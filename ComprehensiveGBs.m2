@@ -3,7 +3,7 @@ newPackage(
     Version => "0.1",
     Date => "",
     Headline => "A package for computing Comprehensive Groebner Bases (CGBs)",
-    Authors => {{ Name => "", Email => "", HomePage => ""}, { Name => "Lorenzo De Biase", Email => "lorenzo.debiase@enea.it", HomePage => "https://sites.google.com/viewlorenzodebiase/"}, { Name => "Weijia Wang", Email => "weijia.wang@lip6.fr", HomePage => "https://weijia.perso.lip6.fr/"}},
+    Authors => {{ Name => "", Email => "", HomePage => ""}, { Name => "Sam Knight", Email => "samdeckardknight@gmail.com", HomePage => ""}, { Name => "Lorenzo De Biase", Email => "lorenzo.debiase@enea.it", HomePage => "https://sites.google.com/viewlorenzodebiase/"}, { Name => "Weijia Wang", Email => "weijia.wang@lip6.fr", HomePage => "https://weijia.perso.lip6.fr/"}},
     Keywords => {""},
     AuxiliaryFiles => false,
     DebuggingMode => true
