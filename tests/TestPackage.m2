@@ -5,7 +5,7 @@ Create your own package using `packageTemplate`.
 *-
 
 newPackage(
-    "TestPackage",
+    "TestPackage Hello",
     Version => "0.1",
     Date => "April 1, 2025",
     Authors => {{
