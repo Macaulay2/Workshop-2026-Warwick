@@ -3,7 +3,7 @@ newPackage(
     Version => "0.1",
     Date => "",
     Headline => "A package for computing Comprehensive Groebner Bases (CGBs)",
-    Authors => {{ Name => "", Email => "", HomePage => ""}},
+    Authors => {{ Name => "", Email => "", HomePage => ""}, { Name => "Lorenzo De Biase", Email => "lorenzo.debiase@enea.it", HomePage => "https://sites.google.com/viewlorenzodebiase/"}},
     Keywords => {""},
     AuxiliaryFiles => false,
     DebuggingMode => true
