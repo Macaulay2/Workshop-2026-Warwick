@@ -23,6 +23,32 @@ export {} -- functions, objects to export
 
 -* Code section *-
 
+extendedRing = method()
+extendedRing (PolynomialRing) := R -> (
+  var = gens R;
+  coeff = gens baseRing R;
+  base = baseRing baseRing R;
+  return(base[l, var, coeff]);  -- ordering of variables requires l >> var >> coeff
+);
+
+CGBMain = method();
+CGBMain (List, List) := (F, S) ->(
+  print("1");
+  if 1 % (ideal S) == 0 then (
+    return {}
+  );
+  R = ring F_0;
+  RExt = extendedRing(R);
+  A = apply(F, i -> l *sub(i, RExt));
+  B = apply(S, i -> (l-1) *sub(i, RExt));
+  gb(ideal join(A, B));
+);
+
+-- R = QQ[u, x];
+-- F = {x^2-x, x^3-1};
+-- S = {u-1};
+-- CGBMain(F, S)
+
 
 -- TODO: implement cgbMain, cgb
 -- input system F subset of K[u_1 .. u_m][x_1 .. x_n]  (assumed form of poly ring)
