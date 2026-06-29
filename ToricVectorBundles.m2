@@ -36,7 +36,7 @@ newPackage("ToricVectorBundles",
 	 },
     Configuration => {},
     PackageImports => {"Varieties"},
-    PackageExports => {"Isomorphism", "Polyhedra"}
+    PackageExports => {"Isomorphism", "Polyhedra","NormalToricVarieties"}
     )
 
 -- Check version compatibility of Polyhedra
@@ -63,39 +63,49 @@ if (options Polyhedra)#Version < "1.1" then error("expected at least version 1.1
 --
 ---------------------------------------------------------------------------
 
-export {"ToricVectorBundle",
-     "ToricVectorBundleKaneyama", 
-     "ToricVectorBundleKlyachko",
-     "toricVectorBundle", 
-     "addBase", 
-     "addBaseChange", 
-     "addDegrees", 
-     "addFiltration", 
-     "areIsomorphic",
-     "base",
-     "cartierIndex",
-     "charts",
-     "cocycleCheck", 
-     "cotangentBundle",
-     "deltaE",
-     "details",  
-     "eulerChi", 
-     "existsDecomposition", 
-     "filtration", 
-     "findWeights", 
-     "isGeneral", 
-     --"isomorphism", 
-     "isWellDefined", 
-     "randomDeformation",
-     "regCheck", 
-     "tangentBundle", 
-     "twist", 
-     "weilToCartier", 
-     "hirzebruchFan",
-     "pp1ProductFan", 
-     "projectiveSpaceFan",
-     "raySortOfFan",
-     "customConeSort"}
+export {
+    -- Types
+    "ToricVectorBundle",
+    "ToricVectorBundleKaneyama", 
+    "ToricVectorBundleKlyachko",
+    "ToricVectorBundleNew",
+    -- Constructors
+    "toricVectorBundle",
+    -- others
+    "addBase", 
+    "addBaseChange", 
+    "addDegrees", 
+    "addFiltration", 
+    "areIsomorphic",
+    "base",
+    "cartierIndex",
+    "charts",
+    "cocycleCheck", 
+    "cotangentBundle",
+    "deltaE",
+    "details",  
+    "eulerChi", 
+    "existsDecomposition", 
+    "filtration", 
+    "findWeights", 
+    "isGeneral", 
+    --"isomorphism", 
+    "isWellDefined", 
+    "randomDeformation",
+    "regCheck", 
+    "tangentBundle", 
+    "twist", 
+    "weilToCartier", 
+    "hirzebruchFan",
+    "pp1ProductFan", 
+    "projectiveSpaceFan",
+    "raySortOfFan",
+    "customConeSort",
+    -- keys
+    "filtrationMatrices",
+    "filtrationJumps",
+    "baseVariety"
+    }
 
 
 protect allRaysTable
@@ -160,6 +170,163 @@ ToricVectorBundleKlyachko = new Type of ToricVectorBundle
 ToricVectorBundleKlyachko.synonym = "vector bundle on a toric variety (Klyachko's description)"
 globalAssignment ToricVectorBundleKlyachko
 
+
+ToricVectorBundleNew = new Type of ToricVectorBundle
+ToricVectorBundleNew.synonym = "vector bundle on a toric variety (Klyachko's description)"
+globalAssignment ToricVectorBundleNew
+
+toricVectorBundle = method(Options => true)
+toricVectorBundle (NormalToricVariety, List, List) := (baseVariety, matrixList, indexesList) -> (
+    -- error checking
+    if #matrixList != #(rays baseVariety) then error("There must be as many filtrations as rays of the base");
+    if #indexesList != #(rays baseVariety) then error("There must be as many filtrations as rays of the base");
+    L := apply(matrixList, m -> {numColumns m, numRows m});
+    if #(unique flatten L) != 1 then error("The filtration matrices must be square");
+    if not same L then error("The sizes of the filtration matrices must be the same");
+    rankE := (unique flatten L)_0;
+    if any(indexesList, l -> #l != rankE) then error("The filtration data must be same length as rank");
+    new ToricVectorBundleNew from {
+	symbol variety => baseVariety,
+	symbol filtrationMatrices => matrixList,
+	symbol filtrationJumps => indexesList,
+	symbol rank => rankE,
+	symbol cache => new CacheTable}
+    )
+
+
+-- PURPOSE : Building a Vector Bundle of rank 'k' on the Toric Variety given by the Fan 'F'
+--toricVectorBundle = method(Options => true)
+
+--   INPUT : '(k,F)',  a strictly positive integer 'k' and a pure and full dimensional Fan 'F'
+--  OUTPUT : A ToricVectorBundleKaneyama or ToricVectorBundleKlyachko
+-- COMMENT : If no option is given the function will return a ToricVectorBundleKlyachko, if "Type" => "Kaneyama" is given it returns a ToricVectorBundleKaneyama
+toricVectorBundle (ZZ,Fan) := {"Type"=>"Klyachko"} >> opts -> (k,F) -> (
+     if opts#"Type" == "Kaneyama" then makeVBKaneyama(k,F) else if opts#"Type" == "Klyachko" then makeVBKlyachko(k,F) else error("Expected Type to be Klyachko or Kaneyama."))
+
+
+--   INPUT : '(k,F,L1,L2)',  a strictly positive integer 'k',a pure and full dimensional Fan 'F', and two lists 'L1' and 'L2'
+--  OUTPUT : A ToricVectorBundleKaneyama or ToricVectorBundleKlyachko
+-- COMMENT : If no option is given the function will return a ToricVectorBundleKlyachko where the base matrices are given in the first list and the 
+--     	     filtration matrices are given in the second list, 
+--     	     if "Type" => "Kaneyama" is given it returns a ToricVectorBundleKaneyama where the degree matrices are given in the first list and the
+--     	     transition matrices are given in the second list.
+toricVectorBundle (ZZ,Fan,List,List) := {"Type"=>"Klyachko"} >> opts -> (k,F,L1,L2) -> (
+     if opts#"Type" == "Kaneyama" then makeVBKaneyama(k,F,L1,L2) else if opts#"Type" == "Klyachko" then makeVBKlyachko(k,F,L1,L2) else error("Expected Type to be Klyachko or Kaneyama."))
+
+ -- PURPOSE : Building a Vector Bundle of rank 'k' on the Toric Variety given by the Fan 'F'
+--           with 0 degrees and identity transition matrices
+--   INPUT : '(k,F)',  a strictly positive integer 'k' and a pure and full dimensional
+--                     Fan 'F' 
+--  OUTPUT : The ToricVectorBundleKaneyama 'VB'
+makeVBKaneyama = method(TypicalValue => ToricVectorBundleKaneyama)
+makeVBKaneyama (ZZ,Fan) := (k,F) -> (
+     -- Checking for input errors
+     if k < 0 then error("The vector bundle must have a positive rank.");
+     if not isComplete F then error("The fan has to be complete.");
+     if not isPointed F then error("The fan has to be pointed.");
+     -- Writing the table of Cones of maximal dimension
+     n := dim F;
+     Frays := rays F;
+     Flineality := linealitySpace F;
+     topConeTable := customConeSort apply(maxCones F, c-> (Frays_c, Flineality));
+     topConeTable = apply(#topConeTable, i -> topConeTable#i => i);
+     topConeTable = hashTable topConeTable;
+     
+     -- Saving the index pairs of top dimensional Cones that intersect in a codim 1 Cone
+     Ltable := hashTable {};
+     scan(pairs topConeTable, (C,a) -> Ltable = merge(Ltable,hashTable apply(facesAsCones(1,posHull C), e -> (rays e, linealitySpace e) => a),(b,c) -> if b < c then (b,c) else (c,b)));
+     Ltable = hashTable flatten apply(pairs Ltable, p -> if instance(p#1,Sequence) then p#1 => p#0 else {});
+     -- Removing Cones on the "border" of F, which have only 1 index
+     pairlist := sort keys Ltable;
+     -- Saving the identity into the Table of transition matrices
+     baseChangeTable := hashTable apply(pairlist, p -> p => map(QQ^k,QQ^k,1));
+     -- Saving 0 degrees into the degree table
+     degreeTable := hashTable apply(keys topConeTable, C -> C => map(ZZ^n,ZZ^k,0));
+     -- Making the vector bundle
+     new ToricVectorBundleKaneyama from {
+	  "degreeTable" => degreeTable,
+	  "baseChangeTable" => baseChangeTable,
+	  "codim1Table" => Ltable,
+	  "ToricVariety" => F,
+	  "number of affine charts" => #topConeTable,
+	  "dimension of the variety" => n,
+	  "rank of the vector bundle" => k,
+	  "topConeTable" => topConeTable,
+	  symbol cache => new CacheTable})
+
+
+--   INPUT : '(k,F,degreeList,matrixList)',  a strictly positive integer 'k', a pure and full dimensional
+--                     Fan 'F' of dimension n, a list 'degreeList' of k by n matrices over ZZ, one for each 
+--     	    	       top dimensional Cone in 'F' where the columns give the degrees of the generators in the 
+--     	    	       corresponding affine chart to this Cone, and a list 'matrixList' of  k by k matrices 
+--     	    	       over QQ, one for each pair of top dimensional Cones intersecting in a common codim 1 face. 
+--  OUTPUT : The ToricVectorBundleKaneyama 'tvb' 
+-- COMMENT : Note that the top dimensional cones are numbered starting with 0 and the codim 1 intersections are 
+--           labelled by pairs (i,j) denoting the two top dim cones involved, with i<j and they are ordered
+--     	     in lexicographic order. So the matrices in 'matrixList' will be assigned to the pairs (i,j) in that 
+--     	     order, where the matrix A assigned to (i,j) denotes the transition
+--     	    	 (e_i^1,...,e_i^k) = (e_j^1,...,e_j^k)* A
+--     	     The matrices in 'degreeList' will be assigned to the cones in the order in which they are numbered.
+makeVBKaneyama (ZZ,Fan,List,List) := (k,F,degreelist,matrixlist) -> (
+     -- Generating the trivial vector bundle of rank k
+     tvb := makeVBKaneyama(k,F);
+     -- Adding the given degrees and transition matrices
+     tvb = addDegrees(tvb,degreelist);
+     tvb = addBaseChange(tvb,matrixlist);
+     tvb)
+
+
+-- PURPOSE : Building a Vector Bundle in the Klyachko description of rank 'k' on the Toric Variety given by the Fan 'F'
+--           with trivial Filtration for every ray
+--   INPUT : '(k,F)',  a strictly positive integer 'k' and a pure and full dimensional Fan 'F' 
+--  OUTPUT : The ToricVectorBundleKlyachko 'VB'
+makeVBKlyachko = method(TypicalValue => ToricVectorBundleKlyachko)
+makeVBKlyachko (ZZ,Fan) := (k,F) -> (
+     -- Checking for input errors
+     if k < 0 then error("The vector bundle must have a positive rank.");
+     if not isPointed F then error("The Fan has to be pointed");
+     -- Writing the table of rays
+     rT := raySortOfFan F;
+     rT = hashTable apply(#rT, i -> rT#i => i);
+     -- Writing the table of identity matrices for the vector bundle bases
+     bT := hashTable apply(keys rT, i -> i => map(QQ^k,QQ^k,1));
+     -- Writing the table of matrices for the filtration maps
+     fMT := hashTable apply(keys rT, i -> i =>  matrix {toList(k:0)});
+     -- Computing the list of changes in the filtrations
+     fT := hashTable apply(pairs fMT, p -> (
+	       L := flatten entries p#1;
+	       L1 := sort unique L;
+	       p#0 => hashTable ({min L1 - 1 => {}} | apply(L1, l -> l => positions(L,e -> e == l)))));
+     -- Generating the vector bundle
+     tvb := new ToricVectorBundleKlyachko from {
+	  "ring" => QQ,
+	  "rayTable" => rT,
+	  "baseTable" => bT,
+	  "filtrationMatricesTable" => fMT,
+	  "filtrationTable" => fT,
+	  "ToricVariety" => F,
+	  "number of affine charts" => #((maxCones F)),
+	  "dimension of the variety" => dim F,
+	  "rank of the vector bundle" => k,
+	  "number of rays" => #rT,
+	  symbol cache => new CacheTable};
+     tvb.cache.isVB = true;
+     tvb)
+
+--   INPUT : '(k,F,baseList,filtrationList)',  a strictly positive integer 'k', a pure and full dimensional
+--                     Fan 'F' of dimension n, a list 'baseList' of k by k matrices over the same ring/field, one for each 
+--     	    	       ray of 'F' where the columns give the basis of the vector bundle over the ray, and a list 
+--     	    	       'filtrationList' of  1 by k matrices over ZZ, one for each ray such that the i-th column of 
+--     	    	       the base matrix is at first in the part of the filtration indexed by the i-th entry in the filtration 
+--     	    	       matrix.
+--  OUTPUT : The ToricVectorBundleKlyachko 'tvb' 
+-- COMMENT : Note that the bases and filtration matrices will be assigned to the rays in the order, they appear in rays F
+makeVBKlyachko (ZZ,Fan,List,List) := (k,F,Bm,Fm) -> (
+     tvb := makeVBKlyachko(k,F);
+     tvb = addBase(tvb,Bm);
+     addFiltration(tvb,Fm))
+
+
 -- Modifying the standard output for a ToricVectorBundleKaneyama to give an overview of its characteristica
 net ToricVectorBundleKaneyama := tvb -> ( horizontalJoin flatten ( 
 	  "{", 
@@ -198,25 +365,6 @@ raySortOfFan = (fan) -> (
 -- FUNCTIONS TO CONSTRUCT VECTOR BUNDLES AND MODIFY THEM
 ---------------------------------------------------------------
 
-
--- PURPOSE : Building a Vector Bundle of rank 'k' on the Toric Variety given by the Fan 'F'
-toricVectorBundle = method(Options => true)
-
---   INPUT : '(k,F)',  a strictly positive integer 'k' and a pure and full dimensional Fan 'F'
---  OUTPUT : A ToricVectorBundleKaneyama or ToricVectorBundleKlyachko
--- COMMENT : If no option is given the function will return a ToricVectorBundleKlyachko, if "Type" => "Kaneyama" is given it returns a ToricVectorBundleKaneyama
-toricVectorBundle (ZZ,Fan) := {"Type"=>"Klyachko"} >> opts -> (k,F) -> (
-     if opts#"Type" == "Kaneyama" then makeVBKaneyama(k,F) else if opts#"Type" == "Klyachko" then makeVBKlyachko(k,F) else error("Expected Type to be Klyachko or Kaneyama."))
-
-
---   INPUT : '(k,F,L1,L2)',  a strictly positive integer 'k',a pure and full dimensional Fan 'F', and two lists 'L1' and 'L2'
---  OUTPUT : A ToricVectorBundleKaneyama or ToricVectorBundleKlyachko
--- COMMENT : If no option is given the function will return a ToricVectorBundleKlyachko where the base matrices are given in the first list and the 
---     	     filtration matrices are given in the second list, 
---     	     if "Type" => "Kaneyama" is given it returns a ToricVectorBundleKaneyama where the degree matrices are given in the first list and the
---     	     transition matrices are given in the second list.
-toricVectorBundle (ZZ,Fan,List,List) := {"Type"=>"Klyachko"} >> opts -> (k,F,L1,L2) -> (
-     if opts#"Type" == "Kaneyama" then makeVBKaneyama(k,F,L1,L2) else if opts#"Type" == "Klyachko" then makeVBKlyachko(k,F,L1,L2) else error("Expected Type to be Klyachko or Kaneyama."))
 
 
 -- PURPOSE : Changing the base matrices of a given ToricVectorBundleKlyachko to those given in the List 
@@ -462,7 +610,7 @@ regCheck ToricVectorBundleKaneyama := (cacheValue symbol regCheck)( tvb -> (
 -- PURPOSE : Returning the base representation of the bundle
 --   INPUT : 'tvb',  a ToricVectorBundleKlyachko
 --  OUTPUT : A HashTable which gives for each ray of the fan the matrix of the basis
-base = method(TypicalValue => HashTable)
+--base = method(TypicalValue => HashTable)
 base ToricVectorBundleKlyachko := tvb -> tvb#"baseTable"
 
 
@@ -664,7 +812,7 @@ coker (ToricVectorBundleKlyachko,Matrix) := (T,M) -> (
 
 	       
 -- PURPOSE : Computing the cotangent bundle on a smooth, pure, and full dimensional Toric Variety 
-cotangentBundle = method(Options => {"Type" => "Klyachko"})
+-- cotangentBundle = method(Options => {"Type" => "Klyachko"})
 
 --   INPUT : 'F',  a smooth, pure, and full dimensional Fan
 --  OUTPUT : 'tvb',  a ToricVectorBundle
@@ -1316,7 +1464,7 @@ symmetricPower(ZZ,ToricVectorBundle) := (l,tvb) -> (
 --   INPUT : 'F',  a smooth, pure, and full dimensional Fan
 --  OUTPUT : 'tvb',  a ToricVectorBundle
 -- COMMENT : If no option is given the function will return a ToricVectorBundleKlyachko, if "Type" => "Kaneyama" is given it returns a ToricVectorBundleKaneyama
-tangentBundle = method(Options => {"Type" => "Klyachko"})
+-- tangentBundle = method(Options => {"Type" => "Klyachko"})
 tangentBundle Fan := opts -> F -> (
      if opts#"Type" == "Klyachko" then tangentBundleKlyachko F else if opts#"Type" == "Kaneyama" then dual cotangentBundleKaneyama F else error("Expected Type to be Klyachko or Kaneyama."))
 
@@ -1863,120 +2011,7 @@ intersectMatrices = (M,N) -> (
      N = N^{0..m-1};
      gens trim image(M*N));
 
-
--- PURPOSE : Building a Vector Bundle of rank 'k' on the Toric Variety given by the Fan 'F'
---           with 0 degrees and identity transition matrices
---   INPUT : '(k,F)',  a strictly positive integer 'k' and a pure and full dimensional
---                     Fan 'F' 
---  OUTPUT : The ToricVectorBundleKaneyama 'VB'
-makeVBKaneyama = method(TypicalValue => ToricVectorBundleKaneyama)
-makeVBKaneyama (ZZ,Fan) := (k,F) -> (
-     -- Checking for input errors
-     if k < 0 then error("The vector bundle must have a positive rank.");
-     if not isComplete F then error("The fan has to be complete.");
-     if not isPointed F then error("The fan has to be pointed.");
-     -- Writing the table of Cones of maximal dimension
-     n := dim F;
-     Frays := rays F;
-     Flineality := linealitySpace F;
-     topConeTable := customConeSort apply(maxCones F, c-> (Frays_c, Flineality));
-     topConeTable = apply(#topConeTable, i -> topConeTable#i => i);
-     topConeTable = hashTable topConeTable;
-     
-     -- Saving the index pairs of top dimensional Cones that intersect in a codim 1 Cone
-     Ltable := hashTable {};
-     scan(pairs topConeTable, (C,a) -> Ltable = merge(Ltable,hashTable apply(facesAsCones(1,posHull C), e -> (rays e, linealitySpace e) => a),(b,c) -> if b < c then (b,c) else (c,b)));
-     Ltable = hashTable flatten apply(pairs Ltable, p -> if instance(p#1,Sequence) then p#1 => p#0 else {});
-     -- Removing Cones on the "border" of F, which have only 1 index
-     pairlist := sort keys Ltable;
-     -- Saving the identity into the Table of transition matrices
-     baseChangeTable := hashTable apply(pairlist, p -> p => map(QQ^k,QQ^k,1));
-     -- Saving 0 degrees into the degree table
-     degreeTable := hashTable apply(keys topConeTable, C -> C => map(ZZ^n,ZZ^k,0));
-     -- Making the vector bundle
-     new ToricVectorBundleKaneyama from {
-	  "degreeTable" => degreeTable,
-	  "baseChangeTable" => baseChangeTable,
-	  "codim1Table" => Ltable,
-	  "ToricVariety" => F,
-	  "number of affine charts" => #topConeTable,
-	  "dimension of the variety" => n,
-	  "rank of the vector bundle" => k,
-	  "topConeTable" => topConeTable,
-	  symbol cache => new CacheTable})
-
---   INPUT : '(k,F,degreeList,matrixList)',  a strictly positive integer 'k', a pure and full dimensional
---                     Fan 'F' of dimension n, a list 'degreeList' of k by n matrices over ZZ, one for each 
---     	    	       top dimensional Cone in 'F' where the columns give the degrees of the generators in the 
---     	    	       corresponding affine chart to this Cone, and a list 'matrixList' of  k by k matrices 
---     	    	       over QQ, one for each pair of top dimensional Cones intersecting in a common codim 1 face. 
---  OUTPUT : The ToricVectorBundleKaneyama 'tvb' 
--- COMMENT : Note that the top dimensional cones are numbered starting with 0 and the codim 1 intersections are 
---           labelled by pairs (i,j) denoting the two top dim cones involved, with i<j and they are ordered
---     	     in lexicographic order. So the matrices in 'matrixList' will be assigned to the pairs (i,j) in that 
---     	     order, where the matrix A assigned to (i,j) denotes the transition
---     	    	 (e_i^1,...,e_i^k) = (e_j^1,...,e_j^k)* A
---     	     The matrices in 'degreeList' will be assigned to the cones in the order in which they are numbered.
-makeVBKaneyama (ZZ,Fan,List,List) := (k,F,degreelist,matrixlist) -> (
-     -- Generating the trivial vector bundle of rank k
-     tvb := makeVBKaneyama(k,F);
-     -- Adding the given degrees and transition matrices
-     tvb = addDegrees(tvb,degreelist);
-     tvb = addBaseChange(tvb,matrixlist);
-     tvb)
-
-
--- PURPOSE : Building a Vector Bundle in the Klyachko description of rank 'k' on the Toric Variety given by the Fan 'F'
---           with trivial Filtration for every ray
---   INPUT : '(k,F)',  a strictly positive integer 'k' and a pure and full dimensional Fan 'F' 
---  OUTPUT : The ToricVectorBundleKlyachko 'VB'
-makeVBKlyachko = method(TypicalValue => ToricVectorBundleKlyachko)
-makeVBKlyachko (ZZ,Fan) := (k,F) -> (
-     -- Checking for input errors
-     if k < 0 then error("The vector bundle must have a positive rank.");
-     if not isPointed F then error("The Fan has to be pointed");
-     -- Writing the table of rays
-     rT := raySortOfFan F;
-     rT = hashTable apply(#rT, i -> rT#i => i);
-     -- Writing the table of identity matrices for the vector bundle bases
-     bT := hashTable apply(keys rT, i -> i => map(QQ^k,QQ^k,1));
-     -- Writing the table of matrices for the filtration maps
-     fMT := hashTable apply(keys rT, i -> i =>  matrix {toList(k:0)});
-     -- Computing the list of changes in the filtrations
-     fT := hashTable apply(pairs fMT, p -> (
-	       L := flatten entries p#1;
-	       L1 := sort unique L;
-	       p#0 => hashTable ({min L1 - 1 => {}} | apply(L1, l -> l => positions(L,e -> e == l)))));
-     -- Generating the vector bundle
-     tvb := new ToricVectorBundleKlyachko from {
-	  "ring" => QQ,
-	  "rayTable" => rT,
-	  "baseTable" => bT,
-	  "filtrationMatricesTable" => fMT,
-	  "filtrationTable" => fT,
-	  "ToricVariety" => F,
-	  "number of affine charts" => #((maxCones F)),
-	  "dimension of the variety" => dim F,
-	  "rank of the vector bundle" => k,
-	  "number of rays" => #rT,
-	  symbol cache => new CacheTable};
-     tvb.cache.isVB = true;
-     tvb)
-
---   INPUT : '(k,F,baseList,filtrationList)',  a strictly positive integer 'k', a pure and full dimensional
---                     Fan 'F' of dimension n, a list 'baseList' of k by k matrices over the same ring/field, one for each 
---     	    	       ray of 'F' where the columns give the basis of the vector bundle over the ray, and a list 
---     	    	       'filtrationList' of  1 by k matrices over ZZ, one for each ray such that the i-th column of 
---     	    	       the base matrix is at first in the part of the filtration indexed by the i-th entry in the filtration 
---     	    	       matrix.
---  OUTPUT : The ToricVectorBundleKlyachko 'tvb' 
--- COMMENT : Note that the bases and filtration matrices will be assigned to the rays in the order, they appear in rays F
-makeVBKlyachko (ZZ,Fan,List,List) := (k,F,Bm,Fm) -> (
-     tvb := makeVBKlyachko(k,F);
-     tvb = addBase(tvb,Bm);
-     addFiltration(tvb,Fm))
-
-
+  
 -- PURPOSE : Solving the system R*X=F
 --   INPUT : '(R,F)',  two matrices over ZZ
 --  OUTPUT : a matrix of QQ solutions
