@@ -1,0 +1,9 @@
+isCyclicFlats List := Boolean => L -> (
+    for i from 0 to #L - 1 (
+        if not isInstance
+        if not isInstance(L#i#0, Set) then (
+            if debugLevel > 0 then printerr(toString L#i#0 | " is not a set.");
+            return false;
+        );
+    );
+)
