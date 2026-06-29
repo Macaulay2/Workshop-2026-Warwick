@@ -9,8 +9,9 @@ newPackage(
         { Name => "Weijia Wang", Email => "weijia.wang@lip6.fr", HomePage => "https://weijia.perso.lip6.fr/"},
         { Name => "Angelo El Saliby", Email => "angelo.el.saliby@mis.mpg.de", HomePage => "angeloelsaliby.github.io"},
         { Name => "Oliver Clarke", Email => "oliver.clarke@durham.ac.uk", HomePage => ""},
-        { Name => "Sam Knight", Email => "samdeckardknight@gmail.com", HomePage => ""},
+        { Name => "Sam Knight", Email => "samdeckardknight@gmail.com", HomePage => ""}
         { Name => "Agustina Cagliero", Email => "mariaagustina.cagliero@kuleuven.be", HomePage => ""}
+        { Name => "Giulia Gaggero", Email => "gaggerog@mcmaster.ca", HomePage => ""}
         },
 
     Keywords => {""},
