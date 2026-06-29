@@ -82,7 +82,7 @@ export {"ToricVectorBundle",
      "findWeights", 
      "isGeneral", 
      --"isomorphism", 
-     "isVectorBundle", 
+     "isWellDefined", 
      "randomDeformation",
      "regCheck", 
      "tangentBundle", 
@@ -1119,8 +1119,8 @@ isGeneral ToricVectorBundleKlyachko := (cacheValue symbol isGeneral)( tvb -> (
 --     	     regularity and cocycle condition
 --   INPUT : 'T',  a ToricVectorBundle
 --  OUTPUT : 'true' if 'T' is fact a bundle, 'false' otherwise
-isVectorBundle = method()
-isVectorBundle ToricVectorBundle := (cacheValue symbol isVB)( T -> (
+isWellDefined = method()
+isWellDefined ToricVectorBundle := (cacheValue symbol isVB)( T -> (
 	  if instance(T,ToricVectorBundleKlyachko) then (
 	       L := findWeights T;
 	       all(L, l -> l != {}) and existsDecomposition(T,L))
@@ -2288,17 +2288,17 @@ document {
      rays in that order. To see the order use ",TO (rays,ToricVectorBundle),".",
      
      PARA{}, "The matrices need not satisfy the compatibility condition. This can 
-     be checked with ",TO isVectorBundle,".",
+     be checked with ",TO isWellDefined,".",
      
      EXAMPLE {
 	  " E = toricVectorBundle(2,pp1ProductFan 2)",
 	  " details E",
 	  " F = addBase(E,{matrix{{1,2},{3,1}},matrix{{-1,0},{3,1}},matrix{{1,2},{-3,-1}},matrix{{-1,0},{-3,-1}}})",
 	  " details F",
-	  " isVectorBundle F"
+	  " isWellDefined F"
 	  },
      
-     SeeAlso => {base,addFiltration,isVectorBundle}
+     SeeAlso => {base,addFiltration,isWellDefined}
      
      }
 
@@ -2362,20 +2362,20 @@ document {
      in the filtration matrix is less or equal to $j$."///,
      
      PARA{}, "The matrices need not satisfy the compatibility condition. This can be checked 
-     with ",TO isVectorBundle,".",
+     with ",TO isWellDefined,".",
      
      EXAMPLE {
 	  " E = toricVectorBundle(2,pp1ProductFan 2)",
 	  " details E",
 	  " F = addFiltration(E,{matrix{{1,3}},matrix{{-1,3}},matrix{{2,-3}},matrix{{0,-1}}})",
 	  " details F",
-	  " isVectorBundle F"
+	  " isWellDefined F"
 	  },
      
      PARA{}, "This means that for example over the first ray the first basis vector of the filtration of ",TT "F"," 
      appears at the filtration step 1 and the second at 3.",
      
-     SeeAlso => {filtration,addBase,isVectorBundle}
+     SeeAlso => {filtration,addBase,isWellDefined}
      
      }
 
@@ -2431,7 +2431,7 @@ document {
 	  " base E"
 	  },
      
-     SeeAlso => {addBase,filtration,isVectorBundle}
+     SeeAlso => {addBase,filtration,isWellDefined}
      
      }
 
@@ -2880,11 +2880,11 @@ document {
      
      PARA{}, "Note that the data given in the description of ",TT "E"," defines an equivariant vector bundle 
      on the toric variety exactly if there exists a set of weight vectors for each maximal cone that admits a 
-     decomposition. The function ",TO isVectorBundle," uses this.",
+     decomposition. The function ",TO isWellDefined," uses this.",
     
      Caveat => {TT "existsDecomposition"," is known to produce incorrect output."},
  
-     SeeAlso => {findWeights,isVectorBundle,(maxCones,ToricVectorBundle)}
+     SeeAlso => {findWeights,isWellDefined,(maxCones,ToricVectorBundle)}
      
      }
 
@@ -2965,7 +2965,7 @@ document {
      
      PARA{}, "So in this example for each ray the first column of the basis appears at -1 and the second at 0.",
      
-     SeeAlso => {addFiltration,base,isVectorBundle}
+     SeeAlso => {addFiltration,base,isWellDefined}
      
      }
 
@@ -2992,7 +2992,7 @@ document {
 	  " findWeights E"
 	  },
      
-     SeeAlso => {filtration,existsDecomposition,isVectorBundle}
+     SeeAlso => {filtration,existsDecomposition,isWellDefined}
      
      }
 
@@ -3180,9 +3180,9 @@ document {
      }
 
 document {
-     Key => {isVectorBundle, (isVectorBundle,ToricVectorBundle)},
+     Key => {isWellDefined, (isWellDefined,ToricVectorBundle)},
      Headline => " checks if the data does in fact define an equivariant toric vector bundle",
-     Usage => " b = isVectorBundle E",
+     Usage => " b = isWellDefined E",
      Inputs => {
 	  "E" => ToricVectorBundle
 	  },
@@ -3199,10 +3199,10 @@ document {
      EXAMPLE{
 	  " E = toricVectorBundle(2,pp1ProductFan 2)",
 	  " E = addBase(E,{matrix{{1,2},{3,1}},matrix{{-1,0},{3,1}},matrix{{1,2},{-3,-1}},matrix{{-1,0},{-3,-1}}})",
-	  " isVectorBundle E",
+	  " isWellDefined E",
 	  " F = toricVectorBundle(1,normalFan crossPolytope 3)",
 	  " F = addFiltration(F,apply({2,1,1,2,2,1,1,2}, i -> matrix {{i}}))",
-	  " isVectorBundle F"
+	  " isWellDefined F"
 	  },
      
      PARA{}, "If ",TT "E"," is in Kaneyama's description then data in ",TT "E"," defines an equivariant 
@@ -3211,12 +3211,12 @@ document {
      
      EXAMPLE{
 	  " E = toricVectorBundle(2,pp1ProductFan 2,\"Type\" => \"Kaneyama\")",
-	  " isVectorBundle E",
+	  " isWellDefined E",
 	  " E = addBaseChange(E,{matrix{{1,2},{3,1}},matrix{{-1,0},{3,1}},matrix{{1,2},{-3,-1}},matrix{{-1,0},{-3,-1}}})",
-	  " isVectorBundle E"
+	  " isWellDefined E"
 	  },
      
-     Caveat => {TT "isVectorBundle"," is known to produce incorrect output for Klyachko bundles. The user is recommended to instead use ",TT "isLocallyFree"," from the package ",TT "PositivityToricBundles","."},
+     Caveat => {TT "isWellDefined"," is known to produce incorrect output for Klyachko bundles. The user is recommended to instead use ",TT "isLocallyFree"," from the package ",TT "PositivityToricBundles","."},
      SeeAlso => {findWeights,
 	  existsDecomposition,
 	  addBase,
@@ -3525,7 +3525,7 @@ document {
 	  " regCheck E"
 	  },
      
-     SeeAlso => {addBaseChange,addDegrees,cocycleCheck,isVectorBundle}
+     SeeAlso => {addBaseChange,addDegrees,cocycleCheck,isWellDefined}
      
      }
 
@@ -3768,7 +3768,7 @@ document {
 	  details,
 	  regCheck,
 	  cocycleCheck,
-	  isVectorBundle}
+	  isWellDefined}
      
      } 
 
@@ -3837,7 +3837,7 @@ document {
 	  details,
 	  regCheck,
 	  cocycleCheck,
-	  isVectorBundle}
+	  isWellDefined}
      
      }
 
@@ -4036,15 +4036,15 @@ assert(rank T == 3)
 ///
 
 -- Test 8
--- Checking isVectorBundle
+-- Checking isWellDefined
 TEST ///
 T = toricVectorBundle(2,pp1ProductFan 2)
 T1 = addBase(T,{matrix{{1,2},{3,1}},matrix{{-1,0},{3,1}},matrix{{1,2},{-3,-1}},matrix{{-1,0},{-3,-1}}})
-assert isVectorBundle T1
+assert isWellDefined T1
 T = toricVectorBundle(1,normalFan crossPolytope 3)
 L = apply({2,1,1,2,2,1,1,2}, i -> matrix {{i}});
 T = addFiltration(T,L)
-assert not isVectorBundle T
+assert not isWellDefined T
 ///
 
 -- Test 9
