@@ -1,0 +1,7 @@
+gfan todo 
+
+- fix Documentation, for instance the documentation for tropicalIntersection is wrong.
+
+- new or adapted parser for new datatype: SymmetricFan works, but the new datatype PolyhedralFan does not - it contains less information so the parser doesn't work
+
+- 
