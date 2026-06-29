@@ -1,5 +1,7 @@
 --*- coding: utf-8 -*-
 
+--TODO: update these blurbs to reflect the overhaul project at M2 workshop
+
 ---------------------------------------------------------------------------
 -- PURPOSE: Computations with vector bundles on toric varieties 
 -- PROGRAMMER : René Birkner 
@@ -7,7 +9,7 @@
 ---------------------------------------------------------------------------
 newPackage("ToricVectorBundles",
     Headline => "vector bundles on toric varieties",
-    Version => "1.3",
+    Version => "1.4",
     Date => "April 15, 2025",
     Authors => {
          {Name => "René Birkner"
@@ -38,9 +40,6 @@ newPackage("ToricVectorBundles",
     PackageImports => {"Varieties"},
     PackageExports => {"Isomorphism", "Polyhedra","NormalToricVarieties"}
     )
-
--- Check version compatibility of Polyhedra
-if (options Polyhedra)#Version < "1.1" then error("expected at least version 1.1 of Polyhedra to be installed.")
 
 ---------------------------------------------------------------------------
 -- COPYRIGHT NOTICE:
@@ -90,7 +89,6 @@ export {
     "findWeights", 
     "isGeneral", 
     --"isomorphism", 
-    "isWellDefined", 
     "randomDeformation",
     "regCheck", 
     "tangentBundle", 
@@ -123,40 +121,6 @@ protect isomorphic
 -- DEFINING NEW TYPES
 ---------------------------------------------------------------------------
 
-
--- For some reason it is important for ToricVectorBundles to be able to sort
--- cones. Since cones as keys in hashtables do not work anymore we move the old
--- code for sorting cones here from OldPolyhedra.m2 and implement a method for
--- sorting the new keys.
-Cone ? Cone := (C1,C2) -> (
-     if C1 == C2 then symbol == else (
-     if ambDim C1 != ambDim C2 then ambDim C1 ? ambDim C2 else (
-          if dim C1 != dim C2 then dim C1 ? dim C2 else (
-          R1 := sort rays C1;
-          R2 := sort rays C2;
-          if R1 != R2 then (
-          R1 = apply(numColumns R1, i -> R1_{i});
-          R2 = apply(numColumns R2, i -> R2_{i});
-          (a,b) := (set R1,set R2); 
-          r := (sort matrix {join(select(R1,i->not b#?i),select(R2,i->not a#?i))})_{0};
-          if a#?r then symbol > else symbol <)
-          else (
-          R1 = linSpace C1;
-          R2 = linSpace C2;
-          R1 = apply(numColumns R1, i -> R1_{i});
-          R2 = apply(numColumns R2, i -> R2_{i});
-          (c,d) := (set R1,set R2);
-          l := (sort matrix {join(select(R1,i->not d#?i),select(R2,i->not c#?i))})_{0};
-          if c#?l then symbol > else symbol <)))))
-
-customConeSort = method()
-customConeSort List := L -> (
-	L = apply(L, l -> posHull l);
-	L = sort L;
-	L = apply(L, l -> (rays l, linealitySpace l));
-	L
-)
-
 -- Defining the new type ToricVectorBundle, the parent type to the two types of TVB
 ToricVectorBundle = new Type of HashTable
 
@@ -169,7 +133,6 @@ globalAssignment ToricVectorBundleKaneyama
 ToricVectorBundleKlyachko = new Type of ToricVectorBundle
 ToricVectorBundleKlyachko.synonym = "vector bundle on a toric variety (Klyachko's description)"
 globalAssignment ToricVectorBundleKlyachko
-
 
 ToricVectorBundleNew = new Type of ToricVectorBundle
 ToricVectorBundleNew.synonym = "vector bundle on a toric variety (Klyachko's description)"
@@ -193,6 +156,7 @@ toricVectorBundle (NormalToricVariety, List, List) := (baseVariety, matrixList, 
 	symbol cache => new CacheTable}
     )
 
+--TODO: once the overhaul is complete, we should remove these constructors.
 
 -- PURPOSE : Building a Vector Bundle of rank 'k' on the Toric Variety given by the Fan 'F'
 --toricVectorBundle = method(Options => true)
@@ -254,6 +218,7 @@ makeVBKaneyama (ZZ,Fan) := (k,F) -> (
 	  "topConeTable" => topConeTable,
 	  symbol cache => new CacheTable})
 
+--TODO: I think the Kaneyama presentation is still useful, but needs some massaging to be palatable.
 
 --   INPUT : '(k,F,degreeList,matrixList)',  a strictly positive integer 'k', a pure and full dimensional
 --                     Fan 'F' of dimension n, a list 'degreeList' of k by n matrices over ZZ, one for each 
@@ -356,6 +321,41 @@ net ToricVectorBundleKlyachko := tvb -> ( horizontalJoin flatten (
 -- Polyhedra, so that changes to the algorithm for computing the hash code of
 -- matrices doesn't affect what we do.
 
+
+-- For some reason it is important for ToricVectorBundles to be able to sort
+-- cones. Since cones as keys in hashtables do not work anymore we move the old
+-- code for sorting cones here from OldPolyhedra.m2 and implement a method for
+-- sorting the new keys.
+Cone ? Cone := (C1,C2) -> (
+     if C1 == C2 then symbol == else (
+     if ambDim C1 != ambDim C2 then ambDim C1 ? ambDim C2 else (
+          if dim C1 != dim C2 then dim C1 ? dim C2 else (
+          R1 := sort rays C1;
+          R2 := sort rays C2;
+          if R1 != R2 then (
+          R1 = apply(numColumns R1, i -> R1_{i});
+          R2 = apply(numColumns R2, i -> R2_{i});
+          (a,b) := (set R1,set R2); 
+          r := (sort matrix {join(select(R1,i->not b#?i),select(R2,i->not a#?i))})_{0};
+          if a#?r then symbol > else symbol <)
+          else (
+          R1 = linSpace C1;
+          R2 = linSpace C2;
+          R1 = apply(numColumns R1, i -> R1_{i});
+          R2 = apply(numColumns R2, i -> R2_{i});
+          (c,d) := (set R1,set R2);
+          l := (sort matrix {join(select(R1,i->not d#?i),select(R2,i->not c#?i))})_{0};
+          if c#?l then symbol > else symbol <)))))
+
+customConeSort = method()
+customConeSort List := L -> (
+	L = apply(L, l -> posHull l);
+	L = sort L;
+	L = apply(L, l -> (rays l, linealitySpace l));
+	L
+)
+
+
 raySort = value Polyhedra#"private dictionary"#"raySort"
 raySortOfFan = (fan) -> (
     r := rays fan;
@@ -365,7 +365,7 @@ raySortOfFan = (fan) -> (
 -- FUNCTIONS TO CONSTRUCT VECTOR BUNDLES AND MODIFY THEM
 ---------------------------------------------------------------
 
-
+--TODO: The "add" methods are just garbage? Remove
 
 -- PURPOSE : Changing the base matrices of a given ToricVectorBundleKlyachko to those given in the List 
 --   INPUT : '(tvb,L)',  a ToricVectorBundle 'tvb' and a list 'L'of k by k matrices over a common ring/field, one for each
@@ -522,12 +522,16 @@ addFiltration (ToricVectorBundleKlyachko,List) := (tvb,L) -> (
 	  symbol cache => new CacheTable})
 
 
+--TODO: this method is literally unused.
+  
 -- PURPOSE : Giving the number of affine charts of a ToricVectorBundle
 --   INPUT : 'tvb', a ToricVectorBundle
 --  OUTPUT : 'ZZ',  the number of affine charts
 charts = method(TypicalValue => ZZ)
 charts ToricVectorBundle := tvb -> tvb#"number of affine charts"
 
+
+--TODO: this is just isWellDefined for Kaneyama.
 	       
 -- PURPOSE : Checking if the ToricVectorBundleKaneyama fulfills the cocycle condition
 --   INPUT : 'tvb',  a ToricVectorBundleKaneyama 
@@ -562,6 +566,8 @@ cocycleCheck ToricVectorBundleKaneyama := (cacheValue symbol cocycle)( tvb -> (
      	  all(L, l -> product apply(reverse l, e -> if e#0 > e#1 then inverse bCT#(e#1,e#0) else bCT#e) == map(QQ^k,QQ^k,1))))
 
 
+--TODO: this method might still be useful... could cut, could transfer its functionality.
+  
 -- PURPOSE : Presenting some details of the given ToricVectorBundle
 --   INPUT : 'tvb',  a ToricVectorBundleKaneyama
 --  OUTPUT : '(A,C)',	 where 'A' is a hashTable giving the enumeration of the maximal cones with their rays and degree matrix, 
@@ -573,6 +579,8 @@ details ToricVectorBundle := tvb -> (
      else hashTable apply(rays tvb, r -> r => (tvb#"baseTable"#r,tvb#"filtrationMatricesTable"#r)))
 
 
+--TODO: This is also part of isWellDefined for Kaneyama.
+ 
 -- PURPOSE : Checking if a ToricVectorBundleKaneyama satisfies the regularity conditions of the degrees
 --   INPUT : 'tvb', a ToricVectorBundleKaneyama
 --  OUTPUT : 'true' or 'false'
@@ -607,6 +615,8 @@ regCheck ToricVectorBundleKaneyama := (cacheValue symbol regCheck)( tvb -> (
 ----------------------------------------------------------------------------
 
 
+--TODO: Two extraction methods. should modify to match our new type.
+
 -- PURPOSE : Returning the base representation of the bundle
 --   INPUT : 'tvb',  a ToricVectorBundleKlyachko
 --  OUTPUT : A HashTable which gives for each ray of the fan the matrix of the basis
@@ -620,6 +630,8 @@ base ToricVectorBundleKlyachko := tvb -> tvb#"baseTable"
 filtration = method(TypicalValue => HashTable)
 filtration ToricVectorBundleKlyachko := tvb -> tvb#"filtrationMatricesTable"
 
+
+--TODO: A nice method, well-commented. we just need to modernize the extraction methods inside.
 
 -- PURPOSE : Checking for the descriptions of two given vector bundles in Klyachko's description if they are isomorphic
 --   INPUT : '(T1,T2)',  two ToricVectorBundleKlyachko
@@ -1270,7 +1282,6 @@ isGeneral ToricVectorBundleKlyachko := (cacheValue symbol isGeneral)( tvb -> (
 --     	     regularity and cocycle condition
 --   INPUT : 'T',  a ToricVectorBundle
 --  OUTPUT : 'true' if 'T' is fact a bundle, 'false' otherwise
-isWellDefined = method()
 isWellDefined ToricVectorBundle := (cacheValue symbol isVB)( T -> (
 	  if instance(T,ToricVectorBundleKlyachko) then (
 	       L := findWeights T;
