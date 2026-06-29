@@ -26,10 +26,10 @@ export {} -- functions, objects to export
 
 extendedRing = method();
 extendedRing (PolynomialRing) := R -> (
-  var = gens R;
-  coeff = gens baseRing R;
-  base = baseRing baseRing R;
-  return(base[l, var, coeff]);  -- ordering of variables requires l >> var >> coeff
+  var := gens R;
+  coeff := gens baseRing R;
+  base := baseRing baseRing R;
+  return(base[local l, var, coeff]);  -- ordering of variables requires l >> var >> coeff
 );
 
 aux = method();
@@ -43,12 +43,13 @@ CGBMain (List, List) := (F, S) ->(
   if 1 % (ideal S) == 0 then (
     return {}
   );
-  R = ring F_0;
-  RExt = extendedRing(R);
-  A = apply(F, i -> l *sub(i, RExt));
-  B = apply(S, i -> (l-1) *sub(i, RExt));
-  G = (entries gens gb(ideal join(A, B)))_0;
-  pruneG = select(G, g -> (leadTerm(g) % l == 0) and any(gens R, i -> leadTerm(g) % i == 0)) -- test if this line works 30th
+  R := ring F_0;
+  RExt := extendedRing(R);
+  l := first gens RExt;
+  A := apply(F, i -> l * sub(i, RExt));
+  B := apply(S, i -> (l-1) * sub(i, RExt));
+  G := (entries gens gb(ideal join(A, B)))_0;
+  pruneG := select(G, g -> (leadTerm(g) % l == 0) and any(gens R, i -> leadTerm(g) % i == 0)) -- test if this line works 30th
 );
 
 -- R = QQ[u, x];
