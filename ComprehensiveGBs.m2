@@ -23,6 +23,14 @@ export {} -- functions, objects to export
 -* Code section *-
 
 
+-- TODO: implement cgbMain, cgb
+-- input system F subset of K[u_1 .. u_m][x_1 .. x_n]  (assumed form of poly ring)
+
+
+
+
+
+
 -* Documentation section *-
 
 beginDocumentation()
@@ -52,6 +60,11 @@ uninstallPackage "ComprehensiveGBs"
 restart
 installPackage "ComprehensiveGBs"
 viewHelp "ComprehensiveGBs"
+
+
+
+
+
 
 Description
        Text
