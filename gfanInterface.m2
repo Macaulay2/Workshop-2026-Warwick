@@ -68,6 +68,7 @@ export {
 	"gfanTropicalHyperSurface", -- v0.4 -- done!
 	"gfanTropicalHyperSurfaceReconstruction",
 	"gfanTropicalIntersection", -- done!
+        "gfanTropicalPrevariety", -- TODO: under development
 	"gfanTropicalLifting",
 	"gfanTropicalLinearSpace", -- v0.4 -- done! doc needs double checking
 	"gfanTropicalMultiplicity", -- example needed.
@@ -2350,6 +2351,25 @@ gfanTropicalMultiplicity (List) := opts -> (L) -> (
 )
 
 --------------------------------------------------------
+-- gfan_tropicalprevariety
+--------------------------------------------------------
+
+gfanTropicalPrevariety = method(Options => {})
+
+
+gfanTropicalPrevariety (List) :=  opts -> (L) -> (
+    (ringMap,newL) := gfanConvertToNewRing(L);
+    L = newL;
+    input := gfanRingToString(ring first L) | gfanPolynomialListToString(L);
+    s:=runGfanCommand("gfan _tropicalprevariety",opts,input)
+
+)
+
+
+
+
+
+--------------------------------------------------------
 -- gfan_tropicalrank
 --------------------------------------------------------
 
@@ -4499,6 +4519,15 @@ doc///
 	 assert(maxCones(C) === {{0,1}})
 	 ///
 
+         -- gfanTropicalPrevariety
+         TEST ///
+         QQ[x,y];
+         gfanTropicalHyperSurface(x+y)
+         gfanTropicalHyperSurface(x+y+1)
+         gfanTropicalIntersection {x+y, x+y+1}
+         gfanTropicalPrevariety {x+y, x+y+1} 
+         ///
+         
 	-- TEST gfanFanProduct
 -- 	TEST ///
 -- 	 QQ[x,y];
