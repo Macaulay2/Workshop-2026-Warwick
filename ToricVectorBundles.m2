@@ -452,7 +452,7 @@ addBaseChange (ToricVectorBundleKaneyama,List) := (tvb,L) -> (
 	  symbol cache => new CacheTable})
 
 
--*
+
 -- PURPOSE : Changing the degrees of the local generators of a given ToricVectorBundleKaneyama to those given in the List 
 --   INPUT : '(tvb,L)',  a ToricVectorBundleKaneyama 'tvb' and a list 'L'of n by k matrices over ZZ, one for each 
 --     	    	      	 top dimensional Cone. 
@@ -487,7 +487,7 @@ addDegrees (ToricVectorBundleKaneyama,List) := (tvb,L) -> (
 	  "codim1Table" => tvb#"codim1Table",
 	  "topConeTable" => tvb#"topConeTable",
 	  symbol cache => new CacheTable})
-
+-*
 
 --   INPUT : '(tvb,L)',  a ToricVectorBundleKlyachko 'tvb' and a list 'L'of 1 by k matrices over ZZ, one for each 
 --     	    	      	   	  ray of the fan
@@ -533,9 +533,9 @@ addFiltration (ToricVectorBundleKlyachko,List) := (tvb,L) -> (
 --   INPUT : 'tvb',  a ToricVectorBundleKaneyama 
 --  OUTPUT : 'true' or 'false' 
 
---isWellDefinedKaneyama = method()
 isWellDefined ToricVectorBundleKaneyama := Boolean => ( tvb -> (
-     	  -- Extracting data out of tvb
+	  -- ORIGINALLY coCycleCheck
+	  -- Extracting data out of tvb
      	  n := tvb#"dimension of the variety";
      	  k := tvb#"rank of the vector bundle";
      	  bCT := tvb#"baseChangeTable";
@@ -564,13 +564,11 @@ isWellDefined ToricVectorBundleKaneyama := Boolean => ( tvb -> (
 			return false
 		  	);
 
-		  -- regcheck
+	  -- ORIGINALLY regcheck
      	  -- Extracting the necessary data
      	  tCT := customConeSort keys tvb#"topConeTable";
      	  c1T := tvb#"codim1Table";
-     	  bCT := tvb#"baseChangeTable";
      	  dT := tvb#"degreeTable";
-     	  k := tvb#"rank of the vector bundle";
      	  if not (all(keys bCT, p -> (
 	       	    -- Taking a pair corresponding to a codim 1 cone, the corresponding transition matrix and its inverse
 	       	    A := bCT#p;
@@ -588,10 +586,38 @@ isWellDefined ToricVectorBundleKaneyama := Boolean => ( tvb -> (
 		  return true
 ))
 
--*
+
 cocycleCheck = method(TypicalValue => Boolean)
 cocycleCheck ToricVectorBundleKaneyama := (cacheValue symbol cocycle)( tvb -> (
-*-
+	 n := tvb#"dimension of the variety";
+     	  k := tvb#"rank of the vector bundle";
+     	  bCT := tvb#"baseChangeTable";
+     	  topCones := customConeSort keys tvb#"topConeTable";
+     	  L := hashTable {};
+     	  -- For each codim 2 Cone computing the list of topCones which have this Cone as a face
+     	  -- and save the list of indices of these topCones as an element in L
+     	  for i from 0 to #topCones - 1  do L = merge(hashTable apply(facesAsCones(2,posHull topCones#i), C -> (rays C, linealitySpace C) => {i}),L,(a,b) -> sort join(a,b));
+     	  -- Finding the cyclic order of every list of topCones in L and write this cyclic order as a 
+     	  -- list of consecutive pairs
+     	  L = for l in values L list (
+	       pairings := {};
+	       start := l#0;
+	       a := start;
+	       l = drop(l,1);
+	       i := position(l, e -> dim intersection(posHull topCones#a, posHull topCones#e) == n-1);
+	       while i =!= null do (
+		    pairings = pairings | {(a,l#i)};
+		    a = l#i;
+		    l = drop(l,{i,i});
+		    i = position(l, e -> dim intersection(posHull topCones#a, posHull topCones#e) == n-1));
+	       if dim intersection(posHull topCones#a, posHull topCones#start) == n-1 then pairings | {(a,start)} else continue);
+     	  -- Check for every cyclic order of topCones if the product of the corresponding transition
+     	  -- matrices is the identity
+	     all(L, l -> product apply(reverse l, e -> if e#0 > e#1 then inverse bCT#(e#1,e#0) else bCT#e) == map(QQ^k,QQ^k,1))
+		       
+		       
+	))
+
 
 
 --TODO: this method might still be useful... could cut, could transfer its functionality.
@@ -4480,6 +4506,23 @@ C2=posHull matrix {{2,-1},{1,-1}}
 F=fan{C,C1,C2}
 assert(cartierIndex({1,1,1},F) == 3)
 assert(cartierIndex({3,3,3},F) == 1)
+///
+
+-- ADDING NEW TESTS JUNE 2026
+-- Test 31
+-- Checking isWellDefined (Kaneyama) (combining the tests for cocycleCheck and regCheck
+TEST ///
+T = toricVectorBundle(2,pp1ProductFan 2,"Type" => "Kaneyama")
+assert isWellDefined T
+--tests for cocycleCheck
+T1 = addBaseChange(T,{matrix{{1,2},{0,1}},matrix{{1,0},{3,1}},matrix{{1,-2},{0,1}},matrix{{1,0},{-3,1}}})
+assert isWellDefined T1
+T1 = addBaseChange(T,{matrix{{1,2},{0,1}},matrix{{1,0},{3,1}},matrix{{1,-2},{0,1}},matrix{{1,0},{-2,1}}})
+assert not isWellDefined T1 -- fails because of cocycleCheck
+--tests for regCheck
+T1 = addDegrees(T,{matrix{{1,2},{3,1}},matrix{{-1,0},{3,1}},matrix{{1,2},{-3,-1}},matrix{{-1,0},{-3,-1}}})
+assert not isWellDefined T1 -- fails because of regCheck
+
 ///
 
 
