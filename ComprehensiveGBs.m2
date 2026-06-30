@@ -38,30 +38,49 @@ aux (RingElement) := (h) -> (
 );
 
 CGBMain = method();
-CGBMain (List, List) := (F, S) ->(
-  print("1");
+CGBMain (List, List) := (F, S) -> (
+  print("Computing CGB for F = " | toString F | " and S = " | toString S);
   if 1 % (ideal S) == 0 then (
     return {}
   );
   R := ring F_0;
-  RExt := extendedRing(R);
+  X := gens R;
+  U := gens baseRing R;
+  K := baseRing baseRing R;
+  RExt := K[getSymbol "l", X, U, MonomialOrder => Lex]; -- maybe construct the ordering from R?
   l := first gens RExt;
+  RFlat := K[X, U, MonomialOrder => Lex];
+  RExt' := K[U][l, X, MonomialOrder => Lex];
   A := apply(F, i -> l * sub(i, RExt));
   B := apply(S, i -> (l-1) * sub(i, RExt));
   G := (entries gens gb(ideal join(A, B)))_0;
-  pruneG := select(G, g -> (leadTerm(g) % l == 0) and any(gens R, i -> leadTerm(g) % i == 0)) -- test if this line works 30th
+  pruneG := select(G, g -> ((leadTerm g) % l == 0) and any(X, i -> member(sub(i, RFlat), support leadCoefficient sub(g, RFlat[l]))));
+  pruneG' := apply(pruneG, g -> leadCoefficient sub(g, RExt'));
+  h := lcm pruneG';
+  -- H := pruneG'; (takes too long to terminate if we do not factor h)
+  hfac := factor h;
+  H := apply(#hfac, i -> if isConstant hfac#i#0 then 1 else hfac#i#0);
+  return {(S, sub(h, R), apply(G, g -> sub(sub(g, {l => 1}), R)))} | flatten apply(H, hi -> CGBMain(F, append(S, sub(hi, R))))
 );
 
--- R = QQ[u, x];
--- F = {x^2-x, x^3-1};
--- S = {u-1};
--- CGBMain(F, S)
+-*
+R = QQ[u][x];
+F = {x^2-x, x^3-1};
+S = {u-1};
+CGBMain(F, S)
+*-
+
+-*
+R = QQ[a, b][x, y, z];
+F = {x^3-a, y^4-b, x+y-z};
+S = {};
+CGBMain(F, S)
+*-
 
 -- Order of confidence:
 -- 
 
--- TODO: implement cgbMain, cgb
--- input system F subset of K[u_1 .. u_m][x_1 .. x_n]  (assumed form of poly ring)
+-- TODO: implement cgb
 
 
 
