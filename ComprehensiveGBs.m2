@@ -69,8 +69,7 @@ CGBMain (List, List) := (F, S) -> (
   pruneG' := apply(pruneG, g -> leadCoefficient sub(g, RExt'));
   h := lcm pruneG';
   -- H := pruneG'; (takes too long to terminate if we do not factor h)
-  hfac := factor h;
-  H := apply(#hfac, i -> if isConstant hfac#i#0 then 1 else hfac#i#0);
+  H := listOfFactors h;
   return {(S, sub(h, R), apply(G, g -> sub(sub(g, {l => 1}), R)))} | flatten apply(H, hi -> CGBMain(F, append(S, sub(hi, R))))
 );
 
