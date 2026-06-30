@@ -139,8 +139,8 @@ ToricVectorBundleNew = new Type of ToricVectorBundle
 ToricVectorBundleNew.synonym = "vector bundle on a toric variety (Klyachko's description)"
 globalAssignment ToricVectorBundleNew
 
-toricVectorBundle = method()
-toricVectorBundle (NormalToricVariety, List, List) := (baseVariety, matrixList, indexesList) -> (
+toricVectorBundle = method(Options => true)
+toricVectorBundle (NormalToricVariety, List, List) := {} >> o -> (baseVariety, matrixList, indexesList) -> (
     -- error checking
     if #matrixList != #(rays baseVariety) then error("There must be as many filtrations as rays of the base");
     if #indexesList != #(rays baseVariety) then error("There must be as many filtrations as rays of the base");
@@ -316,15 +316,28 @@ net ToricVectorBundleKlyachko := tvb -> ( horizontalJoin flatten (
 -- GETTER FUNCTIONS FOR TORICVECTORBUNDLESNEW 
 --------------------------------------------------------------
 
-variety( ToricVectorBundleNew) := E -> (E#variety)
+variety( ToricVectorBundleNew) := E -> (E.variety)
 
-rank(ToricVectorBundleNew):= E ->(E#rank)
+rank(ToricVectorBundleNew):= E ->(E.rank)
 
-fitrationJumps := E -> (E#filtrationJumps)
+rank ToricVectorBundleKaneyama := T -> T#"rank of the vector bundle"
 
-fitrationMatrices := E -> (E#filtrationMatrices)
+rank ToricVectorBundleKlyachko := T -> T#"rank of the vector bundle"
 
--- filteredPiece( TprocVectorBundleNew, ray, index ) outs matrix (span of the corresponding columns)
+
+filtrationJumps = method()
+filtrationJumps ToricVectorBundleNew := E -> (E.filtrationJumps)
+
+filtrationMatrices = method()
+filtrationMatrices ToricVectorBundleNew := E -> (E.filtrationMatrices)
+
+rays(ToricVectorBundleNew) := {} >> o -> E ->( rays(variety (E) ))
+
+
+rays ToricVectorBundleKaneyama := {} >> o -> tvb -> raySortOfFan tvb#"ToricVariety"
+
+rays ToricVectorBundleKlyachko := {} >> o -> tvb -> raySortOfFan tvb#"ToricVariety"
+
 
 -- PURPOSE : Presenting some details of the given ToricVectorBundle
 --   INPUT : 'tvb',  a ToricVectorBundleKaneyama
@@ -341,12 +354,25 @@ details ToricVectorBundleKlyachko := tvb -> (
 
 -- This outupts a list of hash tables so that the order of the rays is displayed correctly
 details ToricVectorBundleNew := tvb ->(
-    raysX := rays(tvb#variety );
+    if not tvb.cache.?details then (  
+    raysX := rays(tvb );
     filts := filtrationMatrices (tvb);
     jumps := filtrationJumps( tvb); 
-    for i in #raysX -1 list( hashTable {raysX_i => {filts_i, jumps_i } } )
+    tvb.cache.details = hashTable for i to #raysX -1 list(  raysX_i => {filts_i, jumps_i }  ););
+    tvb.cache.details
 )
 
+
+-- filteredPiece( TprocVectorBundleNew, ray, index ) outs matrix (span of the corresponding columns)
+filteredPiece = method()
+-- Computes the vector space corresponding to the ray p at the index i
+filteredPiece (ToricVectorBundleNew, List, ZZ) := (E, p, i) ->(
+    dataE:= details(E)#p;
+    jumpE:= dataE_1;
+    inds:= apply(select({1..rank(E)}, n -> (i>= jumpE_n)), m -> m-1);
+    (dataE_0)_inds
+    
+)
 
 
 
@@ -1284,17 +1310,6 @@ randomDeformation (ToricVectorBundleKlyachko,ZZ,ZZ) := (tvb,l,h) -> (
 randomDeformation (ToricVectorBundleKlyachko,ZZ) := (tvb,h) -> randomDeformation(tvb,0,h)
 
 
--- PURPOSE : Returning the rank of the vector bundle
---   INPUT : 'T',  a ToricVectorBundle
-rank ToricVectorBundle := T -> T#"rank of the vector bundle"
-
-
--- PURPOSE : Giving the rays of the underlying Fan of a toric vector bundle
---   INPUT : 'tvb',  a TorcVectorBundle
---  OUTPUT : 'L',  a List containing the rays of the Fan underlying the bundle
-rays ToricVectorBundle := {} >> o -> tvb -> raySortOfFan tvb#"ToricVariety"
-
-
 -- PURPOSE : Computing the 'l'-th symmetric power of a Toric Vector Bundle
 --   INPUT : '(l,tvb)',  where 'l' is a strictly positive integer and 'tvb' is a ToricVectorBundle
 --  OUTPUT : 'tvb',  a ToricVectorBundle which is the 'l'-th symmetric power
@@ -1977,14 +1992,23 @@ map(ToricVectorBundleNew, ToricVectorBundleNew, Matrix):= ToricVectorBundleMap =
     if ring M =!= ring E1 or ring M =!= ring E2 then error " The matrix needs to be defined over the same ring as the bundles";
     if variety E1 =!= variety E2 then error "The base varieties of the bundles have to coincide";
 
+    -- Check that map is well defined running on the rays and indeces
+    Xrays:= rays(variety(E1));
+    r :=rank E1;
+    phi:= map((ring E2)^(rank E2), (ring E1)^(r) , M )
+    for i from 0 to r do(
+        for p in Xrays do(
+        if not isSubset(phi(filteredPiece(E1,p,i)), filteredPiece(E2, p, i)) then (print(p,i); error ("The map is not compatible for the ray and index above "));
+        )
+    )
+
+
     new ToricVectorBundleMap from{
         symbol source => E1,
         symbol target => E2,
         symbol map => M,
         symbol cache => new CacheTable
     }
-
-
 )
 
 ToricVectorBundleMap#id = E -> map(E,E, id_(ring E^(rank E) ))
