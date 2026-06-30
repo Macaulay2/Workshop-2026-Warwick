@@ -766,6 +766,9 @@ hh(ZZ,Sequence) := (i,S) -> (
 hh(ZZ,ToricVectorBundle) := ZZ => (i,T) -> rank cohomology(i,T)
 
 
+--TODO: this is good too, but again, modernize, and don't use the "new ... from ..." format.
+--      instead, it should use the main constructor toricVectorBundle.
+
 -- PURPOSE : Computing the coker bundle of a toric vector bundle
 --   INPUT : '(T,M)', where 'T' is a ToricVectorBundleKlyachko and 'M' a matrix with the bundle space as target
 --  OUTPUT : The bundle given by the cokernels of the filtrations
