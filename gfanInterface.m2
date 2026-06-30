@@ -93,6 +93,8 @@ export {
         "gfanPadicInitialIdeal"
 }
 
+importFrom(Polyhedra,{"pure","simplicial"})
+
 gfanVerbose = gfanInterface#Options#Configuration#"verbose"
 -- for backward compatibility
 if not programPaths#?"gfan" and gfanInterface#Options#Configuration#"path" != ""
@@ -525,8 +527,8 @@ gfanParsePolyhedralFan String := o -> s -> (
 		
 		S=fanFromGfan({myrays,mylinspace,mymaximalcones,dimfan,puremanual,simplicialmanual,fVector});
 		
-		-- if not isPureSet then remove(S.cache,symbol pure);
-		-- if not isSimplicialSet then remove(S.cache,symbol simplicial);
+		 if not isPureSet then remove(S.cache,symbol pure);
+		 if not isSimplicialSet then remove(S.cache,symbol simplicial);
 	    );	    
 
 	    --re-writing the  multiplicities according to the new order of maximal cones 
