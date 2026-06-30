@@ -103,9 +103,7 @@ CGB(List):=F->(
     for i in G do (
         result=result|(i_2);
         );
-
-
-
+    result
 )
 
 
