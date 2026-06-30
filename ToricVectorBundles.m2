@@ -3960,6 +3960,323 @@ document {
      SeeAlso => {cartierIndex}
      
      }
+-*
+doc ///
+    Key
+        ToricVectorBundleMap
+    Headline
+        the class of all maps between toric vector bundles
+    Description
+        Text
+	    Let $\mathcal{E}_1$ and $\mathcal{E}_2$ be toric vector bundles on
+	    a common base toric variety$X$. A bundle map is a
+	    map $f : \mathcal{E}_1 \to \mathcal{E}_2$ such that for any face $F \subset C$, we have
+	    that $f(F)$ is contained in a face of $D$.
+        Text
+	    To specify a map of simplicial complexes, the target and source
+	    complexes need to be specified as well as a matrix which
+	    determines a map between the complexes' corresponding rings.
+	Text
+	    The primary constructor of a simplicial map is
+	    @TO (map, SimplicialComplex, SimplicialComplex, Matrix)@.
+    SeeAlso
+    	"Working with simplicial maps"
+        SimplicialComplex
+	(id, SimplicialComplex)
+	(isWellDefined, SimplicialMap)
+///
+
+doc ///
+    Key
+        (source, SimplicialMap)
+    Headline
+        get the source of the map
+    Usage
+    	X = source f
+    Inputs
+    	f : SimplicialMap
+    Outputs
+    	X : SimplicialComplex
+    	    that is the source of the map f
+    Description
+        Text
+	    Given a map $f \colon \Delta \to \Gamma$, this method returns the
+	    abstract simplicial complex $\Delta$.  The source is one of the
+	    defining attributes of a simplicial map
+	Text
+	    For the identity map, the source and target are equal.
+	Example
+            S = ZZ[x_0..x_5];
+	    Δ = simplicialComplex monomialIdeal(x_0*x_5, x_1*x_4, x_2*x_3)
+    	    id_Δ
+	    source id_Δ
+	    assert(source id_Δ === Δ)
+	    assert(source id_Δ === target id_Δ)
+	Text
+    	    The next map projects an octahedron onto a square.
+	Example
+	    R = ZZ[y_0..y_3];
+	    Γ = simplicialComplex monomialIdeal(y_1*y_2)
+	    f = map(Γ, Δ, {y_0,y_0,y_1,y_2,y_3,y_3})
+	    assert isWellDefined f
+	    source f
+	    assert(source f === Δ)  
+	    peek f  
+    SeeAlso
+        "Working with simplicial maps"
+        (target, SimplicialMap)    
+        (matrix, SimplicialMap)    		
+	(isWellDefined, SimplicialMap)
+        (map, SimplicialComplex, SimplicialComplex, Matrix)	
+///
+
+doc ///
+    Key
+	(target, SimplicialMap)
+    Headline 
+    	get the target of the map
+    Usage
+    	Y = target f
+    Inputs
+    	f : SimplicialMap
+    Outputs
+    	Y : SimplicialComplex
+    	    that is the target of the map f	
+    Description	    
+        Text
+	    Given a map $f \colon \Delta \to \Gamma$, this method returns the
+	    abstract simplicial complex $\Gamma$.  The target is one of the
+	    defining attributes of a simplicial map
+	Text
+	    For the identity map, the source and target are equal.
+	Example
+            S = ZZ[x_0..x_5];
+	    Δ = simplicialComplex monomialIdeal(x_0*x_5, x_1*x_4, x_2*x_3)
+    	    id_Δ 
+	    source id_Δ
+	    assert(target id_Δ === Δ)
+	    assert(target id_Δ === source id_Δ)
+	Text
+    	    The next map projects an octahedron onto a square.
+	Example
+	    R = ZZ[y_0..y_3];
+	    Γ = simplicialComplex monomialIdeal(y_1*y_2)
+	    f = map(Γ, Δ, {y_0,y_0,y_1,y_2,y_3,y_3})
+	    assert isWellDefined f
+	    target f
+	    assert(target f === Γ)
+	    peek f
+    SeeAlso
+        "Working with simplicial maps"    
+        (source, SimplicialMap)    
+        (matrix, SimplicialMap)    		
+	(isWellDefined, SimplicialMap)
+        (map, SimplicialComplex, SimplicialComplex, Matrix)
+///
+
+doc ///
+    Key
+        (map, SimplicialMap)
+    Headline
+        the underlying ring map associated to a simplicial map
+    Usage
+    	phi = map f
+    Inputs
+    	f : SimplicialMap
+	: Degree
+	    ignored
+	: DegreeLift
+	    ignored
+	: DegreeMap
+	    ignored
+    Outputs
+        phi : RingMap
+	    a map from the ring of the source of $f$ to the 
+	    ring of the target of $f$.
+    Description
+        Text
+            Every simplicial map sends the vertices of the source of $f$
+	    to the vertices of the target of $f$. Consequently, this 
+	    determines a ring map between the ring of the source of $f$ 
+	    and the ring of the target of $f$.
+        Example
+            S = ZZ/101[a,b,c,d];
+	    Δ = simplexComplex(3,S)
+	    f = map(Δ,Δ,matrix{{a,b,c,d}})
+	    map f	
+    SeeAlso
+        "Working with simplicial maps"
+	(map, SimplicialComplex,SimplicialComplex, RingMap)
+	(source, SimplicialMap)
+        (target, SimplicialMap)
+        (matrix, SimplicialMap)
+	(isWellDefined, SimplicialMap)
+///	  
+
+doc ///
+    Key
+	(matrix, SimplicialMap)
+    Headline 
+    	get the underlying map of rings
+    Usage
+    	g = matrix f
+    Inputs
+    	f : SimplicialMap
+	Degree =>
+	    unused
+    Outputs
+    	g : Matrix
+            having one row
+    Description	    
+        Text
+    	    A simplicial map is a map $f \colon \Delta \to \Gamma$ such that
+    	    for any face $F \subset \Delta$, the image $f(F)$ is contained in
+    	    a face of $\Gamma$.  Since an abstract simplicial complex is, in
+    	    this package, represented by its Stanley–Reisner ideal in a
+    	    polynomial ring, the simplicial map $f$ corresponds to a ring map
+    	    from the ring of $\Delta$ to the ring of $\Gamma$.  The ring map
+    	    is described by a matrix having one row; the entry in the $i$-th
+    	    column is the image in the ring of $\Gamma$ of the $i$-th variable
+    	    in the ring $\Delta$.  This method returns this matrix.
+	Text
+	    For the identity map, the matrix of variables in the ambient
+	    polynomial ring.
+	Example
+            S = ZZ[x_0..x_5];
+	    Δ = simplicialComplex monomialIdeal(x_0*x_5, x_1*x_4, x_2*x_3)
+    	    id_Δ 
+	    matrix id_Δ
+	    assert(matrix id_Δ === vars S)
+	Text
+    	    The next map projects an octahedron onto a square.
+	Example
+	    R = ZZ[y_0..y_3];
+	    Γ = simplicialComplex monomialIdeal(y_1*y_2)
+	    f = map(Γ, Δ, {y_0,y_0,y_1,y_2,y_3,y_3})
+    	    matrix f
+	Text
+	    This matrix is simply extracted from the underlying map of rings.
+	Example
+	    code(matrix, SimplicialMap)
+    SeeAlso
+        "Working with simplicial maps"    
+        (source, SimplicialMap)    
+        (target, SimplicialMap)    		
+	(isWellDefined, SimplicialMap)
+        (map, SimplicialComplex, SimplicialComplex, Matrix)
+///
+
+undocumented {
+    (expression, SimplicialMap), 
+    (toString, SimplicialMap), 
+    (texMath, SimplicialMap)
+    }
+
+doc ///
+    Key
+        (net, SimplicialMap)
+    Headline
+        make a symbolic representation for a map of abstract simplicial complexes
+    Usage
+        net f
+    Inputs
+        f : SimplicialMap
+    Outputs
+        : Net
+	    a symbolic representation used for printing
+    Description
+        Text
+	    The net of map $f \colon \Delta \to \Gamma$ between abstract
+	    simplicial complexes is a list of variables in the ring of
+	    $\Gamma$.  This list determines a ring map from the ring of
+	    $\Delta$ to the ring of $\Gamma$ by sending the $i$-th variable
+	    in the ring of $\Delta$ to the $i$-th monomial on the list.
+    	Text
+	    The identity map $\operatorname{id} \colon \Delta \to \Delta$
+	    corresponds to list of variables in the ring of $\Delta$.
+        Example
+            S = ZZ[x_0..x_5];
+	    Δ = simplicialComplex monomialIdeal(x_0*x_5, x_1*x_4, x_2*x_3)
+    	    id_Δ
+	    net id_Δ
+	    matrix id_Δ
+	Text
+    	    The next example does not come from the identity map.
+	Example
+	    S' = ZZ[y_0..y_3];
+	    Γ = simplicialComplex monomialIdeal(y_1*y_2)
+	    f = map(Γ, Δ, {y_0,y_0,y_1,y_2,y_3,y_3})
+	    assert isWellDefined f
+	    net f
+	    matrix f
+    SeeAlso
+        "Working with simplicial maps"
+        (matrix, SimplicialMap)
+	(net, SimplicialComplex)	
+///	  
+
+doc ///
+    Key
+        (map, SimplicialComplex, SimplicialComplex, Matrix)
+	(map, SimplicialComplex, SimplicialComplex, List)
+        (map, SimplicialComplex, SimplicialComplex, RingMap)
+	(map, SimplicialComplex, Matrix)
+	(map, SimplicialComplex, List)
+	(map, SimplicialComplex, RingMap)	
+    Headline
+        create a simplicial map between simplicial complexes
+    Usage
+    	f = map(E,D,M)
+	f = map(D,M)
+    Inputs
+    	Delta : SimplicialComplex
+	    the @TO2((source,SimplicialMap), "source")@ of the simplicial complex
+	Gamma : SimplicialComplex
+	    the @TO2((target,SimplicialMap), "target")@ of the simplicial map.
+	M : Matrix
+	    @TO2(List,"list")@, or @TO2(RingMap,"ring map")@.
+	: Degree
+	    ignored
+	: DegreeLift
+            ignored
+	: DegreeMap
+	    ignored
+    Outputs
+    	f : SimplicialMap
+    Description
+        Text
+	    A simplicial map $f: \Delta \to \Gamma$ is a function that sends the
+	    vertices of $\Delta$ to vertices of $\Gamma$, with the added condition that
+	    if $\{ v_1, v_2,..,v_k \} \in \Delta$, then $\{ f(v_1), f(v_2), ..., 
+	    f(v_n) \} \in \Gamma$. If no target is specified, it is assumed that the
+	    target is the simplicial complex whose faces are $f(F)$ for all faces $F 
+	    \in \Delta$. As a first example, let's look at the identity map on a
+	    3-simplex.
+	Example
+	    S = QQ[a,b,c,d];
+            Δ = simplexComplex(3,S);
+	    f = map(Δ,Δ, id_S)
+	    matrix f
+	    map f
+	Text
+	    Here is a slightly more interesting example.
+	Example
+	    R = QQ[s,t,u,v,w];
+	    Γ = simplicialComplex{s*t*u,u*v*w};
+	    g = map(Δ,Γ, {a,b,c,d,d})
+	    source g
+	    target g
+	    image g
+    SeeAlso
+        "Working with simplicial maps"
+	(source, SimplicialMap)
+        (target, SimplicialMap)
+	(image, SimplicialMap)    
+        (matrix, SimplicialMap)
+	(map, SimplicialMap)    		
+	(isWellDefined, SimplicialMap)
+///
+*-
 
 
 
