@@ -215,6 +215,12 @@ MarkedPolynomialList.synonym = "marked polynomial list";
   -- and L and inL have the same length, and the
   -- the monomial inL#i is the marked monomial, which
   -- should occur with the same coefficient in L#i.
+  
+MarkedPolynomialList == MarkedPolynomialList := (As, Bs) -> (
+	    set transpose As == set transpose Bs
+);
+
+
 
 markedPolynomialList = method();
 markedPolynomialList List := L -> (
@@ -4494,18 +4500,16 @@ doc///
 	 	markedPolynomialList {{y^3,x*y^2,x^2*y,x^4},{-x^3+y^3,x*y^2-x^2,x^2*y-y^2,x^4-y^2}},
 	 	markedPolynomialList {{y^2,x^2*y,x^5},{-x^4+y^2,-x^4+x^2*y,x^5-x^2}}
 	 }
-         equalMPL = (A,B) -> set transpose A === set transpose B
-         equalListMPL = (As, Bs) -> (
-            if #As =!= #Bs then return false;
-            remaining := Bs;
-            all(As, a -> (
-            i := position(remaining, b -> equalMPL(a,b));
-            if i === null then return false;
-            remaining = drop(remaining, {i,i});
-          true
-      ))
-)   
-        assert equalListMPL(G, Gprime)
+--         equalListMPL = (As, Bs) -> (
+--            if #As =!= #Bs then return false;
+--            remaining := Bs;
+--            all(As, a -> (
+--            i := position(remaining, b -> a==b);
+--            if i === null then return false;
+--           true
+--           ))
+--         )   
+        assert (G == Gprime)
 	 ///
 -- 	TEST MPLConverter
 	 TEST ///
