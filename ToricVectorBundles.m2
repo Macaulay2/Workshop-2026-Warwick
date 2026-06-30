@@ -372,6 +372,8 @@ raySortOfFan = (fan) -> (
 --     	    	      	   ray of the underlying fan
 --  OUTPUT : The ToricVectorBundleKlyachko 'tvb' 
 -- COMMENT : Note that the  matrices in 'L' will be assigned to the rays in the order they appear in rays tvb
+
+-*
 addBase = method(TypicalValue => ToricVectorBundleKlyachko)
 addBase (ToricVectorBundleKlyachko,List) := (tvb,L) -> (
      -- Extracting data out of tvb
@@ -419,6 +421,7 @@ addBase (ToricVectorBundleKlyachko,List) := (tvb,L) -> (
 --     	     will be assigned to the pairs (i,j) in that order, where the matrix A assigned to (i,j) denotes the 
 --     	     transition
 --     	    	 (e_i^1,...,e_i^k) = (e_j^1,...,e_j^k)* A
+*-
 addBaseChange = method(TypicalValue => ToricVectorBundleKaneyama)
 addBaseChange (ToricVectorBundleKaneyama,List) := (tvb,L) -> (
      -- Extracting data out of tvb
@@ -449,6 +452,7 @@ addBaseChange (ToricVectorBundleKaneyama,List) := (tvb,L) -> (
 	  symbol cache => new CacheTable})
 
 
+-*
 -- PURPOSE : Changing the degrees of the local generators of a given ToricVectorBundleKaneyama to those given in the List 
 --   INPUT : '(tvb,L)',  a ToricVectorBundleKaneyama 'tvb' and a list 'L'of n by k matrices over ZZ, one for each 
 --     	    	      	 top dimensional Cone. 
@@ -521,23 +525,16 @@ addFiltration (ToricVectorBundleKlyachko,List) := (tvb,L) -> (
 	  "number of rays" => tvb#"number of rays",
 	  symbol cache => new CacheTable})
 
-
---TODO: this method is literally unused.
-  
--- PURPOSE : Giving the number of affine charts of a ToricVectorBundle
---   INPUT : 'tvb', a ToricVectorBundle
---  OUTPUT : 'ZZ',  the number of affine charts
-charts = method(TypicalValue => ZZ)
-charts ToricVectorBundle := tvb -> tvb#"number of affine charts"
-
+*-
 
 --TODO: this is just isWellDefined for Kaneyama.
 	       
 -- PURPOSE : Checking if the ToricVectorBundleKaneyama fulfills the cocycle condition
 --   INPUT : 'tvb',  a ToricVectorBundleKaneyama 
 --  OUTPUT : 'true' or 'false' 
-cocycleCheck = method(TypicalValue => Boolean)
-cocycleCheck ToricVectorBundleKaneyama := (cacheValue symbol cocycle)( tvb -> (
+
+--isWellDefinedKaneyama = method()
+isWellDefined ToricVectorBundleKaneyama := Boolean => ( tvb -> (
      	  -- Extracting data out of tvb
      	  n := tvb#"dimension of the variety";
      	  k := tvb#"rank of the vector bundle";
@@ -563,7 +560,38 @@ cocycleCheck ToricVectorBundleKaneyama := (cacheValue symbol cocycle)( tvb -> (
 	       if dim intersection(posHull topCones#a, posHull topCones#start) == n-1 then pairings | {(a,start)} else continue);
      	  -- Check for every cyclic order of topCones if the product of the corresponding transition
      	  -- matrices is the identity
-     	  all(L, l -> product apply(reverse l, e -> if e#0 > e#1 then inverse bCT#(e#1,e#0) else bCT#e) == map(QQ^k,QQ^k,1))))
+		  if not (all(L, l -> product apply(reverse l, e -> if e#0 > e#1 then inverse bCT#(e#1,e#0) else bCT#e) == map(QQ^k,QQ^k,1))) then (
+			return false
+		  	);
+
+		  -- regcheck
+     	  -- Extracting the necessary data
+     	  tCT := customConeSort keys tvb#"topConeTable";
+     	  c1T := tvb#"codim1Table";
+     	  bCT := tvb#"baseChangeTable";
+     	  dT := tvb#"degreeTable";
+     	  k := tvb#"rank of the vector bundle";
+     	  if not (all(keys bCT, p -> (
+	       	    -- Taking a pair corresponding to a codim 1 cone, the corresponding transition matrix and its inverse
+	       	    A := bCT#p;
+	       	    B := inverse A;
+	       	    -- Computing the dual of the codim 1 cone
+	       	    C := dualCone posHull c1T#p;
+	       	    -- Check for all pairs of degree vectors of the two top Cones the reg condition
+	       	    all(k, i -> (
+			      ri := (dT#(tCT#(p#1)))_{i};
+			      all(k, j -> (
+				   	rj := (dT#(tCT#(p#0)))_{j};
+				   	(if A^{i}_{j} != 0 then contains(C,rj-ri) else true) and (if A^{j}_{i} != 0 then contains(C,ri-rj) else true)))))))) then (
+						return false
+					);
+		  return true
+))
+
+-*
+cocycleCheck = method(TypicalValue => Boolean)
+cocycleCheck ToricVectorBundleKaneyama := (cacheValue symbol cocycle)( tvb -> (
+*-
 
 
 --TODO: this method might still be useful... could cut, could transfer its functionality.
@@ -1282,7 +1310,7 @@ isGeneral ToricVectorBundleKlyachko := (cacheValue symbol isGeneral)( tvb -> (
 --     	     regularity and cocycle condition
 --   INPUT : 'T',  a ToricVectorBundle
 --  OUTPUT : 'true' if 'T' is fact a bundle, 'false' otherwise
-isWellDefined ToricVectorBundle := (cacheValue symbol isVB)( T -> (
+isWellDefined ToricVectorBundle := (cacheValue symbol isWellDefined)( T -> (
 	  if instance(T,ToricVectorBundleKlyachko) then (
 	       L := findWeights T;
 	       all(L, l -> l != {}) and existsDecomposition(T,L))
