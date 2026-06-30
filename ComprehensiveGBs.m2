@@ -66,7 +66,7 @@ CGBMain (List, List) := (F, S) -> (
   A := apply(F, i -> l * sub(i, RExt));
   B := apply(S, i -> (l-1) * sub(i, RExt));
   G := (entries gens gb(ideal join(A, B)))_0;
-  pruneG := select(G, g -> ((exponents leadMonomial g)_0 > 1) and any((exponents leadMonomial g)_(toList(1..(#X))),i -> i > 0));
+  pruneG := select(G, g -> ((leadTerm g) % l == 0) and any(X, i -> member(sub(i, RFlat), support leadCoefficient sub(g, RFlat[l]))));
   pruneG' := apply(pruneG, g -> leadCoefficient sub(g, RExt'));
   h := lcm pruneG';
 
