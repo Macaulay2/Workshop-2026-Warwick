@@ -68,7 +68,8 @@ CGBMain (List, List) := (F, S) -> (
   pruneG := select(G, g -> ((leadTerm g) % l == 0) and any(X, i -> member(sub(i, RFlat), support leadCoefficient sub(g, RFlat[l]))));
   pruneG' := apply(pruneG, g -> leadCoefficient sub(g, RExt'));
   h := lcm pruneG';
-  -- H := pruneG'; (takes too long to terminate if we do not factor h)
+  -- H := pruneG'; -- (takes too long to terminate if we do not factor h)
+  -- H := unique apply(pruneG', g -> squareFreePart g); -- (takes a bit longer to terminate)
   H := listOfFactors h;
   return {(S, sub(h, R), apply(G, g -> sub(sub(g, {l => 1}), R)))} | flatten apply(H, hi -> CGBMain(F, append(S, sub(hi, R))))
 );
