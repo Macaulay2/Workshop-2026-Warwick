@@ -38,7 +38,8 @@ newPackage("ToricVectorBundles",
 	 },
     Configuration => {},
     PackageImports => {"Varieties"},
-    PackageExports => {"Isomorphism", "Polyhedra","NormalToricVarieties"}
+    PackageExports => {"Isomorphism", "Polyhedra","NormalToricVarieties"},
+    DebuggingMode => true
     )
 
 ---------------------------------------------------------------------------
@@ -138,7 +139,7 @@ ToricVectorBundleNew = new Type of ToricVectorBundle
 ToricVectorBundleNew.synonym = "vector bundle on a toric variety (Klyachko's description)"
 globalAssignment ToricVectorBundleNew
 
-toricVectorBundle = method(Options => true)
+toricVectorBundle = method()
 toricVectorBundle (NormalToricVariety, List, List) := (baseVariety, matrixList, indexesList) -> (
     -- error checking
     if #matrixList != #(rays baseVariety) then error("There must be as many filtrations as rays of the base");
@@ -310,6 +311,44 @@ net ToricVectorBundleKlyachko := tvb -> ( horizontalJoin flatten (
 					      "number of affine charts",
 					      "number of rays"}, key -> (net key, " => ", net tvb#key))),
 	  "}" ))
+
+--------------------------------------------------------------
+-- GETTER FUNCTIONS FOR TORICVECTORBUNDLESNEW 
+--------------------------------------------------------------
+
+variety( ToricVectorBundleNew) := E -> (E#variety)
+
+rank(ToricVectorBundleNew):= E ->(E#rank)
+
+fitrationJumps := E -> (E#filtrationJumps)
+
+fitrationMatrices := E -> (E#filtrationMatrices)
+
+-- filteredPiece( TprocVectorBundleNew, ray, index ) outs matrix (span of the corresponding columns)
+
+-- PURPOSE : Presenting some details of the given ToricVectorBundle
+--   INPUT : 'tvb',  a ToricVectorBundleKaneyama
+--  OUTPUT : '(A,C)',	 where 'A' is a hashTable giving the enumeration of the maximal cones with their rays and degree matrix, 
+--     	    	      	 and 'B' gives the transition matrices for the codim 1 pairs
+-- COMMENT : This function gives the possibility to have a quick overview on the main properties of a ToricVectorBundleKaneyama
+details = method()
+
+details ToricVectorBundleKaneyama := tvb -> (
+     hashTable apply(pairs(tvb#"topConeTable"), p -> ( p#1 => (rays posHull p#0,tvb#"degreeTable"#(p#0)))),tvb#"baseChangeTable")
+
+details ToricVectorBundleKlyachko := tvb -> (
+      hashTable apply(rays tvb, r -> r => (tvb#"baseTable"#r,tvb#"filtrationMatricesTable"#r)))
+
+-- This outupts a list of hash tables so that the order of the rays is displayed correctly
+details ToricVectorBundleNew := tvb ->(
+    raysX := rays(tvb#variety );
+    filts := filtrationMatrices (tvb);
+    jumps := filtrationJumps( tvb); 
+    for i in #raysX -1 list( hashTable {raysX_i => {filts_i, jumps_i } } )
+)
+
+
+
 
 
 ---------------------------------------------------------------
@@ -622,15 +661,6 @@ cocycleCheck ToricVectorBundleKaneyama := (cacheValue symbol cocycle)( tvb -> (
 
 --TODO: this method might still be useful... could cut, could transfer its functionality.
   
--- PURPOSE : Presenting some details of the given ToricVectorBundle
---   INPUT : 'tvb',  a ToricVectorBundleKaneyama
---  OUTPUT : '(A,C)',	 where 'A' is a hashTable giving the enumeration of the maximal cones with their rays and degree matrix, 
---     	    	      	 and 'B' gives the transition matrices for the codim 1 pairs
--- COMMENT : This function gives the possibility to have a quick overview on the main properties of a ToricVectorBundleKaneyama
-details = method()
-details ToricVectorBundle := tvb -> (
-     if instance(tvb,ToricVectorBundleKaneyama) then (hashTable apply(pairs(tvb#"topConeTable"), p -> ( p#1 => (rays posHull p#0,tvb#"degreeTable"#(p#0)))),tvb#"baseChangeTable")
-     else hashTable apply(rays tvb, r -> r => (tvb#"baseTable"#r,tvb#"filtrationMatricesTable"#r)))
 
 
 --TODO: This is also part of isWellDefined for Kaneyama.
@@ -818,67 +848,6 @@ hh(ZZ,Sequence) := (i,S) -> (
 --   INPUT : '(i,T)',  'i' for the 'i'th cohomology group, 'T' a ToricVectorBundle
 --  OUTPUT : 'ZZ',  the rank of the 'i'th cohomology group
 hh(ZZ,ToricVectorBundle) := ZZ => (i,T) -> rank cohomology(i,T)
-
-
---TODO: this is good too, but again, modernize, and don't use the "new ... from ..." format.
---      instead, it should use the main constructor toricVectorBundle.
-
--- PURPOSE : Computing the coker bundle of a toric vector bundle
---   INPUT : '(T,M)', where 'T' is a ToricVectorBundleKlyachko and 'M' a matrix with the bundle space as target
---  OUTPUT : The bundle given by the cokernels of the filtrations
-coker (ToricVectorBundleKlyachko,Matrix) := (T,M) -> (
-     k := T#"rank of the vector bundle";
-     tRing := T#"ring";
-     -- Checking for input errors
-     if k != numRows M then error("The source of the matrix has to be the vector bundle.");
-     if tRing =!= ring M then error("Matrix and bundle have to be over the same ring."); 
-     -- Computing the map from the bundle to the kernel
-     N := transpose mingens ker transpose M;
-     -- Computing a basis of the cokernel
-     coKerGens := mingens image N;
-     newRank := numColumns coKerGens;
-     bT := T#"baseTable";
-     fT := T#"filtrationTable";
-     -- Computing the new baseTable with filtrations
-     bT = hashTable apply(keys bT, j -> (
-	       fTj := drop(sort keys fT#j,1);
-	       cols := {};
-	       oldCoKer := map(tRing^newRank,tRing^0,0);
-	       -- Going through the filtration steps and computing the cokernel for each step
-	       j => apply(fTj, i -> (
-			 cols = cols | fT#j#i;
-			 -- Computing the cokernel
-			 A := N * (bT#j)_cols;
-			 -- Representing this in the basis chosen
-			 gkMA := (gens ker (coKerGens | A))^{0..newRank-1};
-			 -- Selecting the new basis elements that appear in this filtration step
-			 gkMA = mingens (image(oldCoKer | gkMA) / image oldCoKer);
-			 -- Appending these new vectors
-			 oldCoKer = oldCoKer |gkMA;
-			 -- appending the filtration step number
-			 (gkMA,matrix {toList(numColumns gkMA:i)})))));
-     -- Generating the new filtration matrices and tables
-     fMT := hashTable apply(pairs bT, p -> p#0 => matrix {apply(p#1,last)});
-     fT = hashTable apply(pairs fMT, p -> (
-	       L := flatten entries p#1;
-	       L1 := sort unique L;
-	       p#0 => hashTable ({min L1 - 1 => {}} | apply(L1, l -> l => positions(L,e -> e == l)))));
-     bT = hashTable apply(pairs bT, p -> p#0 => matrix {apply(p#1,first)});
-     Tnew := new ToricVectorBundleKlyachko from {
-	  "ring" => T#"ring",
-	  "rayTable" => T#"rayTable",
-	  "baseTable" => bT,
-	  "filtrationMatricesTable" => fMT,
-	  "filtrationTable" => fT,
-	  "ToricVariety" => T#"ToricVariety",
-	  "number of affine charts" => T#"number of affine charts",
-	  "dimension of the variety" => T#"dimension of the variety",
-	  "rank of the vector bundle" => newRank,
-	  "number of rays" => T#"number of rays",
-	  symbol cache => new CacheTable};
-     if T.cache.?isVB and T.cache.isVB then Tnew.cache.isVB = T.cache.isVB;
-     Tnew)     	       
-
 	       
 -- PURPOSE : Computing the cotangent bundle on a smooth, pure, and full dimensional Toric Variety 
 -- cotangentBundle = method(Options => {"Type" => "Klyachko"})
@@ -1245,61 +1214,6 @@ ring ToricVectorBundle := (cacheValue symbol gradedRing)( T -> (
 	  else QQ[DegreeRank => T#"dimension of the variety"]))
 
 
--- PURPOSE : Computing the image bundle of a toric vector bundle
---   INPUT : '(T,M)', where 'T' is a ToricVectorBundleKlyachko and 'M' a matrix with the bundle space as its source
---  OUTPUT : The bundle given by the images of the filtrations
-image (ToricVectorBundleKlyachko,Matrix) := (T,M) -> (
-     k := T#"rank of the vector bundle";
-     tRing := T#"ring";
-     -- Checking for input errors
-     if k != numColumns M then error("The source of the matrix has to be the vector bundle.");
-     if tRing =!= ring M then error("The matrix and the bundle have to be over the same ring."); 
-     -- Compute a basis of the image
-     Mgens := mingens image M;
-     ranknew := numColumns Mgens;
-     bT := T#"baseTable";
-     fT := T#"filtrationTable";
-     -- for each ray compute the image of the filtration
-     bT = hashTable apply(keys bT, j -> (
-	       fTj := drop(sort keys fT#j,1);
-	       cols := {};
-	       oldImage := map(tRing^ranknew,tRing^0,0);
-	       -- for each filtration step compute the image
-	       j => apply(fTj, i -> (
-			 cols = cols | fT#j#i;
-			 -- take the image of the i-th filtration
-			 A := M * (bT#j)_cols;
-			 -- Represent this in the basis chosen
-			 gkMA := (gens ker (Mgens | A))^{0..ranknew-1};
-			 -- Select the new basis vectors of the filtration
-			 gkMA = mingens (image(oldImage | gkMA) / image oldImage);
-			 -- and add them to the matrix
-			 oldImage = oldImage |gkMA;
-			 -- save the new matrix and filtration step
-			 (gkMA,matrix {toList(numColumns gkMA:i)})))));
-     -- Generate the new filtration matrices and tables
-     fMT := hashTable apply(pairs bT, p -> p#0 => matrix {apply(p#1,last)});
-     fT = hashTable apply(pairs fMT, p -> (
-	       L := flatten entries p#1;
-	       L1 := sort unique L;
-	       p#0 => hashTable ({(min L1-1) => {}} | apply(L1, l -> l => positions(L,e -> e == l)))));
-     bT = hashTable apply(pairs bT, p -> p#0 => matrix {apply(p#1,first)});
-     Tnew := new ToricVectorBundleKlyachko from {
-	  "ring" => T#"ring",
-	  "rayTable" => T#"rayTable",
-	  "baseTable" => bT,
-	  "filtrationMatricesTable" => fMT,
-	  "filtrationTable" => fT,
-	  "ToricVariety" => T#"ToricVariety",
-	  "number of affine charts" => T#"number of affine charts",
-	  "dimension of the variety" => T#"dimension of the variety",
-	  "rank of the vector bundle" => ranknew,
-	  "number of rays" => T#"number of rays",
-	  symbol cache => new CacheTable};
-     if T.cache.?isVB and T.cache.isVB then Tnew.cache.isVB = true;
-     Tnew)
-
-
 -- PURPOSE : Check for a ToricVectorBundleKlyachko if it is general
 --   INPUT : 'tvb',  a ToricVectorBundleKlyachko
 --  OUTPUT : 'true' or 'false'
@@ -1345,59 +1259,6 @@ isWellDefined ToricVectorBundle := (cacheValue symbol isWellDefined)( T -> (
 	       all(L, l -> l != {}) and existsDecomposition(T,L))
 	  else regCheck T and cocycleCheck T))
 
-
--- PURPOSE : Computing the kernel bundle of a toric vector bundle
---   INPUT : '(T,M)', where 'T' is a ToricVectorBundleKlyachko and 'M' a matrix with the bundle space as source
---  OUTPUT : The bundle given by the kernels of the filtrations
-ker (ToricVectorBundleKlyachko,Matrix) := opts -> (T,M) -> (
-     k := T#"rank of the vector bundle";
-     tRing := T#"ring";
-     -- Checking for input errors
-     if k != numColumns M then error("The source of the matrix has to be the vector bundle.");
-     if tRing =!= ring M then error("Matrix and bundle have to be over the same ring.");
-     -- Compute a basis of the kernel
-     M = mingens ker M;
-     ranknew := numColumns M;
-     bT := T#"baseTable";
-     fT := T#"filtrationTable";
-     -- Compute the new filtration for each ray
-     bT = hashTable apply(keys bT, j -> (
-	       fTj := drop(sort keys fT#j,1);
-	       cols := {};
-	       oldKer := map(tRing^ranknew,tRing^0,0);
-	       -- compute each filtration step
-	       j => apply(fTj, i -> (
-			 cols = cols | fT#j#i;
-			 A := (bT#j)_cols;
-			 -- Represent the kernel intersected with the actual filtration step in the basis chosen
-			 gkMA := (gens ker (M | A))^{0..ranknew-1};
-			 -- Select the "new" vectors
-			 gkMA = mingens (image(oldKer | gkMA) / image oldKer);
-			 oldKer = oldKer |gkMA;
-			 -- Save the new vectors and the filtration step
-			 (gkMA,matrix {toList(numColumns gkMA:i)})))));
-     -- Compute the filtration matrices and tables
-     fMT := hashTable apply(pairs bT, p -> p#0 => matrix {apply(p#1,last)});
-     fT = hashTable apply(pairs fMT, p -> (
-	       L := flatten entries p#1;
-	       L1 := sort unique L;
-	       p#0 => hashTable ({min L1 - 1 => {}} | apply(L1, l -> l => positions(L,e -> e == l)))));
-     bT = hashTable apply(pairs bT, p -> p#0 => matrix {apply(p#1,first)});
-     Tnew := new ToricVectorBundleKlyachko from {
-	  "ring" => T#"ring",
-	  "rayTable" => T#"rayTable",
-	  "baseTable" => bT,
-	  "filtrationMatricesTable" => fMT,
-	  "filtrationTable" => fT,
-	  "ToricVariety" => T#"ToricVariety",
-	  "number of affine charts" => T#"number of affine charts",
-	  "dimension of the variety" => T#"dimension of the variety",
-	  "rank of the vector bundle" => ranknew,
-	  "number of rays" => T#"number of rays",
-	  symbol cache => new CacheTable};
-     if T.cache.?isVB and T.cache.isVB then Tnew.cache.isVB = true;
-     Tnew)
-     
 
 -- PURPOSE : Returning the maximal cones of the underlying fan
 --   INPUT : 'T',  a ToricVectorBundle
@@ -2121,6 +1982,256 @@ tangentBundleKlyachko = F -> (
      tvb = addBase(tvb,baseTable);
      tvb.cache.isVB = true;
      tvb)
+
+--------------------------------------
+-- MAPS
+--------------------------------------
+
+ToricVectorBundleMap = new Type of HashTable
+ToricVectorBundleMap.synonym = "map of toric vector bundles on a fixed toric variety"
+source ToricVectorBundleMap := ToricVectorBundleNew => f -> f.source
+target ToricVectorBundleMap := ToricVectorBundleNew => f -> f.target
+map ToricVectorBundleMap := Matrix => f -> f.map
+matrix ToricVectorBundleMap := Matrix => f -> f.map
+
+-- TO DO NET ToricVectorBundleMap
+
+
+map(ToricVectorBundleNew, ToricVectorBundleNew, Matrix):= ToricVectorBundleMap => opts -> (E2, E1, M) ->(
+    if ring E1 =!= ring E2 then error "The vector bundles need to be defined over the same ring";
+    if numRows M =!= rank E1 or numColumns M =!= rank E2 then error " The dimensions of the matrix don't match the ranks of the bundles";
+    if ring M =!= ring E1 or ring M =!= ring E2 then error " The matrix needs to be defined over the same ring as the bundles";
+    if variety E1 =!= variety E2 then error "The base varieties of the bundles have to coincide";
+
+    new ToricVectorBundleMap from{
+        symbol source => E1,
+        symbol target => E2,
+        symbol map => M,
+        symbol cache => new CacheTable
+    }
+
+
+)
+
+ToricVectorBundleMap#id = E -> map(E,E, id_(ring E^(rank E) ))
+
+isWellDefined(ToricVectorBundleMap ) := Boolean => f ->(
+    K := keys f;
+    expectedKeys := set{symbol source, symbol target, symbol map, symbol cache};
+    if set K =!= expectedKeys then (
+    if debugLevel > 0 then (
+        added := toList(K - expectedKeys);
+        missing := toList(expectedKeys - K);
+        if #added > 0 then 
+            << "-- unexpected key(s): " << toString added << endl;
+        if #missing > 0 then 
+            << "-- missing keys(s): " << toString missing << endl);
+        return false
+    );
+    --Check types
+    if not instance(f.source, ToricVectorBundleNew) then (
+    if debugLevel > 0 then (
+        << "-- expected the source to be a ToricVectorBundleNew" << endl);
+    return false    );
+    if not instance(f.target, ToricVectorBundleNew) then (
+    if debugLevel > 0 then (
+        << "-- expected the target to be a ToricVectorBundleNew" << endl);
+    return false
+    );
+    if not instance(f.map, Matrix) then (
+    if debugLevel > 0 then (
+        << "-- expected the map to be a Matrix" << endl);
+    return false
+    );
+    if not instance(f.cache, CacheTable) then (
+        if debugLevel > 0 then (
+        << "-- expected cache to be a CacheTable" << endl);
+        return false
+    );    
+    --Check mathematical structure
+    E1 := source f;
+    E2 := target f;
+    g := map f;
+    X := variety E1;
+    --for p in rays X do(
+        -- TO DO
+
+    --);
+
+
+    true    
+    
+)
+
+
+
+
+
+-- PURPOSE : Computing the image bundle of a toric vector bundle
+--   INPUT : '(T,M)', where 'T' is a ToricVectorBundleKlyachko and 'M' a matrix with the bundle space as its source
+--  OUTPUT : The bundle given by the images of the filtrations
+image (ToricVectorBundleKlyachko,Matrix) := (T,M) -> (
+     k := T#"rank of the vector bundle";
+     tRing := T#"ring";
+     -- Checking for input errors
+     if k != numColumns M then error("The source of the matrix has to be the vector bundle.");
+     if tRing =!= ring M then error("The matrix and the bundle have to be over the same ring."); 
+     -- Compute a basis of the image
+     Mgens := mingens image M;
+     ranknew := numColumns Mgens;
+     bT := T#"baseTable";
+     fT := T#"filtrationTable";
+     -- for each ray compute the image of the filtration
+     bT = hashTable apply(keys bT, j -> (
+	       fTj := drop(sort keys fT#j,1);
+	       cols := {};
+	       oldImage := map(tRing^ranknew,tRing^0,0);
+	       -- for each filtration step compute the image
+	       j => apply(fTj, i -> (
+			 cols = cols | fT#j#i;
+			 -- take the image of the i-th filtration
+			 A := M * (bT#j)_cols;
+			 -- Represent this in the basis chosen
+			 gkMA := (gens ker (Mgens | A))^{0..ranknew-1};
+			 -- Select the new basis vectors of the filtration
+			 gkMA = mingens (image(oldImage | gkMA) / image oldImage);
+			 -- and add them to the matrix
+			 oldImage = oldImage |gkMA;
+			 -- save the new matrix and filtration step
+			 (gkMA,matrix {toList(numColumns gkMA:i)})))));
+     -- Generate the new filtration matrices and tables
+     fMT := hashTable apply(pairs bT, p -> p#0 => matrix {apply(p#1,last)});
+     fT = hashTable apply(pairs fMT, p -> (
+	       L := flatten entries p#1;
+	       L1 := sort unique L;
+	       p#0 => hashTable ({(min L1-1) => {}} | apply(L1, l -> l => positions(L,e -> e == l)))));
+     bT = hashTable apply(pairs bT, p -> p#0 => matrix {apply(p#1,first)});
+     Tnew := new ToricVectorBundleKlyachko from {
+	  "ring" => T#"ring",
+	  "rayTable" => T#"rayTable",
+	  "baseTable" => bT,
+	  "filtrationMatricesTable" => fMT,
+	  "filtrationTable" => fT,
+	  "ToricVariety" => T#"ToricVariety",
+	  "number of affine charts" => T#"number of affine charts",
+	  "dimension of the variety" => T#"dimension of the variety",
+	  "rank of the vector bundle" => ranknew,
+	  "number of rays" => T#"number of rays",
+	  symbol cache => new CacheTable};
+     if T.cache.?isVB and T.cache.isVB then Tnew.cache.isVB = true;
+     Tnew)
+
+
+-- PURPOSE : Computing the kernel bundle of a toric vector bundle
+--   INPUT : '(T,M)', where 'T' is a ToricVectorBundleKlyachko and 'M' a matrix with the bundle space as source
+--  OUTPUT : The bundle given by the kernels of the filtrations
+ker (ToricVectorBundleKlyachko,Matrix) := opts -> (T,M) -> (
+     k := T#"rank of the vector bundle";
+     tRing := T#"ring";
+     -- Checking for input errors
+     if k != numColumns M then error("The source of the matrix has to be the vector bundle.");
+     if tRing =!= ring M then error("Matrix and bundle have to be over the same ring.");
+     -- Compute a basis of the kernel
+     M = mingens ker M;
+     ranknew := numColumns M;
+     bT := T#"baseTable";
+     fT := T#"filtrationTable";
+     -- Compute the new filtration for each ray
+     bT = hashTable apply(keys bT, j -> (
+	       fTj := drop(sort keys fT#j,1);
+	       cols := {};
+	       oldKer := map(tRing^ranknew,tRing^0,0);
+	       -- compute each filtration step
+	       j => apply(fTj, i -> (
+			 cols = cols | fT#j#i;
+			 A := (bT#j)_cols;
+			 -- Represent the kernel intersected with the actual filtration step in the basis chosen
+			 gkMA := (gens ker (M | A))^{0..ranknew-1};
+			 -- Select the "new" vectors
+			 gkMA = mingens (image(oldKer | gkMA) / image oldKer);
+			 oldKer = oldKer |gkMA;
+			 -- Save the new vectors and the filtration step
+			 (gkMA,matrix {toList(numColumns gkMA:i)})))));
+     -- Compute the filtration matrices and tables
+     fMT := hashTable apply(pairs bT, p -> p#0 => matrix {apply(p#1,last)});
+     fT = hashTable apply(pairs fMT, p -> (
+	       L := flatten entries p#1;
+	       L1 := sort unique L;
+	       p#0 => hashTable ({min L1 - 1 => {}} | apply(L1, l -> l => positions(L,e -> e == l)))));
+     bT = hashTable apply(pairs bT, p -> p#0 => matrix {apply(p#1,first)});
+     Tnew := new ToricVectorBundleKlyachko from {
+	  "ring" => T#"ring",
+	  "rayTable" => T#"rayTable",
+	  "baseTable" => bT,
+	  "filtrationMatricesTable" => fMT,
+	  "filtrationTable" => fT,
+	  "ToricVariety" => T#"ToricVariety",
+	  "number of affine charts" => T#"number of affine charts",
+	  "dimension of the variety" => T#"dimension of the variety",
+	  "rank of the vector bundle" => ranknew,
+	  "number of rays" => T#"number of rays",
+	  symbol cache => new CacheTable};
+     if T.cache.?isVB and T.cache.isVB then Tnew.cache.isVB = true;
+     Tnew)
+     
+
+
+
+-- PURPOSE : Computing the coker bundle of a toric vector bundle
+--   INPUT : '(T,M)', where 'T' is a ToricVectorBundleKlyachko and 'M' a matrix with the bundle space as target
+--  OUTPUT : The bundle given by the cokernels of the filtrations
+coker (ToricVectorBundleKlyachko,Matrix) := (T,M) -> (
+     k := T#"rank of the vector bundle";
+     tRing := T#"ring";
+     -- Checking for input errors
+     if k != numRows M then error("The source of the matrix has to be the vector bundle.");
+     if tRing =!= ring M then error("Matrix and bundle have to be over the same ring."); 
+     -- Computing the map from the bundle to the kernel
+     N := transpose mingens ker transpose M;
+     -- Computing a basis of the cokernel
+     coKerGens := mingens image N;
+     newRank := numColumns coKerGens;
+     bT := T#"baseTable";
+     fT := T#"filtrationTable";
+     -- Computing the new baseTable with filtrations
+     bT = hashTable apply(keys bT, j -> (
+	       fTj := drop(sort keys fT#j,1);
+	       cols := {};
+	       oldCoKer := map(tRing^newRank,tRing^0,0);
+	       -- Going through the filtration steps and computing the cokernel for each step
+	       j => apply(fTj, i -> (
+			 cols = cols | fT#j#i;
+			 -- Computing the cokernel
+			 A := N * (bT#j)_cols;
+			 -- Representing this in the basis chosen
+			 gkMA := (gens ker (coKerGens | A))^{0..newRank-1};
+			 -- Selecting the new basis elements that appear in this filtration step
+			 gkMA = mingens (image(oldCoKer | gkMA) / image oldCoKer);
+			 -- Appending these new vectors
+			 oldCoKer = oldCoKer |gkMA;
+			 -- appending the filtration step number
+			 (gkMA,matrix {toList(numColumns gkMA:i)})))));
+     -- Generating the new filtration matrices and tables
+     fMT := hashTable apply(pairs bT, p -> p#0 => matrix {apply(p#1,last)});
+     fT = hashTable apply(pairs fMT, p -> (
+	       L := flatten entries p#1;
+	       L1 := sort unique L;
+	       p#0 => hashTable ({min L1 - 1 => {}} | apply(L1, l -> l => positions(L,e -> e == l)))));
+     bT = hashTable apply(pairs bT, p -> p#0 => matrix {apply(p#1,first)});
+     Tnew := new ToricVectorBundleKlyachko from {
+	  "ring" => T#"ring",
+	  "rayTable" => T#"rayTable",
+	  "baseTable" => bT,
+	  "filtrationMatricesTable" => fMT,
+	  "filtrationTable" => fT,
+	  "ToricVariety" => T#"ToricVariety",
+	  "number of affine charts" => T#"number of affine charts",
+	  "dimension of the variety" => T#"dimension of the variety",
+	  "rank of the vector bundle" => newRank,
+	  "number of rays" => T#"number of rays",
+	  symbol cache => new CacheTable};
+     if T.cache.?isVB and T.cache.isVB then Tnew.cache.isVB = T.cache.isVB;
+     Tnew)     	       
 
 
 
@@ -4014,6 +4125,323 @@ document {
      SeeAlso => {cartierIndex}
      
      }
+-*
+doc ///
+    Key
+        ToricVectorBundleMap
+    Headline
+        the class of all maps between toric vector bundles
+    Description
+        Text
+	    Let $\mathcal{E}_1$ and $\mathcal{E}_2$ be toric vector bundles on
+	    a common base toric variety$X$. A bundle map is a
+	    map $f : \mathcal{E}_1 \to \mathcal{E}_2$ such that for any face $F \subset C$, we have
+	    that $f(F)$ is contained in a face of $D$.
+        Text
+	    To specify a map of simplicial complexes, the target and source
+	    complexes need to be specified as well as a matrix which
+	    determines a map between the complexes' corresponding rings.
+	Text
+	    The primary constructor of a simplicial map is
+	    @TO (map, SimplicialComplex, SimplicialComplex, Matrix)@.
+    SeeAlso
+    	"Working with simplicial maps"
+        SimplicialComplex
+	(id, SimplicialComplex)
+	(isWellDefined, SimplicialMap)
+///
+
+doc ///
+    Key
+        (source, SimplicialMap)
+    Headline
+        get the source of the map
+    Usage
+    	X = source f
+    Inputs
+    	f : SimplicialMap
+    Outputs
+    	X : SimplicialComplex
+    	    that is the source of the map f
+    Description
+        Text
+	    Given a map $f \colon \Delta \to \Gamma$, this method returns the
+	    abstract simplicial complex $\Delta$.  The source is one of the
+	    defining attributes of a simplicial map
+	Text
+	    For the identity map, the source and target are equal.
+	Example
+            S = ZZ[x_0..x_5];
+	    Δ = simplicialComplex monomialIdeal(x_0*x_5, x_1*x_4, x_2*x_3)
+    	    id_Δ
+	    source id_Δ
+	    assert(source id_Δ === Δ)
+	    assert(source id_Δ === target id_Δ)
+	Text
+    	    The next map projects an octahedron onto a square.
+	Example
+	    R = ZZ[y_0..y_3];
+	    Γ = simplicialComplex monomialIdeal(y_1*y_2)
+	    f = map(Γ, Δ, {y_0,y_0,y_1,y_2,y_3,y_3})
+	    assert isWellDefined f
+	    source f
+	    assert(source f === Δ)  
+	    peek f  
+    SeeAlso
+        "Working with simplicial maps"
+        (target, SimplicialMap)    
+        (matrix, SimplicialMap)    		
+	(isWellDefined, SimplicialMap)
+        (map, SimplicialComplex, SimplicialComplex, Matrix)	
+///
+
+doc ///
+    Key
+	(target, SimplicialMap)
+    Headline 
+    	get the target of the map
+    Usage
+    	Y = target f
+    Inputs
+    	f : SimplicialMap
+    Outputs
+    	Y : SimplicialComplex
+    	    that is the target of the map f	
+    Description	    
+        Text
+	    Given a map $f \colon \Delta \to \Gamma$, this method returns the
+	    abstract simplicial complex $\Gamma$.  The target is one of the
+	    defining attributes of a simplicial map
+	Text
+	    For the identity map, the source and target are equal.
+	Example
+            S = ZZ[x_0..x_5];
+	    Δ = simplicialComplex monomialIdeal(x_0*x_5, x_1*x_4, x_2*x_3)
+    	    id_Δ 
+	    source id_Δ
+	    assert(target id_Δ === Δ)
+	    assert(target id_Δ === source id_Δ)
+	Text
+    	    The next map projects an octahedron onto a square.
+	Example
+	    R = ZZ[y_0..y_3];
+	    Γ = simplicialComplex monomialIdeal(y_1*y_2)
+	    f = map(Γ, Δ, {y_0,y_0,y_1,y_2,y_3,y_3})
+	    assert isWellDefined f
+	    target f
+	    assert(target f === Γ)
+	    peek f
+    SeeAlso
+        "Working with simplicial maps"    
+        (source, SimplicialMap)    
+        (matrix, SimplicialMap)    		
+	(isWellDefined, SimplicialMap)
+        (map, SimplicialComplex, SimplicialComplex, Matrix)
+///
+
+doc ///
+    Key
+        (map, SimplicialMap)
+    Headline
+        the underlying ring map associated to a simplicial map
+    Usage
+    	phi = map f
+    Inputs
+    	f : SimplicialMap
+	: Degree
+	    ignored
+	: DegreeLift
+	    ignored
+	: DegreeMap
+	    ignored
+    Outputs
+        phi : RingMap
+	    a map from the ring of the source of $f$ to the 
+	    ring of the target of $f$.
+    Description
+        Text
+            Every simplicial map sends the vertices of the source of $f$
+	    to the vertices of the target of $f$. Consequently, this 
+	    determines a ring map between the ring of the source of $f$ 
+	    and the ring of the target of $f$.
+        Example
+            S = ZZ/101[a,b,c,d];
+	    Δ = simplexComplex(3,S)
+	    f = map(Δ,Δ,matrix{{a,b,c,d}})
+	    map f	
+    SeeAlso
+        "Working with simplicial maps"
+	(map, SimplicialComplex,SimplicialComplex, RingMap)
+	(source, SimplicialMap)
+        (target, SimplicialMap)
+        (matrix, SimplicialMap)
+	(isWellDefined, SimplicialMap)
+///	  
+
+doc ///
+    Key
+	(matrix, SimplicialMap)
+    Headline 
+    	get the underlying map of rings
+    Usage
+    	g = matrix f
+    Inputs
+    	f : SimplicialMap
+	Degree =>
+	    unused
+    Outputs
+    	g : Matrix
+            having one row
+    Description	    
+        Text
+    	    A simplicial map is a map $f \colon \Delta \to \Gamma$ such that
+    	    for any face $F \subset \Delta$, the image $f(F)$ is contained in
+    	    a face of $\Gamma$.  Since an abstract simplicial complex is, in
+    	    this package, represented by its Stanley–Reisner ideal in a
+    	    polynomial ring, the simplicial map $f$ corresponds to a ring map
+    	    from the ring of $\Delta$ to the ring of $\Gamma$.  The ring map
+    	    is described by a matrix having one row; the entry in the $i$-th
+    	    column is the image in the ring of $\Gamma$ of the $i$-th variable
+    	    in the ring $\Delta$.  This method returns this matrix.
+	Text
+	    For the identity map, the matrix of variables in the ambient
+	    polynomial ring.
+	Example
+            S = ZZ[x_0..x_5];
+	    Δ = simplicialComplex monomialIdeal(x_0*x_5, x_1*x_4, x_2*x_3)
+    	    id_Δ 
+	    matrix id_Δ
+	    assert(matrix id_Δ === vars S)
+	Text
+    	    The next map projects an octahedron onto a square.
+	Example
+	    R = ZZ[y_0..y_3];
+	    Γ = simplicialComplex monomialIdeal(y_1*y_2)
+	    f = map(Γ, Δ, {y_0,y_0,y_1,y_2,y_3,y_3})
+    	    matrix f
+	Text
+	    This matrix is simply extracted from the underlying map of rings.
+	Example
+	    code(matrix, SimplicialMap)
+    SeeAlso
+        "Working with simplicial maps"    
+        (source, SimplicialMap)    
+        (target, SimplicialMap)    		
+	(isWellDefined, SimplicialMap)
+        (map, SimplicialComplex, SimplicialComplex, Matrix)
+///
+
+undocumented {
+    (expression, SimplicialMap), 
+    (toString, SimplicialMap), 
+    (texMath, SimplicialMap)
+    }
+
+doc ///
+    Key
+        (net, SimplicialMap)
+    Headline
+        make a symbolic representation for a map of abstract simplicial complexes
+    Usage
+        net f
+    Inputs
+        f : SimplicialMap
+    Outputs
+        : Net
+	    a symbolic representation used for printing
+    Description
+        Text
+	    The net of map $f \colon \Delta \to \Gamma$ between abstract
+	    simplicial complexes is a list of variables in the ring of
+	    $\Gamma$.  This list determines a ring map from the ring of
+	    $\Delta$ to the ring of $\Gamma$ by sending the $i$-th variable
+	    in the ring of $\Delta$ to the $i$-th monomial on the list.
+    	Text
+	    The identity map $\operatorname{id} \colon \Delta \to \Delta$
+	    corresponds to list of variables in the ring of $\Delta$.
+        Example
+            S = ZZ[x_0..x_5];
+	    Δ = simplicialComplex monomialIdeal(x_0*x_5, x_1*x_4, x_2*x_3)
+    	    id_Δ
+	    net id_Δ
+	    matrix id_Δ
+	Text
+    	    The next example does not come from the identity map.
+	Example
+	    S' = ZZ[y_0..y_3];
+	    Γ = simplicialComplex monomialIdeal(y_1*y_2)
+	    f = map(Γ, Δ, {y_0,y_0,y_1,y_2,y_3,y_3})
+	    assert isWellDefined f
+	    net f
+	    matrix f
+    SeeAlso
+        "Working with simplicial maps"
+        (matrix, SimplicialMap)
+	(net, SimplicialComplex)	
+///	  
+
+doc ///
+    Key
+        (map, SimplicialComplex, SimplicialComplex, Matrix)
+	(map, SimplicialComplex, SimplicialComplex, List)
+        (map, SimplicialComplex, SimplicialComplex, RingMap)
+	(map, SimplicialComplex, Matrix)
+	(map, SimplicialComplex, List)
+	(map, SimplicialComplex, RingMap)	
+    Headline
+        create a simplicial map between simplicial complexes
+    Usage
+    	f = map(E,D,M)
+	f = map(D,M)
+    Inputs
+    	Delta : SimplicialComplex
+	    the @TO2((source,SimplicialMap), "source")@ of the simplicial complex
+	Gamma : SimplicialComplex
+	    the @TO2((target,SimplicialMap), "target")@ of the simplicial map.
+	M : Matrix
+	    @TO2(List,"list")@, or @TO2(RingMap,"ring map")@.
+	: Degree
+	    ignored
+	: DegreeLift
+            ignored
+	: DegreeMap
+	    ignored
+    Outputs
+    	f : SimplicialMap
+    Description
+        Text
+	    A simplicial map $f: \Delta \to \Gamma$ is a function that sends the
+	    vertices of $\Delta$ to vertices of $\Gamma$, with the added condition that
+	    if $\{ v_1, v_2,..,v_k \} \in \Delta$, then $\{ f(v_1), f(v_2), ..., 
+	    f(v_n) \} \in \Gamma$. If no target is specified, it is assumed that the
+	    target is the simplicial complex whose faces are $f(F)$ for all faces $F 
+	    \in \Delta$. As a first example, let's look at the identity map on a
+	    3-simplex.
+	Example
+	    S = QQ[a,b,c,d];
+            Δ = simplexComplex(3,S);
+	    f = map(Δ,Δ, id_S)
+	    matrix f
+	    map f
+	Text
+	    Here is a slightly more interesting example.
+	Example
+	    R = QQ[s,t,u,v,w];
+	    Γ = simplicialComplex{s*t*u,u*v*w};
+	    g = map(Δ,Γ, {a,b,c,d,d})
+	    source g
+	    target g
+	    image g
+    SeeAlso
+        "Working with simplicial maps"
+	(source, SimplicialMap)
+        (target, SimplicialMap)
+	(image, SimplicialMap)    
+        (matrix, SimplicialMap)
+	(map, SimplicialMap)    		
+	(isWellDefined, SimplicialMap)
+///
+*-
 
 
 
