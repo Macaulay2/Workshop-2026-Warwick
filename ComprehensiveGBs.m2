@@ -176,7 +176,9 @@ doc ///
   Key
     ComprehensiveGBs
   Headline
-    A package for computing Comprehensive Groebner Bases (CGBs)
+    A package for computing Comprehensive Groebner Bases (CGBs). Base on @HREF("#ref1","[1]")@.
+  References
+    @LABEL("[1]","id" => "ref1")@ Akira Suzuki and Yosuke Sato. 2006. A simple algorithm to compute comprehensive Gröbner bases using Gröbner bases. In Proceedings of the 2006 international symposium on Symbolic and algebraic computation (ISSAC '06). Association for Computing Machinery, New York, NY, USA, 326–331. https://doi.org/10.1145/1145768.1145821
 ///
 
 
