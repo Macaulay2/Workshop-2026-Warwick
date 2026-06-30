@@ -14,6 +14,7 @@ export {
 	"matroid"
 }
 
+
 Matroid = new Type of HashTable
 Matroid.synonym = "matroid"
 
@@ -161,6 +162,64 @@ sliceBySizeList = (s, L) -> ( -- intersects a list against a list of lists, and 
 	s = set s;
 	partition(l -> #(s * set l), L)
 ) -- note: this is different from sliceBySize(set s, L/set)
+
+-- Begin CyclicFlats Code -----------------------------------------------------
+
+
+CyclicFlats = new Type of HashTable
+CyclicFlats.synonym = "cyclicFlats"
+
+globalAssignment CyclicFlats
+net CyclicFlats := M -> (
+    net ofClass class M | " of rank " | toString(M.rank) | " on " | toString(#M.groundSet) | " elements"
+    )
+
+cyclicFlats = method()
+cyclicFlats(HashTable) := H -> (
+    -- TODO: Axiom checking
+    isCyclicFlats = cFlats -> (
+        scanPairs(cFlats, (Flat, Rank) -> (
+                if not instance(Flat, Set) then (
+                    if debugLevel > 0 then printerr("Error: " | toString(Flat) | " is not a set.");
+                    error "Invalid flat.";
+                    );
+
+                if not instance(Rank, ZZ) then (
+                    if debugLevel > 0 then printerr("Error: " | toString(Rank) | " is not an integer.");
+                    error "Invalid rank.";
+                    );
+                )
+            );
+        true
+        );
+    if not isCyclicFlats H then error "Incorrect type for CyclicFlats matroid.";
+    M := new CyclicFlats from {
+        symbol groundSet => union keys H,
+        symbol rank => max values H,
+        symbol cyclicFlats => H
+        };
+    M
+    );
+
+countStressedSubsets = method();
+countStressedSubsets(CyclicFlats, ZZ, ZZ) := (M, r, h) -> (
+    num := 0;
+    scanPairs(M.cyclicFlats, (S, ri) -> if ri == r and #S == h then num += 1);
+    num
+    );
+
+tuttePolynomialRing := ZZ(monoid(["x","y"]/getSymbol));
+tuttePolynomialUniform = method(Options => {BaseRing => tuttePolynomialRing});
+tuttePolynomialUniform (ZZ, ZZ) := RingElement => opts -> (k, n) -> (
+    R := opts.BaseRing;
+    total := sum apply(k, i -> binomial(n-i-2, n-k-1)*R_0^(i+1));
+    total += sum apply(n-k, i -> binomial(n-i-2, k-1)*R_1^(i+1));
+    total
+    );
+
+
+
+-- End CyclicFlats Code -------------------------------------------------------
 
 load "./Matroids/doc-Matroids.m2"
 
