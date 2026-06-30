@@ -171,28 +171,43 @@ CyclicFlats.synonym = "cyclicFlats"
 
 globalAssignment CyclicFlats
 net CyclicFlats := M -> (
-	net ofClass "Todo"
-)
+    net ofClass class M | " of rank " | toString(M.rank) | " on " | toString(#M.groundSet) | " elements"
+    )
 
-BasicMatroid = new HashTable from {
-    set {1, 2} => 1,
-    set {1, 2, 3, 4} => 2,
-    set {} => 0
-};
+cyclicFlats = method()
+cyclicFlats(HashTable) := H -> (
+    -- TODO: Axiom checking
+    isCyclicFlats = cFlats -> (
+        scanPairs(cFlats, (Flat, Rank) -> (
+                if not instance(Flat, Set) then (
+                    if debugLevel > 0 then printerr("Error: " | toString(Flat) | " is not a set.");
+                    error "Invalid flat.";
+                    );
 
-cyclicFlats = method(Options => {EntryMode => "cyclicFlats", ParallelEdges => {}, Loops => {}})
-cyclicFlats HashTable := CyclicFlats => opts -> H -> (
-        Flats = keys H
-        G := union Flats
-        print G
-    	M := new CyclicFlats from {
-		symbol groundSet => G,
-		symbol bases => B,
-		symbol rank => #(B#0),
-		cache => new CacheTable from {symbol groundSet => E}
-	};
-);
-cyclicFlats BasicMatroid
+                if not instance(Rank, ZZ) then (
+                    if debugLevel > 0 then printerr("Error: " | toString(Rank) | " is not an integer.");
+                    error "Invalid rank.";
+                    );
+                )
+            );
+        true
+        );
+    if not isCyclicFlats H then error "Incorrect type for CyclicFlats matroid.";
+    M := new CyclicFlats from {
+        symbol groundSet => union keys H,
+        symbol rank => max values H,
+        symbol cyclicFlats => H
+        };
+    M
+    );
+
+countStressedSubsets = method();
+countStressedSubsets(CyclicFlats, ZZ, ZZ) := (M, r, h) -> (
+    num := 0;
+    scanPairs(M.cyclicFlats, (S, ri) -> if ri == r and #S == h then num += 1);
+    num
+    );
+
 
 
 
