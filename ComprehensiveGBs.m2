@@ -3,7 +3,6 @@ newPackage(
     Version => "0.1",
     Date => "",
     Headline => "A package for computing Comprehensive Groebner Bases (CGBs)",
-
     Authors => {{ Name => "", Email => "", HomePage => ""},
         { Name => "Lorenzo De Biase", Email => "lorenzo.debiase@enea.it", HomePage => "https://sites.google.com/viewlorenzodebiase/"},
         { Name => "Weijia Wang", Email => "weijia.wang@lip6.fr", HomePage => "https://weijia.perso.lip6.fr/"},
@@ -14,13 +13,15 @@ newPackage(
         { Name => "Giulia Gaggero", Email => "gaggerog@mcmaster.ca", HomePage => ""},
         { Name => "Woody Cohen", Email => "2597103@swansea.ac.uk", HomePage => ""}
         },
-
     Keywords => {""},
     AuxiliaryFiles => false,
     DebuggingMode => true
     )
 
-export {} -- functions, objects to export
+export {
+    "CGBMain",
+    "CGB"
+    } -- functions, objects to export
 
 -* Code section *-
 
@@ -68,10 +69,22 @@ CGBMain (List, List) := (F, S) -> (
   pruneG := select(G, g -> ((exponents leadMonomial g)_0 > 1) and any((exponents leadMonomial g)_(toList(1..(#X))),i -> i > 0));
   pruneG' := apply(pruneG, g -> leadCoefficient sub(g, RExt'));
   h := lcm pruneG';
+
+  if pruneG' == {} then (
+      return {(S, sub(h, R), for g in G list (
+                  g' := sub(sub(g, {l => 1}), R);
+                  if zero g' then continue;
+                  g'))}
+      );
+
   -- H := pruneG'; -- (takes too long to terminate if we do not factor h)
   -- H := unique apply(pruneG', g -> squareFreePart g); -- (takes a bit longer to terminate)
+
   H := listOfFactors h;
-  return {(S, sub(h, R), apply(G, g -> sub(sub(g, {l => 1}), R)))} | flatten apply(H, hi -> CGBMain(F, append(S, sub(hi, R))))
+  return {(S, sub(h, R), for g in G list (
+                  g' := sub(sub(g, {l => 1}), R);
+                  if zero g' then continue;
+                  g'))} | flatten apply(H, hi -> CGBMain(F, append(S, sub(hi, R))))
 );
 
 -*
