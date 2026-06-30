@@ -186,6 +186,9 @@ TEST /// -* [insert short title for this test] *-
 
 
 ///
+
+end
+
 d=2
 E={(1,2),(1,3),(2,3),(1,4),(2,4),(3,4)}
 V={1,2,3,4}
