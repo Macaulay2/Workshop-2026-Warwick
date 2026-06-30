@@ -304,3 +304,31 @@ F={f,g,h}
 debug ComprehensiveGBs
 eliminateVariables(F)
 CGB(F)
+
+
+----------------------------------
+--Cleaning up the output of CGBs
+----------------------------------
+
+R = QQ[a, b][x, y, z];
+F = {x^3-a, y^4-b, x+y-z};
+S = {};
+GB = CGBMain(F, S);
+noEmptyGB = select(GB, i-> not(member(i_1, i_0)));
+XX = new Set from apply(noEmptyGB, i -> i_2);
+*-
+count = 0;
+
+minimalStrata = for x in elements XX list (
+  print(length x);
+  strata = select (noEmptyGB, i -> i_2 == x);
+  temp = new Set from flatten(apply(strata, i -> i_0));
+  for s in strata do (
+    temp = temp * (new Set from s_0); 
+  );
+  count = count + length strata;
+  print("S = ", temp, "\t h=", strata_0_1);
+  print("count =", count);
+  minimal = select(strata, i-> (new Set from i_0)===temp);
+  first minimal
+);
