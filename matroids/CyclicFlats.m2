@@ -14,6 +14,7 @@ export {
 	"matroid"
 }
 
+
 Matroid = new Type of HashTable
 Matroid.synonym = "matroid"
 
@@ -161,6 +162,41 @@ sliceBySizeList = (s, L) -> ( -- intersects a list against a list of lists, and 
 	s = set s;
 	partition(l -> #(s * set l), L)
 ) -- note: this is different from sliceBySize(set s, L/set)
+
+-- Begin CyclicFlats Code -----------------------------------------------------
+
+
+CyclicFlats = new Type of HashTable
+CyclicFlats.synonym = "cyclicFlats"
+
+globalAssignment CyclicFlats
+net CyclicFlats := M -> (
+	net ofClass "Todo"
+)
+
+BasicMatroid = new HashTable from {
+    set {1, 2} => 1,
+    set {1, 2, 3, 4} => 2,
+    set {} => 0
+};
+
+cyclicFlats = method(Options => {EntryMode => "cyclicFlats", ParallelEdges => {}, Loops => {}})
+cyclicFlats HashTable := CyclicFlats => opts -> H -> (
+        Flats = keys H
+        G := union Flats
+        print G
+    	M := new CyclicFlats from {
+		symbol groundSet => G,
+		symbol bases => B,
+		symbol rank => #(B#0),
+		cache => new CacheTable from {symbol groundSet => E}
+	};
+);
+cyclicFlats BasicMatroid
+
+
+
+-- End CyclicFlats Code -------------------------------------------------------
 
 load "./Matroids/doc-Matroids.m2"
 
