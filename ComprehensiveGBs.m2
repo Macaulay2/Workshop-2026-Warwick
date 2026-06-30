@@ -202,15 +202,17 @@ cgbOnGraph(List,ZZ):=(G,d)->(
   E:=G_1;
   x:=getSymbol "x";
   w:=getSymbol "w";
-  R:=QQ[w_(E_0)..w_(E_(#E-1))][x_(V_0,1)..x_(V_(#V-1),d)];
-  F:=for i in E list(sum(1..d,k->(x_(i_0,k)-x_(i_1,k))^2)-w_(i_0,i_1));
+  S:=QQ[toSequence apply(E, l -> w_l)];
+  R:=S[x_(V_0,1)..x_(V_(#V-1),d)];
+  F:=for i in E list(sum(1..d,k->(R_(2*i_0+k-3)-R_(2*i_1+k-3))^2)-S_(position(E, j -> j === i)));
   CGB(F)
 )
 d=2
 E={(1,2),(1,3),(2,3)}
 V={1,2,3}
 G={V,E}
-R=cgbOnGraph(G,2)
+cgbOnGraph(G,2)
+
 
 end--
 
