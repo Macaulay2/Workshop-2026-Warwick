@@ -95,8 +95,7 @@ for t in L do (
   G = apply(t_2, p1 -> sub(p1, R') % ideal ({0_(R')} | E));
   I = first entries gens eliminate(ideal G, {x, y});
   print("E = " | toString E | ", N = {" | toString squareFreePart N | "}");
-  print("Ideal after eliminating {x, y}: " | toString I);
-  print("");
+  print("Minimal polynomial of z: " | toString last I);
 );
 *-
 
