@@ -85,7 +85,19 @@ CGBMain(F, S)
 R = QQ[a, b][x, y, z];
 F = {x^3-a, y^4-b, x+y-z};
 S = {};
-CGBMain(F, S)
+L = CGBMain(F, S);
+print("");
+
+R' = QQ[x, y, z, a, b, MonomialOrder => Lex];
+for t in L do (
+  E = apply(t_0, p2 -> sub(p2, R'));
+  N = sub(t_1, R');
+  G = apply(t_2, p1 -> sub(p1, R') % ideal ({0_(R')} | E));
+  I = first entries gens eliminate(ideal G, {x, y});
+  print("E = " | toString E | ", N = {" | toString squareFreePart N | "}");
+  print("Ideal after eliminating {x, y}: " | toString I);
+  print("");
+);
 *-
 
 -- Order of confidence:
