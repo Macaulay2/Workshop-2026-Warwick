@@ -208,6 +208,14 @@ countStressedSubsets(CyclicFlats, ZZ, ZZ) := (M, r, h) -> (
     num
     );
 
+tuttePolynomialRing := ZZ(monoid(["x","y"]/getSymbol));
+tuttePolynomialUniform = method(Options => {BaseRing => tuttePolynomialRing});
+tuttePolynomialUniform (ZZ, ZZ) := RingElement => opts -> (k, n) -> (
+    R := opts.BaseRing;
+    total := sum apply(k, i -> binomial(n-i-2, n-k-1)*R_0^(i+1));
+    total += sum apply(n-k, i -> binomial(n-i-2, k-1)*R_1^(i+1));
+    total
+    );
 
 
 
