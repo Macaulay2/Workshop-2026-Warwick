@@ -86,14 +86,46 @@ CGBMain(F, S)
 
 CGB=method()
 CGB(List):=F->(
-
-
+    s:=first entries eliminateVariables(F);
+    result:=s;
+    G:=CGBMain(F,s);
+    for i in G do (
+        result=result|(i_2);
+        );
 
 
 
 )
 
 
+eliminateVariables=method()
+eliminateVariables(List):=F->(
+    R:=ring first F;
+    n:=numgens(R);
+    m:=numgens(coefficientRing(R));
+    x:=getSymbol "x";
+    u:=getSymbol "u";
+    S:=QQ[x_1..x_n,u_1..u_m, MonomialOrder => Eliminate n];
+
+    U:=gens coefficientRing(R);
+    X:=gens R;
+    l1:=for i from 0 to m-1 list U_i=>S_(i+n);
+    l2:=for j from 0 to n-1 list X_j=>S_j;
+
+
+    F':=apply(F,h->sub(h,l1|l2));
+    F'gbgens:=gens gb(ideal(F'));
+    S':=selectInSubring(1,F'gbgens);
+
+    C:=coefficientRing R;
+    mm:=map(C,ring S',
+        toList(n:0)|gens C   
+        );
+    mm(S')
+
+
+
+    )
 
 
 
@@ -175,7 +207,9 @@ Example:
 R=QQ[a,b,c][x,y]
 f=a*x^2+4*b*y^4
 g=a*b*x*y^3-5*x^2*y
-F={f,g}
+F={f,g,f+a^2}
+debug ComprehensiveGBs
+eliminateVariables(F)
 
 n=numgens(R)
 m=numgens(coefficientRing(R))
@@ -187,7 +221,26 @@ U=gens coefficientRing(R)
 X=gens R
 l1=for i from 0 to m-1 list U_i=>S_(i+n)
 l2=for j from 0 to n-1 list X_j=>S_j
+
 F'=apply(F,h->sub(h,l1|l2))
 gb(ideal(F'))
 F'gbgens=gens gb(ideal(F'))
-selectInSubring(1,F'gbgens)
+
+l1=for i from 0 to m-1 list S_(i+n)=>U_i
+H= first o27
+S'=selectInSubring(1,F'gbgens)
+first entries S'
+C=coefficientRing R
+m=map(C,ring S',
+    toList(n:0)|gens C   
+    )
+m(S')
+
+R=QQ[a,b,c][x,y,z]
+f=x^3-a
+g=y^4-b
+h=x+y-z
+F={f,g,h}
+debug ComprehensiveGBs
+eliminateVariables(F)
+CGB(F)
