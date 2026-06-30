@@ -80,7 +80,8 @@ CGBMain (List, List) := (F, S) -> (
   -- H := pruneG'; -- (takes too long to terminate if we do not factor h)
   -- H := unique apply(pruneG', g -> squareFreePart g); -- (takes a bit longer to terminate)
 
-  H := listOfFactors h;
+  H := listOfFactors h; --See end of section 2 of suzuki sato to for justification. 
+                        --THIS IS NOT PROVEN IN THE PAPER, just claimed.
   return {(S, sub(h, R), for g in G list (
                   g' := sub(sub(g, {l => 1}), R);
                   if zero g' then continue;
