@@ -12,5 +12,5 @@ debug ComprehensiveGBs
 
 R = QQ[a,b][x,y,z, MonomialOrder => Lex]
 F = {x^3 - a, y^4 - b, x+y-z}
-G = CGBMain(F, {});o
+G = CGBMain(F, {});
 G_1
