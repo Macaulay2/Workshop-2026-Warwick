@@ -51,7 +51,7 @@ squareFreePart (RingElement) := (h) -> (
 
 CGBMain = method();
 CGBMain (List, List) := (F, S) -> (
-  print("Computing CGB for F = " | toString F | " and S = " | toString S);
+  --print("Computing CGB for F = " | toString F | " and S = " | toString S);
   if 1 % (ideal S) == 0 then (
     return {}
   );
@@ -66,7 +66,7 @@ CGBMain (List, List) := (F, S) -> (
   A := apply(F, i -> l * sub(i, RExt));
   B := apply(S, i -> (l-1) * sub(i, RExt));
   G := (entries gens gb(ideal join(A, B)))_0;
-  pruneG := select(G, g -> (((exponents leadMonomial g)_0)_0 > 1) and any((exponents leadMonomial g)_(toList(1..(#X))),i -> i > 0));
+  pruneG := select(G, g -> ((leadTerm g) % l == 0) and any(X, i -> member(sub(i, RFlat), support leadCoefficient sub(g, RFlat[l]))));
   pruneG' := apply(pruneG, g -> leadCoefficient sub(g, RExt'));
   h := lcm pruneG';
 
@@ -108,7 +108,8 @@ for t in L do (
   G = apply(t_2, p1 -> sub(p1, R') % ideal ({0_(R')} | E));
   I = first entries gens eliminate(ideal G, {x, y});
   print("E = " | toString E | ", N = {" | toString squareFreePart N | "}");
-  print("Minimal polynomial of z: " | toString last I);
+  print("Ideal after eliminating {x, y}: " | toString I);
+  print("");
 );
 *-
 
@@ -182,7 +183,33 @@ doc ///
 TEST /// -* [insert short title for this test] *-
 -- test code and assertions here
 -- may have as many TEST sections as needed
+
+
+
 ///
+
+end
+
+d=2
+E={(1,2),(1,3),(2,3),(1,4),(2,4),(3,4)}
+V={1,2,3,4}
+G={V,E}
+
+cgbOnGraph=method()
+cgbOnGraph(List,ZZ):=(G,d)->(
+  V:=G_0;
+  E:=G_1;
+  x:=getSymbol "x";
+  w:=getSymbol "w";
+  R:=QQ[w_(E_0)..w_(E_(#E-1))][x_(V_0,1)..x_(V_(#V-1),d)];
+  F:=for i in E list(sum(1..d,k->(x_(i_0,k)-x_(i_1,k))^2)-w_(i_0,i_1));
+  CGB(F)
+)
+d=2
+E={(1,2),(1,3),(2,3)}
+V={1,2,3}
+G={V,E}
+R=cgbOnGraph(G,2)
 
 end--
 
@@ -277,3 +304,31 @@ F={f,g,h}
 debug ComprehensiveGBs
 eliminateVariables(F)
 CGB(F)
+
+
+----------------------------------
+--Cleaning up the output of CGBs
+----------------------------------
+
+R = QQ[a, b][x, y, z];
+F = {x^3-a, y^4-b, x+y-z};
+S = {};
+GB = CGBMain(F, S);
+noEmptyGB = select(GB, i-> not(member(i_1, i_0)));
+XX = new Set from apply(noEmptyGB, i -> i_2);
+*-
+count = 0;
+
+minimalStrata = for x in elements XX list (
+  print(length x);
+  strata = select (noEmptyGB, i -> i_2 == x);
+  temp = new Set from flatten(apply(strata, i -> i_0));
+  for s in strata do (
+    temp = temp * (new Set from s_0); 
+  );
+  count = count + length strata;
+  print("S = ", temp, "\t h=", strata_0_1);
+  print("count =", count);
+  minimal = select(strata, i-> (new Set from i_0)===temp);
+  first minimal
+);
