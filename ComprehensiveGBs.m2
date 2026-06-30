@@ -51,7 +51,7 @@ squareFreePart (RingElement) := (h) -> (
 
 CGBMain = method();
 CGBMain (List, List) := (F, S) -> (
-  print("Computing CGB for F = " | toString F | " and S = " | toString S);
+  --print("Computing CGB for F = " | toString F | " and S = " | toString S);
   if 1 % (ideal S) == 0 then (
     return {}
   );
@@ -182,7 +182,30 @@ doc ///
 TEST /// -* [insert short title for this test] *-
 -- test code and assertions here
 -- may have as many TEST sections as needed
+
+
+
 ///
+d=2
+E={(1,2),(1,3),(2,3),(1,4),(2,4),(3,4)}
+V={1,2,3,4}
+G={V,E}
+
+cgbOnGraph=method()
+cgbOnGraph(List,ZZ):=(G,d)->(
+  V:=G_0;
+  E:=G_1;
+  x:=getSymbol "x";
+  w:=getSymbol "w";
+  R:=QQ[w_(E_0)..w_(E_(#E-1))][x_(V_0,1)..x_(V_(#V-1),d)];
+  F:=for i in E list(sum(1..d,k->(x_(i_0,k)-x_(i_1,k))^2)-w_(i_0,i_1));
+  CGB(F)
+)
+d=2
+E={(1,2),(1,3),(2,3)}
+V={1,2,3}
+G={V,E}
+R=cgbOnGraph(G,2)
 
 end--
 
