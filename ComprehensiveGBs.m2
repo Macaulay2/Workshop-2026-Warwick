@@ -37,6 +37,17 @@ aux (RingElement) := (h) -> (
   return h
 );
 
+listOfFactors = method();
+listOfFactors (RingElement) := (h) -> (
+  hfac := factor h;
+  return apply(#hfac, i -> if isConstant hfac#i#0 then 1 else hfac#i#0)
+);
+
+squareFreePart = method();
+squareFreePart (RingElement) := (h) -> (
+  return product listOfFactors h
+);
+
 CGBMain = method();
 CGBMain (List, List) := (F, S) -> (
   print("Computing CGB for F = " | toString F | " and S = " | toString S);
