@@ -8,9 +8,9 @@ newPackage(
         { Name => "Lorenzo De Biase", Email => "lorenzo.debiase@enea.it", HomePage => "https://sites.google.com/viewlorenzodebiase/"},
         { Name => "Weijia Wang", Email => "weijia.wang@lip6.fr", HomePage => "https://weijia.perso.lip6.fr/"},
         { Name => "Angelo El Saliby", Email => "angelo.el.saliby@mis.mpg.de", HomePage => "angeloelsaliby.github.io"},
-        { Name => "Oliver Clarke", Email => "oliver.clarke@durham.ac.uk", HomePage => ""},
-        { Name => "Sam Knight", Email => "samdeckardknight@gmail.com", HomePage => ""},
-        { Name => "Agustina Cagliero", Email => "mariaagustina.cagliero@kuleuven.be", HomePage => ""},
+        { Name => "Oliver Clarke", Email => "oliver.clarke@durham.ac.uk", HomePage => "https://www.oliverclarkemath.com"},
+        { Name => "Sam Knight", Email => "samdeckardknight@gmail.com", HomePage => ""},,
+        { Name => "Agustina Cagliero", Email => "mariaagustina.cagliero@kuleuven.be", HomePage => ""},,
         { Name => "Giulia Gaggero", Email => "gaggerog@mcmaster.ca", HomePage => ""},
         { Name => "Woody Cohen", Email => "2597103@swansea.ac.uk", HomePage => ""}
         },
@@ -24,35 +24,63 @@ export {} -- functions, objects to export
 
 -* Code section *-
 
-extendedRing = method()
+extendedRing = method();
 extendedRing (PolynomialRing) := R -> (
-  var = gens R;
-  coeff = gens baseRing R;
-  base = baseRing baseRing R;
-  return(base[coeff, var, l]);
+  var := gens R;
+  coeff := gens baseRing R;
+  base := baseRing baseRing R;
+  return(base[local l, var, coeff]);  -- ordering of variables requires l >> var >> coeff
+);
+
+aux = method();
+aux (RingElement) := (h) -> (
+  return h
 );
 
 CGBMain = method();
-CGBMain (List, List) := (F, S) ->(
-  print("1");
+CGBMain (List, List) := (F, S) -> (
+  print("Computing CGB for F = " | toString F | " and S = " | toString S);
   if 1 % (ideal S) == 0 then (
     return {}
   );
-  R = ring F_0;
-  RExt = extendedRing(R);
-  A = apply(F, i -> l *sub(i, RExt));
-  B = apply(S, i -> (l-1) *sub(i, RExt));
-  gb(ideal join(A, B));
+  R := ring F_0;
+  X := gens R;
+  U := gens baseRing R;
+  K := baseRing baseRing R;
+  RExt := K[getSymbol "l", X, U, MonomialOrder => Lex]; -- maybe construct the ordering from R?
+  l := first gens RExt;
+  RFlat := K[X, U, MonomialOrder => Lex];
+  RExt' := K[U][l, X, MonomialOrder => Lex];
+  A := apply(F, i -> l * sub(i, RExt));
+  B := apply(S, i -> (l-1) * sub(i, RExt));
+  G := (entries gens gb(ideal join(A, B)))_0;
+  pruneG := select(G, g -> ((leadTerm g) % l == 0) and any(X, i -> member(sub(i, RFlat), support leadCoefficient sub(g, RFlat[l]))));
+  pruneG' := apply(pruneG, g -> leadCoefficient sub(g, RExt'));
+  h := lcm pruneG';
+  -- H := pruneG'; (takes too long to terminate if we do not factor h)
+  hfac := factor h;
+  H := apply(#hfac, i -> if isConstant hfac#i#0 then 1 else hfac#i#0);
+  return {(S, sub(h, R), apply(G, g -> sub(sub(g, {l => 1}), R)))} | flatten apply(H, hi -> CGBMain(F, append(S, sub(hi, R))))
 );
 
--- R = QQ[u, x];
--- F = {x^2-x, x^3-1};
--- S = {u-1};
--- CGBMain(F, S)
+-*
+R = QQ[u][x];
+F = {x^2-x, x^3-1};
+S = {u-1};
+CGBMain(F, S)
+*-
 
+-*
+R = QQ[a, b][x, y, z];
+F = {x^3-a, y^4-b, x+y-z};
+S = {};
+CGBMain(F, S)
+*-
 
--- TODO: implement cgbMain, cgb
--- input system F subset of K[u_1 .. u_m][x_1 .. x_n]  (assumed form of poly ring)
+-- Order of confidence:
+-- 
+
+-- TODO: implement cgb
 
 
 
