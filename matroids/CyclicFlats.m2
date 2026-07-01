@@ -60,7 +60,11 @@ cyclicFlats(HashTable) := H -> (
             return false;
             );
         --Z1
-        -- TODO: Implement Z1.
+        if not (( isMember(set {}, G)) and  (H#(set{}) == 0)) then (
+            if debugLevel > 0 then printerr("Error: " | toString(cFlats) | "does not satisfy axiom Z1."); -- TODO: Make error message more specific.
+            return false;
+        );
+ 
         --Z2
         for g in G do (
             for h in principalFilter(P,g) do (
