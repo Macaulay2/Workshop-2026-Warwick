@@ -72,6 +72,7 @@ export {
     "ToricVectorBundleKlyachko",
     "ToricVectorBundleNew",
     -- Constructors
+	"lineBundle",
     "toricVectorBundle",
 	"trivialBundle",
     -- others
@@ -159,6 +160,27 @@ toricVectorBundle (NormalToricVariety, List, List) := {} >> o -> (baseVariety, m
 	symbol rank => rankE,
 	symbol cache => new CacheTable}
     )
+
+
+-- PURPOSE : Create the trivial bundle of rank p
+--   INPUT : "p", the rank of the bundle, and "tv", the base variety
+--  OUTPUT : the trivial bundle of rank p
+trivialBundle = method()
+trivialBundle (NormalToricVariety, ZZ) := (tv,r) -> (
+	p := #(rays tv);
+	toricVectorBundle(tv, apply(p, i -> id_((ring tv)^r)), apply(p, i -> toList(r:0)))
+)
+
+lineBundle = method()
+lineBundle ToricDivisor := D -> (
+	X := variety D;
+	jumps := for e in entries D list {e};
+	mats := for p in rays X list matrix {{1}};
+	toricVectorBundle(X, mats, jumps)
+)
+
+
+
 
 
 --TODO: once the overhaul is complete, we should remove these constructors.
@@ -676,22 +698,28 @@ isWellDefined ToricVectorBundleKlyachko := ( T -> (
 -- OPERATIONS ON TORIC VECTOR BUNDLES
 ----------------------------------------------------------------------------
 
--- PURPOSE : Create the trivial bundle of rank p
---   INPUT : "p", the rank of the bundle, and "tv", the base variety
---  OUTPUT : the trivial bundle of rank p
-trivialBundle = method()
-trivialBundle (NormalToricVariety, ZZ) := (tv,r) -> (
-	p := #(rays tv);
-	toricVectorBundle(tv, apply(p, i -> id_((ring tv)^r)), apply(p, i -> toList(r:0)))
-)
-
-
 ToricVectorBundle.directSum = args -> (
      args = toList args;
      T := args#0;
      scan(drop(args,1), E -> T = T ++ E);
      T)      
 ToricVectorBundle ++ ToricVectorBundle := (tvb1,tvb2) -> (
+    --NEW: for ToricVectorBundleNew
+    if instance(tvb1, ToricVectorBundleNew) and instance(tvb1, ToricVectorBundleNew) then(
+        --Errors check
+        if variety(tvb1) =!= variety(tvb2) then(error("Expected the bundles to be over the same toric variety.") );
+        X:=variety(tvb1 );
+        nrays := # rays (variety(tvb1 ));
+        L1:= filtrationMatrices( tvb1 ); 
+        L2:= filtrationMatrices (tvb2 );
+        Lnew:= apply(nrays, i -> L1_i++L2_i );
+        J1:= filtrationJumps( tvb1 ); 
+        J2:= filtrationJumps (tvb2 );
+        Jnew:= apply(nrays, i -> J1_i|J2_i );
+        toricVectorBundle(X, Lnew, Jnew)
+
+    ) 
+    else(
 	  -- Checking for input errors
 	  if tvb1#"ToricVariety" != tvb2#"ToricVariety" then error("Expected the bundles to be over the same toric variety.");
 	  -- Extracting data out of tvb1 and tvb2
@@ -732,6 +760,7 @@ ToricVectorBundle ++ ToricVectorBundle := (tvb1,tvb2) -> (
      	       if tvb1.cache.?isVB and tvb2.cache.?isVB and tvb1.cache.isVB and tvb2.cache.isVB then tvb.cache.isVB = true;
      	       tvb)
 	  else error("The two bundles have to be in the same description."))
+      )
 
 
 
@@ -1381,6 +1410,22 @@ ToricVectorBundle == ToricVectorBundle := (tvb1,tvb2) -> tvb1 === tvb2
 --   INPUT : '(tvb1,tvb2)',  two ToricVectorBundle over the same Fan in the same description
 --  OUTPUT : 'tvb',  a ToricVectorBundle which is the tensor product in the same description
 tensor(ToricVectorBundle, ToricVectorBundle) := ToricVectorBundle => {} >> opts -> (tvb1, tvb2) -> (
+    if instance(tvb1, ToricVectorBundleNew ) and instance(tvb2, ToricVectorBundleNew) then(
+            --Errors check
+    if variety(tvb1) =!= variety(tvb2) then(error("Expected the bundles to be over the same toric variety.") );
+    X:=variety(tvb1 );
+    nrays := # rays (variety(tvb1 ));
+    L1:= filtrationMatrices( tvb1 ); 
+    L2:= filtrationMatrices (tvb2 );
+    Lnew:= apply(nrays, i -> L1_i**L2_i );
+    J1:= filtrationJumps( tvb1 ); 
+    J2:= filtrationJumps (tvb2 );
+    -- TODO chech that this is what we want
+    Jnew:= filtrationTable := apply(nrays, p -> flatten apply(J1_p, e1 -> flatten apply(J2_p, e2 -> e1 + e2)));
+    toricVectorBundle(X, Lnew, Jnew)
+
+    )
+    else(
      -- Checking for input errors
      if tvb1#"ToricVariety" != tvb2#"ToricVariety" then error("Expected bundles over the same toric variety.");
      k1 := tvb1#"rank of the vector bundle";
@@ -1424,8 +1469,9 @@ tensor(ToricVectorBundle, ToricVectorBundle) := ToricVectorBundle => {} >> opts 
      	  tvb = addFiltration(tvb,filtrationTable);
      	  if tvb1.cache.?isVB and tvb2.cache.?isVB and tvb1.cache.isVB and tvb2.cache.isVB then tvb.cache.isVB = true;
      	  tvb)
-     else error("The two toric vector bundles have to be in the same description."))
-
+     else error("The two toric vector bundles have to be in the same description.")
+     )
+)
 
 ToricVectorBundle ** ToricVectorBundle := (tvb1,tvb2) -> tensor(tvb1,tvb2)
 -- ToricVectorBundleKlyachko ** ToricVectorBundleKlyachko := tensor
@@ -1435,7 +1481,18 @@ ToricVectorBundle ** ToricVectorBundle := (tvb1,tvb2) -> tensor(tvb1,tvb2)
 --   INPUT : '(T,d)',  where 'T' is a toricVectorBundleKlyachko and 'd' a list of integers one for each ray of the fan
 --  OUTPUT : a ToricVectorBundleKlyachko
 -- COMMENT : If d={d_1,..d_l} then this corresponds to the line bundle which is the d_i twist on the i-th ray
-twist = method(TypicalValue => ToricVectorBundleKlyachko)
+twist = method()
+
+twist (ToricVectorBundleNew, List) := (E, s) ->(
+    if # rays( variety E) != #s then ("The number of twists has to match the number of rays of the fan.");
+    r:= rank(E);
+    Jlist:= filtrationJumps(E);
+    Jnew:= apply(#s, j -> Jlist_j + toList(r:s_j)  );
+    toricVectorBundle(variety(E), filtrationMatrices(E), Jnew)
+
+)
+
+
 twist (ToricVectorBundleKlyachko,List) := (T,d) -> (
      k := T#"rank of the vector bundle";
      fT := T#"filtrationMatricesTable";
@@ -1964,7 +2021,7 @@ ToricVectorBundleMap = new Type of HashTable
 ToricVectorBundleMap.synonym = "map of toric vector bundles on a fixed toric variety"
 source ToricVectorBundleMap := ToricVectorBundleNew => f -> f.source
 target ToricVectorBundleMap := ToricVectorBundleNew => f -> f.target
-map ToricVectorBundleMap := Matrix => f -> f.map
+map ToricVectorBundleMap := {} >> o -> Matrix => f -> f.map
 matrix ToricVectorBundleMap := Matrix => f -> f.map
 
 -- TODO NET ToricVectorBundleMap
@@ -2029,8 +2086,29 @@ isWellDefined (ToricVectorBundleMap ) := Boolean => f ->(
     M := f.map;
     Xrays := rays(variety(E1));
     r :=rank E1;
-    minj:= min flatten filtrationJumps(E1);
-    maxj:= max flatten filtrationJumps(E1);
+	for p in Xrays do (
+		j := flatten join(filtrationJumps source f, filtrationJumps target f);
+		m1 := min j;
+		m2 := max j;
+
+		for i from m1 to m2 do (
+			amb := module (ring E2) ^ (rank E2);
+			f1 := map(amb, , sub(M * filteredPiece(E1,p,i),QQ));
+			f2 := map(amb, , sub(filteredPiece(E2,p,i),QQ));
+
+			if not isSubset(image f1, image f2) then (
+				return false
+			);
+		);
+
+
+	);
+
+
+
+
+
+-*
     for i from minj-1 to maxj+1 do(
         for p in Xrays do(
         if not isSubset(image (M*filteredPiece(E1,p,i)), image filteredPiece(E2, p, i))
@@ -2041,10 +2119,46 @@ isWellDefined (ToricVectorBundleMap ) := Boolean => f ->(
     f.cache.isWellDefined = true and f.cache.isWellDefined ;    
 	);
 	f.cache.isWellDefined
+*-
+	);
+	true
 )
 
-image (ToricVectorBundleMap) := f -> (
-    -*
+isInjective (ToricVectorBundleMap) := f -> (
+
+	if not isWellDefined f then (
+		if debugLevel > 0 then (
+			<< "-- the map is not well defined" << endl);
+		return false
+	);
+	
+	if not isInjective (map f) then (
+		if debugLevel > 0 then (
+			<< "-- the map is not injective" << endl);
+		return false
+	);
+	
+	X := variety(source f);
+	for p in rays X do (
+		r := join(filtrationJumps source f, filtrationJumps target f);
+		m1 := min r;
+		m2 := max r;
+		for i from m1 to m2 do (
+			if not (numColumns filteredPiece(source f, p, i) <= numColumns filteredPiece(target f, p, i)) then (
+				if debugLevel > 0 then (
+					<< "some error message" << endl
+					);
+				print 1
+				);
+				return false
+			);
+		);
+		return true
+	)
+
+-*
+image (ToricVectorBundleMap) :=(f
+    
     E1:= source f;
     X:= variety E1;
         minj:= min flatten filtrationJumps(E1);
@@ -4947,8 +5061,8 @@ assert not isWellDefined T1 -- fails because of cocycleCheck
 --tests for regCheck
 T1 = addDegrees(T,{matrix{{1,2},{3,1}},matrix{{-1,0},{3,1}},matrix{{1,2},{-3,-1}},matrix{{-1,0},{-3,-1}}})
 assert not isWellDefined T1 -- fails because of regCheck
-
 ///
+
 -- Test
 -- Checking trivialBundle
 TEST ///
@@ -4957,6 +5071,45 @@ E = trivialBundle(X,4)
 assert (rank E == 4)
 assert ((filtrationMatrices E)_0 == 1_((ring E)^4))
 assert ((filtrationJumps E)_0 == toList(4:0))
+///
+
+-*
+-- Test
+-- Checking watermelon
+TEST ///
+X = toricProjectiveSpace 2
+D1 = toricDivisor({1,0,0},X)
+D2 = toricDivisor({0,1,0},X)
+D3 = toricDivisor({0,0,1},X)
+
+L1 = lineBundle(D1)
+L2 = lineBundle(D2)
+L3 = lineBundle(D3)
+
+E1 = trivialBundle(X,1)
+E2 = L1 ++ L2 ++ L3
+
+f = map(E2, E1, matrix(QQ,{{1},{1},{1}}))
+
+assert (isInjective f)
+///
+*-
+
+
+
+-- Test
+-- Checking lineBundle
+TEST ///
+X = hirzebruchSurface 3
+D = toricDivisor({5,-3,1,2},X)
+L = lineBundle(D)
+assert (rank L == 1)
+assert (numColumns filteredPiece(L, (rays X)_0, 5) == 1)
+assert (numColumns filteredPiece(L, (rays X)_0, 6) == 0)
+
+assert (numColumns filteredPiece(L, (rays X)_1, -3) == 1)
+assert (numColumns filteredPiece(L, (rays X)_1, 0) == 0)
+
 ///
 
 end
