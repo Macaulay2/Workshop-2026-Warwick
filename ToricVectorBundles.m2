@@ -691,6 +691,22 @@ ToricVectorBundle.directSum = args -> (
      scan(drop(args,1), E -> T = T ++ E);
      T)      
 ToricVectorBundle ++ ToricVectorBundle := (tvb1,tvb2) -> (
+    --NEW: for ToricVectorBundleNew
+    if instance(tvb1, ToricVectorBundleNew) and instance(tvb1, ToricVectorBundleNew) then(
+        --Errors check
+        if variety(tvb1) =!= variety(tvb2) then(error("Expected the bundles to be over the same toric variety.") );
+        X:=variety(tvb1 );
+        nrays := # rays (variety(tvb1 ));
+        L1:= filtrationMatrices( tvb1 ); 
+        L2:= filtrationMatrices (tvb2 );
+        Lnew:= apply(nrays, i -> L1_i++L2_i );
+        J1:= filtrationJumps( tvb1 ); 
+        J2:= filtrationJumps (tvb2 );
+        Jnew:= apply(nrays, i -> J1_i|J2_i );
+        toricVectorBundle(X, Lnew, Jnew)
+
+    ) 
+    else(
 	  -- Checking for input errors
 	  if tvb1#"ToricVariety" != tvb2#"ToricVariety" then error("Expected the bundles to be over the same toric variety.");
 	  -- Extracting data out of tvb1 and tvb2
@@ -731,6 +747,7 @@ ToricVectorBundle ++ ToricVectorBundle := (tvb1,tvb2) -> (
      	       if tvb1.cache.?isVB and tvb2.cache.?isVB and tvb1.cache.isVB and tvb2.cache.isVB then tvb.cache.isVB = true;
      	       tvb)
 	  else error("The two bundles have to be in the same description."))
+      )
 
 
 
@@ -1369,6 +1386,21 @@ ToricVectorBundle == ToricVectorBundle := (tvb1,tvb2) -> tvb1 === tvb2
 --   INPUT : '(tvb1,tvb2)',  two ToricVectorBundle over the same Fan in the same description
 --  OUTPUT : 'tvb',  a ToricVectorBundle which is the tensor product in the same description
 tensor(ToricVectorBundle, ToricVectorBundle) := ToricVectorBundle => {} >> opts -> (tvb1, tvb2) -> (
+    if instance(tvb1, ToricVectorBundleNew ) and instance(tvb2, ToricVectorBundleNew) then(
+            --Errors check
+    if variety(tvb1) =!= variety(tvb2) then(error("Expected the bundles to be over the same toric variety.") );
+    X:=variety(tvb1 );
+    nrays := # rays (variety(tvb1 ));
+    L1:= filtrationMatrices( tvb1 ); 
+    L2:= filtrationMatrices (tvb2 );
+    Lnew:= apply(nrays, i -> L1_i**L2_i );
+    J1:= filtrationJumps( tvb1 ); 
+    J2:= filtrationJumps (tvb2 );
+    --Jnew:= filtrationTable := apply(R, r -> matrix {flatten apply(flatten entries fmT1#r, e1 -> apply(flatten entries fmT2#r, e2 -> e1 + e2))});
+    --toricVectorBundle(X, Lnew, Jnew)
+
+    )
+    else(
      -- Checking for input errors
      if tvb1#"ToricVariety" != tvb2#"ToricVariety" then error("Expected bundles over the same toric variety.");
      k1 := tvb1#"rank of the vector bundle";
@@ -1412,8 +1444,9 @@ tensor(ToricVectorBundle, ToricVectorBundle) := ToricVectorBundle => {} >> opts 
      	  tvb = addFiltration(tvb,filtrationTable);
      	  if tvb1.cache.?isVB and tvb2.cache.?isVB and tvb1.cache.isVB and tvb2.cache.isVB then tvb.cache.isVB = true;
      	  tvb)
-     else error("The two toric vector bundles have to be in the same description."))
-
+     else error("The two toric vector bundles have to be in the same description.")
+     )
+)
 
 ToricVectorBundle ** ToricVectorBundle := (tvb1,tvb2) -> tensor(tvb1,tvb2)
 -- ToricVectorBundleKlyachko ** ToricVectorBundleKlyachko := tensor
@@ -1423,7 +1456,18 @@ ToricVectorBundle ** ToricVectorBundle := (tvb1,tvb2) -> tensor(tvb1,tvb2)
 --   INPUT : '(T,d)',  where 'T' is a toricVectorBundleKlyachko and 'd' a list of integers one for each ray of the fan
 --  OUTPUT : a ToricVectorBundleKlyachko
 -- COMMENT : If d={d_1,..d_l} then this corresponds to the line bundle which is the d_i twist on the i-th ray
-twist = method(TypicalValue => ToricVectorBundleKlyachko)
+twist = method()
+
+twist (ToricVectorBundleNew, List) := (E, s) ->(
+    if # rays( variety E) != #s then ("The number of twists has to match the number of rays of the fan.");
+    r:= rank(E);
+    Jlist:= filtrationJumps(E);
+    Jnew:= apply(#s, j -> Jlist_j + toList(r:s_j)  );
+    toricVectorBundle(variety(E), filtrationMatrices(E), Jnew)
+
+)
+
+
 twist (ToricVectorBundleKlyachko,List) := (T,d) -> (
      k := T#"rank of the vector bundle";
      fT := T#"filtrationMatricesTable";
