@@ -177,7 +177,7 @@ net CyclicFlats := M -> (
 cyclicFlats = method()
 cyclicFlats(HashTable) := H -> (
     -- TODO: Axiom checking
-    isCyclicFlats = cFlats -> (
+    cyclicFlatsType = cFlats -> (
         scanPairs(cFlats, (Flat, Rank) -> (
                 if not instance(Flat, Set) then (
                     if debugLevel > 0 then printerr("Error: " | toString(Flat) | " is not a set.");
@@ -192,7 +192,45 @@ cyclicFlats(HashTable) := H -> (
             );
         true
         );
-    if not isCyclicFlats H then error "Incorrect type for CyclicFlats matroid.";
+    if not cyclicFlatsType H then error "Incorrect type for CyclicFlats matroid.";
+
+    cyclicFlatsAxioms cFlats -> (
+        G := keys cFlats;
+        P := poset(G, isSubset);
+        --Z0
+        if not isLattice P then (
+            if debugLevel > 0 then printerr("Error: " | toString(P) | " is not a poset under inclusion.")
+            return false
+            )
+        --Z1
+        --Z2
+        for g in G do (
+            for h in principalFilter(P,g) do (
+                if (g != h) then(  --maybe figure out a way around this, like just removing g from the principal filter
+                    if H#h - H#g == 0 or H#h - H#g >= #(h - g) then (
+                        if debugLevel > 0 then printerr("Error: " | toString(cFlats) | " does not satisfy axiom.") -- TODO: Make error message more specific.
+                        return false
+                        );
+                    )
+                )
+            );
+        --Z3
+        for g in G do (
+            for h in G do (
+                rankSum = H#g + H#h;
+                pJoin = first posetJoin(P, g, h);
+                pMeet = first posetMeet(P, g, h);
+                rankJoin = H#(pJoin);
+                rankMeet = H#(pMeet);
+                if ( rankSum < rankJoin + rankMeet + #(intersect(g,h)) - #(pMeet)) then (
+                    if debugLevel > 0 then printerr("Error: " | toString(cFlats) | " does not satisfy axiom.") -- TODO: Make error message more specific.
+                    return false
+                    );
+                );
+            );
+        true
+        )
+    if not cyclicFlatsAxioms H then error "Given hashtable " | toString H | " does not satisfy the axioms of a collection of cyclic flats."
     M := new CyclicFlats from {
         symbol groundSet => union keys H,
         symbol rank => max values H,
