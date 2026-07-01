@@ -33,11 +33,6 @@ extendedRing (PolynomialRing) := R -> (
   return(base[local l, var, coeff]);  -- ordering of variables requires l >> var >> coeff
 );
 
-aux = method();
-aux (RingElement) := (h) -> (
-  return h
-);
-
 listOfFactors = method();
 listOfFactors (RingElement) := (h) -> (
   hfac := factor h;
