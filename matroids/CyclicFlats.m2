@@ -104,21 +104,7 @@ countStressedSubsets(CyclicFlats, ZZ, ZZ) := (M, r, h) -> (
     num
     );
 
-<<<<<<< HEAD
 evalValInvariant (CyclicFlats, Function, Function, Function) := M, Uniform, Cuspidal, Unisum -> (
-=======
-tuttePolynomialRing := ZZ(monoid(["x","y"]/getSymbol));
-tuttePolynomialUniform = method(Options => {"BaseRing" => tuttePolynomialRing});
-tuttePolynomialUniform (ZZ, ZZ) := RingElement => opts -> (k, n) -> (
-    R := opts.BaseRing;
-    total := sum apply(k, i -> binomial(n-i-2, n-k-1)*R_0^(i+1));
-    total += sum apply(n-k, i -> binomial(n-i-2, k-1)*R_1^(i+1));
-    total
-    );
-
-evalValInvariant = method();
-evalValInvariant (CyclicFlats, Function, Function, Function) := (M, Uniform, Cuspidal, Unisum) -> (
->>>>>>> 940d8cb6a9a1a58824ac8f87ebb50727cc87d317
     -*
     Inputs:
         M: CyclicFlats matroid object.
