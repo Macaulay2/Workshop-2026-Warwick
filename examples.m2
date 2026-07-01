@@ -46,6 +46,7 @@ f=a*x_1^2+b*y_1
 g=c*y_2^2+d*x_2
 F = {f,g,(x_1-x_2)^2+(y_1-y_2)^2-s,diff_(x_1) f * diff_(y_2) g -diff_(y_1) f * diff_(x_2) g, diff_(x_1) f * (y_1-y_2) - diff_(y_1) f * (x_1-x_2)}
 elapsedTime G = CGBMain(F, {});
+ -- 1255.88s elapsed
 #G --=1637
 
 --example 4
