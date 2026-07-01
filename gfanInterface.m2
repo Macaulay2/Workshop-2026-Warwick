@@ -1148,7 +1148,10 @@ argStrs = hashTable {
 	"unimodular" => "--unimodular",
 	"vectorinput" => "--vectorinput",
 	"xml" => "--xml",
-	"tropicalbasistest" => "--tropicalbasistest"
+	"tropicalbasistest" => "--tropicalbasistest",
+        "p" => "-p",
+	"groebnerComplex" => "--groebnerComplex",
+	"initialIdeal" => "--initialIdeal"
 };
 
 
@@ -1168,7 +1171,8 @@ cmdLineArgs = hashTable {
 	"gfan _minors" => {"r", "d", "n"},
 	"gfan _mixedvolume" => {"j"},
 	"gfan _tropicallinearspace" => {"n", "d"},
-	"gfan _tropicalhypersurfacereconstruction" => {"i"}
+	"gfan _tropicalhypersurfacereconstruction" => {"i"},
+        "gfan _padic" => { "p" }
 }
 
 

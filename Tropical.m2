@@ -908,20 +908,21 @@ tropicalVarietyWithValExternal = method(
 --still need to add the multiplicities - currently they are empty
 tropicalVarietyWithpadicVal = (I) -> (
     d:=dim I;
-    gfanopt:=(new OptionTable) ++ {"groebnerComplex"=>true,"p"=>2};
-    GC := gfanGroebnerComplex(I,gfanopt);
+--    gfanopt:=(new OptionTable) ++ {"groebnerComplex"=>true,"p"=>2};
+--    GC := gfanGroebnerComplex(I,gfanopt);
+    GC := gfanGroebnerComplex(I, "groebnerComplex"=>true, "p"=>2);
     --First throw away cones for which the corresponding intial ideal contains a monomial
     GC = skeleton(d+1,GC);
     conesToKeep := {};
     conesToCheck:=maxCones GC;
     raysGC:=rays GC;
-    gfanopt2:=(new OptionTable) ++ {"initialIdeal"=>true,"p"=>2};
+--    gfanopt2:=(new OptionTable) ++ {"initialIdeal"=>true,"p"=>2};
     scan(conesToCheck, C->(
 	    --find initial ideal
 	    raysC:=raysGC_C;
 	    w:=flatten entries sum(rank source raysC, i-> raysC_i);
-    	    if w_0>0 then (
-	    	inI := ideal(gfanPadicInitialIdeal(I,w,gfanopt2));
+    	if w_0>0 then (
+	    	inI := ideal(gfanPadicInitialIdeal(I, w, "initialIdeal"=>true, "p"=>2));
 		-- worry about which ring this lives in
 		prodgens := product( gens ring inI, i->i);
     	    	if saturate(inI,prodgens) != ideal(promote(1,ring inI)) then 
