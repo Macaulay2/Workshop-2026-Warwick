@@ -62,7 +62,7 @@ CGBMain (List, List) := (F, S) -> (
 )
 
 CGBMainRec = method();
-CGBMainRec (List, List, List) := (F, S, prev) -> (
+CGBMainRec (List, List, List) := (F, S, memo) -> (
   --print("Computing CGB for F = " | toString F | " and S = " | toString S);
   if 1 % (ideal S) == 0 then (
     return {}
@@ -82,14 +82,13 @@ CGBMainRec (List, List, List) := (F, S, prev) -> (
   pruneG = apply(pruneG, g -> leadCoefficient sub(g, RExt'));
   h := lcm pruneG;
 
-  newprev := prev;
-  newprev = newprev | {(S, sub(h, R), for g in G list (
+  memo = memo | {(S, sub(h, R), for g in G list (
                   g' := sub(sub(g, {l => 1}), R);
                   if zero g' then continue;
                   g'))};
 
   if pruneG == {} then (
-    return newprev
+    return memo
   );
 
   -- H := pruneG; -- (takes too long to terminate if we do not factor h)
@@ -100,7 +99,7 @@ CGBMainRec (List, List, List) := (F, S, prev) -> (
   diffset := {};
   for hi in H do (
     diffset = {({sub(hi, RU)}, 1_RU)};
-    for t in newprev do (
+    for t in memo do (
       diffset = diffConstructibleByLC(diffset, (apply(t#0, p -> sub(p, RU)), sub(t#1, RU)));
       if isEmpty diffset then (
         break
@@ -109,9 +108,9 @@ CGBMainRec (List, List, List) := (F, S, prev) -> (
     if isEmpty diffset then (
       continue;
     );
-    newprev = CGBMainRec(F, append(S, sub(hi, R)), newprev);
+    memo = CGBMainRec(F, append(S, sub(hi, R)), memo);
   );
-  return newprev
+  return memo
 );
 
 -*
