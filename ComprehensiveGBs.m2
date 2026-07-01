@@ -25,14 +25,6 @@ export {
 
 -* Code section *-
 
-extendedRing = method();
-extendedRing (PolynomialRing) := R -> (
-  var := gens R;
-  coeff := gens baseRing R;
-  base := baseRing baseRing R;
-  return(base[local l, var, coeff]);  -- ordering of variables requires l >> var >> coeff
-);
-
 listOfFactors = method();
 listOfFactors (RingElement) := (h) -> (
   hfac := factor h;
