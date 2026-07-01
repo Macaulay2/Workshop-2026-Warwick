@@ -34,7 +34,7 @@ net CyclicFlats := M -> (
 cyclicFlats = method()
 cyclicFlats(HashTable) := H -> (
     -- TODO: Axiom checking
-    cyclicFlatsType = cFlats -> (
+    cyclicFlatsType := cFlats -> (
         scanPairs(cFlats, (Flat, Rank) -> (
                 if not instance(Flat, Set) then (
                     if debugLevel > 0 then printerr("Error: " | toString(Flat) | " is not a set.");
@@ -108,7 +108,8 @@ countStressedSubsets(CyclicFlats, ZZ, ZZ) := (M, r, h) -> (
     num
     );
 
-evalValInvariant (CyclicFlats, Function, Function, Function) := M, Uniform, Cuspidal, Unisum -> (
+evalValInvariant = method();
+evalValInvariant (CyclicFlats, Function, Function, Function) := (M, Uniform, Cuspidal, Unisum) -> (
     -*
     Inputs:
         M: CyclicFlats matroid object.
@@ -144,9 +145,9 @@ tutteUniform (ZZ, ZZ) := RingElement => opts -> (k, n) -> (
 -- From Proposition 7.18
 tutteCuspidal = method(Options => {BaseRing => tutteRing});
 tutteCuspidal (ZZ, ZZ, ZZ, ZZ) := RingElement => opts -> (r, k, h, n) -> (
-    R = opts.BaseRing;
+    R := opts.BaseRing;
 
-    alpha = (i, j, r, k) -> (
+    alpha := (i, j, r, k) -> (
         if i + j <= k then (R_0 - 1)^(k-i-j)(1-((R_0-1)(R_1-1))^(i-r)) else (R_1 - 1)^(k-i-j)(1-((R_0-1)(R_1-1))^(k-r-j))
         );
     
@@ -168,7 +169,7 @@ tutteUnisum (ZZ, ZZ, ZZ, ZZ) := RingElement => opts -> (r, k, h, n) -> (
 
 tutte = method(Options => {BaseRing => tutteRing});
 tutte CyclicFlats := RingElement => opts -> M -> (
-    R = opts.BaseRing
+    R := opts.BaseRing;
     evalValInvariant(M, tutteUniform, tutteCuspidal, tutteUnisum, BaseRing => R)
     );
     
