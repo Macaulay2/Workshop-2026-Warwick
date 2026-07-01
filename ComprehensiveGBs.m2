@@ -39,7 +39,7 @@ squareFreePart (RingElement) := (h) -> (
   return product listOfFactors h
 );
 
-CGBMain = method(Options => {result => new MutableList from {}});
+CGBMain = method(Options => {CGBMainTriples => new MutableList from {}});
 CGBMain (List, List) := o -> (F, S) -> (
   --print("Computing CGB for F = " | toString F | " and S = " | toString S);
   if 1 % (ideal S) == 0 then (
@@ -59,13 +59,13 @@ CGBMain (List, List) := o -> (F, S) -> (
   pruneG := select(G, g -> ((first first exponents(leadMonomial sub(g,RExt))) > 0) and any(exponents(sub(leadCoefficient sub(g,RFlat[getSymbol "l"]),RFlat)), i -> any(i_(toList(0..(#X-1))), i -> i > 0)));
   pruneG' := apply(pruneG, g -> leadCoefficient sub(g, RExt'));
   h := lcm pruneG';
-  (o.result)#(#(o.result)) = (S, sub(h, R), for g in G list (
+  (o.CGBMainTriples)#(#(o.CGBMainTriples)) = (S, sub(h, R), for g in G list (
                   g' := sub(sub(g, {l => 1}), R);
                   if zero g' then continue;
                   g'));
 
   if pruneG' == {} then (
-      return o.result
+      return o.CGBMainTriples
       );
 
   -- H := pruneG'; -- (takes too long to terminate if we do not factor h)
@@ -73,7 +73,7 @@ CGBMain (List, List) := o -> (F, S) -> (
 
   H := listOfFactors h;
   apply(H, hi -> CGBMain(F, append(S, sub(hi, R))));
-  return o.result
+  return o.CGBMainTriples
 );
 
 -*
