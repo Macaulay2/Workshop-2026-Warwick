@@ -39,8 +39,30 @@ squareFreePart (RingElement) := (h) -> (
   return product listOfFactors h
 );
 
-CGBMain = method(Options => {CGBMainTriples => new MutableList from {}});
-CGBMain (List, List) := o -> (F, S) -> (
+isConsistent = method();
+isConsistent (List, List) := (E, N) -> (
+  I := radical ideal E;
+  any(N, p -> not isMember(p, I))
+);
+
+diffLC = method();
+diffLC (Sequence, Sequence) := (A, B) -> (
+  result := {(A#0 | {B#1}, A#1)} | apply(B#0, p -> (A#0, A#1 * p));
+  select(result, t -> isConsistent(t#0, {t#1}))
+);
+
+diffConstructibleByLC = method();
+diffConstructibleByLC (List, Sequence) := (C, LC) -> (
+  flatten apply(C, t -> diffLC(t, LC))
+);
+
+CGBMain = method();
+CGBMain (List, List) := (F, S) -> (
+  CGBMainRec(F, S, {})
+)
+
+CGBMainRec = method();
+CGBMainRec (List, List, List) := (F, S, prev) -> (
   --print("Computing CGB for F = " | toString F | " and S = " | toString S);
   if 1 % (ideal S) == 0 then (
     return {}
@@ -59,21 +81,37 @@ CGBMain (List, List) := o -> (F, S) -> (
   pruneG := select(G, g -> ((first first exponents(leadMonomial sub(g,RExt))) > 0) and any(exponents(sub(leadCoefficient sub(g,RFlat[getSymbol "l"]),RFlat)), i -> any(i_(toList(0..(#X-1))), i -> i > 0)));
   pruneG' := apply(pruneG, g -> leadCoefficient sub(g, RExt'));
   h := lcm pruneG';
-  (o.CGBMainTriples)#(#(o.CGBMainTriples)) = (S, sub(h, R), for g in G list (
+
+  newprev := prev;
+  newprev = newprev | {(S, sub(h, R), for g in G list (
                   g' := sub(sub(g, {l => 1}), R);
                   if zero g' then continue;
-                  g'));
+                  g'))};
 
   if pruneG' == {} then (
-      return o.CGBMainTriples
+      return newprev
       );
 
   -- H := pruneG'; -- (takes too long to terminate if we do not factor h)
   -- H := unique apply(pruneG', g -> squareFreePart g); -- (takes a bit longer to terminate)
 
   H := listOfFactors h;
-  apply(H, hi -> CGBMain(F, append(S, sub(hi, R))));
-  return o.CGBMainTriples
+  RU := K[U];
+  diffset := {};
+  for hi in H do (
+    diffset = {({sub(hi, RU)}, 1_RU)};
+    for t in newprev do (
+      diffset = diffConstructibleByLC(diffset, (apply(t#0, p -> sub(p, RU)), sub(t#1, RU)));
+      if isEmpty diffset then (
+        break
+      );
+    );
+    if isEmpty diffset then (
+      continue;
+    );
+    newprev = CGBMainRec(F, append(S, sub(hi, R)), newprev);
+  );
+  return newprev
 );
 
 -*
