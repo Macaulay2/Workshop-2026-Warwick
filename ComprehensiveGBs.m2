@@ -127,7 +127,7 @@ CGB(List):=F->(
     for i in G do (
         result=result|(i_2);
         );
-    result
+    unique result
 )
 
 
@@ -202,9 +202,9 @@ cgbOnGraph(List,ZZ):=(G,d)->(
   S:=QQ[toSequence apply(E, l -> w_l)];
   R:=S[x_(V_0,1)..x_(V_(#V-1),d)];
   F:=for i in E list(sum(1..d,k->(R_(2*i_0+k-3)-R_(2*i_1+k-3))^2)-S_(position(E, j -> j === i)));
-  CGB(F)
+  (F, CGBMain(F, {}))
 )
-d=2git pullback
+d=2
 E={(1,2),(1,3),(2,3)}
 V={1,2,3}
 G={V,E}
