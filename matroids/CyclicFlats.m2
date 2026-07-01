@@ -278,7 +278,7 @@ evalValInvariant (CyclicFlats, Function, Function, Function) := M, Uniform, Cusp
     k := M.rank;
     n := #(M.groundSet);
     total := Uniform(k, n);
-    total += sum apply({1..k, r -> (
+    total += sum apply(1..k, r -> (
                 sum apply(r..n, h -> (
                         lam = countStressedSubsets(M, r, h);
                         lam * (Cuspidal(r, k, h, n) - Unisum(r, k, h, n))
