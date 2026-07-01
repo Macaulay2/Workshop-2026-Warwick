@@ -72,6 +72,7 @@ export {
     "ToricVectorBundleKlyachko",
     "ToricVectorBundleNew",
     -- Constructors
+	"lineBundle",
     "toricVectorBundle",
 	"trivialBundle",
     -- others
@@ -159,6 +160,27 @@ toricVectorBundle (NormalToricVariety, List, List) := {} >> o -> (baseVariety, m
 	symbol rank => rankE,
 	symbol cache => new CacheTable}
     )
+
+
+-- PURPOSE : Create the trivial bundle of rank p
+--   INPUT : "p", the rank of the bundle, and "tv", the base variety
+--  OUTPUT : the trivial bundle of rank p
+trivialBundle = method()
+trivialBundle (NormalToricVariety, ZZ) := (tv,r) -> (
+	p := #(rays tv);
+	toricVectorBundle(tv, apply(p, i -> id_((ring tv)^r)), apply(p, i -> toList(r:0)))
+)
+
+lineBundle = method()
+lineBundle ToricDivisor := D -> (
+	X := variety D;
+	jumps := for e in entries D list {e};
+	mats := for p in rays X list matrix {{1}};
+	toricVectorBundle(X, mats, jumps)
+)
+
+
+
 
 
 --TODO: once the overhaul is complete, we should remove these constructors.
@@ -675,16 +697,6 @@ isWellDefined ToricVectorBundleKlyachko := ( T -> (
 ----------------------------------------------------------------------------
 -- OPERATIONS ON TORIC VECTOR BUNDLES
 ----------------------------------------------------------------------------
-
--- PURPOSE : Create the trivial bundle of rank p
---   INPUT : "p", the rank of the bundle, and "tv", the base variety
---  OUTPUT : the trivial bundle of rank p
-trivialBundle = method()
-trivialBundle (NormalToricVariety, ZZ) := (tv,r) -> (
-	p := #(rays tv);
-	toricVectorBundle(tv, apply(p, i -> id_((ring tv)^r)), apply(p, i -> toList(r:0)))
-)
-
 
 ToricVectorBundle.directSum = args -> (
      args = toList args;
@@ -2009,7 +2021,7 @@ ToricVectorBundleMap = new Type of HashTable
 ToricVectorBundleMap.synonym = "map of toric vector bundles on a fixed toric variety"
 source ToricVectorBundleMap := ToricVectorBundleNew => f -> f.source
 target ToricVectorBundleMap := ToricVectorBundleNew => f -> f.target
-map ToricVectorBundleMap := Matrix => f -> f.map
+map ToricVectorBundleMap := {} >> o -> Matrix => f -> f.map
 matrix ToricVectorBundleMap := Matrix => f -> f.map
 
 -- TODO NET ToricVectorBundleMap
@@ -2074,8 +2086,29 @@ isWellDefined (ToricVectorBundleMap ) := Boolean => f ->(
     M := f.map;
     Xrays := rays(variety(E1));
     r :=rank E1;
-    minj:= min flatten filtrationJumps(E1);
-    maxj:= max flatten filtrationJumps(E1);
+	for p in Xrays do (
+		j := flatten join(filtrationJumps source f, filtrationJumps target f);
+		m1 := min j;
+		m2 := max j;
+
+		for i from m1 to m2 do (
+			amb := module (ring E2) ^ (rank E2);
+			f1 := map(amb, , sub(M * filteredPiece(E1,p,i),QQ));
+			f2 := map(amb, , sub(filteredPiece(E2,p,i),QQ));
+
+			if not isSubset(image f1, image f2) then (
+				return false
+			);
+		);
+
+
+	);
+
+
+
+
+
+-*
     for i from minj-1 to maxj+1 do(
         for p in Xrays do(
         if not isSubset(image (M*filteredPiece(E1,p,i)), image filteredPiece(E2, p, i))
@@ -2086,6 +2119,9 @@ isWellDefined (ToricVectorBundleMap ) := Boolean => f ->(
     f.cache.isWellDefined = true and f.cache.isWellDefined ;    
 	);
 	f.cache.isWellDefined
+*-
+	);
+	true
 )
 
 isInjective (ToricVectorBundleMap) := f -> (
@@ -5025,8 +5061,8 @@ assert not isWellDefined T1 -- fails because of cocycleCheck
 --tests for regCheck
 T1 = addDegrees(T,{matrix{{1,2},{3,1}},matrix{{-1,0},{3,1}},matrix{{1,2},{-3,-1}},matrix{{-1,0},{-3,-1}}})
 assert not isWellDefined T1 -- fails because of regCheck
-
 ///
+
 -- Test
 -- Checking trivialBundle
 TEST ///
@@ -5035,6 +5071,45 @@ E = trivialBundle(X,4)
 assert (rank E == 4)
 assert ((filtrationMatrices E)_0 == 1_((ring E)^4))
 assert ((filtrationJumps E)_0 == toList(4:0))
+///
+
+-*
+-- Test
+-- Checking watermelon
+TEST ///
+X = toricProjectiveSpace 2
+D1 = toricDivisor({1,0,0},X)
+D2 = toricDivisor({0,1,0},X)
+D3 = toricDivisor({0,0,1},X)
+
+L1 = lineBundle(D1)
+L2 = lineBundle(D2)
+L3 = lineBundle(D3)
+
+E1 = trivialBundle(X,1)
+E2 = L1 ++ L2 ++ L3
+
+f = map(E2, E1, matrix(QQ,{{1},{1},{1}}))
+
+assert (isInjective f)
+///
+*-
+
+
+
+-- Test
+-- Checking lineBundle
+TEST ///
+X = hirzebruchSurface 3
+D = toricDivisor({5,-3,1,2},X)
+L = lineBundle(D)
+assert (rank L == 1)
+assert (numColumns filteredPiece(L, (rays X)_0, 5) == 1)
+assert (numColumns filteredPiece(L, (rays X)_0, 6) == 0)
+
+assert (numColumns filteredPiece(L, (rays X)_1, -3) == 1)
+assert (numColumns filteredPiece(L, (rays X)_1, 0) == 0)
+
 ///
 
 end
