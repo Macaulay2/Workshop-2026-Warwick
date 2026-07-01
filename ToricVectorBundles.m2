@@ -73,6 +73,7 @@ export {
     "ToricVectorBundleNew",
     -- Constructors
     "toricVectorBundle",
+	"trivialBundle",
     -- others
     "addBase", 
     "addBaseChange", 
@@ -672,6 +673,16 @@ isWellDefined ToricVectorBundleKlyachko := ( T -> (
 ----------------------------------------------------------------------------
 -- OPERATIONS ON TORIC VECTOR BUNDLES
 ----------------------------------------------------------------------------
+
+-- PURPOSE : Create the trivial bundle of rank p
+--   INPUT : "p", the rank of the bundle, and "tv", the base variety
+--  OUTPUT : the trivial bundle of rank p
+trivialBundle = method()
+trivialBundle (NormalToricVariety, ZZ) := (tv,r) -> (
+	p := #(rays tv);
+	toricVectorBundle(tv, apply(p, i -> id_((ring tv)^r)), apply(p, i -> toList(r:0)))
+)
+
 
 ToricVectorBundle.directSum = args -> (
      args = toList args;
@@ -2016,9 +2027,9 @@ isWellDefined(ToricVectorBundleMap ) := Boolean => f ->(
     
 )
 
-
+-*
 image (ToricVectorBundleMap) :=(f
-    -*
+    
     E1:= source f;
     X:= variety E1;
         minj:= min flatten filtrationJumps(E1);
@@ -2028,9 +2039,9 @@ image (ToricVectorBundleMap) :=(f
         if not isSubset(image (filteredPiece(E1,p,i)*M), image filteredPiece(E2, p, i)) then (print(p,i); return false));
         );
     toricVectorBundle(X, )
-    -*
+    
 )
-
+*-
 
 
 -- PURPOSE : Computing the image bundle of a toric vector bundle
@@ -4091,6 +4102,7 @@ document {
      SeeAlso => {cartierIndex}
      
      }
+
 -*
 doc ///
     Key
@@ -4918,7 +4930,15 @@ T1 = addDegrees(T,{matrix{{1,2},{3,1}},matrix{{-1,0},{3,1}},matrix{{1,2},{-3,-1}
 assert not isWellDefined T1 -- fails because of regCheck
 
 ///
-
+-- Test
+-- Checking trivialBundle
+TEST ///
+X = toricProjectiveSpace 2
+E = trivialBundle(X,4)
+assert (rank E == 4)
+assert ((filtrationMatrices E)_0 == 1_((ring E)^4))
+assert ((filtrationJumps E)_0 == toList(4:0))
+///
 
 end
 
