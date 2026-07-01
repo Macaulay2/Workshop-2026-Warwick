@@ -120,6 +120,7 @@ protect degreesList
 protect cocycle
 protect weights
 protect isomorphic
+protect iso
 
 ---------------------------------------------------------------------------
 -- DEFINING NEW TYPES
@@ -902,12 +903,28 @@ areIsomorphic = method(TypicalValue => Boolean)
 -- new areIsomorphic for ToricVectorBundleNew
 -- this is just trivial for now to make sure that the == has been implemented appropriately
 areIsomorphic (ToricVectorBundleNew,ToricVectorBundleNew) := Boolean => (T1,T2) -> (
-    --need to add back in the cache checks!
-    --defining the potential isomorphism as the identity from T1 to T2
-    isoMatrix := map(T2,T1,id_((coefficientRing ring variety T1)^(rank T1)));
-    --checking if this map is injective and surjective. if it is, this will tell us that
-    --these bundles are equivariantly isomorphic
-    (isInjective isoMatrix) --and (isSurjective isoMatrix)
+    --Checking if T1 and T2 have already been deemed isomorphic. If not, create entries in a cache
+    --If T1 does have an entry for iso in the cache, we check if any of the maps targets is T2
+    --i.e. check if we've already deemed T1 iso T2
+    if T1.cache.?iso then(
+        for i in T1.cache.iso do (
+            if i.target === T2 then return true --presumably don't need to store the map in cache again
+            
+            );
+        );
+    if not T1.cache.?iso then (
+        T1.cache.iso = {};
+        );
+    if not T2.cache.?iso then (
+        T1.cache.iso = {};
+        );
+     --Checking if isomorphic!
+     --defining the potential isomorphism as the identity from T1 to T2
+     isoMatrix := map(T2,T1,id_((coefficientRing ring variety T1)^(rank T1)));
+     --checking if this map is injective and surjective. if it is, this will tell us that
+     --these bundles are equivariantly isomorphic
+     ((isInjective isoMatrix) and (isSurjective isoMatrix))
+     
     )
 
 areIsomorphic (ToricVectorBundleKlyachko,ToricVectorBundleKlyachko) := (T1,T2) -> (
@@ -5156,6 +5173,16 @@ assert (numColumns filteredPiece(L, (rays X)_0, 6) == 0)
 assert (numColumns filteredPiece(L, (rays X)_1, -3) == 1)
 assert (numColumns filteredPiece(L, (rays X)_1, 0) == 0)
 
+///
+
+--Test
+--Checking areIsomorphic
+--first test, check trivial bundles of different ranks are not isomorphic
+--map doesn't allow you to define a map between these anyways! Is this what we want?
+TEST ///
+T1 = trivialBundle(toricProjectiveSpace 2,2);
+T2 = trivialBundle(toricProjectiveSpace 2,4);
+assert not areIsomorphic(T1,T2)
 ///
 
 end
