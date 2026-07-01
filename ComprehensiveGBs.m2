@@ -181,11 +181,37 @@ doc ///
 
 
 -* Test section *-
+TEST /// -* Testing  CGBMain on a*x+b*y *-
+
+Ptest = QQ[a,b];
+Rtest = Ptest[x,y, MonomialOrder => Lex];
+
+params = gens Ptest;
+variables = gens Rtest
+
+aR = promote (params#0 , Rtest);
+bR = promote (params#1 , Rtest);
+   
+xR = variables#0;
+yR = variables#1;
+
+
+result = CGBMain({aR*xR + bR*yR}, {});
+
+expected1 = ({},aR, {aR*xR + bR*yR});
+expected2 = ({aR},bR,{aR^2*xR + aR*bR*yR, aR*xR + bR*yR});
+expected3 = ({aR,bR}, 1_Rtest, {aR*xR + bR*yR});
+
+assert(#result == 3);
+
+assert member(expected1, result);
+assert member(expected2, result);
+assert member(expected3, result);
+
+///
 TEST /// -* [insert short title for this test] *-
 -- test code and assertions here
 -- may have as many TEST sections as needed
-
-
 
 ///
 d=2
