@@ -4,4 +4,43 @@ gfan todo
 
 - new or adapted parser for new datatype: SymmetricFan works, but the new datatype PolyhedralFan does not - it contains less information so the parser doesn't work
 
-- 
+
+
+-- TEST gfanTropicalIntersection
+TEST ///
+    gfanGroebnerCone,  
+    QQ[a,b];
+    QQ[x,y];
+    assert(try (gfanGroebnerCone(markedPolynomialList {{x},{x+y}}, markedPolynomialList {{a},{a+b}}); false) else true)
+///
+
+-- TEST gfanTropicalIntersection
+TEST ///
+QQ[x,y];
+
+
+    I = gfanTropicalIntersection {x+y, x+y+1};
+    assert(instance(I, Sequence))
+    assert(#I === 2)
+    F = I#0;
+    mult = I#1;
+    assert(instance(F, Fan))
+    assert(mult === {1})
+    assert(ambDim(F) === 2)
+    assert(dim(F) === 1)
+    assert(rays(F) === matrix{{1},{1}})
+    assert(maxCones(F) === {{0}})
+
+
+    isBasis = gfanTropicalIntersection({x+y, x+y+1}, "tropicalbasistest" => true);
+    assert(isBasis === false)
+///
+
+-- -- TEST gfanSaturation
+	 TEST ///
+	 QQ[x,y,z];
+	 I = ideal(y*z*(x-1), x*(z^2 - y));
+	 S = gfanSaturation I;
+	 assert(S == { z^2 -y, x-1})
+    ///
+

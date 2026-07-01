@@ -28,8 +28,8 @@ export {
 	"MarkedPolynomialList",
 	"markedPolynomialList",
 	"MPLConverter",
-	"polymakeFanToFan",
-	"polymakeConeToCone",
+--	"polymakeFanToFan",
+--	"polymakeConeToCone",
 	"gfan", -- done!
 	"gfanBuchberger", -- done!
 	"gfanDoesIdealContain", -- done!
@@ -4462,7 +4462,45 @@ doc///
 -- functions with wrong output datatype: MixedVolume (string instead of int)
 -- math q: Stats.
 --  Need to test ==
+-- TEST gfanIdealToString
+    TEST ///
+    QQ[x,y,z];
+    I = ideal(x^2 + y, x*z);
+    S = gfanIdealToString I;
+    assert(class S === String)
+    assert(match("x", S))
+    ///
 
+-- TEST toString, net, texMath, expression for MarkedPolynomialList
+    TEST ///
+    QQ[x,y,z];
+    L = markedPolynomialList {{x^2, y}, {x^2 + y^2, x*z + y}};
+    assert(class toString L === String)
+    assert(class net L === Net)
+    assert(class texMath L === String)
+    assert(instance(expression L, Expression))
+    ///
+
+-- TEST gfanVersion
+    TEST ///
+    gfanVer := gfanVersion();
+    assert(class gfanVer === String)
+    ///
+    -- TEST MarkedPolynomialList type
+    TEST ///
+        QQ[x,y,z];
+        L = markedPolynomialList {{x^2, y^2}, {x^2 + y^2 + z^2, x^2 + y^2 + z^2}};
+        assert(class L === MarkedPolynomialList)
+        assert(instance(L, MarkedPolynomialList))
+    ///
+
+    -- TEST gfanFunctions
+        TEST ///
+           assert(class gfanFunctions === HashTable)
+           assert(gfanFunctions#gfan === "gfan")
+           assert(gfanFunctions#gfanBuchberger === "gfan _buchberger")
+           assert(gfanFunctions#gfanStats === "gfan _stats")
+    ///
 
 --        TEST gfan
 	TEST ///
@@ -4603,11 +4641,31 @@ doc///
 	  assert(rank(linealitySpace(C)) === 1)
  	  assert(dim(C) === 1)
 	///
-	
+	-- TEST gfanTropicalIntersection
+    TEST ///
+        QQ[x,y];
+
+
+        I = gfanTropicalIntersection {x+y, x+y+1};
+        assert(instance(I, Sequence))
+        assert(#I === 2)
+        F = I#0;
+        mult = I#1;
+        assert(instance(F, Fan))
+        assert(mult === {1})
+        assert(ambDim(F) === 2)
+        assert(dim(F) === 1)
+        assert(rays(F) === matrix{{1},{1}})
+        assert(maxCones(F) === {{0}})
+
+
+        isBasis = gfanTropicalIntersection({x+y, x+y+1}, "tropicalbasistest" => true);
+        assert(isBasis === false)
+    ///
 	-- -- TEST gfanHomogeneitySpace
 	 TEST ///
 	 QQ[x,y,z];
-	C = gfanHomogeneitySpace {x+y^2, y+z^2}
+	 C = gfanHomogeneitySpace {x+y^2, y+z^2}
 	 assert(ambDim(C) === 3)
 	 assert(linealitySpace(C) === transpose matrix {{4, 2, 1}})
 	 assert(rank(linealitySpace(C)) === 1)
