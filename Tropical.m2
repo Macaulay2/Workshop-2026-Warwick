@@ -2461,7 +2461,7 @@ I=ideal(x+y+2*z)
 T=tropicalVarietyWithpadicVal(I)
 F=fan T
 assert(rank(linealitySpace(F))==1)
-assert(#(vertices(F))==1)
+assert(rank(source(vertices(F)))==1)
 assert(#maxPolyhedra(F)==3)
 ///
 
