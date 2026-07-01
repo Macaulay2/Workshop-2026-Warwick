@@ -7,7 +7,8 @@ newPackage("CyclicFlats",
 		Email => ""}},
 	Headline => "computations with cyclic flats",
 	Keywords => {"Matroids"},
-	HomePage => ""
+	HomePage => "",
+        DebuggingMode => true
 )
 export {
 	"CyclicFlats",
@@ -19,7 +20,11 @@ export {
         "cyclicFlatsAxioms",
         "evalValInvariant",
         "cFlats",
-        "recFlats"
+        "recFlats",
+        "tutte",
+        "tutteUniform",
+        "tutteCuspidal",
+        "tutteUnisum"
 }
 
 needsPackage "Posets"
@@ -36,7 +41,6 @@ net CyclicFlats := M -> (
 
 cyclicFlats = method()
 cyclicFlats(HashTable) := H -> (
-    -- TODO: Axiom checking
     cyclicFlatsType := cFlats -> (
         scanPairs(cFlats, (Flat, Rank) -> (
                 if not (instance(Flat, Set) or instance(Flat, List) or instance(Flat, Sequence)) then (
@@ -130,9 +134,9 @@ evalValInvariant (CyclicFlats, Function, Function, Function) := (M, Uniform, Cus
                 sum apply(r..n, h -> (
                         lam := countStressedSubsets(M, r, h);
                         lam * (Cuspidal(r, k, h, n) - Unisum(r, k, h, n))
-                        );
-                    );
-                );
+                        )
+                    )
+                )
             );
         total
         );
@@ -153,16 +157,16 @@ tutteCuspidal (ZZ, ZZ, ZZ, ZZ) := RingElement => opts -> (r, k, h, n) -> (
     R := opts.BaseRing;
 
     alpha := (i, j, r, k) -> (
-        if i + j <= k then (R_0 - 1)^(k-i-j)(1-((R_0-1)(R_1-1))^(i-r)) else (R_1 - 1)^(k-i-j)(1-((R_0-1)(R_1-1))^(k-r-j))
+        if i + j <= k then (R_0 - 1)^(k-i-j)*(1-((R_0-1)*(R_1-1))^(i-r)) else (R_1 - 1)^(k-i-j)*(1-((R_0-1)*(R_1-1))^(k-r-j))
         );
     
     total := tutteUniform(k-r, n-h, BaseRing => R) * tutteUniform(r, h, BaseRing => R);
     total += sum apply(r+1..h, i -> (
             sum apply(0..k-r-1, j -> (
                     binomial(h, i) * binomial(n-h, j) * alpha(i, j, r, k)
-                    );
-                );
-            );
+                    )
+                )
+            )
         );
     total
     );
