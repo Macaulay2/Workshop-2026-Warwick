@@ -8,20 +8,22 @@ F = {a*x + b*y}
 CGBMain(F, {})
 CGB(F)
 
-debug ComprehensiveGBs
 
 --example 9
 R = QQ[a,b][x,y,z, MonomialOrder => Lex]
 F = {x^3 - a, y^4 - b, x+y-z}
 G = CGBMain(F, {});
-G_1
+#G
+
+debug ComprehensiveGBs
+
 
 --example on graph=triangle
 E={(1,2),(1,3),(2,3)}
 V={1,2,3}
 G={V,E}
 (F,GG)=cgbOnGraph(G,2)
-netList cgbOnGraph(G,2) 
+netList GG
 
 
 --example on graph=square
@@ -32,7 +34,7 @@ G={V,E}
 netList for i in GG list i_{0,1} --showing only the segment's parameters
 
 
---example 2
+--SS example 2
 R = QQ[A,B][X,Y,Z, MonomialOrder => Lex]
 F = {X^4-A,Y^5-B,X+Y-Z}
 elapsedTime G = CGBMain(F, {});
@@ -40,7 +42,7 @@ elapsedTime G = CGBMain(F, {});
 #G --=230
 
 
---example 3
+--SS example 3
 R = QQ[a,b,c,d][x_1,x_2,y_1,y_2,s, MonomialOrder => Lex]
 f=a*x_1^2+b*y_1
 g=c*y_2^2+d*x_2
@@ -49,15 +51,15 @@ elapsedTime G = CGBMain(F, {});
  -- 1255.88s elapsed
 #G --=1637
 
---example 4
+--SS example 4
 R = QQ[a,b,c,e][x_1,x_2,y_1,y_2, MonomialOrder => Lex]
 f=x_1^2+y_1^2+a
 g=y_2-b*x_2^2+c
 F = {f,g}
 G = CGBMain(F, {});
-G_1
 
---example 5 (40s)
+
+--SS example 5 (40s)
 R = QQ[a,b][x,y,z,s, MonomialOrder => Lex]
 f=(x-a)^2+b*y^2+b
 F = {f-z,x^2+y^2+z^2-s,x+z*diff(x, f),y+z*diff(y, f)}
