@@ -159,6 +159,7 @@ toricVectorBundle (NormalToricVariety, List, List) := {} >> o -> (baseVariety, m
 	symbol cache => new CacheTable}
     )
 
+
 --TODO: once the overhaul is complete, we should remove these constructors.
 
 -- PURPOSE : Building a Vector Bundle of rank 'k' on the Toric Variety given by the Fan 'F'
@@ -1959,7 +1960,7 @@ matrix ToricVectorBundleMap := Matrix => f -> f.map
 -- We allow defining a map that is not well defined
 map(ToricVectorBundleNew, ToricVectorBundleNew, Matrix):= ToricVectorBundleMap => opts -> (E2, E1, M) ->(
     if ring E1 =!= ring E2 then error "The vector bundles need to be defined over the same ring";
-    if numRows M =!= rank E1 or numColumns M =!= rank E2 then error " The dimensions of the matrix don't match the ranks of the bundles";
+    if numRows M =!= rank E2 or numColumns M =!= rank E1 then error " The dimensions of the matrix don't match the ranks of the bundles";
     if ring M =!= ring E1 or ring M =!= ring E2 then error " The matrix needs to be defined over the same ring as the bundles";
     if variety E1 =!= variety E2 then error "The base varieties of the bundles have to coincide";
 
@@ -1975,7 +1976,9 @@ map(ToricVectorBundleNew, ToricVectorBundleNew, Matrix):= ToricVectorBundleMap =
 
 ToricVectorBundleMap#id = E -> map(E,E, id_(ring E^(rank E) ))
 
-isWellDefined(ToricVectorBundleMap ) := Boolean => f ->(
+isWellDefined (ToricVectorBundleMap ) := Boolean => f ->(
+	if not f.cache.?isWellDefined then(
+	f.cache.isWellDefined = true;
     K := keys f;
     expectedKeys := set{symbol source, symbol target, symbol map, symbol cache};
     if set K =!= expectedKeys then (
@@ -2011,20 +2014,21 @@ isWellDefined(ToricVectorBundleMap ) := Boolean => f ->(
     --Check mathematical structure
     E1 := source f;
     E2 := target f;
-    M := map f;
-    Xrays:= rays(variety(E1));
+    M := f.map;
+    Xrays := rays(variety(E1));
     r :=rank E1;
     minj:= min flatten filtrationJumps(E1);
-    maxj:= min flatten filtrationJumps(E1);
-    for i from minj to maxj do(
+    maxj:= max flatten filtrationJumps(E1);
+    for i from minj-1 to maxj+1 do(
         for p in Xrays do(
-        if not isSubset(image (filteredPiece(E1,p,i)*M), image filteredPiece(E2, p, i)) then (print(p,i); return false));
+        if not isSubset(image (M*filteredPiece(E1,p,i)), image filteredPiece(E2, p, i))
+		 then (print( concatenate("\n Not well defined at ray " ,toString p ," and index ", toString i)); f.cache.isWellDefined = false;);
+		 );
         );
-    
 
-
-    true    
-    
+    f.cache.isWellDefined = true and f.cache.isWellDefined ;    
+	);
+	f.cache.isWellDefined
 )
 
 -*
