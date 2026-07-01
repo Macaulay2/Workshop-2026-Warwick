@@ -24,7 +24,7 @@ export {
     "cgbOnGraph"
     } -- functions, objects to export
 
-protect result
+protect CGBMainTriples
 
 -* Code section *-
 
