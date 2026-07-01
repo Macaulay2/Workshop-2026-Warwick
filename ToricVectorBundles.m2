@@ -80,7 +80,6 @@ export {
     "addBaseChange", 
     "addDegrees", 
     "addFiltration",
-    "areIsomorphicNew",
     "areIsomorphic",
     "base",
     "cartierIndex",
@@ -890,22 +889,27 @@ filtration ToricVectorBundleKlyachko := tvb -> tvb#"filtrationMatricesTable"
 
 --TODO: A nice method, well-commented. we just need to modernize the extraction methods inside.
 
--- new areIsomorphic for ToricVectorBundleNew
--- this is just trivial for now to make sure that the == has been implemented appropriately
-areIsomorphicNew = method();
-areIsomorphicNew (ToricVectorBundleNew,ToricVectorBundleNew) := Boolean => (T1,T2) -> (
-    if T1 === T2 then return true
-    else return false
-    )
 -- PURPOSE : Checking for the descriptions of two given vector bundles in Klyachko's description if they are isomorphic
 --   INPUT : '(T1,T2)',  two ToricVectorBundleKlyachko
 --  OUTPUT : 'true', if they are isomorphic, 'false' otherwise
 -- COMMENT : If the check reveals that they are isomorphic, the isomorphism can be obtained with the function isomorphism
 
-ToricVectorBundleNew == ToricVectorBundleNew := (T1,T2) -> (areIsomorphicNew(T1,T2))
+ToricVectorBundleNew == ToricVectorBundleNew := (T1,T2) -> (areIsomorphic(T1,T2))
 
 
 areIsomorphic = method(TypicalValue => Boolean)
+
+-- new areIsomorphic for ToricVectorBundleNew
+-- this is just trivial for now to make sure that the == has been implemented appropriately
+areIsomorphic (ToricVectorBundleNew,ToricVectorBundleNew) := Boolean => (T1,T2) -> (
+    --need to add back in the cache checks!
+    --defining the potential isomorphism as the identity from T1 to T2
+    isoMatrix := map(T2,T1,id_((coefficientRing ring variety T1)^(rank T1)));
+    --checking if this map is injective and surjective. if it is, this will tell us that
+    --these bundles are equivariantly isomorphic
+    (isInjective isoMatrix) --and (isSurjective isoMatrix)
+    )
+
 areIsomorphic (ToricVectorBundleKlyachko,ToricVectorBundleKlyachko) := (T1,T2) -> (
      -- Creating the entries in the cacheTables of the two bundles if they are not yet present
      if not T1.cache.?isomorphic then (
