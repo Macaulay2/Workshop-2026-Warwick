@@ -47,3 +47,18 @@ elapsedTime G = CGBMain(F, {});
 #G
 netList for j from 0 to 9 list (G_j)_{0,1}
 
+
+
+
+-- SS Example 6:
+
+R = QQ[a,b][x, y, z, s, MonomialOrder => Lex]
+f = (x - a)^2 + a*y^2 + b
+F = {
+    f - z,
+    x^2 + y^2 + z^2 - s,
+    x + diff(x, f)*z,
+    y + diff(y, f)*z
+    }
+elapsedTime GG = CGBMain(F, {});
+#GG
