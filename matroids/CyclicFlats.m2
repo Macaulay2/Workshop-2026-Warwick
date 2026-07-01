@@ -256,6 +256,31 @@ tuttePolynomialUniform (ZZ, ZZ) := RingElement => opts -> (k, n) -> (
     total
     );
 
+evalValInvariant = method();
+evalValInvariant (CyclicFlats, Function, Function, Function) := M, Uniform, Cuspidal, Unisum -> (
+    -*
+    Inputs:
+        M: CyclicFlats matroid object.
+        Other params are evaluations of the valuative invariant on specific types of matroids indexed by tuples of integers:
+        Uniform: (k, n): Uniform matroid U_{k, n}
+        Cuspidal: (r, k, h, n): Cuspidal matroid L_{r, k, h, n}
+        Unisum: (r, k, h, n): Sum of uniform matroids U_{r, h} + U_{k-r, n-h}
+    *-
+    k := M.rank;
+    n := #(M.groundSet);
+    total := Uniform(k, n);
+    total += sum apply({1..k, r -> (
+                sum apply(r..n, h -> (
+                        lam = countStressedSubsets(M, r, h);
+                        lam * (Cuspidal(r, k, h, n) - Unisum(r, k, h, n))
+                        );
+                    );
+                );
+            );
+        );
+    total
+    );
+
 
 
 -- End CyclicFlats Code -------------------------------------------------------
