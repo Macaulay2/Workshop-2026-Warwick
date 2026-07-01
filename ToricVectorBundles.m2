@@ -161,6 +161,27 @@ toricVectorBundle (NormalToricVariety, List, List) := {} >> o -> (baseVariety, m
     )
 
 
+-- PURPOSE : Create the trivial bundle of rank p
+--   INPUT : "p", the rank of the bundle, and "tv", the base variety
+--  OUTPUT : the trivial bundle of rank p
+trivialBundle = method()
+trivialBundle (NormalToricVariety, ZZ) := (tv,r) -> (
+	p := #(rays tv);
+	toricVectorBundle(tv, apply(p, i -> id_((ring tv)^r)), apply(p, i -> toList(r:0)))
+)
+
+lineBundle = method()
+lineBundle ToricDivisor := D -> (
+	X := variety D;
+	jumps := for e in entries D list {e};
+	mats := for p in rays X list matrix {{1}};
+	toricVectorBundle(X, mats, jumps)
+)
+
+
+
+
+
 --TODO: once the overhaul is complete, we should remove these constructors.
 
 -- PURPOSE : Building a Vector Bundle of rank 'k' on the Toric Variety given by the Fan 'F'
@@ -675,16 +696,6 @@ isWellDefined ToricVectorBundleKlyachko := ( T -> (
 ----------------------------------------------------------------------------
 -- OPERATIONS ON TORIC VECTOR BUNDLES
 ----------------------------------------------------------------------------
-
--- PURPOSE : Create the trivial bundle of rank p
---   INPUT : "p", the rank of the bundle, and "tv", the base variety
---  OUTPUT : the trivial bundle of rank p
-trivialBundle = method()
-trivialBundle (NormalToricVariety, ZZ) := (tv,r) -> (
-	p := #(rays tv);
-	toricVectorBundle(tv, apply(p, i -> id_((ring tv)^r)), apply(p, i -> toList(r:0)))
-)
-
 
 ToricVectorBundle.directSum = args -> (
      args = toList args;
@@ -4990,6 +5001,22 @@ E = trivialBundle(X,4)
 assert (rank E == 4)
 assert ((filtrationMatrices E)_0 == 1_((ring E)^4))
 assert ((filtrationJumps E)_0 == toList(4:0))
+///
+
+///
+-- Test
+-- Checking lineBundle
+TEST ///
+X = hirzebruchSurface 3
+D = toricDivisor({5,-3,1,2},X)
+L = lineBundle(D)
+assert (rank L == 1)
+assert (numColumns filteredPiece(L, (rays X)_0, 5) == 1)
+assert (numColumns filteredPiece(L, (rays X)_0, 6) == 0)
+
+assert (numColumns filteredPiece(L, (rays X)_1, -3) == 1)
+assert (numColumns filteredPiece(L, (rays X)_1, 0) == 0)
+
 ///
 
 end
