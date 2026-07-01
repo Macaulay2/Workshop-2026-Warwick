@@ -2031,6 +2031,38 @@ isWellDefined (ToricVectorBundleMap ) := Boolean => f ->(
 	f.cache.isWellDefined
 )
 
+isInjective (ToricVectorBundleMap) := f -> (
+
+	if not isWellDefined f then (
+		if debugLevel > 0 then (
+			<< "-- the map is not well defined" << endl);
+		return false
+	);
+	
+	if not isInjective (map f) then (
+		if debugLevel > 0 then (
+			<< "-- the map is not injective" << endl);
+		return false
+	);
+	
+	X := variety(source f);
+	for p in rays X do (
+		r := join(filtrationJumps source f, filtrationJumps target f);
+		m1 := min r;
+		m2 := max r;
+		for i from m1 to m2 do (
+			if not (numColumns filteredPiece(source f, p, i) <= numColumns filteredPiece(target f, p, i)) then (
+				if debugLevel > 0 then (
+					<< "some error message" << endl
+					);
+				print 1
+				);
+				return false
+			);
+		);
+		return true
+	)
+
 -*
 image (ToricVectorBundleMap) :=(f
     
