@@ -12,7 +12,7 @@ PGBMain (List, List, List) := (E, N, F) -> (
     );
     R = ring F_0;
     CoeffRing = ring E_0;
-    G := new Set from (gens(gb(apply((E | N), e -> promote(e, R)))));
+    G := first entries gens(gb (ideal(apply((E | N), e -> promote(e, R)))));
     if member(promote(1, R), G) then (
         return {E, N, {promote(1, R)}}
     );
@@ -21,7 +21,12 @@ PGBMain (List, List, List) := (E, N, F) -> (
         if instance(l, Nothing) then (continue);
         l
     ); 
-    productList = product(Gr, N, (a, b) -> a*promote(b, R));
+    productList =flatten ( for g in Gr list (
+        for n in N list (
+            n*g
+            )
+        ));
+    product(Gr, N, (a, b) -> a*promote(b, R));
     if not(consistent(E, productList)) then (
         PGB := {};
     ) else (
