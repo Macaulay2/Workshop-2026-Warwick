@@ -197,17 +197,17 @@ xR = variables#0;
 yR = variables#1;
 
 
-result = CGBMain({aR*xR + bR*yR}, {});
+resultTest = CGBMain({aR*xR + bR*yR}, {});
 
 expected1 = ({},aR, {aR*xR + bR*yR});
 expected2 = ({aR},bR,{aR^2*xR + aR*bR*yR, aR*xR + bR*yR});
 expected3 = ({aR,bR}, 1_Rtest, {aR*xR + bR*yR});
 
-assert(#result == 3);
+assert(#resultTest == 3);
 
-assert member(expected1, result);
-assert member(expected2, result);
-assert member(expected3, result);
+assert member(expected1, resultTest);
+assert member(expected2, resultTest);
+assert member(expected3, resultTest);
 
 ///
 
