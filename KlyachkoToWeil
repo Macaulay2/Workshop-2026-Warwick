@@ -1,0 +1,28 @@
+jumpsToSubspaces := (fJumps,fMatrices,a) -> (
+if length a != length fJumps then error "The length of the vector a must match the number of filtration jumps.";
+E=QQ^(rank fMatrices#0);
+I={};
+for i from 0 to #fJumps-1 do (J={}; 
+	for j from 0 to length fJumps#i -1 do ((
+
+		if (fJumps#i)#j >= a#i then J=append (J, (entries(fMatrices#i)_j)));
+	
+		Jspan=image transpose(map(E,E,matrix J)););
+	I=append(I,Jspan););
+S=intersect(I);
+return S;
+)
+
+klyachkoToWeil := (V) -> (
+	L=flatten (filtrationJumps V);
+	amin=min(L);
+	amax=max(L);
+	d=length (filtrationJumps V);
+	alist= toList (d:amin).. toList (d:amax);
+	E=QQ^(rank filtrationMatrices V#0);
+	strata={};
+	for a in alist do (
+		 strata = append (strata,jumpsToSubspaces (filtrationJumps V, filtrationMatrices V, a));
+		);
+
+)
