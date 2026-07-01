@@ -902,7 +902,7 @@ areIsomorphic (ToricVectorBundleKlyachko,ToricVectorBundleKlyachko) := (T1,T2) -
 		    R = drop(R,1);
 		    -- Check for the first ray, if they have the same filtration numbers and dimensions of the filtration steps
 		    sort fMT1#r0 == sort fMT2#r0 and (
-			 -- if this is the case, resort both base matrices according to the filtration and compute the possible isomorphism
+			 -- if this is the case, re-sort both base matrices according to the filtration and compute the possible isomorphism
 			 A := submatrix'(sort(promote(fMT1#r0,bundleRing) || bT1#r0),{0},);
 			 B := submatrix'(sort(promote(fMT2#r0,bundleRing) || bT2#r0),{0},);
 			 isoMatrix = B*(A^-1);
