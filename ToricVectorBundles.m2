@@ -1,6 +1,7 @@
 --*- coding: utf-8 -*-
 
 --TODO: update these blurbs to reflect the overhaul project at M2 workshop
+--TODO: comments about methods
 
 ---------------------------------------------------------------------------
 -- PURPOSE: Computations with vector bundles on toric varieties 
@@ -100,10 +101,9 @@ export {
     "projectiveSpaceFan",
     "raySortOfFan",
     "customConeSort",
-    -- keys
+    -- getters
     "filtrationMatrices",
-    "filtrationJumps",
-    "baseVariety"
+    "filtrationJumps"
     }
 
 
@@ -316,13 +316,13 @@ net ToricVectorBundleKlyachko := tvb -> ( horizontalJoin flatten (
 -- GETTER FUNCTIONS FOR TORICVECTORBUNDLESNEW 
 --------------------------------------------------------------
 
-variety( ToricVectorBundleNew) := E -> (E#variety)
-
-rank(ToricVectorBundleNew):= E ->(E#rank)
-
-fitrationJumps := E -> (E#filtrationJumps)
-
-fitrationMatrices := E -> (E#filtrationMatrices)
+variety ToricVectorBundleNew := E -> E.variety
+rank ToricVectorBundleNew:= E ->E.rank
+filtrationJumps = method()
+filtrationJumps ToricVectorBundleNew := E -> (E.filtrationJumps)
+filtrationMatrices = method()
+filtrationMatrices ToricVectorBundleNew := E -> (E.filtrationMatrices)
+rays ToricVectorBundleNew := {} >> o -> E -> rays (E.variety)
 
 -- filteredPiece( TprocVectorBundleNew, ray, index ) outs matrix (span of the corresponding columns)
 
@@ -340,11 +340,10 @@ details ToricVectorBundleKlyachko := tvb -> (
       hashTable apply(rays tvb, r -> r => (tvb#"baseTable"#r,tvb#"filtrationMatricesTable"#r)))
 
 -- This outupts a list of hash tables so that the order of the rays is displayed correctly
-details ToricVectorBundleNew := tvb ->(
-    raysX := rays(tvb#variety );
-    filts := filtrationMatrices (tvb);
-    jumps := filtrationJumps( tvb); 
-    for i in #raysX -1 list( hashTable {raysX_i => {filts_i, jumps_i } } )
+details ToricVectorBundleNew := E ->(
+    filts := filtrationMatrices E;
+    jumps := filtrationJumps E; 
+    hashTable for i to #(rays E) -1 list (rays E)_i => {filts_i, jumps_i }
 )
 
 
@@ -698,6 +697,162 @@ regCheck ToricVectorBundleKaneyama := (cacheValue symbol regCheck)( tvb -> (
 -- OPERATIONS ON TORIC VECTOR BUNDLES
 ----------------------------------------------------------------------------
 
+ToricVectorBundle.directSum = args -> (
+     args = toList args;
+     T := args#0;
+     scan(drop(args,1), E -> T = T ++ E);
+     T)      
+ToricVectorBundle ++ ToricVectorBundle := (tvb1,tvb2) -> (
+	  -- Checking for input errors
+	  if tvb1#"ToricVariety" != tvb2#"ToricVariety" then error("Expected the bundles to be over the same toric variety.");
+	  -- Extracting data out of tvb1 and tvb2
+	  k1 := tvb1#"rank of the vector bundle";
+	  k2 := tvb2#"rank of the vector bundle";
+	  if instance(tvb1,ToricVectorBundleKaneyama) and instance(tvb2,ToricVectorBundleKaneyama) then (
+	       -- Generating the trivial bundle of dimension k1+k2
+	       E := makeVBKaneyama(k1 + k2,tvb1#"ToricVariety");
+	       -- Computing the new degree table and transition matrices and writing the degrees and transition matrices into the bundle
+	       E = new ToricVectorBundleKaneyama from {
+	       	    "degreeTable" => merge(tvb1#"degreeTable",tvb2#"degreeTable", (a,b) -> a|b),
+	       	    "baseChangeTable" => merge(tvb1#"baseChangeTable",tvb2#"baseChangeTable", (a,b) -> a++b),
+	       	    "ToricVariety" => E#"ToricVariety",
+	       	    "number of affine charts" => E#"number of affine charts",
+	       	    "dimension of the variety" => E#"dimension of the variety",
+	       	    "rank of the vector bundle" => k1 + k2,
+	       	    "codim1Table" => E#"codim1Table",
+	       	    "topConeTable" => E#"topConeTable",
+	       	    symbol cache => new CacheTable};
+	       if (tvb1.cache.?regCheck and tvb2.cache.?regCheck and tvb1.cache.regCheck and tvb2.cache.regCheck and (
+		    	 tvb1.cache.?cocycle and tvb2.cache.?cocycle and tvb1.cache.cocycle and tvb2.cache.cocycle)) then (
+	       	    E.cache.regCheck = true;
+	       	    E.cache.cocycle = true);
+	       E)
+	  else if instance(tvb1,ToricVectorBundleKlyachko) and instance(tvb2,ToricVectorBundleKlyachko) then (
+	       k := k1 + k2;
+     	       F := tvb1#"ToricVariety";
+     	       R := tvb1#"ring";
+     	       tvb := makeVBKlyachko(k,F);
+     	       fT1 := tvb1#"filtrationMatricesTable";
+     	       fT2 := tvb2#"filtrationMatricesTable";
+     	       bT1 := tvb1#"baseTable";
+     	       bT2 := tvb2#"baseTable";
+     	       filtrationTable := apply(rays tvb, r -> fT1#r | fT2#r);
+     	       baseTable := apply(rays tvb, r -> bT1#r ++ bT2#r);
+     	       tvb = addFiltration(tvb,filtrationTable);
+     	       tvb = addBase(tvb,baseTable);
+     	       if tvb1.cache.?isVB and tvb2.cache.?isVB and tvb1.cache.isVB and tvb2.cache.isVB then tvb.cache.isVB = true;
+     	       tvb)
+	  else error("The two bundles have to be in the same description."))
+
+
+
+-- PURPOSE : Computing the dual bundle to a given ToricVectorBundle
+--   INPUT : 'tvb',  a ToricVectorBundle
+--  OUTPUT : the dual ToricVectorBundle
+dual ToricVectorBundle := {} >> opts -> tvb -> (
+     if instance(tvb,ToricVectorBundleKaneyama) then (
+     	  -- Inverting the degrees and the transition matrices
+     	  degreeTable := hashTable apply(pairs tvb#"degreeTable", p -> p#0 => -(p#1));
+     	  baseChangeTable := hashTable apply(pairs tvb#"baseChangeTable", p -> p#0 => transpose inverse p#1);
+     	  -- Writing the inverted tables into the bundle
+     	  E := new ToricVectorBundleKaneyama from {
+	       "degreeTable" => degreeTable,
+	       "baseChangeTable" => baseChangeTable,
+	       "ToricVariety" => tvb#"ToricVariety",
+	       "number of affine charts" => tvb#"number of affine charts",
+	       "dimension of the variety" => tvb#"dimension of the variety",
+	       "rank of the vector bundle" => tvb#"rank of the vector bundle",
+	       "codim1Table" => tvb#"codim1Table",
+	       "topConeTable" => tvb#"topConeTable",
+	       symbol cache => new CacheTable};
+     	  if tvb.cache.?regCheck and tvb.cache.regCheck and tvb.cache.?cocycle and tvb.cache.cocycle then (
+	       E.cache.regCheck = true;
+	       E.cache.cocycle = true);
+     	  E)
+     else (
+	  -- Inverting the filtration. If the filtration has d steps then the new n-th boundary is -(d-n+1th boundary)-1 and the n-th step is the 
+     	  -- d-n+2 th step
+	  fT := hashTable apply(pairs tvb#"filtrationTable", (r,e) -> r => (
+		  newkeys := reverse drop(sort keys e, 1);
+		  newvalues := {{}} | apply(newkeys, k -> e#k);
+		  newkeys = {-first newkeys - 1} | -newkeys;
+		  hashTable apply(#newkeys, i -> newkeys#i => newvalues#i)
+		  )
+	      );
+	  fMT := hashTable apply(pairs fT, q -> q#0 => (q1new:= hashTable flatten apply(pairs q#1, p -> apply(p#1, i -> i => p#0)); matrix {apply(#q1new, j -> q1new#j)}));
+     	  -- The orthogonal complement is given by the transpose of the inverse matrix
+     	  bT := hashTable apply(pairs tvb#"baseTable", p -> p#0 => transpose inverse p#1);
+     	  T := new ToricVectorBundleKlyachko from {
+	       "ring" => tvb#"ring",
+	       "rayTable" => tvb#"rayTable",
+	       "baseTable" => bT,
+	       "filtrationMatricesTable" => fMT,
+	       "filtrationTable" => fT,
+	       "ToricVariety" => tvb#"ToricVariety",
+	       "number of affine charts" => tvb#"number of affine charts",
+	       "dimension of the variety" => tvb#"dimension of the variety",
+	       "rank of the vector bundle" => tvb#"rank of the vector bundle",
+	       "number of rays" => tvb#"number of rays",
+	       symbol cache => new CacheTable};
+     	  if tvb.cache.?isVB and tvb.cache.isVB then T.cache.isVB = true;
+     	  T))
+
+
+-- PURPOSE : Computing the 'l'-th exterior power of a ToricVectorBundle
+--   INPUT : '(l,tvb)',  where 'l' is a strictly positive integer and 'tvb'is a TorcVectorBundle
+--  OUTPUT : 'tvb',  a ToricVectorBundle which is the 'l'-th exterior power
+exteriorPower (ZZ,ToricVectorBundle) := ToricVectorBundle => opts -> (l,tvb) -> (
+     k := tvb#"rank of the vector bundle";
+     -- Checking for input errors
+     if l < 0 then error("The power has to be positive.");
+     -- Generating the list of 'l'-tuples of 0..k-1 and the corresponding index table
+     ind := subsets(k,l);
+     indtable := hashTable apply(#ind, i -> ind#i => i);
+     if instance(tvb,ToricVectorBundleKlyachko) then (
+     	  if l == 0 then toricVectorBundle(1,tvb#"ToricVariety")
+	  else if l > k then toricVectorBundle(0,tvb#"ToricVariety")
+	  else (
+	       -- Extracting data
+     	       baseTable := tvb#"baseTable";
+     	       filtrationTable := tvb#"filtrationMatricesTable";
+     	       Rs := rays tvb;
+     	       R := tvb#"ring";
+     	       F := tvb#"ToricVariety";
+     	       -- Computing the 'l'-th exterior powers of the base matrices
+     	       baseTable = apply(Rs, r -> (
+	       	    	 B := baseTable#r;
+	       	    	 M := mutableMatrix(R,#ind,#ind);
+	       	    	 for j in ind do for k in ind do M_(indtable#k,indtable#j) = det(B^k_j);
+	       	    	 matrix M));
+     	       -- Computing the 'l'-th exterior power of the filtration matrices
+     	       filtrationTable = apply(Rs, r -> (
+	       	    	 filt := filtrationTable#r;
+	       	    	 matrix {apply(ind, j -> ( sum flatten entries filt_j))}));
+     	       T := makeVBKlyachko(#ind,F,baseTable,filtrationTable);
+     	       if tvb.cache.?isVB and tvb.cache.isVB then T.cache.isVB = true;
+     	       T))
+     else (
+	  if l == 0 then toricVectorBundle(1,tvb#"ToricVariety","Type" => "Kaneyama")
+	  else if l > k then toricVectorBundle(0,tvb#"ToricVariety","Type" => "Kaneyama")
+	  else (
+	       -- Computing the 'l'-th exterior powers of the transition matrices
+     	       baseChangeTable := hashTable apply(pairs tvb#"baseChangeTable", p -> p#0 =>  matrix apply(ind, j -> apply(ind, k -> det (p#1)^j_k)));
+     	       -- Computing the 'l'-th exterior power of the degrees
+     	       degreeTable := hashTable apply(pairs tvb#"degreeTable", p -> p#0 => matrix {apply(ind, j -> (p#1)_j * matrix toList(l:{1}))});
+     	       E := new ToricVectorBundleKaneyama from {
+	       	    "degreeTable" => degreeTable,
+	       	    "baseChangeTable" => baseChangeTable,
+	       	    "ToricVariety" => tvb#"ToricVariety",
+	       	    "number of affine charts" => tvb#"number of affine charts",
+	       	    "dimension of the variety" => tvb#"dimension of the variety",
+	       	    "rank of the vector bundle" => #ind,
+	       	    "codim1Table" => tvb#"codim1Table",
+	       	    "topConeTable" => tvb#"topConeTable",
+	       	    symbol cache => new CacheTable};
+     	       if tvb.cache.?regCheck and tvb.cache.regCheck and tvb.cache.?cocycle and tvb.cache.cocycle then (
+	       	    E.cache.regCheck = true;
+	       	    E.cache.cocycle = true);
+     	       E)))
 
 --TODO: Two extraction methods. should modify to match our new type.
 
@@ -906,59 +1061,6 @@ deltaE ToricVectorBundle := (cacheValue symbol deltaE)( tvb -> (
 		 		     M := transpose matrix {apply(s, r -> (-r | r) || (fMT#r))};
 		 		     vertices polyhedronFromHData(M_{0..n-1},M_{n})))})))
 
-
---   INPUT : '(tvb1,tvb2)',  two ToricVectorBundle over the same Fan
---  OUTPUT : 'tvb',  a ToricVectorBundle which is the direct sum
-ToricVectorBundle.directSum = args -> (
-     args = toList args;
-     T := args#0;
-     scan(drop(args,1), E -> T = T ++ E);
-     T)
-
-      
-ToricVectorBundle ++ ToricVectorBundle := (tvb1,tvb2) -> (
-	  -- Checking for input errors
-	  if tvb1#"ToricVariety" != tvb2#"ToricVariety" then error("Expected the bundles to be over the same toric variety.");
-	  -- Extracting data out of tvb1 and tvb2
-	  k1 := tvb1#"rank of the vector bundle";
-	  k2 := tvb2#"rank of the vector bundle";
-	  if instance(tvb1,ToricVectorBundleKaneyama) and instance(tvb2,ToricVectorBundleKaneyama) then (
-	       -- Generating the trivial bundle of dimension k1+k2
-	       E := makeVBKaneyama(k1 + k2,tvb1#"ToricVariety");
-	       -- Computing the new degree table and transition matrices and writing the degrees and transition matrices into the bundle
-	       E = new ToricVectorBundleKaneyama from {
-	       	    "degreeTable" => merge(tvb1#"degreeTable",tvb2#"degreeTable", (a,b) -> a|b),
-	       	    "baseChangeTable" => merge(tvb1#"baseChangeTable",tvb2#"baseChangeTable", (a,b) -> a++b),
-	       	    "ToricVariety" => E#"ToricVariety",
-	       	    "number of affine charts" => E#"number of affine charts",
-	       	    "dimension of the variety" => E#"dimension of the variety",
-	       	    "rank of the vector bundle" => k1 + k2,
-	       	    "codim1Table" => E#"codim1Table",
-	       	    "topConeTable" => E#"topConeTable",
-	       	    symbol cache => new CacheTable};
-	       if (tvb1.cache.?regCheck and tvb2.cache.?regCheck and tvb1.cache.regCheck and tvb2.cache.regCheck and (
-		    	 tvb1.cache.?cocycle and tvb2.cache.?cocycle and tvb1.cache.cocycle and tvb2.cache.cocycle)) then (
-	       	    E.cache.regCheck = true;
-	       	    E.cache.cocycle = true);
-	       E)
-	  else if instance(tvb1,ToricVectorBundleKlyachko) and instance(tvb2,ToricVectorBundleKlyachko) then (
-	       k := k1 + k2;
-     	       F := tvb1#"ToricVariety";
-     	       R := tvb1#"ring";
-     	       tvb := makeVBKlyachko(k,F);
-     	       fT1 := tvb1#"filtrationMatricesTable";
-     	       fT2 := tvb2#"filtrationMatricesTable";
-     	       bT1 := tvb1#"baseTable";
-     	       bT2 := tvb2#"baseTable";
-     	       filtrationTable := apply(rays tvb, r -> fT1#r | fT2#r);
-     	       baseTable := apply(rays tvb, r -> bT1#r ++ bT2#r);
-     	       tvb = addFiltration(tvb,filtrationTable);
-     	       tvb = addBase(tvb,baseTable);
-     	       if tvb1.cache.?isVB and tvb2.cache.?isVB and tvb1.cache.isVB and tvb2.cache.isVB then tvb.cache.isVB = true;
-     	       tvb)
-	  else error("The two bundles have to be in the same description."))
-
-
 -- ToricVectorBundleKlyachko ++ ToricVectorBundleKlyachko := (tvb1,tvb2) -> (
 --     -- Extracting data out of tvb1 and tvb2
 --     k1 := (tvb1#"rank of the vector bundle");
@@ -977,59 +1079,6 @@ ToricVectorBundle ++ ToricVectorBundle := (tvb1,tvb2) -> (
 --     tvb = addBase(tvb,baseTable);
 --     if tvb1.cache.?isVB and tvb2.cache.?isVB and tvb1.cache.isVB and tvb2.cache.isVB then tvb.cache.isVB = true;
 --     tvb)
-
-
--- PURPOSE : Computing the dual bundle to a given ToricVectorBundle
---   INPUT : 'tvb',  a ToricVectorBundle
---  OUTPUT : the dual ToricVectorBundle
-dual ToricVectorBundle := {} >> opts -> tvb -> (
-     if instance(tvb,ToricVectorBundleKaneyama) then (
-     	  -- Inverting the degrees and the transition matrices
-     	  degreeTable := hashTable apply(pairs tvb#"degreeTable", p -> p#0 => -(p#1));
-     	  baseChangeTable := hashTable apply(pairs tvb#"baseChangeTable", p -> p#0 => transpose inverse p#1);
-     	  -- Writing the inverted tables into the bundle
-     	  E := new ToricVectorBundleKaneyama from {
-	       "degreeTable" => degreeTable,
-	       "baseChangeTable" => baseChangeTable,
-	       "ToricVariety" => tvb#"ToricVariety",
-	       "number of affine charts" => tvb#"number of affine charts",
-	       "dimension of the variety" => tvb#"dimension of the variety",
-	       "rank of the vector bundle" => tvb#"rank of the vector bundle",
-	       "codim1Table" => tvb#"codim1Table",
-	       "topConeTable" => tvb#"topConeTable",
-	       symbol cache => new CacheTable};
-     	  if tvb.cache.?regCheck and tvb.cache.regCheck and tvb.cache.?cocycle and tvb.cache.cocycle then (
-	       E.cache.regCheck = true;
-	       E.cache.cocycle = true);
-     	  E)
-     else (
-	  -- Inverting the filtration. If the filtration has d steps then the new n-th boundary is -(d-n+1th boundary)-1 and the n-th step is the 
-     	  -- d-n+2 th step
-	  fT := hashTable apply(pairs tvb#"filtrationTable", (r,e) -> r => (
-		  newkeys := reverse drop(sort keys e, 1);
-		  newvalues := {{}} | apply(newkeys, k -> e#k);
-		  newkeys = {-first newkeys - 1} | -newkeys;
-		  hashTable apply(#newkeys, i -> newkeys#i => newvalues#i)
-		  )
-	      );
-	  fMT := hashTable apply(pairs fT, q -> q#0 => (q1new:= hashTable flatten apply(pairs q#1, p -> apply(p#1, i -> i => p#0)); matrix {apply(#q1new, j -> q1new#j)}));
-     	  -- The orthogonal complement is given by the transpose of the inverse matrix
-     	  bT := hashTable apply(pairs tvb#"baseTable", p -> p#0 => transpose inverse p#1);
-     	  T := new ToricVectorBundleKlyachko from {
-	       "ring" => tvb#"ring",
-	       "rayTable" => tvb#"rayTable",
-	       "baseTable" => bT,
-	       "filtrationMatricesTable" => fMT,
-	       "filtrationTable" => fT,
-	       "ToricVariety" => tvb#"ToricVariety",
-	       "number of affine charts" => tvb#"number of affine charts",
-	       "dimension of the variety" => tvb#"dimension of the variety",
-	       "rank of the vector bundle" => tvb#"rank of the vector bundle",
-	       "number of rays" => tvb#"number of rays",
-	       symbol cache => new CacheTable};
-     	  if tvb.cache.?isVB and tvb.cache.isVB then T.cache.isVB = true;
-     	  T))
-	  
 	  
 -- PURPOSE : Checking if a given List of possible degree vectors admits a Decomposition in torus eigenspaces that give the filtration
 --   INPUT : '(T,L)',  where 'T' is a ToricVectorBundleKlyachko and 'L' is a List where the i-th entry is either a matrix or a List of 
@@ -1079,64 +1128,6 @@ existsDecomposition (ToricVectorBundleKlyachko,List) := (T,L) -> (
 	       if not T.cache.?isVB then T.cache.isVB = true;
 	       T.cache.degreesList = T.cache.degreesList|{L});
 	  L != {}))
-
-
--- PURPOSE : Computing the 'l'-th exterior power of a ToricVectorBundle
---   INPUT : '(l,tvb)',  where 'l' is a strictly positive integer and 'tvb'is a TorcVectorBundle
---  OUTPUT : 'tvb',  a ToricVectorBundle which is the 'l'-th exterior power
-exteriorPower (ZZ,ToricVectorBundle) := ToricVectorBundle => opts -> (l,tvb) -> (
-     k := tvb#"rank of the vector bundle";
-     -- Checking for input errors
-     if l < 0 then error("The power has to be positive.");
-     -- Generating the list of 'l'-tuples of 0..k-1 and the corresponding index table
-     ind := subsets(k,l);
-     indtable := hashTable apply(#ind, i -> ind#i => i);
-     if instance(tvb,ToricVectorBundleKlyachko) then (
-     	  if l == 0 then toricVectorBundle(1,tvb#"ToricVariety")
-	  else if l > k then toricVectorBundle(0,tvb#"ToricVariety")
-	  else (
-	       -- Extracting data
-     	       baseTable := tvb#"baseTable";
-     	       filtrationTable := tvb#"filtrationMatricesTable";
-     	       Rs := rays tvb;
-     	       R := tvb#"ring";
-     	       F := tvb#"ToricVariety";
-     	       -- Computing the 'l'-th exterior powers of the base matrices
-     	       baseTable = apply(Rs, r -> (
-	       	    	 B := baseTable#r;
-	       	    	 M := mutableMatrix(R,#ind,#ind);
-	       	    	 for j in ind do for k in ind do M_(indtable#k,indtable#j) = det(B^k_j);
-	       	    	 matrix M));
-     	       -- Computing the 'l'-th exterior power of the filtration matrices
-     	       filtrationTable = apply(Rs, r -> (
-	       	    	 filt := filtrationTable#r;
-	       	    	 matrix {apply(ind, j -> ( sum flatten entries filt_j))}));
-     	       T := makeVBKlyachko(#ind,F,baseTable,filtrationTable);
-     	       if tvb.cache.?isVB and tvb.cache.isVB then T.cache.isVB = true;
-     	       T))
-     else (
-	  if l == 0 then toricVectorBundle(1,tvb#"ToricVariety","Type" => "Kaneyama")
-	  else if l > k then toricVectorBundle(0,tvb#"ToricVariety","Type" => "Kaneyama")
-	  else (
-	       -- Computing the 'l'-th exterior powers of the transition matrices
-     	       baseChangeTable := hashTable apply(pairs tvb#"baseChangeTable", p -> p#0 =>  matrix apply(ind, j -> apply(ind, k -> det (p#1)^j_k)));
-     	       -- Computing the 'l'-th exterior power of the degrees
-     	       degreeTable := hashTable apply(pairs tvb#"degreeTable", p -> p#0 => matrix {apply(ind, j -> (p#1)_j * matrix toList(l:{1}))});
-     	       E := new ToricVectorBundleKaneyama from {
-	       	    "degreeTable" => degreeTable,
-	       	    "baseChangeTable" => baseChangeTable,
-	       	    "ToricVariety" => tvb#"ToricVariety",
-	       	    "number of affine charts" => tvb#"number of affine charts",
-	       	    "dimension of the variety" => tvb#"dimension of the variety",
-	       	    "rank of the vector bundle" => #ind,
-	       	    "codim1Table" => tvb#"codim1Table",
-	       	    "topConeTable" => tvb#"topConeTable",
-	       	    symbol cache => new CacheTable};
-     	       if tvb.cache.?regCheck and tvb.cache.regCheck and tvb.cache.?cocycle and tvb.cache.cocycle then (
-	       	    E.cache.regCheck = true;
-	       	    E.cache.cocycle = true);
-     	       E)))
-
 
 -- PURPOSE : Returning the underlying fan of a toric vector bundle
 --   INPUT : 'T',  a ToricVectorBundleKaneyama
@@ -1318,7 +1309,7 @@ rank ToricVectorBundle := T -> T#"rank of the vector bundle"
 -- PURPOSE : Giving the rays of the underlying Fan of a toric vector bundle
 --   INPUT : 'tvb',  a TorcVectorBundle
 --  OUTPUT : 'L',  a List containing the rays of the Fan underlying the bundle
-rays ToricVectorBundle := {} >> o -> tvb -> raySortOfFan tvb#"ToricVariety"
+rays ToricVectorBundleKaneyama := {} >> o -> tvb -> raySortOfFan tvb#"ToricVariety"
 
 
 -- PURPOSE : Computing the 'l'-th symmetric power of a Toric Vector Bundle
