@@ -41,7 +41,7 @@ aux (RingElement) := (h) -> (
 listOfFactors = method();
 listOfFactors (RingElement) := (h) -> (
   hfac := factor h;
-  return apply(#hfac, i -> if isConstant hfac#i#0 then 1 else hfac#i#0)
+  return apply(#hfac, i -> if isConstant hfac#i#0 then 1_(ring h) else hfac#i#0)
 );
 
 squareFreePart = method();
