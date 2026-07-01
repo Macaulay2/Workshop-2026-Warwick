@@ -2020,7 +2020,7 @@ ToricVectorBundleMap = new Type of HashTable
 ToricVectorBundleMap.synonym = "map of toric vector bundles on a fixed toric variety"
 source ToricVectorBundleMap := ToricVectorBundleNew => f -> f.source
 target ToricVectorBundleMap := ToricVectorBundleNew => f -> f.target
-map ToricVectorBundleMap := {} >> o -> Matrix => f -> f.map
+map ToricVectorBundleMap := Matrix => opts -> f -> f.map
 matrix ToricVectorBundleMap := Matrix => f -> f.map
 
 -- TODO NET ToricVectorBundleMap
@@ -2122,12 +2122,15 @@ isWellDefined (ToricVectorBundleMap ) := Boolean => f ->(
 	);
 	true
 )
-
+-- PURPOSE : To check whether a given map of TVB is injective. 
+--   INPUT : "T" where T is a ToricVectorBundle. 
+--  OUTPUT : A boolean indicating whether T is injective or not. 
 isInjective (ToricVectorBundleMap) := f -> (
 
 	if not isWellDefined f then (
 		if debugLevel > 0 then (
-			<< "-- the map is not well defined" << endl);
+			<< "-- the map is not well defined" << endl
+		);
 		return false
 	);
 	
@@ -2139,7 +2142,7 @@ isInjective (ToricVectorBundleMap) := f -> (
 	
 	X := variety(source f);
 	for p in rays X do (
-		r := join(filtrationJumps source f, filtrationJumps target f);
+		r := flatten join(filtrationJumps source f, filtrationJumps target f);
 		m1 := min r;
 		m2 := max r;
 		for i from m1 to m2 do (
@@ -2147,13 +2150,52 @@ isInjective (ToricVectorBundleMap) := f -> (
 				if debugLevel > 0 then (
 					<< "some error message" << endl
 					);
-				print 1
-				);
 				return false
+				);
+				
+			);
+		);
+		
+		true
+	)
+
+-- PURPOSE : To check whether a given map of TVB is surjective. 
+--   INPUT : "T" where T is a ToricVectorBundle. 
+--  OUTPUT : A boolean indicating whether T is surjective or not. 
+isSurjective (ToricVectorBundleMap) := f -> (
+
+	if not isWellDefined f then (
+		if debugLevel > 0 then (
+			<< "-- the map is not well defined" << endl);
+		return false
+	);
+	
+	if not isSurjective (map f) then (
+		if debugLevel > 0 then (
+			<< "-- the map is not injective" << endl);
+		return false
+	);
+	
+	X := variety(source f);
+	for p in rays X do (
+		r := flatten join(filtrationJumps source f, filtrationJumps target f);
+		m1 := min r;
+		m2 := max r;
+		for i from m1 to m2 do (
+			if not (numColumns filteredPiece(source f, p, i) >= numColumns filteredPiece(target f, p, i)) then (
+				if debugLevel > 0 then (
+					<< "some error message" << endl
+					);
+				return false
+				);
 			);
 		);
 		return true
 	)
+
+
+
+
 
 -*
 image (ToricVectorBundleMap) :=(f
