@@ -11,9 +11,10 @@ PGBMain (List, List, List) := (E, N, F) -> (
         return {}
     );
     R := ring F_0;
+    RFlat = QQ[ gens R, gens (coefficientRing R), MonomialOrder => Lex];
     CoeffRing = ring E_0;
-    G := first entries gens(gb (ideal(apply((E | N), e -> promote(e, R)))));
-    if member(promote(1, R), G) then (
+    G := first entries gens(gb (ideal(apply((E | N), e -> sub(e, RFlat)))));
+    if member(sub(1, RFlat), G) then (
         return {E, N, {promote(1, R)}}
     );
     Gr := for g in G list (
@@ -21,20 +22,23 @@ PGBMain (List, List, List) := (E, N, F) -> (
         if instance(l, Nothing) then (continue);
         promote(l, R)
     ); 
-    productList =flatten ( for g in Gr list (
+    productList = flatten ( for g in Gr list (
         for n in N list (
             n*g
             )
         ));
     product(Gr, N, (a, b) -> a*promote(b, R));
-    if not(consistent(E, productList)) then (
-        PGB := {};
-    ) else (
+    PGB := {};
+    if consistent(E, productList) then (
         PGB := {{E, productList, {1}}};
     );
     if not(consistent(productList, N)) then (
         return PGB
     );
+    diff = (new Set from G) - (new Set from Gr);
+    Gm := MDBasis(new List from diff);
+    h := lcm(apply(Gm, g->leadMonomial(sub(g, R))));
+    if consistent(Gr, )
 );
 
 MDBasis = method();
@@ -61,5 +65,7 @@ MDBasis (List) := (G) -> (
 
     return Basis 
 );
-
+R = QQ[a,b,c][x,y,z, MonomialOrder => Lex];
+G = {a*x*y + b*x, b*x^2*y+c*z, a*b*x+a*x*y+z, a*y+z, c*x + c*z^2}
+assert({a*y + z, c*x + c*z^2} == MDBasis(G));
 TEST ///
