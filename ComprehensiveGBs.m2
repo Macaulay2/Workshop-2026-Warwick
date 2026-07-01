@@ -66,7 +66,7 @@ CGBMain (List, List) := (F, S) -> (
   A := apply(F, i -> l * sub(i, RExt));
   B := apply(S, i -> (l-1) * sub(i, RExt));
   G := (entries gens gb(ideal join(A, B)))_0;
-  pruneG := select(G, g -> ((leadTerm g) % l == 0) and any(X, i -> member(sub(i, RFlat), support leadCoefficient sub(g, RFlat[l]))));
+  pruneG := select(G, g -> ((first first exponents(leadMonomial sub(g,RExt))) > 0) and any(exponents(sub(leadCoefficient sub(g,RFlat[getSymbol "l"]),RFlat)), i -> any(i_(toList(0..(#X-1))), i -> i > 0)));
   pruneG' := apply(pruneG, g -> leadCoefficient sub(g, RExt'));
   h := lcm pruneG';
 
@@ -181,11 +181,37 @@ doc ///
 
 
 -* Test section *-
+TEST /// -* Testing  CGBMain on a*x+b*y *-
+
+Ptest = QQ[a,b];
+Rtest = Ptest[x,y, MonomialOrder => Lex];
+
+params = gens Ptest;
+variables = gens Rtest
+
+aR = promote (params#0 , Rtest);
+bR = promote (params#1 , Rtest);
+   
+xR = variables#0;
+yR = variables#1;
+
+
+result = CGBMain({aR*xR + bR*yR}, {});
+
+expected1 = ({},aR, {aR*xR + bR*yR});
+expected2 = ({aR},bR,{aR^2*xR + aR*bR*yR, aR*xR + bR*yR});
+expected3 = ({aR,bR}, 1_Rtest, {aR*xR + bR*yR});
+
+assert(#result == 3);
+
+assert member(expected1, result);
+assert member(expected2, result);
+assert member(expected3, result);
+
+///
 TEST /// -* [insert short title for this test] *-
 -- test code and assertions here
 -- may have as many TEST sections as needed
-
-
 
 ///
 d=2
