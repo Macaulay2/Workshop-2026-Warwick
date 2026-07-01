@@ -79,8 +79,8 @@ CGBMainRec (List, List, List) := (F, S, prev) -> (
   B := apply(S, i -> (l-1) * sub(i, RExt));
   G := (entries gens gb(ideal join(A, B)))_0;
   pruneG := select(G, g -> ((first first exponents(leadMonomial sub(g,RExt))) > 0) and any(exponents(sub(leadCoefficient sub(g,RFlat[getSymbol "l"]),RFlat)), i -> any(i_(toList(0..(#X-1))), i -> i > 0)));
-  pruneG' := apply(pruneG, g -> leadCoefficient sub(g, RExt'));
-  h := lcm pruneG';
+  pruneG = apply(pruneG, g -> leadCoefficient sub(g, RExt'));
+  h := lcm pruneG;
 
   newprev := prev;
   newprev = newprev | {(S, sub(h, R), for g in G list (
@@ -88,12 +88,12 @@ CGBMainRec (List, List, List) := (F, S, prev) -> (
                   if zero g' then continue;
                   g'))};
 
-  if pruneG' == {} then (
-      return newprev
-      );
+  if pruneG == {} then (
+    return newprev
+  );
 
-  -- H := pruneG'; -- (takes too long to terminate if we do not factor h)
-  -- H := unique apply(pruneG', g -> squareFreePart g); -- (takes a bit longer to terminate)
+  -- H := pruneG; -- (takes too long to terminate if we do not factor h)
+  -- H := unique apply(pruneG, g -> squareFreePart g); -- (takes a bit longer to terminate)
 
   H := listOfFactors h;
   RU := K[U];
