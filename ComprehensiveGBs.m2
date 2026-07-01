@@ -15,6 +15,7 @@ newPackage(
         },
     Keywords => {""},
     AuxiliaryFiles => false,
+    PackageImports => {"MinimalPrimes"},
     DebuggingMode => true
     )
 
@@ -31,12 +32,12 @@ protect CGBMainTriples
 listOfFactors = method();
 listOfFactors (RingElement) := (h) -> (
   hfac := factor h;
-  return apply(#hfac, i -> if isConstant hfac#i#0 then 1_(ring h) else hfac#i#0)
+  apply(#hfac, i -> if isConstant hfac#i#0 then 1_(ring h) else hfac#i#0)
 );
 
 squareFreePart = method();
 squareFreePart (RingElement) := (h) -> (
-  return product listOfFactors h
+  product listOfFactors h
 );
 
 isConsistent = method();
