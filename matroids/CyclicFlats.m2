@@ -120,12 +120,12 @@ evalValInvariant (CyclicFlats, Function, Function, Function) := M, Uniform, Cusp
                 sum apply(r..n, h -> (
                         lam := countStressedSubsets(M, r, h);
                         lam * (Cuspidal(r, k, h, n) - Unisum(r, k, h, n))
-                                      );
-                         );
-                                   );
-                      );
-    total
-    );
+                        );
+                    );
+                );
+            );
+        total
+        );
 
 
 tutteRing := ZZ(monoid(["x","y"]/getSymbol));
