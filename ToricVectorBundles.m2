@@ -72,6 +72,7 @@ export {
     "ToricVectorBundleKlyachko",
     "ToricVectorBundleNew",
     -- Constructors
+	"lineBundle",
     "toricVectorBundle",
 	"trivialBundle",
     -- others
@@ -5035,8 +5036,8 @@ assert not isWellDefined T1 -- fails because of cocycleCheck
 --tests for regCheck
 T1 = addDegrees(T,{matrix{{1,2},{3,1}},matrix{{-1,0},{3,1}},matrix{{1,2},{-3,-1}},matrix{{-1,0},{-3,-1}}})
 assert not isWellDefined T1 -- fails because of regCheck
-
 ///
+
 -- Test
 -- Checking trivialBundle
 TEST ///
@@ -5047,7 +5048,30 @@ assert ((filtrationMatrices E)_0 == 1_((ring E)^4))
 assert ((filtrationJumps E)_0 == toList(4:0))
 ///
 
+-*
+-- Test
+-- Checking 
+TEST ///
+X = toricProjectiveSpace 2
+D1 = toricDivisor({1,0,0},X)
+D2 = toricDivisor({0,1,0},X)
+D3 = toricDivisor({0,0,1},X)
+
+L1 = lineBundle(D1)
+L2 = lineBundle(D2)
+L3 = lineBundle(D3)
+
+E1 = trivialBundle(X,1)
+E2 = L1 ++ L2 ++ L3
+
+f = map(E2, E1, matrix {{1},{1},{1}})
+
+assert (isInjective f)
 ///
+*-
+
+
+
 -- Test
 -- Checking lineBundle
 TEST ///
