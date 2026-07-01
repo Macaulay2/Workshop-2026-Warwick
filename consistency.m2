@@ -10,7 +10,7 @@ PGBMain (List, List, List) := (E, N, F) -> (
     if not(consistent(E, N)) then (
         return {}
     );
-    R = ring F_0;
+    R := ring F_0;
     CoeffRing = ring E_0;
     G := first entries gens(gb (ideal(apply((E | N), e -> promote(e, R)))));
     if member(promote(1, R), G) then (
@@ -19,7 +19,7 @@ PGBMain (List, List, List) := (E, N, F) -> (
     Gr := for g in G list (
         l := lift(g, CoeffRing, Verify =>false);
         if instance(l, Nothing) then (continue);
-        l
+        promote(l, R)
     ); 
     productList =flatten ( for g in Gr list (
         for n in N list (
@@ -31,5 +31,35 @@ PGBMain (List, List, List) := (E, N, F) -> (
         PGB := {};
     ) else (
         PGB := {{E, productList, {1}}};
-    )
+    );
+    if not(consistent(productList, N)) then (
+        return PGB
+    );
 );
+
+MDBasis = method();
+MDBasis (List) := (G) -> (
+    F := G;
+    Basis := {first F};
+    F = delete(first F, F);
+    for g in F do (
+         F = delete(g, F);
+         for f in Basis do (
+            LTg := leadMonomial(g);
+            LTf := leadMonomial(f);
+            print(LTg, LTf);
+            if LTg % LTf == 0 then (
+                break
+            );  
+            if LTf % LTg == 0 then (
+                Basis = delete(f, Basis) | {g};
+                continue
+            );
+            Basis = Basis | {g};
+         ); 
+    );
+
+    return Basis 
+);
+
+TEST ///
