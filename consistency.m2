@@ -1,3 +1,6 @@
+
+-- Ollie: for the consistency test, we don't need to compute radical of E
+-- we can use Rabinowitsch to just get away with one GB computation!
 consistent = method();
 consistent (List, List) := (E, N) ->(
     I := radical (ideal E);

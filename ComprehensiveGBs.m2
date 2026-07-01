@@ -29,13 +29,13 @@ protect CGBMainTriples
 
 -* Code section *-
 
-listOfFactors = method();
+listOfFactors = method()
 listOfFactors (RingElement) := (h) -> (
   hfac := factor h;
   apply(#hfac, i -> if isConstant hfac#i#0 then 1_(ring h) else hfac#i#0)
 );
 
-squareFreePart = method();
+squareFreePart = method()
 squareFreePart (RingElement) := (h) -> (
   product listOfFactors h
 );
@@ -166,25 +166,18 @@ eliminateVariables(List):=F->(
     x:=getSymbol "x";
     u:=getSymbol "u";
     S:=QQ[x_1..x_n,u_1..u_m, MonomialOrder => Eliminate n];
-
     U:=gens coefficientRing(R);
     X:=gens R;
     l1:=for i from 0 to m-1 list U_i=>S_(i+n);
     l2:=for j from 0 to n-1 list X_j=>S_j;
-
-
     F':=apply(F,h->sub(h,l1|l2));
     F'gbgens:=gens gb(ideal(F'));
     S':=selectInSubring(1,F'gbgens);
-
     C:=coefficientRing R;
     mm:=map(C,ring S',
         toList(n:0)|gens C   
         );
     mm(S')
-
-
-
     )
 
 
@@ -213,7 +206,7 @@ doc ///
   Key
     ComprehensiveGBs
   Headline
-    A package for computing Comprehensive Groebner Bases (CGBs). Base on @HREF("#ref1","[1]")@.
+    A package for computing Comprehensive Groebner Bases (CGBs). Based on @HREF("#ref1","[1]")@.
   References
     @LABEL("[1]","id" => "ref1")@ Akira Suzuki and Yosuke Sato. 2006. A simple algorithm to compute comprehensive Gröbner bases using Gröbner bases. In Proceedings of the 2006 international symposium on Symbolic and algebraic computation (ISSAC '06). Association for Computing Machinery, New York, NY, USA, 326–331. https://doi.org/10.1145/1145768.1145821
 ///
