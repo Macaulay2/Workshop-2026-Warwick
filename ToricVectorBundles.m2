@@ -1,3 +1,4 @@
+
 --*- coding: utf-8 -*-
 
 --TODO: update these blurbs to reflect the overhaul project at M2 workshop
@@ -89,7 +90,7 @@ export {
     "existsDecomposition", 
     "filtration", 
     "findWeights", 
-    "isGeneral", 
+    "isGeneral",
     --"isomorphism", 
     "randomDeformation",
     "regCheck", 
@@ -139,8 +140,8 @@ ToricVectorBundleNew = new Type of ToricVectorBundle
 ToricVectorBundleNew.synonym = "vector bundle on a toric variety (Klyachko's description)"
 globalAssignment ToricVectorBundleNew
 
-toricVectorBundle = method()
-toricVectorBundle (NormalToricVariety, List, List) := (baseVariety, matrixList, indexesList) -> (
+toricVectorBundle = method(Options => true)
+toricVectorBundle (NormalToricVariety, List, List) := {} >> o -> (baseVariety, matrixList, indexesList) -> (
     -- error checking
     if #matrixList != #(rays baseVariety) then error("There must be as many filtrations as rays of the base");
     if #indexesList != #(rays baseVariety) then error("There must be as many filtrations as rays of the base");
@@ -165,6 +166,7 @@ toricVectorBundle (NormalToricVariety, List, List) := (baseVariety, matrixList, 
 --   INPUT : '(k,F)',  a strictly positive integer 'k' and a pure and full dimensional Fan 'F'
 --  OUTPUT : A ToricVectorBundleKaneyama or ToricVectorBundleKlyachko
 -- COMMENT : If no option is given the function will return a ToricVectorBundleKlyachko, if "Type" => "Kaneyama" is given it returns a ToricVectorBundleKaneyama
+
 toricVectorBundle (ZZ,Fan) := {"Type"=>"Klyachko"} >> opts -> (k,F) -> (
      if opts#"Type" == "Kaneyama" then makeVBKaneyama(k,F) else if opts#"Type" == "Klyachko" then makeVBKlyachko(k,F) else error("Expected Type to be Klyachko or Kaneyama."))
 
@@ -315,16 +317,28 @@ net ToricVectorBundleKlyachko := tvb -> ( horizontalJoin flatten (
 --------------------------------------------------------------
 -- GETTER FUNCTIONS FOR TORICVECTORBUNDLESNEW 
 --------------------------------------------------------------
+variety( ToricVectorBundleNew) := E -> (E.variety)
 
-variety ToricVectorBundleNew := E -> E.variety
-rank ToricVectorBundleNew:= E ->E.rank
+rank(ToricVectorBundleNew):= E ->(E.rank)
+
+rank ToricVectorBundleKaneyama := T -> T#"rank of the vector bundle"
+
+rank ToricVectorBundleKlyachko := T -> T#"rank of the vector bundle"
+
+
 filtrationJumps = method()
 filtrationJumps ToricVectorBundleNew := E -> (E.filtrationJumps)
+
 filtrationMatrices = method()
 filtrationMatrices ToricVectorBundleNew := E -> (E.filtrationMatrices)
-rays ToricVectorBundleNew := {} >> o -> E -> rays (E.variety)
 
--- filteredPiece( TprocVectorBundleNew, ray, index ) outs matrix (span of the corresponding columns)
+rays(ToricVectorBundleNew) := {} >> o -> E ->( rays(variety (E) ))
+
+
+rays ToricVectorBundleKaneyama := {} >> o -> tvb -> raySortOfFan tvb#"ToricVariety"
+
+rays ToricVectorBundleKlyachko := {} >> o -> tvb -> raySortOfFan tvb#"ToricVariety"
+
 
 -- PURPOSE : Presenting some details of the given ToricVectorBundle
 --   INPUT : 'tvb',  a ToricVectorBundleKaneyama
@@ -340,12 +354,26 @@ details ToricVectorBundleKlyachko := tvb -> (
       hashTable apply(rays tvb, r -> r => (tvb#"baseTable"#r,tvb#"filtrationMatricesTable"#r)))
 
 -- This outupts a list of hash tables so that the order of the rays is displayed correctly
-details ToricVectorBundleNew := E ->(
-    filts := filtrationMatrices E;
-    jumps := filtrationJumps E; 
-    hashTable for i to #(rays E) -1 list (rays E)_i => {filts_i, jumps_i }
+details ToricVectorBundleNew := tvb ->(
+    if not tvb.cache.?details then (  
+    raysX := rays(tvb );
+    filts := filtrationMatrices (tvb);
+    jumps := filtrationJumps( tvb); 
+    tvb.cache.details = hashTable for i to #raysX -1 list(  raysX_i => {filts_i, jumps_i }  ););
+    tvb.cache.details
 )
 
+
+-- filteredPiece( TprocVectorBundleNew, ray, index ) outs matrix (span of the corresponding columns)
+filteredPiece = method()
+-- Computes the vector space corresponding to the ray p at the index i
+filteredPiece (ToricVectorBundleNew, List, ZZ) := (E, p, i) ->(
+    dataE:= details(E)#p;
+    jumpE:= dataE_1;
+    inds:= apply(select({1..rank(E)}, n -> (i>= jumpE_n)), m -> m-1);
+    (dataE_0)_inds
+    
+)
 
 
 
@@ -404,6 +432,7 @@ raySortOfFan = (fan) -> (
 ---------------------------------------------------------------
 
 --TODO: The "add" methods are just garbage? Remove
+-- these methods are used in the TESTS..can we modify the tests?
 
 -- PURPOSE : Changing the base matrices of a given ToricVectorBundleKlyachko to those given in the List 
 --   INPUT : '(tvb,L)',  a ToricVectorBundle 'tvb' and a list 'L'of k by k matrices over a common ring/field, one for each
@@ -411,7 +440,7 @@ raySortOfFan = (fan) -> (
 --  OUTPUT : The ToricVectorBundleKlyachko 'tvb' 
 -- COMMENT : Note that the  matrices in 'L' will be assigned to the rays in the order they appear in rays tvb
 
--*
+
 addBase = method(TypicalValue => ToricVectorBundleKlyachko)
 addBase (ToricVectorBundleKlyachko,List) := (tvb,L) -> (
      -- Extracting data out of tvb
@@ -459,7 +488,7 @@ addBase (ToricVectorBundleKlyachko,List) := (tvb,L) -> (
 --     	     will be assigned to the pairs (i,j) in that order, where the matrix A assigned to (i,j) denotes the 
 --     	     transition
 --     	    	 (e_i^1,...,e_i^k) = (e_j^1,...,e_j^k)* A
-*-
+
 addBaseChange = method(TypicalValue => ToricVectorBundleKaneyama)
 addBaseChange (ToricVectorBundleKaneyama,List) := (tvb,L) -> (
      -- Extracting data out of tvb
@@ -525,7 +554,7 @@ addDegrees (ToricVectorBundleKaneyama,List) := (tvb,L) -> (
 	  "codim1Table" => tvb#"codim1Table",
 	  "topConeTable" => tvb#"topConeTable",
 	  symbol cache => new CacheTable})
--*
+
 
 --   INPUT : '(tvb,L)',  a ToricVectorBundleKlyachko 'tvb' and a list 'L'of 1 by k matrices over ZZ, one for each 
 --     	    	      	   	  ray of the fan
@@ -563,13 +592,17 @@ addFiltration (ToricVectorBundleKlyachko,List) := (tvb,L) -> (
 	  "number of rays" => tvb#"number of rays",
 	  symbol cache => new CacheTable})
 
-*-
 
---TODO: this is just isWellDefined for Kaneyama.
-	       
--- PURPOSE : Checking if the ToricVectorBundleKaneyama fulfills the cocycle condition
---   INPUT : 'tvb',  a ToricVectorBundleKaneyama 
---  OUTPUT : 'true' or 'false' 
+
+--TODO: this is just isWellDefined for Kaneyama.	      
+
+-- PURPOSE : Checking if the ToricVectorBundleKaneyama is well-defined. Combining previous cocycleCheck and regCheck
+--	    First checks if tvb fulfills the cocycle condition
+--	    Then checks that tvb satisfies the regularity conditions of the degrees
+--   INPUT : 'tvb', a ToricVectorBundleKaneyama
+--  OUTPUT : 'true' or 'false'
+-- COMMENT : ToricVectorBundles generated by tangentBundle should fulfill the conditions of
+--           the regularity check automatically
 
 isWellDefined ToricVectorBundleKaneyama := Boolean => ( tvb -> (
 	  -- ORIGINALLY coCycleCheck
@@ -599,6 +632,8 @@ isWellDefined ToricVectorBundleKaneyama := Boolean => ( tvb -> (
      	  -- Check for every cyclic order of topCones if the product of the corresponding transition
      	  -- matrices is the identity
 		  if not (all(L, l -> product apply(reverse l, e -> if e#0 > e#1 then inverse bCT#(e#1,e#0) else bCT#e) == map(QQ^k,QQ^k,1))) then (
+		      if debugLevel > 0 then
+			  << "--toric vector bundle does not fulfill cocycle condition" << endl;
 			return false
 		  	);
 
@@ -619,79 +654,20 @@ isWellDefined ToricVectorBundleKaneyama := Boolean => ( tvb -> (
 			      all(k, j -> (
 				   	rj := (dT#(tCT#(p#0)))_{j};
 				   	(if A^{i}_{j} != 0 then contains(C,rj-ri) else true) and (if A^{j}_{i} != 0 then contains(C,ri-rj) else true)))))))) then (
-						return false
+                                             if debugLevel > 0 then
+					     << "--toric vector bundle does not satisfy regularity conditions of the degrees" << endl;
+		                            return false
 					);
 		  return true
 ))
 
-
-cocycleCheck = method(TypicalValue => Boolean)
-cocycleCheck ToricVectorBundleKaneyama := (cacheValue symbol cocycle)( tvb -> (
-	 n := tvb#"dimension of the variety";
-     	  k := tvb#"rank of the vector bundle";
-     	  bCT := tvb#"baseChangeTable";
-     	  topCones := customConeSort keys tvb#"topConeTable";
-     	  L := hashTable {};
-     	  -- For each codim 2 Cone computing the list of topCones which have this Cone as a face
-     	  -- and save the list of indices of these topCones as an element in L
-     	  for i from 0 to #topCones - 1  do L = merge(hashTable apply(facesAsCones(2,posHull topCones#i), C -> (rays C, linealitySpace C) => {i}),L,(a,b) -> sort join(a,b));
-     	  -- Finding the cyclic order of every list of topCones in L and write this cyclic order as a 
-     	  -- list of consecutive pairs
-     	  L = for l in values L list (
-	       pairings := {};
-	       start := l#0;
-	       a := start;
-	       l = drop(l,1);
-	       i := position(l, e -> dim intersection(posHull topCones#a, posHull topCones#e) == n-1);
-	       while i =!= null do (
-		    pairings = pairings | {(a,l#i)};
-		    a = l#i;
-		    l = drop(l,{i,i});
-		    i = position(l, e -> dim intersection(posHull topCones#a, posHull topCones#e) == n-1));
-	       if dim intersection(posHull topCones#a, posHull topCones#start) == n-1 then pairings | {(a,start)} else continue);
-     	  -- Check for every cyclic order of topCones if the product of the corresponding transition
-     	  -- matrices is the identity
-	     all(L, l -> product apply(reverse l, e -> if e#0 > e#1 then inverse bCT#(e#1,e#0) else bCT#e) == map(QQ^k,QQ^k,1))
-		       
-		       
-	))
-
-
-
---TODO: this method might still be useful... could cut, could transfer its functionality.
+-- PURPOSE : Checking if the data in T in fact defines a vectorbundle, i.e., satisfies the decomposition condition
+--   INPUT : 'T',  a ToricVectorBundleKlyachko
+--  OUTPUT : 'true' if 'T' is fact a bundle, 'false' otherwise
+isWellDefined ToricVectorBundleKlyachko := ( T -> (
+	       L := findWeights T;
+	       all(L, l -> l != {}) and existsDecomposition(T,L)))
   
-
-
---TODO: This is also part of isWellDefined for Kaneyama.
- 
--- PURPOSE : Checking if a ToricVectorBundleKaneyama satisfies the regularity conditions of the degrees
---   INPUT : 'tvb', a ToricVectorBundleKaneyama
---  OUTPUT : 'true' or 'false'
--- COMMENT : This function is for checking ToricVectorBundles whose degrees and matrices 
---     	     are inserted by hand. Those generated for example by tangentBundle fulfill the 
---     	     conditions automatically.
-regCheck = method(TypicalValue => Boolean)
-regCheck ToricVectorBundleKaneyama := (cacheValue symbol regCheck)( tvb -> (
-     	  -- Extracting the necessary data
-     	  tCT := customConeSort keys tvb#"topConeTable";
-     	  c1T := tvb#"codim1Table";
-     	  bCT := tvb#"baseChangeTable";
-     	  dT := tvb#"degreeTable";
-     	  k := tvb#"rank of the vector bundle";
-     	  all(keys bCT, p -> (
-	       	    -- Taking a pair corresponding to a codim 1 cone, the corresponding transition matrix and its inverse
-	       	    A := bCT#p;
-	       	    B := inverse A;
-	       	    -- Computing the dual of the codim 1 cone
-	       	    C := dualCone posHull c1T#p;
-	       	    -- Check for all pairs of degree vectors of the two top Cones the reg condition
-	       	    all(k, i -> (
-			      ri := (dT#(tCT#(p#1)))_{i};
-			      all(k, j -> (
-				   	rj := (dT#(tCT#(p#0)))_{j};
-				   	(if A^{i}_{j} != 0 then contains(C,rj-ri) else true) and (if A^{j}_{i} != 0 then contains(C,ri-rj) else true)))))))))
-
-
 
 ----------------------------------------------------------------------------
 -- OPERATIONS ON TORIC VECTOR BUNDLES
@@ -1240,15 +1216,8 @@ isGeneral ToricVectorBundleKlyachko := (cacheValue symbol isGeneral)( tvb -> (
 	       	    recursiveCheck(apply(C, r -> L#r),{})))))
 
 
--- PURPOSE : Checking if the data in T in fact defines a vectorbundle, i.e., satisfies the decomposition condition or
---     	     regularity and cocycle condition
---   INPUT : 'T',  a ToricVectorBundle
---  OUTPUT : 'true' if 'T' is fact a bundle, 'false' otherwise
-isWellDefined ToricVectorBundle := (cacheValue symbol isWellDefined)( T -> (
-	  if instance(T,ToricVectorBundleKlyachko) then (
-	       L := findWeights T;
-	       all(L, l -> l != {}) and existsDecomposition(T,L))
-	  else regCheck T and cocycleCheck T))
+
+
 
 
 -- PURPOSE : Returning the maximal cones of the underlying fan
@@ -1299,17 +1268,6 @@ randomDeformation (ToricVectorBundleKlyachko,ZZ,ZZ) := (tvb,l,h) -> (
 -- COMMENT : Simply replaces the base matrices by random matrices of full rank with entries between 
 --     	     0 and 'h'
 randomDeformation (ToricVectorBundleKlyachko,ZZ) := (tvb,h) -> randomDeformation(tvb,0,h)
-
-
--- PURPOSE : Returning the rank of the vector bundle
---   INPUT : 'T',  a ToricVectorBundle
-rank ToricVectorBundle := T -> T#"rank of the vector bundle"
-
-
--- PURPOSE : Giving the rays of the underlying Fan of a toric vector bundle
---   INPUT : 'tvb',  a TorcVectorBundle
---  OUTPUT : 'L',  a List containing the rays of the Fan underlying the bundle
-rays ToricVectorBundleKaneyama := {} >> o -> tvb -> raySortOfFan tvb#"ToricVariety"
 
 
 -- PURPOSE : Computing the 'l'-th symmetric power of a Toric Vector Bundle
@@ -1994,14 +1952,23 @@ map(ToricVectorBundleNew, ToricVectorBundleNew, Matrix):= ToricVectorBundleMap =
     if ring M =!= ring E1 or ring M =!= ring E2 then error " The matrix needs to be defined over the same ring as the bundles";
     if variety E1 =!= variety E2 then error "The base varieties of the bundles have to coincide";
 
+    -- Check that map is well defined running on the rays and indeces
+    Xrays:= rays(variety(E1));
+    r :=rank E1;
+    phi:= map((ring E2)^(rank E2), (ring E1)^(r) , M )
+    for i from 0 to r do(
+        for p in Xrays do(
+        if not isSubset(phi(filteredPiece(E1,p,i)), filteredPiece(E2, p, i)) then (print(p,i); error ("The map is not compatible for the ray and index above "));
+        )
+    )
+
+
     new ToricVectorBundleMap from{
         symbol source => E1,
         symbol target => E2,
         symbol map => M,
         symbol cache => new CacheTable
     }
-
-
 )
 
 ToricVectorBundleMap#id = E -> map(E,E, id_(ring E^(rank E) ))
@@ -4929,7 +4896,7 @@ assert(cartierIndex({3,3,3},F) == 1)
 
 -- ADDING NEW TESTS JUNE 2026
 -- Test 31
--- Checking isWellDefined (Kaneyama) (combining the tests for cocycleCheck and regCheck
+-- Checking isWellDefined (Kaneyama) (combining the tests for cocycleCheck and regCheck)
 TEST ///
 T = toricVectorBundle(2,pp1ProductFan 2,"Type" => "Kaneyama")
 assert isWellDefined T
