@@ -2020,7 +2020,7 @@ ToricVectorBundleMap = new Type of HashTable
 ToricVectorBundleMap.synonym = "map of toric vector bundles on a fixed toric variety"
 source ToricVectorBundleMap := ToricVectorBundleNew => f -> f.source
 target ToricVectorBundleMap := ToricVectorBundleNew => f -> f.target
-map ToricVectorBundleMap := Matrix => f -> f.map
+map ToricVectorBundleMap := {} >> o -> Matrix => f -> f.map
 matrix ToricVectorBundleMap := Matrix => f -> f.map
 
 -- TODO NET ToricVectorBundleMap
@@ -2085,8 +2085,29 @@ isWellDefined (ToricVectorBundleMap ) := Boolean => f ->(
     M := f.map;
     Xrays := rays(variety(E1));
     r :=rank E1;
-    minj:= min flatten filtrationJumps(E1);
-    maxj:= max flatten filtrationJumps(E1);
+	for p in Xrays do (
+		j := flatten join(filtrationJumps source f, filtrationJumps target f);
+		m1 := min j;
+		m2 := max j;
+
+		for i from m1 to m2 do (
+			amb := module (ring E2) ^ (rank E2);
+			f1 := map(amb, , sub(M * filteredPiece(E1,p,i),QQ));
+			f2 := map(amb, , sub(filteredPiece(E2,p,i),QQ));
+
+			if not isSubset(image f1, image f2) then (
+				return false
+			);
+		);
+
+
+	);
+
+
+
+
+
+-*
     for i from minj-1 to maxj+1 do(
         for p in Xrays do(
         if not isSubset(image (M*filteredPiece(E1,p,i)), image filteredPiece(E2, p, i))
@@ -2097,6 +2118,9 @@ isWellDefined (ToricVectorBundleMap ) := Boolean => f ->(
     f.cache.isWellDefined = true and f.cache.isWellDefined ;    
 	);
 	f.cache.isWellDefined
+*-
+	);
+	true
 )
 
 isInjective (ToricVectorBundleMap) := f -> (
@@ -5050,7 +5074,7 @@ assert ((filtrationJumps E)_0 == toList(4:0))
 
 -*
 -- Test
--- Checking 
+-- Checking watermelon
 TEST ///
 X = toricProjectiveSpace 2
 D1 = toricDivisor({1,0,0},X)
@@ -5064,7 +5088,7 @@ L3 = lineBundle(D3)
 E1 = trivialBundle(X,1)
 E2 = L1 ++ L2 ++ L3
 
-f = map(E2, E1, matrix {{1},{1},{1}})
+f = map(E2, E1, matrix(QQ,{{1},{1},{1}}))
 
 assert (isInjective f)
 ///
