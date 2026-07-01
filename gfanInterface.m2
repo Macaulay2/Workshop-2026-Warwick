@@ -4533,7 +4533,7 @@ doc///
 	gfanConvertToNewRing(R)
 	///
 
-	-- TEST gfanBuchberger
+-- TEST gfanBuchberger
 	TEST ///
 	 equalMPL = (A,B) -> set transpose A === set transpose B
 	 QQ[x,y,z];
@@ -4620,7 +4620,7 @@ doc///
 	  assert(rank(linealitySpace(C)) === 1)
 	  assert(dim(C) === 2)
 	  C = gfanGroebnerCone( markedPolynomialList {{x}, {x+y}},  markedPolynomialList {{x}, {x+y}} )
-	-- assert(C#"AMBIENT_DIM" === 2)
+	  assert(rank target rays C === 2)
 	  assert(linealitySpace(C) === transpose matrix {{1, 1}})
 	  assert(rank(linealitySpace(C)) === 1)
  	  assert(dim(C) === 1)
@@ -4700,15 +4700,16 @@ doc///
 	 ///
 	--
 	-- -- TEST gfanMinkowskiSum
-	-- TEST ///
-	-- QQ[x,y];
-	-- M = gfanMinkowskiSum { x + y + x*y, x + y + x*y + 1}
-	-- assert(M#"AMBIENT_DIM" === 2)
-	-- assert(M#"MAXIMAL_CONES" == {{0, 1}, {0, 2}, {1, 3}, {2, 4}, {3, 4}})
-	-- assert(M#"DIM" === 2)
-	-- assert(M#"RAYS" == {{-1, -1}, {-1, 0}, {0, -1}, {0, 1}, {1, 0}})
-	-- assert(M#"F_VECTOR" == {1, 5, 5})
-	-- ///
+	 TEST ///
+	   QQ[x,y];
+	   M = gfanMinkowskiSum { x + y + x*y, x + y + x*y + 1}
+	   assert(rank target rays M === 2)
+	   assert(entries transpose rays M ===  {{-1, 0}, {1, 0}, {0, -1}, {-1, -1}, {0, 1}})
+	   assert(maxCones M == {{0, 3}, {2, 3}, {0, 4}, {1, 2}, {1, 4}})
+	   assert(dim M === 2)
+	   assert(fVector M == {1, 5, 5})
+	 ///
+	 
 	--
 	-- -- TEST gfanMinors
 	 TEST ///
@@ -4792,7 +4793,8 @@ end--
 --Added 1/7/26
 --Design decisions:
 --At the moment
---"IMPLIED_EQUATIONS", "RELATIVE_INTERIOR_POINT", and "FACETS"  are not supported.
+--"IMPLIED_EQUATIONS", "RELATIVE_INTERIOR_POINT", "FACETS", and
+--  "ORTH_LINEALITY_SPACE" are not currently supported.
 
 
 
