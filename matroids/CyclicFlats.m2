@@ -1,4 +1,4 @@
-newPackage("Matroids",
+newPackage("CyclicFlats",
 	AuxiliaryFiles => true,
 	Version => "1.0.0",
 	Date => "June 2026",
@@ -10,11 +10,18 @@ newPackage("Matroids",
 	HomePage => ""
 )
 export {
-	"Matroid",
-	"matroid"
+	"CyclicFlats",
+	"cyclicFlats",
+        "BaseRing",
+        "groundSet",
+        "rankSum",
+        "cyclicFlatsType",
+        "cyclicFlatsAxioms"
 }
 
+needsPackage "Posets"
 
+-*
 Matroid = new Type of HashTable
 Matroid.synonym = "matroid"
 
@@ -163,6 +170,8 @@ sliceBySizeList = (s, L) -> ( -- intersects a list against a list of lists, and 
 	partition(l -> #(s * set l), L)
 ) -- note: this is different from sliceBySize(set s, L/set)
 
+*-
+
 -- Begin CyclicFlats Code -----------------------------------------------------
 
 
@@ -194,14 +203,14 @@ cyclicFlats(HashTable) := H -> (
         );
     if not cyclicFlatsType H then error "Incorrect type for CyclicFlats matroid.";
 
-    cyclicFlatsAxioms cFlats -> (
+    cyclicFlatsAxioms = cFlats -> (
         G := keys cFlats;
         P := poset(G, isSubset);
         --Z0
         if not isLattice P then (
-            if debugLevel > 0 then printerr("Error: " | toString(P) | " is not a poset under inclusion.")
-            return false
-            )
+            if debugLevel > 0 then printerr("Error: " | toString(P) | " is not a poset under inclusion.");
+            return false;
+            );
         --Z1
         -- TODO: Implement Z1.
         --Z2
@@ -209,7 +218,7 @@ cyclicFlats(HashTable) := H -> (
             for h in principalFilter(P,g) do (
                 if (g != h) then(  --maybe figure out a way around this, like just removing g from the principal filter
                     if H#h - H#g == 0 or H#h - H#g >= #(h - g) then (
-                        if debugLevel > 0 then printerr("Error: " | toString(cFlats) | " does not satisfy axiom.") -- TODO: Make error message more specific.
+                        if debugLevel > 0 then printerr("Error: " | toString(cFlats) | " does not satisfy axiom."); -- TODO: Make error message more specific.
                         return false
                         );
                     )
@@ -219,19 +228,19 @@ cyclicFlats(HashTable) := H -> (
         for g in G do (
             for h in G do (
                 rankSum = H#g + H#h;
-                pJoin = first posetJoin(P, g, h);
-                pMeet = first posetMeet(P, g, h);
-                rankJoin = H#(pJoin);
-                rankMeet = H#(pMeet);
+                pJoin := first posetJoin(P, g, h);
+                pMeet := first posetMeet(P, g, h);
+                rankJoin := H#(pJoin);
+                rankMeet := H#(pMeet);
                 if ( rankSum < rankJoin + rankMeet + #(intersect(g,h)) - #(pMeet)) then (
-                    if debugLevel > 0 then printerr("Error: " | toString(cFlats) | " does not satisfy axiom.") -- TODO: Make error message more specific.
-                    return false
+                    if debugLevel > 0 then printerr("Error: " | toString(cFlats) | " does not satisfy axiom."); -- TODO: Make error message more specific.
+                    return false;
                     );
                 );
             );
-        true
-        )
-    if not cyclicFlatsAxioms H then error "Given hashtable " | toString H | " does not satisfy the axioms of a collection of cyclic flats."
+        true;
+        );
+    if not cyclicFlatsAxioms H then error "Given hashtable " | toString H | " does not satisfy the axioms of a collection of cyclic flats.";
     M := new CyclicFlats from {
         symbol groundSet => union keys H,
         symbol rank => max values H,
@@ -248,7 +257,7 @@ countStressedSubsets(CyclicFlats, ZZ, ZZ) := (M, r, h) -> (
     );
 
 tuttePolynomialRing := ZZ(monoid(["x","y"]/getSymbol));
-tuttePolynomialUniform = method(Options => {BaseRing => tuttePolynomialRing});
+tuttePolynomialUniform = method(Options => {"BaseRing" => tuttePolynomialRing});
 tuttePolynomialUniform (ZZ, ZZ) := RingElement => opts -> (k, n) -> (
     R := opts.BaseRing;
     total := sum apply(k, i -> binomial(n-i-2, n-k-1)*R_0^(i+1));
@@ -260,9 +269,9 @@ tuttePolynomialUniform (ZZ, ZZ) := RingElement => opts -> (k, n) -> (
 
 -- End CyclicFlats Code -------------------------------------------------------
 
-load "./Matroids/doc-Matroids.m2"
+--load "./Matroids/doc-Matroids.m2"
 
-load "./Matroids/tests-Matroids.m2"
+--load "./Matroids/tests-Matroids.m2"
 
 -- Note: ./Matroids/foundations.m2 is an upstream in-development module that
 -- defines Pasture / Foundation / pasture / pastureMorphism / savePasture /
