@@ -90,7 +90,7 @@ export {
     "existsDecomposition", 
     "filtration", 
     "findWeights", 
-    "isGeneral",
+    "isGeneral","filteredPiece",
     --"isomorphism", 
     "randomDeformation",
     "regCheck", 
@@ -326,6 +326,7 @@ rank ToricVectorBundleKaneyama := T -> T#"rank of the vector bundle"
 
 rank ToricVectorBundleKlyachko := T -> T#"rank of the vector bundle"
 
+ring ToricVectorBundleNew := E -> coefficientRing ring (E.variety)
 
 filtrationJumps = method()
 filtrationJumps ToricVectorBundleNew := E -> (E.filtrationJumps)
@@ -369,13 +370,12 @@ details ToricVectorBundleNew := tvb ->(
 filteredPiece = method()
 -- Computes the vector space corresponding to the ray p at the index i
 filteredPiece (ToricVectorBundleNew, List, ZZ) := (E, p, i) ->(
-    dataE:= details(E)#p;
+    dataE:= (details(E))#p;
     jumpE:= dataE_1;
-    inds:= apply(select({1..rank(E)}, n -> (i>= jumpE_n)), m -> m-1);
+    inds:= select(toList(0..rank(E)-1), n -> (i<= jumpE_n));
     (dataE_0)_inds
     
 )
-
 
 
 
@@ -1944,25 +1944,15 @@ target ToricVectorBundleMap := ToricVectorBundleNew => f -> f.target
 map ToricVectorBundleMap := Matrix => f -> f.map
 matrix ToricVectorBundleMap := Matrix => f -> f.map
 
--- TO DO NET ToricVectorBundleMap
+-- TODO NET ToricVectorBundleMap
 
-
+-- We allow defining a map that is not well defined
 map(ToricVectorBundleNew, ToricVectorBundleNew, Matrix):= ToricVectorBundleMap => opts -> (E2, E1, M) ->(
     if ring E1 =!= ring E2 then error "The vector bundles need to be defined over the same ring";
     if numRows M =!= rank E1 or numColumns M =!= rank E2 then error " The dimensions of the matrix don't match the ranks of the bundles";
     if ring M =!= ring E1 or ring M =!= ring E2 then error " The matrix needs to be defined over the same ring as the bundles";
     if variety E1 =!= variety E2 then error "The base varieties of the bundles have to coincide";
--*
-    -- Check that map is well defined running on the rays and indeces
-    Xrays:= rays(variety(E1));
-    r :=rank E1;
-    phi:= map((ring E2)^(rank E2), (ring E1)^(r) , M );
-    for i from 0 to r do(
-        for p in Xrays do(
-        if not isSubset(phi(filteredPiece(E1,p,i)), filteredPiece(E2, p, i)) then (print(p,i); error ("The map is not compatible for the ray and index above "));
-        )
-    )
-*-
+
 
     new ToricVectorBundleMap from{
         symbol source => E1,
@@ -1971,6 +1961,7 @@ map(ToricVectorBundleNew, ToricVectorBundleNew, Matrix):= ToricVectorBundleMap =
         symbol cache => new CacheTable
     }
 )
+
 
 ToricVectorBundleMap#id = E -> map(E,E, id_(ring E^(rank E) ))
 
@@ -2010,12 +2001,16 @@ isWellDefined(ToricVectorBundleMap ) := Boolean => f ->(
     --Check mathematical structure
     E1 := source f;
     E2 := target f;
-    g := map f;
-    X := variety E1;
-    --for p in rays X do(
-        -- TO DO
-
-    --);
+    M := map f;
+    Xrays:= rays(variety(E1));
+    r :=rank E1;
+    minj:= min flatten filtrationJumps(E1);
+    maxj:= min flatten filtrationJumps(E1);
+    for i from minj to maxj do(
+        for p in Xrays do(
+        if not isSubset(image (filteredPiece(E1,p,i)*M), image filteredPiece(E2, p, i)) then (print(p,i); return false));
+        );
+    
 
 
     true    
@@ -2023,6 +2018,19 @@ isWellDefined(ToricVectorBundleMap ) := Boolean => f ->(
 )
 
 
+image (ToricVectorBundleMap) :=(f
+    -*
+    E1:= source f;
+    X:= variety E1;
+        minj:= min flatten filtrationJumps(E1);
+    maxj:= min flatten filtrationJumps(E1);
+    for i from minj to maxj do(
+        for p in Xrays do(
+        if not isSubset(image (filteredPiece(E1,p,i)*M), image filteredPiece(E2, p, i)) then (print(p,i); return false));
+        );
+    toricVectorBundle(X, )
+    -*
+)
 
 
 
