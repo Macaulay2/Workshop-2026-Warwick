@@ -208,6 +208,25 @@ assert member(expected2, result);
 assert member(expected3, result);
 
 ///
+
+///
+TEST /// -* Testing  CGB on a*x+b*y  *-
+PTest = QQ[aTest,bTest];
+RTest = PTest[xTest,yTest, MonomialOrder => Lex];
+
+fTest = aTest*xTest + bTest*yTest;
+
+expected1 = aTest*xTest + bTest*yTest;
+expected2 = aTest^2*xTest + aTest*bTest*yTest;
+
+result = CGB({fTest});
+
+assert(#result == 2);
+assert(result#0 == expected1 or result#1 == expected1);
+assert(result#0 == expected1 or result#1 == expected2);
+///
+
+
 TEST /// -* [insert short title for this test] *-
 -- test code and assertions here
 -- may have as many TEST sections as needed
