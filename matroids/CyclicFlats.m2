@@ -203,6 +203,7 @@ cyclicFlats(HashTable) := H -> (
             return false
             )
         --Z1
+        -- TODO: Implement Z1.
         --Z2
         for g in G do (
             for h in principalFilter(P,g) do (
