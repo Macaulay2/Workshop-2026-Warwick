@@ -158,6 +158,7 @@ toricVectorBundle (NormalToricVariety, List, List) := {} >> o -> (baseVariety, m
 	symbol cache => new CacheTable}
     )
 
+
 --TODO: once the overhaul is complete, we should remove these constructors.
 
 -- PURPOSE : Building a Vector Bundle of rank 'k' on the Toric Variety given by the Fan 'F'
