@@ -2021,18 +2021,16 @@ isWellDefined (ToricVectorBundleMap ) := Boolean => f ->(
 
 
 image (ToricVectorBundleMap) :=(f) ->(
-   -*E1:= source f;
+   	E1:= source f;
     X:= variety E1;
         minj:= min flatten filtrationJumps(E1);
     maxj:= min flatten filtrationJumps(E1);
-    for i from minj to maxj do(
-        for p in Xrays list(
-        M*filteredPiece(E1,p,i)
-        );)
-    *-  
+    --for i from minj to maxj do(
+       -- for p in Xrays list(
+        --M*filteredPiece(E1,p,i);
+        --););
+      
 )
-
-
 
 -- PURPOSE : Computing the image bundle of a toric vector bundle
 --   INPUT : '(T,M)', where 'T' is a ToricVectorBundleKlyachko and 'M' a matrix with the bundle space as its source
