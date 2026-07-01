@@ -22,15 +22,13 @@ areCyclicFlats List := l -> (
     P := poset(G, isSubset);
     --z0 checks if the poset is a lattice
     if not isLattice P then (
-        print 0;
         return false)
-    else (print "Z0 ok");
+    else (print "Z0 ok \n");
     --Z1
     if (( isMember(set {}, G)) and  (H#(set{}) == 0)) then (
-        print "Z1 ok";
+        print "Z1 ok \n";
     )
     else (
-        print 1;
         return false;
     );
 
@@ -39,12 +37,11 @@ areCyclicFlats List := l -> (
         for h in principalFilter(P,g) do (
             if (g != h) then(  --maybe figure out a way around this, like just removing g from the principal filter
                 if H#h - H#g == 0 or H#h - H#g >= #(h - g) then (
-                    print 2; 
                     return false );
             )
         )
     );
-    print "Z2 ok";
+    print "Z2 ok \n";
     --Z3
         for g in G do (
             for h in G do (
