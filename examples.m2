@@ -32,7 +32,21 @@ G={V,E}
 netList for i in GG list i_{0,1} --showing only the segment's parameters
 
 
+--example 2
+R = QQ[A,B][X,Y,Z, MonomialOrder => Lex]
+F = {X^4-A,Y^5-B,X+Y-Z}
+elapsedTime G = CGBMain(F, {});
+-- 236.631s elapsed
+#G --=230
 
+
+--example 3
+R = QQ[a,b,c,d][x_1,x_2,y_1,y_2,s, MonomialOrder => Lex]
+f=a*x_1^2+b*y_1
+g=c*y_2^2+d*x_2
+F = {f,g,(x_1-x_2)^2+(y_1-y_2)^2-s,diff_(x_1) f * diff_(y_2) g -diff_(y_1) f * diff_(x_2) g, diff_(x_1) f * (y_1-y_2) - diff_(y_1) f * (x_1-x_2)}
+elapsedTime G = CGBMain(F, {});
+#G
 
 --example 4
 R = QQ[a,b,c,e][x_1,x_2,y_1,y_2, MonomialOrder => Lex]
