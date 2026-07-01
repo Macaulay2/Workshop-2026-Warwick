@@ -20,8 +20,11 @@ newPackage(
 
 export {
     "CGBMain",
-    "CGB"
+    "CGB",
+    "cgbOnGraph"
     } -- functions, objects to export
+
+protect result
 
 -* Code section *-
 
@@ -147,6 +150,18 @@ eliminateVariables(List):=F->(
     )
 
 
+cgbOnGraph=method()
+cgbOnGraph(List,ZZ):=(G,d)->(
+  V:=G_0;
+  E:=G_1;
+  x:=getSymbol "x";
+  w:=getSymbol "w";
+  S:=QQ[toSequence apply(E, l -> w_l)];
+  R:=S[x_(V_0,1)..x_(V_(#V-1),d)];
+  F:=for i in E list(sum(1..d,k->(R_(2*i_0+k-3)-R_(2*i_1+k-3))^2)-S_(position(E, j -> j === i)));
+  (F, CGBMain(F, {}))
+)
+
 
 
 
@@ -196,7 +211,7 @@ assert member(expected3, result);
 
 ///
 
-///
+
 TEST /// -* Testing  CGB on a*x+b*y  *-
 PTest = QQ[aTest,bTest];
 RTest = PTest[xTest,yTest, MonomialOrder => Lex];
@@ -219,30 +234,11 @@ TEST /// -* [insert short title for this test] *-
 -- may have as many TEST sections as needed
 
 ///
-d=2
-E={(1,2),(1,3),(2,3),(1,4),(2,4),(3,4)}
-V={1,2,3,4}
-G={V,E}
-
-cgbOnGraph=method()
-cgbOnGraph(List,ZZ):=(G,d)->(
-  V:=G_0;
-  E:=G_1;
-  x:=getSymbol "x";
-  w:=getSymbol "w";
-  S:=QQ[toSequence apply(E, l -> w_l)];
-  R:=S[x_(V_0,1)..x_(V_(#V-1),d)];
-  F:=for i in E list(sum(1..d,k->(R_(2*i_0+k-3)-R_(2*i_1+k-3))^2)-S_(position(E, j -> j === i)));
-  (F, CGBMain(F, {}))
-)
-d=2
-E={(1,2),(1,3),(2,3)}
-V={1,2,3}
-G={V,E}
-cgbOnGraph(G,2)
 
 
 end--
+
+
 
 -* Development section *-
 restart
@@ -290,7 +286,8 @@ doc ///
      References
      Caveat
      SeeAlso
-///
+
+     ///
 
 
 
