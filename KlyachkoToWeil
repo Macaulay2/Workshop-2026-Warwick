@@ -26,3 +26,14 @@ klyachkoToWeil := (V) -> (
 		);
 
 )
+
+weilDecoration := (E, a) ->(
+	Erays:= rays variety E;
+	-- list of the vector spaces at index a_i in the ray p_i
+	LvectSp := apply(# Erays, i-> filteredPiece(E, Erays_i, a_i)  );
+
+	
+)
+
+
+)
