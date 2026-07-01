@@ -1,0 +1,23 @@
+/* Macaulay2 session transcript highlighting */
+
+/* ---- prompt tokens ---- */
+.m2-inp  { color: #79b8ff; font-weight: bold; }   /* i7 :   input prompt   */
+.m2-out  { color: #85e89d; }                       /* o7 =   output prompt  */
+.m2-dbgi { color: #f8a458; font-weight: bold; }   /* ii7 :  debugger input */
+.m2-dbgo { color: #f1c55a; }                       /* oo7 =  debugger out   */
+
+/* ---- syntax ---- */
+.m2-kw  { color: #c792ea; font-weight: bold; }    /* keywords              */
+.m2-str { color: #c3e88d; }                        /* string literals       */
+.m2-op  { color: #89ddff; }                        /* := ->                 */
+.m2-cmt { color: #546e7a; font-style: italic; }   /* -- comments           */
+
+/* ---- diagnostic ---- */
+.m2-err { color: #ff5370; font-weight: bold; }    /* error: ...            */
+.m2-dbg { color: #f8a458; font-style: italic; }   /* entering debugger     */
+
+/* ---- block chrome ---- */
+div.m2-code {
+  border-left: 3px solid #f8a458;
+  padding-left: 0.5em;
+}
