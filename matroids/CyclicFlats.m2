@@ -104,17 +104,7 @@ countStressedSubsets(CyclicFlats, ZZ, ZZ) := (M, r, h) -> (
     num
     );
 
-tuttePolynomialRing := ZZ(monoid(["x","y"]/getSymbol));
-tuttePolynomialUniform = method(Options => {"BaseRing" => tuttePolynomialRing});
-tuttePolynomialUniform (ZZ, ZZ) := RingElement => opts -> (k, n) -> (
-    R := opts.BaseRing;
-    total := sum apply(k, i -> binomial(n-i-2, n-k-1)*R_0^(i+1));
-    total += sum apply(n-k, i -> binomial(n-i-2, k-1)*R_1^(i+1));
-    total
-    );
-
-evalValInvariant = method();
-evalValInvariant (CyclicFlats, Function, Function, Function) := (M, Uniform, Cuspidal, Unisum) -> (
+evalValInvariant (CyclicFlats, Function, Function, Function) := M, Uniform, Cuspidal, Unisum -> (
     -*
     Inputs:
         M: CyclicFlats matroid object.
@@ -130,14 +120,54 @@ evalValInvariant (CyclicFlats, Function, Function, Function) := (M, Uniform, Cus
                 sum apply(r..n, h -> (
                         lam := countStressedSubsets(M, r, h);
                         lam * (Cuspidal(r, k, h, n) - Unisum(r, k, h, n))
-                                      );
-                         );
-                                   );
-                      );
+                        );
+                    );
+                );
+            );
+        total
+        );
+
+
+tutteRing := ZZ(monoid(["x","y"]/getSymbol));
+tutteUniform = method(Options => {BaseRing => tutteRing});
+tutteUniform (ZZ, ZZ) := RingElement => opts -> (k, n) -> (
+    R := opts.BaseRing;
+    total := sum apply(k, i -> binomial(n-i-2, n-k-1)*R_0^(i+1));
+    total += sum apply(n-k, i -> binomial(n-i-2, k-1)*R_1^(i+1));
     total
     );
 
+-- From Proposition 7.18
+tutteCuspidal = method(Options => {BaseRing => tutteRing});
+tutteCuspidal (ZZ, ZZ, ZZ, ZZ) := RingElement => opts -> (r, k, h, n) -> (
+    R = opts.BaseRing;
 
+    alpha = (i, j, r, k) -> (
+        if i + j <= k then (R_0 - 1)^(k-i-j)(1-((R_0-1)(R_1-1))^(i-r)) else (R_1 - 1)^(k-i-j)(1-((R_0-1)(R_1-1))^(k-r-j))
+        );
+    
+    total := tutteUniform(k-r, n-h, BaseRing => R) * tutteUniform(r, h, BaseRing => R);
+    total += sum apply(r+1..h, i -> (
+            sum apply(0..k-r-1, j -> (
+                    binomial(h, i) * binomial(n-h, j) * alpha(i, j, r, k)
+                    );
+                );
+            );
+        );
+    total
+    );
+
+tutteUnisum = method(Options => {BaseRing => tutteRing});
+tutteUnisum (ZZ, ZZ, ZZ, ZZ) := RingElement => opts -> (r, k, h, n) -> (
+    tutteUniform(r, h) * tutteUniform(k-r, n-h)
+    );
+
+tutte = method(Options => {BaseRing => tutteRing});
+tutte CyclicFlats := RingElement => opts -> M -> (
+    R = opts.BaseRing
+    evalValInvariant(M, tutteUniform, tutteCuspidal, tutteUnisum, BaseRing => R)
+    );
+    
 
 -- End CyclicFlats Code -------------------------------------------------------
 
