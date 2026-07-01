@@ -17,14 +17,17 @@ export {
         "rankSum",
         "cyclicFlatsType",
         "cyclicFlatsAxioms",
-        "evalValInvariant"
+        "evalValInvariant",
+        "cFlats",
+        "recFlats"
 }
 
 needsPackage "Posets"
 
 
-CyclicFlats = new Type of HashTable
-CyclicFlats.synonym = "cyclicFlats"
+CyclicFlats = new Type of HashTable;
+CyclicFlats.synonym = "cyclicFlats";
+
 
 globalAssignment CyclicFlats
 net CyclicFlats := M -> (
@@ -36,8 +39,8 @@ cyclicFlats(HashTable) := H -> (
     -- TODO: Axiom checking
     cyclicFlatsType := cFlats -> (
         scanPairs(cFlats, (Flat, Rank) -> (
-                if not instance(Flat, Set) then (
-                    if debugLevel > 0 then printerr("Error: " | toString(Flat) | " is not a set.");
+                if not (instance(Flat, Set) or instance(Flat, List) or instance(Flat, Sequence)) then (
+                    if debugLevel > 0 then printerr("Error: " | toString(Flat) | " is not iterable.");
                     error "Invalid flat.";
                     );
 
@@ -50,8 +53,10 @@ cyclicFlats(HashTable) := H -> (
         true
         );
     if not cyclicFlatsType H then error "Incorrect type for CyclicFlats matroid.";
-
-    cyclicFlatsAxioms = cFlats -> (
+    H2 := new HashTable from applyPairs(H, (k, v) -> (
+            set k => v
+            ));
+    cyclicFlatsAxioms := cFlats -> (
         G := keys cFlats;
         P := poset(G, isSubset);
         --Z0
@@ -60,7 +65,7 @@ cyclicFlats(HashTable) := H -> (
             return false;
             );
         --Z1
-        if not (( isMember(set {}, G)) and  (H#(set{}) == 0)) then (
+        if not (( isMember(set {}, G)) and  (cFlats#(set{}) == 0)) then (
             if debugLevel > 0 then printerr("Error: " | toString(cFlats) | "does not satisfy axiom Z1."); -- TODO: Make error message more specific.
             return false;
         );
@@ -69,9 +74,9 @@ cyclicFlats(HashTable) := H -> (
         for g in G do (
             for h in principalFilter(P,g) do (
                 if (g != h) then(  --maybe figure out a way around this, like just removing g from the principal filter
-                    if H#h - H#g == 0 or H#h - H#g >= #(h - g) then (
+                    if cFlats#h - cFlats#g == 0 or cFlats#h - cFlats#g >= #(h - g) then (
                         if debugLevel > 0 then printerr("Error: " | toString(cFlats) | " does not satisfy axiom."); -- TODO: Make error message more specific.
-                        return false
+                        return false;
                         );
                     )
                 )
@@ -79,24 +84,24 @@ cyclicFlats(HashTable) := H -> (
         --Z3
         for g in G do (
             for h in G do (
-                rankSum = H#g + H#h;
+                rankSum := cFlats#g + cFlats#h;
                 pJoin := first posetJoin(P, g, h);
                 pMeet := first posetMeet(P, g, h);
-                rankJoin := H#(pJoin);
-                rankMeet := H#(pMeet);
+                rankJoin := cFlats#(pJoin);
+                rankMeet := cFlats#(pMeet);
                 if ( rankSum < rankJoin + rankMeet + #(intersect(g,h)) - #(pMeet)) then (
                     if debugLevel > 0 then printerr("Error: " | toString(cFlats) | " does not satisfy axiom."); -- TODO: Make error message more specific.
                     return false;
                     );
                 );
             );
-        true;
+        true
         );
-    if not cyclicFlatsAxioms H then error "Given hashtable " | toString H | " does not satisfy the axioms of a collection of cyclic flats.";
+    if not cyclicFlatsAxioms H2 then error "Given hashtable " | toString H | " does not satisfy the axioms of a collection of cyclic flats.";
     M := new CyclicFlats from {
-        symbol groundSet => union keys H,
-        symbol rank => max values H,
-        symbol cyclicFlats => H
+        symbol groundSet => union keys H2,
+        symbol rank => max values H2,
+        symbol cyclicFlats => H2
         };
     M
     );
