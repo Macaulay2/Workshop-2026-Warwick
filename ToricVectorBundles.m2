@@ -1408,8 +1408,9 @@ tensor(ToricVectorBundle, ToricVectorBundle) := ToricVectorBundle => {} >> opts 
     Lnew:= apply(nrays, i -> L1_i**L2_i );
     J1:= filtrationJumps( tvb1 ); 
     J2:= filtrationJumps (tvb2 );
-    --Jnew:= filtrationTable := apply(R, r -> matrix {flatten apply(flatten entries fmT1#r, e1 -> apply(flatten entries fmT2#r, e2 -> e1 + e2))});
-    --toricVectorBundle(X, Lnew, Jnew)
+    -- TODO chech that this is what we want
+    Jnew:= filtrationTable := apply(nrays, p -> flatten apply(J1_p, e1 -> flatten apply(J2_p, e2 -> e1 + e2)));
+    toricVectorBundle(X, Lnew, Jnew)
 
     )
     else(
