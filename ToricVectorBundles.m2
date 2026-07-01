@@ -78,7 +78,8 @@ export {
     "addBase", 
     "addBaseChange", 
     "addDegrees", 
-    "addFiltration", 
+    "addFiltration",
+    "areIsomorphicNew",
     "areIsomorphic",
     "base",
     "cartierIndex",
@@ -860,10 +861,21 @@ filtration ToricVectorBundleKlyachko := tvb -> tvb#"filtrationMatricesTable"
 
 --TODO: A nice method, well-commented. we just need to modernize the extraction methods inside.
 
+-- new areIsomorphic for ToricVectorBundleNew
+-- this is just trivial for now to make sure that the == has been implemented appropriately
+areIsomorphicNew = method();
+areIsomorphicNew (ToricVectorBundleNew,ToricVectorBundleNew) := Boolean => (T1,T2) -> (
+    if T1 === T2 then return true
+    else return false
+    )
 -- PURPOSE : Checking for the descriptions of two given vector bundles in Klyachko's description if they are isomorphic
 --   INPUT : '(T1,T2)',  two ToricVectorBundleKlyachko
 --  OUTPUT : 'true', if they are isomorphic, 'false' otherwise
 -- COMMENT : If the check reveals that they are isomorphic, the isomorphism can be obtained with the function isomorphism
+
+ToricVectorBundleNew == ToricVectorBundleNew := (T1,T2) -> (areIsomorphicNew(T1,T2))
+
+
 areIsomorphic = method(TypicalValue => Boolean)
 areIsomorphic (ToricVectorBundleKlyachko,ToricVectorBundleKlyachko) := (T1,T2) -> (
      -- Creating the entries in the cacheTables of the two bundles if they are not yet present
@@ -2075,7 +2087,6 @@ image (ToricVectorBundleMap) :=(f
         if not isSubset(image (filteredPiece(E1,p,i)*M), image filteredPiece(E2, p, i)) then (print(p,i); return false));
         );
     toricVectorBundle(X, )
-    
 )
 *-
 
@@ -4499,6 +4510,11 @@ assert(T#"baseTable" === hashTable {matrix{{-1},{-1}} => matrix {{1,0},{0,1}},ma
 assert(rank T == 2)
 assert(T#"dimension of the variety" == 2)
 ///
+
+-- Test k
+-- Checking toricVectorBundle for ToricVectorBundleNew
+baseVariety = toricProjectiveSpace 2;
+matrixList = {matrix{},matrix{},matrix{}}
 
 -- Test 2
 -- Checking addBaseChange and cocycleCheck
