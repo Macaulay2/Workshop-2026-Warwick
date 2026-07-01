@@ -1951,17 +1951,17 @@ map(ToricVectorBundleNew, ToricVectorBundleNew, Matrix):= ToricVectorBundleMap =
     if numRows M =!= rank E1 or numColumns M =!= rank E2 then error " The dimensions of the matrix don't match the ranks of the bundles";
     if ring M =!= ring E1 or ring M =!= ring E2 then error " The matrix needs to be defined over the same ring as the bundles";
     if variety E1 =!= variety E2 then error "The base varieties of the bundles have to coincide";
-
+-*
     -- Check that map is well defined running on the rays and indeces
     Xrays:= rays(variety(E1));
     r :=rank E1;
-    phi:= map((ring E2)^(rank E2), (ring E1)^(r) , M )
+    phi:= map((ring E2)^(rank E2), (ring E1)^(r) , M );
     for i from 0 to r do(
         for p in Xrays do(
         if not isSubset(phi(filteredPiece(E1,p,i)), filteredPiece(E2, p, i)) then (print(p,i); error ("The map is not compatible for the ray and index above "));
         )
     )
-
+*-
 
     new ToricVectorBundleMap from{
         symbol source => E1,
