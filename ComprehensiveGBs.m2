@@ -80,8 +80,7 @@ CGBMain (List, List) := (F, S) -> (
   -- H := pruneG'; -- (takes too long to terminate if we do not factor h)
   -- H := unique apply(pruneG', g -> squareFreePart g); -- (takes a bit longer to terminate)
 
-  H := listOfFactors h; --See end of section 2 of suzuki sato to for justification. 
-                        --THIS IS NOT PROVEN IN THE PAPER, just claimed.
+  H := listOfFactors h;
   return {(S, sub(h, R), for g in G list (
                   g' := sub(sub(g, {l => 1}), R);
                   if zero g' then continue;
@@ -109,8 +108,7 @@ for t in L do (
   G = apply(t_2, p -> sub(p, R'));
   I = first entries gens eliminate(saturate(ideal (E | G), ideal N), {x, y});
   print("E = " | toString E | ", N = {" | toString squareFreePart N | "}");
-  print("Ideal after eliminating {x, y}: " | toString I);
-  print("");
+  print("Minimal polynomial of z: " | toString last I);
 );
 *-
 
@@ -190,9 +188,6 @@ TEST /// -* [insert short title for this test] *-
 
 
 ///
-
-end
-
 d=2
 E={(1,2),(1,3),(2,3),(1,4),(2,4),(3,4)}
 V={1,2,3,4}
@@ -209,7 +204,7 @@ cgbOnGraph(List,ZZ):=(G,d)->(
   F:=for i in E list(sum(1..d,k->(R_(2*i_0+k-3)-R_(2*i_1+k-3))^2)-S_(position(E, j -> j === i)));
   CGB(F)
 )
-d=2
+d=2git pullback
 E={(1,2),(1,3),(2,3)}
 V={1,2,3}
 G={V,E}
@@ -309,31 +304,3 @@ F={f,g,h}
 debug ComprehensiveGBs
 eliminateVariables(F)
 CGB(F)
-
-
-----------------------------------
---Cleaning up the output of CGBs
-----------------------------------
-
-R = QQ[a, b][x, y, z];
-F = {x^3-a, y^4-b, x+y-z};
-S = {};
-GB = CGBMain(F, S);
-noEmptyGB = select(GB, i-> not(member(i_1, i_0)));
-XX = new Set from apply(noEmptyGB, i -> i_2);
-*-
-count = 0;
-
-minimalStrata = for x in elements XX list (
-  print(length x);
-  strata = select (noEmptyGB, i -> i_2 == x);
-  temp = new Set from flatten(apply(strata, i -> i_0));
-  for s in strata do (
-    temp = temp * (new Set from s_0); 
-  );
-  count = count + length strata;
-  print("S = ", temp, "\t h=", strata_0_1);
-  print("count =", count);
-  minimal = select(strata, i-> (new Set from i_0)===temp);
-  first minimal
-);
