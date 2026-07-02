@@ -26,6 +26,7 @@ export {
     } -- functions, objects to export
 
 protect CGBMainTriples
+protect ReduceStrata
 
 -* Code section *-
 
@@ -88,7 +89,7 @@ CGBMain (List, List) := (F, S) -> (
   CGBMainRec(F, S, {}, RingsandThings)
 )
 
-CGBMainRec = method(Options => {reduceStrata => false});
+CGBMainRec = method(Options => {ReduceStrata => false});
 CGBMainRec (List, List, List, List) := o -> (F, S, memo, RingsandThings) -> (
   --print("Computing CGB for F = " | toString F | " and S = " | toString S);
   if 1 % (ideal S) == 0 then (
