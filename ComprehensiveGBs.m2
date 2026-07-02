@@ -59,36 +59,36 @@ diffConstructibleByLC (List, Sequence) := (C, LC) -> (
 
 CGBMain = method();
 CGBMain (List, List) := (F, S) -> (
-  R := ring F_0;
-  X := gens R;
+  R' := ring F_0;
+  X' := gens R;
   U := gens baseRing R;
   K := baseRing baseRing R;
-  RExt := K[getSymbol "l", X, U, MonomialOrder => Lex]; -- maybe construct the ordering from R?
-  l := first gens RExt;
-  RFlat := K[X, U, MonomialOrder => Lex];
-  RExt' := K[U][l, X, MonomialOrder => Lex];
-  RU := K[U];
-  RFlatl := RFlat[l];
-  RingsandThings := {R,X,RExt,RFlat,RExt',RU,RFlatl};
+  RExtt := K[getSymbol "l", X', U, MonomialOrder => Lex]; -- maybe construct the ordering from R?
+  l := first gens RExtt;
+  RFlat' := K[X', U, MonomialOrder => Lex];
+  RExtt' := K[U][l, X', MonomialOrder => Lex];
+  RU' := K[U];
+  RFlatl' := RFlat'[l];
+  RingsandThings := new HashTable from {R => R', X => X', RExt => RExtt, RFlat => RFlat', RExt' => RExtt', RU => RU', RFlatl => RFlatl'};
   CGBMainRec(F, S, {}, RingsandThings)
 )
 
 CGBMainRec = method();
-CGBMainRec (List, List, List, List) := (F, S, memo, RingsandThings) -> (
+CGBMainRec (List, List, List, HashTable) := (F, S, memo, RingsandThings) -> (
   --print("Computing CGB for F = " | toString F | " and S = " | toString S);
   if 1 % (ideal S) == 0 then (
     return {}
   );
-  l := first gens RingsandThings_2;
-  A := apply(F, i -> l * sub(i, RingsandThings_2));
-  B := apply(S, i -> (l-1) * sub(i, RingsandThings_2));
+  l := first gens RingsandThings#RExt;
+  A := apply(F, i -> l * sub(i, RingsandThings#RExt));
+  B := apply(S, i -> (l-1) * sub(i, RingsandThings#RExt));
   G := (entries gens gb(ideal join(A, B)))_0;
-  pruneG := select(G, g -> ((first first exponents(leadMonomial sub(g,RingsandThings_2))) > 0) and any(exponents(sub(leadCoefficient sub(g,RingsandThings_6),RingsandThings_3)), i -> any(i_(toList(0..(#(RingsandThings_1)-1))), i -> i > 0)));
-  pruneG = apply(pruneG, g -> leadCoefficient sub(g, RingsandThings_4));
+  pruneG := select(G, g -> ((first first exponents(leadMonomial sub(g,RingsandThings#RExt))) > 0) and any(exponents(sub(leadCoefficient sub(g,RingsandThings#RFlatl),RingsandThings#RFlat)), i -> any(i_(toList(0..(#(RingsandThings#X)-1))), i -> i > 0)));
+  pruneG = apply(pruneG, g -> leadCoefficient sub(g, RingsandThings#RExt'));
   h := lcm pruneG;
 
-  memo = memo | {(S, sub(h, RingsandThings_0), for g in G list (
-                  g' := sub(sub(g, {l => 1}), RingsandThings_0);
+  memo = memo | {(S, sub(h, RingsandThings#R), for g in G list (
+                  g' := sub(sub(g, {l => 1}), RingsandThings#R);
                   if zero g' then continue;
                   g'))};
 
@@ -102,9 +102,9 @@ CGBMainRec (List, List, List, List) := (F, S, memo, RingsandThings) -> (
   H := listOfFactors h;
   diffset := {};
   for hi in H do (
-    diffset = {({sub(hi, RingsandThings_5)}, 1_(RingsandThings_5))};
+    diffset = {({sub(hi, RingsandThings#RU)}, 1_(RingsandThings#RU))};
     for t in memo do (
-      diffset = diffConstructibleByLC(diffset, (apply(t#0, p -> sub(p, RingsandThings_5)), sub(t#1, RingsandThings_5)));
+      diffset = diffConstructibleByLC(diffset, (apply(t#0, p -> sub(p, RingsandThings#RU)), sub(t#1, RingsandThings#RU)));
       if isEmpty diffset then (
         break
       );
@@ -112,7 +112,7 @@ CGBMainRec (List, List, List, List) := (F, S, memo, RingsandThings) -> (
     if isEmpty diffset then (
       continue;
     );
-    memo = CGBMainRec(F, append(S, sub(hi, RingsandThings_0)), memo, RingsandThings);
+    memo = CGBMainRec(F, append(S, sub(hi, RingsandThings#R)), memo, RingsandThings);
   );
   return memo
 );
