@@ -50,7 +50,7 @@ totalListProduct (List, List) := (A, B) -> (
 PGBMain = method();
 PGBMain (CGBTriple) := T -> (
     {E, N, F} := T#triple;
-    print(E, length N);
+    --print(E, length N);
     if not(consistent(E, N)) then (
         return {}
     );
@@ -69,7 +69,7 @@ PGBMain (CGBTriple) := T -> (
     if length Gr == 0 then (
         Gr = {0_U};
     );
-    productList = totalListProduct(Gr, N);
+    productList := totalListProduct(Gr, N);
     if length(productList) == 0 then (
         productList = {0_CoeffRing};
     );
@@ -80,7 +80,8 @@ PGBMain (CGBTriple) := T -> (
     if not(consistent(productList, N)) then (
         return PGB
     );
-    listDiff := apply(toList((new Set from G) - (new Set from Gr)), l -> sub(l, R));
+    listDiff := apply(toList((new Set from apply(G, i->sub(i, R))) - (new Set from apply(Gr, i->sub(i, R)))), l -> sub(l, R));
+    if length listDiff == 0 then (return {});
     Gm := MDBasis(listDiff);
     H := apply(Gm, g->leadCoefficient(sub(g, R)));
     h := lcm(H);
@@ -88,7 +89,7 @@ PGBMain (CGBTriple) := T -> (
     if consistent(Gr, productList) then (
         PGB = PGB | {{Gr, productList, Gm}};
     );
-    breakpoint
+    --breakpoint
     for i in 0..(length(H)-1) do (
         PGB = PGB | PGBMain(CGBFromTriple({Gr | {H_i}, totalListProduct(N, {product(H_{0..(i-1)})}), listDiff}));
         );
