@@ -53,7 +53,7 @@ isConsistentRabinowitsch (List, List) :=(E,N) -> (
     if isEmpty N then(return false);
     R := ring E_0;
     S := (baseRing R)[Variables => 1+numgens R];
-    M=map(S,R, (gens S)_{0..(numgens(R)-1)});
+    M := map(S,R, (gens S)_{0..(numgens(R)-1)});
     any(N, f -> not isMember(1, ideal(apply(E,p->M(p))|{(M(f)*last(gens S)-1)})))
 )
 --R=QQ[x,y]
