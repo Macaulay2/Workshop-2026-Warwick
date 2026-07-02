@@ -50,7 +50,10 @@ isConsistent (List, List) := (E, N) -> (
 isConsistentRabinowitsch = method();
 isConsistentRabinowitsch (List, List) :=(E,N) -> (
     if isEmpty (E|N) then(return false);
-    if isEmpty E then(return set(N) != 0);
+    if isEmpty E then(
+        if zero first N then error("Please remove zeros from N"); 
+        return true;
+        );
     if isEmpty N then(return false);
     R := ring E_0;
     S := (baseRing R)[Variables => 1+numgens R];
