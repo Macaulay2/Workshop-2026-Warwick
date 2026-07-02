@@ -73,8 +73,8 @@ diffConstructibleByLC (List, Sequence) := (C, LC) -> (
   flatten apply(C, t -> diffLC(t, LC))
 );
 
-CGBMain = method(); -- Initialises CGBMainRec
-CGBMain (List, List) := (F, S) -> (
+CGBMain = method(Options => {ReduceStrata => false}); -- Initialises CGBMainRec
+CGBMain (List, List) := o -> (F, S) -> (
   R := ring F_0;
   X := gens R;
   U := gens baseRing R;
@@ -86,12 +86,12 @@ CGBMain (List, List) := (F, S) -> (
   RU := K[U];
   RFlatl := RFlat[l];
   RingsandThings := {R,X,RExt,RFlat,RExt',RU,RFlatl};
-  CGBMainRec(F, S, {}, RingsandThings)
+  CGBMainRec(F, S, {}, RingsandThings,ReduceStrata => o.ReduceStrata)
 )
 
 CGBMainRec = method(Options => {ReduceStrata => false});
 CGBMainRec (List, List, List, List) := o -> (F, S, memo, RingsandThings) -> (
-  --print("Computing CGB for F = " | toString F | " and S = " | toString S);
+  print("Computing CGB for F = " | toString F | " and S = " | toString S);
   if 1 % (ideal S) == 0 then (
     return {}
   );
@@ -102,14 +102,22 @@ CGBMainRec (List, List, List, List) := o -> (F, S, memo, RingsandThings) -> (
   pruneG := select(G, g -> ((first first exponents(leadMonomial sub(g,RingsandThings_2))) > 0) and any(exponents(sub(leadCoefficient sub(g,RingsandThings_6),RingsandThings_3)), i -> any(i_(toList(0..(#(RingsandThings_1)-1))), i -> i > 0)));
   pruneG = apply(pruneG, g -> leadCoefficient sub(g, RingsandThings_4));
   h := lcm pruneG;
-
-  memo = memo | {(S, sub(h, RingsandThings_0), for g in G list (
+  if o.ReduceStrata then (
+    memo = memo | {(S, sub(h, RingsandThings_0), for g in G list (
                   g' := sub(sub(g, {l => 1}), RingsandThings_0);
                   if zero g' then continue;
                   g'))};
+  );
 
   if pruneG == {} then (
-    return memo
+    if o.ReduceStrata then (
+      return memo
+    ) else (
+      return {(S, sub(h, R), for g in G list (
+                  g' := sub(sub(g, {l => 1}), R);
+                  if zero g' then continue;
+                  g'))}
+    )
   );
 
   -- H := pruneG; -- (takes too long to terminate if we do not factor h)
@@ -129,15 +137,15 @@ CGBMainRec (List, List, List, List) := o -> (F, S, memo, RingsandThings) -> (
       if isEmpty diffset then (
         continue;
       );
-      memo = CGBMainRec(F, append(S, sub(hi, RingsandThings_0)), memo, RingsandThings);
+      memo = CGBMainRec(F, append(S, sub(hi, RingsandThings_0)), memo, RingsandThings, ReduceStrata => true);
     );
+    return memo
   ) else (
     return {(S, sub(h, RingsandThings_0), for g in G list (
                   g' := sub(sub(g, {l => 1}), RingsandThings_0);
                   if zero g' then continue;
                   g'))} | flatten apply(H, hi -> CGBMainRec(F, append(S, sub(hi, RingsandThings_0)), memo, RingsandThings))
   );
-  return memo
 );
 
 
@@ -195,11 +203,11 @@ for t in L do (
 
 
 
-CGB=method()
+CGB=method(Options => {ReduceStrata => false})
 CGB(List):=F->(
     s:=first entries eliminateVariables(F);
     result:=s;
-    G:=CGBMain(F,s);
+    G:=CGBMain(F,s, ReduceStrata => o.ReduceStrata);
     for i in G do (
         result=result|(i_2);
         );
