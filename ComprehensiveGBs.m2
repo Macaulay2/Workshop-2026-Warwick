@@ -65,12 +65,25 @@ isConsistentRabinowitsch (List, List) :=(E,N) -> (
 --N={y^2}
 --isConsistentRabinowitsch(E,N)
 
-diffLC = method();
-diffLC (Sequence, Sequence) := (A, B) -> (
-  result := {(A#0 | {B#1}, A#1)} | apply(B#0, p -> (A#0, A#1 * p));
-  select(result, t -> isConsistent(t#0, {t#1}))
-);
 
+diffLC = method(
+    Options => {
+        Strategy => "radical"
+    }
+);
+diffLC (Sequence, Sequence) := opts -> (A, B) -> (
+  result := {(A#0 | {B#1}, A#1)} | apply(B#0, p -> (A#0, A#1 * p));
+  breakpoint
+  if opts.Strategy == "radical" then (
+    select(result, t -> isConsistent(t#0, {t#1}))
+    ) 
+  else if opts.Strategy == "Rabinowitsch" then (
+    select(result, t -> isConsistentRabinowitsch(t#0, {t#1}))
+    )
+  else (
+    error "Unknown strategy for diffLC"
+  )
+); 
 diffConstructibleByLC = method();
 diffConstructibleByLC (List, Sequence) := (C, LC) -> (
   flatten apply(C, t -> diffLC(t, LC))
