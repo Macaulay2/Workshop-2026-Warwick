@@ -5276,10 +5276,20 @@ filtMat = apply(p, i -> basisMat);
 jumpsT3 = filtrationJumps T3;
 T4 = toricVectorBundle(PP3,filtMat,jumpsT3);
 assert areIsomorphic(T3,T4)
+--checking isomorphic for changing basis filtration matrices in different ways
+TT3 = tangentBundle PP3;
+basisMat0 = (filtrationMatrices TT3)#0 * (matrix{{1,0,0},{1,1,0},{1,0,1}});
+basisMat1 = (filtrationMatrices TT3)#1 * (matrix{{1,0,1},{0,1,1},{0,1,0}});
+basisMat2 = (filtrationMatrices TT3)#2 * (matrix{{1,-1,1},{-1,0,1},{0,1,-1}});
+basisMat3 = (filtrationMatrices TT3)#3;
+T = toricVectorBundle(PP3,{basisMat0,basisMat1,basisMat2,basisMat3},filtrationJumps TT3);
+areIsomorphic(TT3,T)
+
 ///
 
 --Test 35
 --Test for isomorphism
+TEST///
 PP3 = toricProjectiveSpace 3;
 D = toricDivisor({1,2,-1,0},PP3);
 L1 = lineBundle D;
@@ -5300,7 +5310,7 @@ conjIsoT3T4 = map(T4,T3,id_((ring T3)^(rank T3)));
 assert (isomorphism(T3,T4) === conjIsoT3T4)
 conjIsoT4T3 = map(T3,T4,id_((ring T4)^(rank T4)));
 assert (isomorphism(T4,T3) === conjIsoT4T3)
-
+///
 --Test 36
 --Test for ring
 
@@ -5357,10 +5367,37 @@ assert(filtrationMatrices(T) == {matrix(QQ, {{-1, -1}, {-1, 0}}), matrix(QQ ,{{1
 assert(areIsomorphic(T, T1**L) )
 ///
 
+-*
 --Test 40
 --Test for map for ToricVectorBundleNew
+PP3 = toricProjectiveSpace 3;
+trivPP3 = trivialBundle(PP3,3);
+tangPP3 = tangentBundle(PP3);
+M = matrix{{1,0,1},{0,1,0},{1,1,0}};
+tvbMap = map(trivPP3,tangPP3,M)
+assert(tvbMap.source === tangPP3)
+assert(tvbMap.target === trivPP3)
+assert(tvbMap.map === M)
+*-
+--Test 41
+--Test for isWellDefined for map of ToricVectorBundleNew
+--test when source is not a ToricVectorBundleNew
 
+--test when target is not a ToricVectorBundleNew
 
+--test when map is not a matrix
+
+--test when cache is not a cachetable? can we check this?
+
+--test a map that is not well defined
+
+--test a map that is well defined
+
+PP3 = toricProjectiveSpace 3;
+trivPP3 = trivialBundle(PP3,3);
+tangPP3 = tangentBundle(PP3);
+M = matrix{{1,0,1},{0,1,0},{1,1,0}};
+tvbMap = map(trivPP3,tangPP3,M)
 
 end
 
