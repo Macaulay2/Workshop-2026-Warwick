@@ -19,6 +19,7 @@ export {
         "evalValInvariant",
         "tuttePolynomial",
         "ehrhartPolynomial",
+        "ehrhartCuspidal",
         "basesOfCyclicFlats"
 }
 
@@ -209,7 +210,7 @@ tuttePolynomial CyclicFlatsMatroid := opts -> M -> (
     );
 
 -- Evaluating the Ehrhart polynomial
-ehrhartRing := ZZ[t];
+ehrhartRing := QQ[t];
 
 ehrhartUniform = method(Options => {BaseRing => ehrhartRing});
 ehrhartUniform (ZZ, ZZ) := RingElement => opts -> (k, n) -> (
@@ -223,19 +224,31 @@ ehrhartUniform (ZZ, ZZ) := RingElement => opts -> (k, n) -> (
 ehrhartCuspidal = method(Options => {BaseRing => ehrhartRing});
 ehrhartCuspidal (ZZ, ZZ, ZZ, ZZ) := RingElement => opts -> (r, k, h, n) -> (
     R := opts.BaseRing;
-    -- Ehrhart polynomial of the matroid Lambda_{r,k,h,n}, evaluated at t
-    -- Parameters r, k, h, n as in Lemma 7.14; t a nonnegative integer.
-    a := n - h - k + r;
-    b := h - r;
-    m := min(h, k) - r;
-    sum(0..(m*t), i ->
-        sum(0..(n-h), j ->
-            sum(0..h, l ->
-                (-1)^(j+l)
-                * binomial(n-h, j)
-                * binomial(h, l)
-                * binomial((a-j)*t + n - h - j + i - 1, n - h - 1)
-                * binomial((b-l)*t + h - l - i - 1, h - 1)
+    ehr := (r, k, h, n, s) -> (
+        -- Ehrhart polynomial of the matroid Lambda_{r,k,h,n}, evaluated at t
+        -- Parameters r, k, h, n as in Lemma 7.14; t a nonnegative integer.
+        a := n - h - k + r;
+        b := h - r;
+        m := min(h, k) - r;
+        sum apply(toList(0..(m*s)), i ->
+            sum apply(toList(0..(n-h)), j ->
+                sum apply(toList(0..h), l ->
+                    (-1)^(j+l) * binomial(n-h, j) * binomial(h, l) * binomial((a-j)*s + n - h - j + i - 1, n - h - 1) * binomial((b-l)*s + h - l - i - 1, h - 1)
+                    )
+                )
+            )
+        );
+    -- Lagrange interpolating the Ehrhart polynomial
+    d := n-1;
+    pts := for s from 0 to d list (s, ehr(r, k, h, n, s));
+    print(pts);
+    sum apply(toList(pts), p -> (
+            s0 := first p;
+            val := last p;
+            val * product apply(toList(pts), q -> (
+                    s1 := first q;
+                    if s1 == s0 then 1_R else (t-s1)/(s0-s1)
+                    )
                 )
             )
         )
