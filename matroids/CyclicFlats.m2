@@ -131,7 +131,7 @@ evalValInvariant (CyclicFlats, Function, Function, Function) := (M, Uniform, Cus
     n := #(M.groundSet);
     total := Uniform(k, n);
     total += sum apply(1..k, r -> (
-                sum apply(r..n, h -> (
+                sum apply(r+1..n, h -> (
                         lam := countStressedSubsets(M, r, h);
                         lam * (Cuspidal(r, k, h, n) - Unisum(r, k, h, n))
                         )
@@ -159,7 +159,7 @@ tutteCuspidal (ZZ, ZZ, ZZ, ZZ) := RingElement => opts -> (r, k, h, n) -> (
     alpha := (i, j, r, k) -> (
         if i + j <= k then (R_0 - 1)^(k-i-j)*(1-((R_0-1)*(R_1-1))^(i-r)) else (R_1 - 1)^(k-i-j)*(1-((R_0-1)*(R_1-1))^(k-r-j))
         );
-    
+
     total := tutteUniform(k-r, n-h, BaseRing => R) * tutteUniform(r, h, BaseRing => R);
     total += sum apply(r+1..h, i -> (
             sum apply(0..k-r-1, j -> (
