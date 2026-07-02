@@ -233,7 +233,7 @@ ehrhartCuspidal (ZZ, ZZ, ZZ, ZZ) := RingElement => opts -> (r, k, h, n) -> (
         sum apply(toList(0..(m*s)), i ->
             sum apply(toList(0..(n-h)), j ->
                 sum apply(toList(0..h), l ->
-                    (-1)^(j+l) * binomial(n-h, j) * binomial(h, l) * binomial((a-j)*s + n - h - j + i - 1, n - h - 1) * binomial((b-l)*s + h - l - i - 1, h - 1)
+                     binomial(n-h, j) * binomial(h, l) * binomial((a-j)*s + n - h - j + i - 1, n - h - 1) * binomial((b-l)*s + h - l - i - 1, h - 1)
                     )
                 )
             )
