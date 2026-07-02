@@ -446,7 +446,7 @@ tropicalVariety (Ideal) := o -> (I) ->(
     if o.IsHomogeneous==false then
     (
 
-	--First homogenize, append variable AA to the beginning
+	--First homogenize, append variable AA to the beginningtropicalVa
     	R := ring I;
     	AA := symbol AA;
 
@@ -878,8 +878,8 @@ heightOneSlice Fan := F ->(
         emptyCones:={};
 	listOfSlicedCones:={};
 	numberOfMaxCones := length listOfMaxCones; 
-	if (numberOfMaxCones == 0) then (print "The variety is empty!"; return F;)
-	else( 
+	if (numberOfMaxCones == 0) then (print "The variety is empty!"; return F;) -- fix to not print 
+	else( -- algorithm is too expensive, instead, compute which rays exist at height 1 and work with that. 
  	    for i from 0 when i < (numberOfMaxCones) do (
 		currentMaxCone := coneFromVData( submatrix(raysMatrix, listOfMaxCones#i), linealitySpace(F));  
 		slicedMaxCone := intersection(currentMaxCone, slicePlane);
@@ -930,9 +930,10 @@ tropicalVarietyWithpadicVal = (I) -> (
 	    );
    ));
    raysToKeep:=sort unique flatten conesToKeep;
+   
+   mults:={};
    (PC,keptCones):= heightOneSlice(fan((rays GC)_raysToKeep,linealitySpace(GC), conesToKeep));
    --Will need to work out the multiplicities later
-   mults:={};
    return(tropicalCycle1(PC,mults));
 );
 
@@ -2461,7 +2462,7 @@ I=ideal(x+y+2*z)
 T=tropicalVarietyWithpadicVal(I)
 F=fan T
 assert(rank(linealitySpace(F))==1)
-assert(#(vertices(F))==1)
+assert(rank(source(vertices(F)))==1)
 assert(#maxPolyhedra(F)==3)
 ///
 
