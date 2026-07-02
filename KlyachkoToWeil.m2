@@ -1,27 +1,31 @@
 needsPackage "NormalToricVarieties";
 needsPackage "ToricVectorBundles";
 
--*
-jumpsToSubspaces (list, list, hashTable) := (fJumps,fMatrices,a) -> (
---if length a != length fJumps then error "The length of the vector a must match the number of filtration jumps.";
-I={};
-for i from 0 to #fJumps-1 do (J={}; 
-	for j from 0 to length fJumps#i -1 do ((
-
-		if (fJumps#i)#j >= a#i then J=append (J, (entries(fMatrices#i)_j)));
-	
-		Jspan=image transpose(map(E,E,matrix J)););
-	I=append(I,Jspan););
-S=intersect(I);
-return S;
+weilDecoration := (V) -> (
+	L:=flatten (filtrationJumps V);
+	amin:=min(L);
+	amax:=max(L);
+	d:=length (filtrationJumps V);
+	alist:= reverse(toList(toList (d:amin).. toList (d:amax)));
+	strataIntersections:={};
+	weilDecorationImage:={};
+	for a in alist do (	strata:={}; 
+		for i from 0 to d-1 do(
+			strata = append (strata,filteredPiece (V, (rays (variety V))#i, a#i));
+		);
+		int:=intersect (apply (strata, i -> image i));
+		if isMember(int,strataIntersections)==false then (strataIntersections= append (strataIntersections, int);
+			weilDecorationImage= append (weilDecorationImage, a));
+	);
+	wDecoration:={{strataIntersections#0,infinity}};
+	for i from 1 to length (weilDecorationImage)-1 do (
+		wDecoration= append (wDecoration, {strataIntersections#i,weilDecorationImage#i});
+	);
+	wDecoration
 )
-*-
 
-M
-
---Test 34
---Checking areIsomorphic
---first test, check trivial bundles of different ranks are not isomorphic
+--Test 
+--Checking weilDecoration on the tangent bundle of P^2 and the direct sum of the tangent bundle with a line bundle.
 TEST ///
 M=toricProjectiveSpace 2;
 V=tangentBundle M++lineBundle(M_1);
