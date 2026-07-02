@@ -152,16 +152,9 @@ evalValInvariant (CyclicFlats, MethodFunctionWithOptions, MethodFunctionWithOpti
     *-
     k := M.rank;
     n := #(M.groundSet);
-<<<<<<< HEAD
-    total := Uniform(k, n);
-    total += sum apply(1..k, r -> (
-                sum apply(r+1..n, h -> (
-=======
     total := Uniform(k, n); 
     summy := sum apply(toList(1..k), r -> (
                 sum apply(toList(r..n), h -> ( --Requires toList because sum needs a list and r..n naturally returns a Sequence
-                        
->>>>>>> 77604f26aaeb5d1cadc6912a92cf93b337811d15
                         lam := countStressedSubsets(M, r, h);
                         lam * (Cuspidal(r, k, h, n) - Unisum(r, k, h, n))
                         )
