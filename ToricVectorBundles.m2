@@ -969,31 +969,36 @@ areIsomorphic = method(TypicalValue => Boolean)
 -- new areIsomorphic for ToricVectorBundleNew
 -- this is just trivial for now to make sure that the == has been implemented appropriately
 areIsomorphic (ToricVectorBundleNew,ToricVectorBundleNew) := Boolean => (T1,T2) -> (
+    areTVBsIso := false;
     --First check that the bundles have same rank, defined over same ring and have same base variety before
     --anything else
     if not ((rank T1 == rank T2) and (variety T1 === variety T2) and (ring T1 === ring T2)) then return false;
     --Checking if T1 and T2 have already been deemed isomorphic. If not, create entries in a cache
-    --If T1 does have an entry for iso in the cache, we check if any of the maps targets is T2
-    --i.e. check if we've already deemed T1 iso T2
-    if T1.cache.?iso then(
-        for i in T1.cache.iso do (
-            if i.target === T2 then return true --presumably don't need to store the map in cache again
-            
-            );
-        );
     if not T1.cache.?iso then (
-        T1.cache.iso = {};
+        T1.cache.iso = new MutableHashTable;
         );
     if not T2.cache.?iso then (
-        T1.cache.iso = {};
+        T2.cache.iso = new MutableHashTable;
         );
-     --Checking if isomorphic!
-     --defining the potential isomorphism as the identity from T1 to T2
-     isoMatrix := map(T2,T1,id_((coefficientRing ring variety T1)^(rank T1)));
-     --checking if this map is injective and surjective. if it is, this will tell us that
-     --these bundles are equivariantly isomorphic
-     ((isInjective isoMatrix) and (isSurjective isoMatrix))
-     
+    --If T1 does have an entry for iso in the cache, we check if any of the maps targets is T2
+    --i.e. check if we've already deemed T1 iso T2
+    if T1.cache.iso#?T2 then return true;
+    
+    if not T1.cache.iso#?T2 then (
+        --Checking if isomorphic!
+        --defining the potential isomorphism as the identity from T1 to T2
+        isoMapT1T2 := map(T2,T1,id_((ring T1)^(rank T1)));
+        --checking if this map is injective and surjective. if it is, this will tell us that
+        --these bundles are equivariantly isomorphic
+        areTVBsIso = ((isInjective isoMapT1T2) and (isSurjective isoMapT1T2));
+        if areTVBsIso then (
+            T1.cache.iso#T2 = isoMapT1T2;
+            isoMapT2T1 := map(T1,T2,id_((ring T2)^(rank T2)));
+            T2.cache.iso#T1 = isoMapT2T1;
+            );
+         );
+
+     areTVBsIso
     )
 
 areIsomorphic (ToricVectorBundleKlyachko,ToricVectorBundleKlyachko) := (T1,T2) -> (
@@ -1045,6 +1050,11 @@ areIsomorphic (ToricVectorBundleKlyachko,ToricVectorBundleKlyachko) := (T1,T2) -
 --   INPUT : '(T1,T2)',  two ToricVectorBundleKlyachko
 --  OUTPUT : The isomorphism, if they are isomorphic, otherwise an error
 --isomorphism = method(TypicalValue => Matrix)
+
+isomorphism (ToricVectorBundleNew,ToricVectorBundleNew) := Boolean => o -> (T1,T2) -> (
+    if not areIsomorphic(T1,T2) then error("The bundles are not isomorphic");
+    T1.cache.iso#T2
+    )
 isomorphism (ToricVectorBundleKlyachko,ToricVectorBundleKlyachko) := o -> (T1,T2) -> (
      if not areIsomorphic(T1,T2) then error("The bundles are not isomorphic");
      T1.cache.isoMatrix#T2)				
@@ -5259,27 +5269,51 @@ assert areIsomorphic(L1,L2)
 T3 = trivialBundle(PP3,3);
 basisMat = matrix{{1,0,0},{1,1,0},{1,0,1}};
 p = #(rays T3);
-filtMat = apply(p, i -> basisMat)
+filtMat = apply(p, i -> basisMat);
 jumpsT3 = filtrationJumps T3;
 T4 = toricVectorBundle(PP3,filtMat,jumpsT3);
 assert areIsomorphic(T3,T4)
 ///
 
--- Test for ring
+--Test 35
+--Test for isomorphism
+PP3 = toricProjectiveSpace 3;
+D = toricDivisor({1,2,-1,0},PP3);
+L1 = lineBundle D;
+triv = trivialBundle(PP3,1);
+L2 = twist(triv,{1,2,-1,0});
+conjIsoL1L2 = map(L2,L1,id_((ring L1)^(rank L1)));
+assert (isomorphism(L1,L2) === conjIsoL1L2)
+conjIsoL2L1 = map(L1,L2,id_((ring L2)^(rank L2)));
+assert (isomorphism(L2,L1) === conjIsoL2L1)
+--same bundle but different bases
+T3 = trivialBundle(PP3,3);
+basisMat = matrix{{1,0,0},{1,1,0},{1,0,1}};
+p = #(rays T3);
+filtMat = apply(p, i -> basisMat);
+jumpsT3 = filtrationJumps T3;
+T4 = toricVectorBundle(PP3,filtMat,jumpsT3);
+conjIsoT3T4 = map(T4,T3,id_((ring T3)^(rank T3)));
+assert (isomorphism(T3,T4) === conjIsoT3T4)
+conjIsoT4T3 = map(T3,T4,id_((ring T4)^(rank T4)));
+assert (isomorphism(T4,T3) === conjIsoT4T3)
+
+--Test 36
+--Test for ring
 
 TEST///
 X = toricProjectiveSpace 2;
 T1 = trivialBundle(X,2);
-assert(ring T1 == QQ)
+assert(ring T1 === QQ)
 Y = hirzebruchSurface(3, CoefficientRing=>ZZ/101);
 T2 = cotangentBundle(Y);
 assert(ring T2 === ZZ/101)
 ///
 
-
--- Test direct sum
+--Test 37
+--Test direct sum
 TEST///
-X= toricProjectiveSpace 2;
+X = toricProjectiveSpace 2;
 T1 = trivialBundle(X,2);
 T2 = tangentBundle(X);
 T= T1++T2;
@@ -5291,10 +5325,10 @@ assert(filtrationJumps(T)=={{0, 0, 1, 0}, {0, 0, 1, 0}, {0, 0, 1, 0}} )
 assert(filtrationMatrices(T) == {matrix(QQ, {{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, -1, -1}, {0, 0, -1, 0}}), matrix(QQ, {{1, 0, 0, 0},{0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}}), matrix(QQ, {{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 0, 1},{0, 0, 1, 0}} )} )
 ///
 
-
--- Test direct product
+--Test 38
+--Test direct product
 TEST///
-X= toricProjectiveSpace 2;
+X = toricProjectiveSpace 2;
 T1 = trivialBundle(X,3);
 T2 = tangentBundle(X);
 T= T1**T2;
@@ -5306,10 +5340,10 @@ assert(filtrationJumps(T)=={{1, 0, 1, 0, 1, 0}, {1, 0, 1, 0, 1, 0}, {1, 0, 1, 0,
 assert(filtrationMatrices(T) ==  {matrix(QQ, {{-1, -1, 0, 0, 0, 0}, {-1, 0, 0, 0, 0, 0}, {0, 0, -1, -1, 0, 0}, {0, 0, -1, 0, 0,      0}, {0, 0, 0, 0, -1, -1}, {0, 0, 0, 0, -1, 0}}), matrix(QQ, {{1, 0, 0, 0, 0, 0}, {0, 1, 0, 0, 0,  0}, {0, 0, 1, 0, 0, 0}, {0, 0, 0, 1, 0, 0}, {0, 0, 0, 0, 1, 0}, {0, 0, 0, 0, 0, 1}}), matrix(QQ,      {{0, 1, 0, 0, 0, 0}, {1, 0, 0, 0, 0, 0}, {0, 0, 0, 1, 0, 0}, {0, 0, 1, 0, 0, 0}, {0, 0, 0,      0, 0, 1}, {0, 0, 0, 0, 1, 0}})} )
 ///
 
-
--- Test for twist
+--Test 39
+--Test for twist
 TEST///
-X= toricProjectiveSpace 2;
+X = toricProjectiveSpace 2;
 T1 = tangentBundle(X);
 L = lineBundle(toricDivisor({1,2,-1},X));
 T = twist(T1, {1,2,-1} );
@@ -5319,6 +5353,10 @@ assert(filtrationJumps(T)=={{2, 1}, {3, 2}, {0, -1}})
 assert(filtrationMatrices(T) == {matrix(QQ, {{-1, -1}, {-1, 0}}), matrix(QQ ,{{1, 0}, {0, 1}}), matrix(QQ, {{0, 1}, {1, 0}})})
 assert(areIsomorphic(T, T1**L) )
 ///
+
+--Test 40
+--Test for map for ToricVectorBundleNew
+
 
 
 end
