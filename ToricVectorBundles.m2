@@ -431,7 +431,7 @@ rank ToricVectorBundleKlyachko := T -> T#"rank of the vector bundle"
 --   INPUT : 'T',  a ToricVectorBundle
 --  OUTPUT : the ring of the bundle with degree space the lattice of the variety
 ring ToricVectorBundle := (cacheValue symbol gradedRing)( T -> (
-    if instance(T, ToricVectorBundleNew) then coefficientRing ring variety T;    
+    if instance(T, ToricVectorBundleNew) then (return coefficientRing ring variety T);    
     if instance(T,ToricVectorBundleKlyachko) then (T#"ring")[DegreeRank => T#"dimension of the variety"]
     else QQ[DegreeRank => T#"dimension of the variety"]))
 
