@@ -232,7 +232,7 @@ displayFiltrations ToricVectorBundleNew := E -> (
 trivialBundle = method()
 trivialBundle (NormalToricVariety, ZZ) := (tv,r) -> (
 	p := #(rays tv);
-	toricVectorBundle(tv, apply(p, i -> id_((ring tv)^r)), apply(p, i -> toList(r:0)))
+	toricVectorBundle(tv, apply(p, i -> id_((coefficientRing ring tv)^r)), apply(p, i -> toList(r:0)))
 )
 
 lineBundle = method()
@@ -431,7 +431,9 @@ rank ToricVectorBundleKlyachko := T -> T#"rank of the vector bundle"
 --   INPUT : 'T',  a ToricVectorBundle
 --  OUTPUT : the ring of the bundle with degree space the lattice of the variety
 ring ToricVectorBundle := (cacheValue symbol gradedRing)( T -> (
-    if instance(T, ToricVectorBundleNew) then (return coefficientRing ring variety T);    
+
+    if instance(T, ToricVectorBundleNew) then ( return coefficientRing ring variety T);    
+
     if instance(T,ToricVectorBundleKlyachko) then (T#"ring")[DegreeRank => T#"dimension of the variety"]
     else QQ[DegreeRank => T#"dimension of the variety"]))
 
@@ -1038,60 +1040,38 @@ dual ToricVectorBundle := {} >> opts -> tvb -> (
 
 
 -- PURPOSE : Computing the 'l'-th exterior power of a ToricVectorBundle
---   INPUT : '(l,tvb)',  where 'l' is a strictly positive integer and 'tvb'is a TorcVectorBundle
---  OUTPUT : 'tvb',  a ToricVectorBundle which is the 'l'-th exterior power
-exteriorPower (ZZ,ToricVectorBundle) := ToricVectorBundle => opts -> (l,tvb) -> (
-     k := tvb#"rank of the vector bundle";
-     -- Checking for input errors
-     if l < 0 then error("The power has to be positive.");
-     -- Generating the list of 'l'-tuples of 0..k-1 and the corresponding index table
-     ind := subsets(k,l);
-     indtable := hashTable apply(#ind, i -> ind#i => i);
-     if instance(tvb,ToricVectorBundleKlyachko) then (
-     	  if l == 0 then toricVectorBundle(1,tvb#"ToricVariety")
-	  else if l > k then toricVectorBundle(0,tvb#"ToricVariety")
-	  else (
-	       -- Extracting data
-     	       baseTable := tvb#"baseTable";
-     	       filtrationTable := tvb#"filtrationMatricesTable";
-     	       Rs := rays tvb;
-     	       R := tvb#"ring";
-     	       F := tvb#"ToricVariety";
-     	       -- Computing the 'l'-th exterior powers of the base matrices
-     	       baseTable = apply(Rs, r -> (
-	       	    	 B := baseTable#r;
-	       	    	 M := mutableMatrix(R,#ind,#ind);
-	       	    	 for j in ind do for k in ind do M_(indtable#k,indtable#j) = det(B^k_j);
-	       	    	 matrix M));
-     	       -- Computing the 'l'-th exterior power of the filtration matrices
-     	       filtrationTable = apply(Rs, r -> (
-	       	    	 filt := filtrationTable#r;
-	       	    	 matrix {apply(ind, j -> ( sum flatten entries filt_j))}));
-     	       T := makeVBKlyachko(#ind,F,baseTable,filtrationTable);
-     	       if tvb.cache.?isVB and tvb.cache.isVB then T.cache.isVB = true;
-     	       T))
-     else (
-	  if l == 0 then toricVectorBundle(1,tvb#"ToricVariety","Type" => "Kaneyama")
-	  else if l > k then toricVectorBundle(0,tvb#"ToricVariety","Type" => "Kaneyama")
-	  else (
-	       -- Computing the 'l'-th exterior powers of the transition matrices
-     	       baseChangeTable := hashTable apply(pairs tvb#"baseChangeTable", p -> p#0 =>  matrix apply(ind, j -> apply(ind, k -> det (p#1)^j_k)));
-     	       -- Computing the 'l'-th exterior power of the degrees
-     	       degreeTable := hashTable apply(pairs tvb#"degreeTable", p -> p#0 => matrix {apply(ind, j -> (p#1)_j * matrix toList(l:{1}))});
-     	       E := new ToricVectorBundleKaneyama from {
-	       	    "degreeTable" => degreeTable,
-	       	    "baseChangeTable" => baseChangeTable,
-	       	    "ToricVariety" => tvb#"ToricVariety",
-	       	    "number of affine charts" => tvb#"number of affine charts",
-	       	    "dimension of the variety" => tvb#"dimension of the variety",
-	       	    "rank of the vector bundle" => #ind,
-	       	    "codim1Table" => tvb#"codim1Table",
-	       	    "topConeTable" => tvb#"topConeTable",
-	       	    symbol cache => new CacheTable};
-     	       if tvb.cache.?regCheck and tvb.cache.regCheck and tvb.cache.?cocycle and tvb.cache.cocycle then (
-	       	    E.cache.regCheck = true;
-	       	    E.cache.cocycle = true);
-     	       E)))
+--   INPUT : '(TVB, l)',  where 'l' is a strictly positive integer and 'TVB'is a TorcVectorBundle
+--  OUTPUT : the 'l'-th exterior power of TVB
+exteriorPower (ToricVectorBundleNew, ZZ) := (TVB, l) -> (
+	if l < 0 then (
+		error("The power has to be non-negative.");
+	) else if l == 0 then (
+		trivialBundle(variety TVB, 0)
+	) else (
+		R := rays variety TVB;
+		fM := filtrationMatrices TVB;
+		fJ := filtrationJumps TVB;
+     	
+     	ind := subsets(rank TVB,l);
+    	indtable := hashTable apply(#ind, i -> ind#i => i);
+
+		newfM := apply(#R, t -> (
+			M := mutableMatrix(ring variety TVB,#ind,#ind);
+			for i in ind do (
+				for j in ind do (
+					M_(indtable#(rank TVB),indtable#j) = det((fM_t)^(rank TVB)_j);
+				);
+			);
+			matrix M
+		));
+
+		newfJ := apply(#R, t -> (
+			apply(ind, j -> sum (fJ_t)_j)
+		));
+
+		toricVectorBundle(variety TVB, newfM, newfJ)
+	)
+)
 
 --TODO: Two extraction methods. should modify to match our new type.
 
@@ -1456,6 +1436,10 @@ randomDeformation (ToricVectorBundleKlyachko,ZZ,ZZ) := (tvb,l,h) -> (
 --     	     0 and 'h'
 randomDeformation (ToricVectorBundleKlyachko,ZZ) := (tvb,h) -> randomDeformation(tvb,0,h)
 
+
+-- PURPOSE : Constructs the symmetric power of a given bundle. 
+--   INPUT : '(TVB, l)', where "TVB" is a bundle and l is the rank, 
+--  OUTPUT : the lth symmetric power of TVB. 
 symmetricPower (ToricVectorBundleNew, ZZ) := (TVB, l) -> (
 	if l < 0 then (
 		error("The power has to be non-negative.");
@@ -1471,7 +1455,7 @@ symmetricPower (ToricVectorBundleNew, ZZ) := (TVB, l) -> (
      	indtable := hashTable apply(#ind, i -> ind#i => i);
 
 		newfM := apply(#R, t -> (
-			M := mutableMatrix(ring variety TVB,#ind,#ind);
+			M := mutableMatrix(ring TVB,#ind,#ind);
 			for i in ind do (
 				for j in allind do (
 					M_(indtable#(sort j),indtable#i) = M_(indtable#(sort j),indtable#i) + product apply(#j, k -> ((fM_t)_i)_(j#k,k))
@@ -1487,18 +1471,6 @@ symmetricPower (ToricVectorBundleNew, ZZ) := (TVB, l) -> (
 		toricVectorBundle(variety TVB, newfM, newfJ)
 	)
 )
-
-
-
-
-
-
-
-
-
-
-
-
 
 -- PURPOSE : Computing the tangent bundle on a smooth, pure, and full dimensional Toric Variety 
 --   INPUT : 'F',  a smooth, pure, and full dimensional Fan
