@@ -27,7 +27,7 @@ Version => "1.1",
 --		"keepfiles" => true,
 "keepfiles" => false,
 		"cachePolyhedralOutput" => true,
-		"tropicalMax" => false,
+		"tropicalMax" => true,
 		"polymakeCommand" =>""
 	},
     --Might need PackageImports here - should Polyhedra be here instead??
@@ -860,6 +860,9 @@ multiplicities (TropicalCycle1) := T -> (T#"Multiplicities")
 
 
 --Takes the height one slice in min convention - height -1 slice in max convention
+-- We assume that the lineality space of the fan is contained in the height 0 slice.
+-- "Height" here is the first coordinate.
+
 heightOneSlice = method(TypicalValue => Fan)
 
 heightOneSlice Fan := F ->(
@@ -871,25 +874,24 @@ heightOneSlice Fan := F ->(
 	if (addsemiringAdd == "Min") then
 		heightCut = 1
 	else heightCut = -1;
-	M := matrix{{join(toSequence{1},(ambDim F -1): 0)}}; 
-	N := matrix{{(ambDim F): 0}}; 
-	slicePlane := polyhedronFromHData(N, matrix{{0}}, M, matrix{{heightCut}});
 	--- for each cone in the fan fan T, slice and append to PC
         emptyCones:={};
 	listOfSlicedCones:={};
-	numberOfMaxCones := length listOfMaxCones; 
-	if (numberOfMaxCones == 0) then (print "The variety is empty!"; return F;) -- fix to not print 
-	else( -- algorithm is too expensive, instead, compute which rays exist at height 1 and work with that. 
- 	    for i from 0 when i < (numberOfMaxCones) do (
-		currentMaxCone := coneFromVData( submatrix(raysMatrix, listOfMaxCones#i), linealitySpace(F));  
-		slicedMaxCone := intersection(currentMaxCone, slicePlane);
-		newSlicedMaxCone := convexHull(submatrix'(vertices slicedMaxCone ,{0},),submatrix'(rays slicedMaxCone ,{0},), submatrix'(linealitySpace slicedMaxCone ,{0},));
-		if dim(newSlicedMaxCone)>-1 then 
-		         (listOfSlicedCones = listOfSlicedCones | {newSlicedMaxCone})
+	numberOfMaxCones := length listOfMaxCones;
+	for i from 0 when i < (numberOfMaxCones) do (
+	    	currentMaxCone := listOfMaxCones#i;
+		heightOneRays := select(currentMaxCone,j->((heightCut*raysMatrix_j)_0>0));
+		heightZeroRays := select(currentMaxCone,j->(not(member(j,heightOneRays))));
+		scaledRays := transpose matrix apply(entries transpose raysMatrix_heightOneRays, row ->(apply(#row-1, j->(row_(j+1)/(heightCut*row_0)))));
+		slicedMaxCone := convexHull(scaledRays, submatrix'(raysMatrix_heightZeroRays,{0},), submatrix'(linealitySpace F , {0}, ));
+		if dim(slicedMaxCone)>-1 then 
+		         (listOfSlicedCones = listOfSlicedCones | {slicedMaxCone})
 		else emptyCones = emptyCones |{i};
-            )	
-	);
+        );
     	conesToKeep := select(numberOfMaxCones,i->(not(member(i,emptyCones))));
+--	if conesToKeep == {} then
+--	    return(polyhedralComplex(zerovector of size d, {}, zerovector      ),{});
+--TODO - deal with the empty complex case.
     	return(polyhedralComplex(listOfSlicedCones),conesToKeep);
 )	
 
@@ -906,6 +908,7 @@ tropicalVarietyWithValExternal = method(
 --First assume that I is prime
 
 --still need to add the multiplicities - currently they are empty
+--Also need to make work with max options
 tropicalVarietyWithpadicVal = (I) -> (
     d:=dim I;   
 --    gfanopt:=(new OptionTable) ++ {"groebnerComplex"=>true,"p"=>2};
