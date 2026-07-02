@@ -1,7 +1,7 @@
 --profile method() ---->> Gives a count of called functions and elapsed time
 
 
-CGBTriple = new Type of MutableHashTable
+CGBTriple = new Type of HashTable
 
 protect coefficientsRing
 protect totalRing
@@ -17,24 +17,35 @@ CGBFromTriple List := CGB => (L) -> (
         return new CGBTriple from {triple => L, coefficientsRing => coeff, totalRing => R , flattenedRing => scalarRing[gens R, gens coeff, MonomialOrder => Lex] };
         );
 );
+getCoefficientsRing = method();
 
+getCoefficientsRing = method();
+
+isConsistentRabinowitsch = method();
+isConsistentRabinowitsch (List, List) :=(E,N) -> (
+    if isEmpty (E|N) then(return false);
+    if isEmpty E then(return set(N) != 0);
+    if isEmpty N then(return false);
+    R := ring E_0;
+    S := (baseRing R)[Variables => 1+numgens R];
+    M := map(S,R, (gens S)_{0..(numgens(R)-1)});
+    any(N, f -> not isMember(1, ideal(apply(E,p->M(p))|{(M(f)*last(gens S)-1)})))
+)
 
 -- Ollie: for the consistency test, we don't need to compute radical of E
 -- we can use Rabinowitsch to just get away with one GB computation!
-consistent = method();
-consistent (List, List) := (E, N) ->(
-    if length E == 0 then (
-        if length N == 0 then (
-            return false
-        );
-        R := ring N_0;
-        I := ideal 0_R;
-    ) else (
-        I := radical (ideal E);
-    );
-    
-    return not(isEmpty(select(N, n -> not(isMember(n, I)))))
-);
+
+listOfFactors = method()
+listOfFactors := (h) -> (
+  hfac := factor h;
+  apply(#hfac, i -> if isConstant hfac#i#0 then 1_(ring h) else hfac#i#0)
+)
+
+squareFreePart = method()
+squareFreePart  := (h) -> (
+  product listOfFactors h
+)
+
 
 totalListProduct = method();
 totalListProduct (List, List) := (A, B) -> (
@@ -51,7 +62,7 @@ PGBMain = method();
 PGBMain (CGBTriple) := T -> (
     {E, N, F} := T#triple;
     --print(E, length N);
-    if not(consistent(E, N)) then (
+    if not(isConsistentRabinowitsch(E, N)) then (
         return {}
     );
     R := T#totalRing;
@@ -69,30 +80,34 @@ PGBMain (CGBTriple) := T -> (
     if length Gr == 0 then (
         Gr = {0_U};
     );
-    productList := totalListProduct(Gr, N);
+    productList := unique(totalListProduct(Gr, N));
     if length(productList) == 0 then (
         productList = {0_CoeffRing};
     );
     PGB := {};
-    if consistent(E, productList) then (
+    if isConsistentRabinowitsch(E, productList) then (
         PGB = {{E, productList, {1_R}}};
     );
-    if not(consistent(productList, N)) then (
+    if not(isConsistentRabinowitsch(productList, N)) then (
         return PGB
     );
-    listDiff := apply(toList((new Set from apply(G, i->sub(i, R))) - (new Set from apply(Gr, i->sub(i, R)))), l -> sub(l, R));
+    listDiff := toList((new Set from apply(G, i->sub(i, R))) - (new Set from apply(Gr, i->sub(i, R))));
     if length listDiff == 0 then (return {});
     Gm := MDBasis(listDiff);
-    H := apply(Gm, g->leadCoefficient(sub(g, R)));
-    h := lcm(H);
-    productList = totalListProduct(N, {sub(h, CoeffRing)});
-    if consistent(Gr, productList) then (
-        PGB = PGB | {{Gr, productList, Gm}};
+    H := unique(apply(Gm, g->squareFreePart(leadCoefficient(sub(g, R)))));
+    h := squareFreePart(lcm(H));
+    productList = unique(apply(totalListProduct(N, {sub(h, CoeffRing)}), i -> squareFreePart(i)));
+    if isConsistentRabinowitsch(Gr, productList) then (
+        PGB = unique(PGB | {{Gr, productList, Gm}});
     );
     --breakpoint
     for i in 0..(length(H)-1) do (
-        PGB = PGB | PGBMain(CGBFromTriple({Gr | {H_i}, totalListProduct(N, {product(H_{0..(i-1)})}), listDiff}));
-        );
+        PGB = unique(PGB | PGBMain(CGBFromTriple({
+            unique(Gr | {H_i}), 
+            unique(totalListProduct(N, {squareFreePart(product(H_{0..(i-1)}))})), 
+            listDiff}
+        )));
+    );
 
     return PGB  
 );
@@ -111,10 +126,9 @@ MDBasis (List) := (G) -> (
                 break
             );  
             if LTf % LTg == 0 then (
-                Basis = delete(f, Basis) | {g};
+                Basis = unique(delete(f, Basis) | {g});
                 continue
             );
-            Basis = Basis | {g};
          ); 
     );
 
@@ -123,6 +137,7 @@ MDBasis (List) := (G) -> (
 
 end 
 restart
+installPackage "ComprehensiveGBs"
 load "consistency.m2"
 ---------------------
 --TEST
@@ -135,14 +150,30 @@ L= PGBMain(T)
 assert({a*y + z, c*x + c*z^2} == MDBasis(G));
 
 --Example 9
-U = QQ[a,b]
-R = U[x,y,z, MonomialOrder => Lex]
+U = QQ[a, b, c, MonomialOrder => Lex]
+R = U[x,y,z, MonomialOrder => Lex];
 F = {x^3 - a, y^4 - b, x+y-z}
 T = CGBFromTriple({{0_U}, {1_U}, F})
-L =PGBMain(T)
+L= PGBMain(T)
 
 U = QQ[a,b]
 R = U[x,y, MonomialOrder => Lex]
 F = {a*x + b*y}
 T = CGBFromTriple({{0_U}, {1_U}, F})
 L =PGBMain(T)
+
+
+consistent = method();
+consistent (List, List) := (E, N) ->(
+    if length E == 0 then (
+        if length N == 0 then (
+            return false
+        );
+        R := ring N_0;
+        I := ideal 0_R;
+    ) else (
+        I := radical (ideal E);
+    );
+    
+    return not(isEmpty(select(N, n -> not(isMember(n, I)))))
+);
