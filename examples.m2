@@ -14,18 +14,24 @@ R = QQ[a,b][x,y,z, MonomialOrder => Lex]
 F = {x^3 - a, y^4 - b, x+y-z}
 G = CGBMain(F, {});
 #G
+
 G_1
 G_2
 G_3
 debug ComprehensiveGBs
+
+-- list of strata
+netList for g in G list g_{0,1}
 
 
 --example on graph=triangle
 E={(1,2),(1,3),(2,3)}
 V={1,2,3}
 G={V,E}
-(F,GG)=cgbOnGraph(G,2)
-netList GG
+(F,GG)=cgbOnGraph(G,2);
+
+-- strata
+netList for g in GG list g_{0,1}
 
 
 --example on graph=square

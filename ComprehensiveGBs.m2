@@ -26,48 +26,71 @@ export {
     } -- functions, objects to export
 
 protect CGBMainTriples
+protect ReduceStrata
 
 -* Code section *-
 
-listOfFactors = method();
+listOfFactors = method() -- returns the list of factors of a ring element
 listOfFactors (RingElement) := (h) -> (
   hfac := factor h;
   apply(#hfac, i -> if isConstant hfac#i#0 then 1_(ring h) else hfac#i#0)
 );
 
-squareFreePart = method();
+squareFreePart = method() -- returns the square free part of a ring element
 squareFreePart (RingElement) := (h) -> (
   product listOfFactors h
 );
 
-isConsistent = method();
+isConsistent = method(); -- returns whether or not rad(E) intersect N is empty
 isConsistent (List, List) := (E, N) -> (
   I := radical ideal E;
   any(N, p -> not isMember(p, I))
 );
 
-diffLC = method();
-diffLC (Sequence, Sequence) := (A, B) -> (
-  result := {(A#0 | {B#1}, A#1)} | apply(B#0, p -> (A#0, A#1 * p));
-  select(result, t -> isConsistent(t#0, {t#1}))
-);
+isConsistentRabinowitsch = method();
+isConsistentRabinowitsch (List, List) :=(E,N) -> (
+    if isEmpty (E|N) then(return false);
+    if isEmpty E then(
+        if zero first N then error("Please remove zeros from N"); 
+        return true;
+        );
+    if isEmpty N then(return false);
+    R := ring E_0;
+    S := (baseRing R)[Variables => 1+numgens R];
+    M := map(S,R, (gens S)_{0..(numgens(R)-1)});
+    any(N, f -> not isMember(1, ideal(apply(E,p->M(p))|{(M(f)*last(gens S)-1)})))
+)
+--R=QQ[x,y]
+--E={x+y}
+--N={y^2}
+--isConsistentRabinowitsch(E,N)
 
+
+diffLC = method(
+    Options => {
+        Strategy => "radical"
+    }
+);
+diffLC (Sequence, Sequence) := opts -> (A, B) -> (
+  result := {(A#0 | {B#1}, A#1)} | apply(B#0, p -> (A#0, A#1 * p));
+  breakpoint
+  if opts.Strategy == "radical" then (
+    select(result, t -> isConsistent(t#0, {t#1}))
+    ) 
+  else if opts.Strategy == "Rabinowitsch" then (
+    select(result, t -> isConsistentRabinowitsch(t#0, {t#1}))
+    )
+  else (
+    error "Unknown strategy for diffLC"
+  )
+); 
 diffConstructibleByLC = method();
 diffConstructibleByLC (List, Sequence) := (C, LC) -> (
   flatten apply(C, t -> diffLC(t, LC))
 );
 
-CGBMain = method();
-CGBMain (List, List) := (F, S) -> (
-  CGBMainRec(F, S, {})
-)
-
-CGBMainRec = method();
-CGBMainRec (List, List, List) := (F, S, memo) -> (
-  --print("Computing CGB for F = " | toString F | " and S = " | toString S);
-  if 1 % (ideal S) == 0 then (
-    return {}
-  );
+CGBMain = method(Options => {ReduceStrata => false}); -- Initialises CGBMainRec
+CGBMain (List, List) := o -> (F, S) -> (
   R := ring F_0;
   X := gens R;
   U := gens baseRing R;
@@ -76,49 +99,99 @@ CGBMainRec (List, List, List) := (F, S, memo) -> (
   l := first gens RExt;
   RFlat := K[X, U, MonomialOrder => Lex];
   RExt' := K[U][l, X, MonomialOrder => Lex];
-  A := apply(F, i -> l * sub(i, RExt));
-  B := apply(S, i -> (l-1) * sub(i, RExt));
+  RU := K[U];
+  RFlatl := RFlat[l];
+  RingsandThings := {R,X,RExt,RFlat,RExt',RU,RFlatl};
+  CGBMainRec(F, S, {}, RingsandThings,ReduceStrata => o.ReduceStrata)
+)
+
+CGBMainRec = method(Options => {ReduceStrata => false});
+CGBMainRec (List, List, List, List) := o -> (F, S, memo, RingsandThings) -> (
+  print("Computing CGB for F = " | toString F | " and S = " | toString S);
+  if 1 % (ideal S) == 0 then (
+    return {}
+  );
+  l := first gens RingsandThings_2;
+  A := apply(F, i -> l * sub(i, RingsandThings_2));
+  B := apply(S, i -> (l-1) * sub(i, RingsandThings_2));
   G := (entries gens gb(ideal join(A, B)))_0;
-  pruneG := select(G, g -> ((first first exponents(leadMonomial sub(g,RExt))) > 0) and any(exponents(sub(leadCoefficient sub(g,RFlat[getSymbol "l"]),RFlat)), i -> any(i_(toList(0..(#X-1))), i -> i > 0)));
-  pruneG = apply(pruneG, g -> leadCoefficient sub(g, RExt'));
+  pruneG := select(G, g -> ((first first exponents(leadMonomial sub(g,RingsandThings_2))) > 0) and any(exponents(sub(leadCoefficient sub(g,RingsandThings_6),RingsandThings_3)), i -> any(i_(toList(0..(#(RingsandThings_1)-1))), i -> i > 0)));
+  pruneG = apply(pruneG, g -> leadCoefficient sub(g, RingsandThings_4));
   h := lcm pruneG;
   for i in 0..(#(factor h)-1) do (
-     if isConstant (factor h)#i#0 then(
+    if isConstant (factor h)#i#0 then(
          h = h//(factor h)#i#0;
          )
       );
-  -- this clean up is not enough 
   
-  memo = memo | {(S, sub(h, R), for g in G list (
-                  g' := sub(sub(g, {l => 1}), R);
+  if o.ReduceStrata then (
+    memo = memo | {(S, sub(h, RingsandThings_0), for g in G list (
+                  g' := sub(sub(g, {l => 1}), RingsandThings_0);
                   if zero g' then continue;
                   g'))};
+  );
 
   if pruneG == {} then (
-    return memo
+    if o.ReduceStrata then (
+      return memo
+    ) else (
+      return {(S, sub(h, R), for g in G list (
+                  g' := sub(sub(g, {l => 1}), R);
+                  if zero g' then continue;
+                  g'))}
+    )
   );
 
   -- H := pruneG; -- (takes too long to terminate if we do not factor h)
   -- H := unique apply(pruneG, g -> squareFreePart g); -- (takes a bit longer to terminate)
 
   H := listOfFactors h;
-  RU := K[U];
-  diffset := {};
-  for hi in H do (
-    diffset = {({sub(hi, RU)}, 1_RU)};
-    for t in memo do (
-      diffset = diffConstructibleByLC(diffset, (apply(t#0, p -> sub(p, RU)), sub(t#1, RU)));
-      if isEmpty diffset then (
-        break
+  if o.ReduceStrata then (
+    diffset := {};
+    for hi in H do (
+      diffset = {({sub(hi, RingsandThings_5)}, 1_(RingsandThings_5))};
+      for t in memo do (
+        diffset = diffConstructibleByLC(diffset, (apply(t#0, p -> sub(p, RingsandThings_5)), sub(t#1, RingsandThings_5)));
+        if isEmpty diffset then (
+          break
+        );
       );
+      if isEmpty diffset then (
+        continue;
+      );
+      memo = CGBMainRec(F, append(S, sub(hi, RingsandThings_0)), memo, RingsandThings, ReduceStrata => true);
     );
-    if isEmpty diffset then (
-      continue;
-    );
-    memo = CGBMainRec(F, append(S, sub(hi, R)), memo);
+    return memo
+  ) else (
+    return {(S, sub(h, RingsandThings_0), for g in G list (
+                  g' := sub(sub(g, {l => 1}), RingsandThings_0);
+                  if zero g' then continue;
+                  g'))} | flatten apply(H, hi -> CGBMainRec(F, append(S, sub(hi, RingsandThings_0)), memo, RingsandThings))
   );
-  return memo
 );
+
+
+-*
+
+Notes on Optimisation:
+
+-- Expensive operations:
+-- > Creating a new ring on each iteration (Do this once at the start keep passing in the rings data)
+--   The rings data and all the maps can be put in a new object
+--
+-- > calling radical to check consistency, instead us Rabinowitsch
+--
+
+TODO: profiling - see what else is taking time
+
+needsPackage "ComprehensiveGBs"
+R = QQ[a,b][x,y,z, MonomialOrder => Lex]
+F = {x^3 - a, y^4 - b, x+y-z}
+profile CGBMain(F, {});
+profileSummary
+
+*-
+
 
 -*
 R = QQ[u][x];
@@ -152,11 +225,11 @@ for t in L do (
 
 
 
-CGB=method()
+CGB=method(Options => {ReduceStrata => false})
 CGB(List):=F->(
     s:=first entries eliminateVariables(F);
     result:=s;
-    G:=CGBMain(F,s);
+    G:=CGBMain(F,s, ReduceStrata => o.ReduceStrata);
     for i in G do (
         result=result|(i_2);
         );
@@ -173,25 +246,18 @@ eliminateVariables(List):=F->(
     x:=getSymbol "x";
     u:=getSymbol "u";
     S:=QQ[x_1..x_n,u_1..u_m, MonomialOrder => Eliminate n];
-
     U:=gens coefficientRing(R);
     X:=gens R;
     l1:=for i from 0 to m-1 list U_i=>S_(i+n);
     l2:=for j from 0 to n-1 list X_j=>S_j;
-
-
     F':=apply(F,h->sub(h,l1|l2));
     F'gbgens:=gens gb(ideal(F'));
     S':=selectInSubring(1,F'gbgens);
-
     C:=coefficientRing R;
     mm:=map(C,ring S',
         toList(n:0)|gens C   
         );
     mm(S')
-
-
-
     )
 
 
@@ -220,7 +286,7 @@ doc ///
   Key
     ComprehensiveGBs
   Headline
-    A package for computing Comprehensive Groebner Bases (CGBs). Base on @HREF("#ref1","[1]")@.
+    A package for computing Comprehensive Groebner Bases (CGBs). Based on @HREF("#ref1","[1]")@.
   References
     @LABEL("[1]","id" => "ref1")@ Akira Suzuki and Yosuke Sato. 2006. A simple algorithm to compute comprehensive Gröbner bases using Gröbner bases. In Proceedings of the 2006 international symposium on Symbolic and algebraic computation (ISSAC '06). Association for Computing Machinery, New York, NY, USA, 326–331. https://doi.org/10.1145/1145768.1145821
 ///
@@ -294,7 +360,6 @@ uninstallPackage "ComprehensiveGBs"
 restart
 installPackage "ComprehensiveGBs"
 viewHelp "ComprehensiveGBs"
-
 
 
 
