@@ -11,34 +11,29 @@ newPackage("CyclicFlats",
         DebuggingMode => true
 )
 export {
-	"CyclicFlats",
-	"cyclicFlats",
-        "BaseRing",
+	"CyclicFlatsMatroid",
+	"cyclicFlatsMatroid",
+        "cyclicFlats",
         "groundSet",
         "rankSum",
-        "cyclicFlatsType",
-        "cyclicFlatsAxioms",
         "evalValInvariant",
-        "cFlats",
-        "recFlats",
-        "tutte",
+        "tuttePolynomial",
+        "ehrhartPolynomial",
         "basesOfCyclicFlats"
 }
 
 needsPackage "Posets"
 
+CyclicFlatsMatroid = new Type of HashTable;
+CyclicFlatsMatroid.synonym = "cyclicFlatsMatroid";
 
-CyclicFlats = new Type of HashTable;
-CyclicFlats.synonym = "cyclicFlats";
-
-
-globalAssignment CyclicFlats
-net CyclicFlats := M -> (
+globalAssignment CyclicFlatsMatroid
+net CyclicFlatsMatroid := M -> (
     net ofClass class M | " of rank " | toString(M.rank) | " on " | toString(#M.groundSet) | " elements"
     )
 
-cyclicFlats = method()
-cyclicFlats(HashTable) := H -> (
+cyclicFlatsMatroid = method()
+cyclicFlatsMatroid(HashTable) := H -> (
     cyclicFlatsType := cFlats -> (
         scanPairs(cFlats, (Flat, Rank) -> (
                 if not (instance(Flat, Set) or instance(Flat, List) or instance(Flat, Sequence)) then (
@@ -54,11 +49,11 @@ cyclicFlats(HashTable) := H -> (
             );
         true
         );
-    if not cyclicFlatsType H then error "Incorrect type for CyclicFlats matroid.";
+    if not cyclicFlatsType H then error "Incorrect type for CyclicFlatsMatroid matroid.";
     H2 := new HashTable from applyPairs(H, (k, v) -> (
             set k => v
             ));        
-    M := new CyclicFlats from {
+    M := new CyclicFlatsMatroid from {
         symbol groundSet => union keys H2,
         symbol rank => max values H2,
         symbol cyclicFlats => H2
@@ -67,7 +62,7 @@ cyclicFlats(HashTable) := H -> (
     );
 
 
-isWellDefined(CyclicFlats) := M -> (
+isWellDefined(CyclicFlatsMatroid) := M -> (
     cFlats := M.cyclicFlats;
     G := keys cFlats;
     P := poset(G, isSubset);
@@ -111,7 +106,7 @@ isWellDefined(CyclicFlats) := M -> (
     );
 
 basesOfCyclicFlats = method()
-basesOfCyclicFlats CyclicFlats := M -> (
+basesOfCyclicFlats CyclicFlatsMatroid := M -> (
     H := M.cyclicFlats;
     G := keys H;
     topSet := union G;
@@ -128,40 +123,52 @@ basesOfCyclicFlats CyclicFlats := M -> (
         if tracker then ( bases = append(bases, toList(x)) );
     );
     return bases;
-)
+);
+
+-- Generic code for evaluating valuative invariants on split matroids
 
 countStressedSubsets = method();
-countStressedSubsets(CyclicFlats, ZZ, ZZ) := (M, r, h) -> (
+countStressedSubsets(CyclicFlatsMatroid, ZZ, ZZ) := (M, r, h) -> (
     num := 0;
     scanPairs(M.cyclicFlats, (S, ri) -> if ri == r and #S == h then num += 1);
     num
     );
 
-evalValInvariant = method();
-evalValInvariant (CyclicFlats, MethodFunctionWithOptions, MethodFunctionWithOptions, MethodFunctionWithOptions) := (M, Uniform, Cuspidal, Unisum) -> (
+evalValInvariant = method(Options => {BaseRing => null});
+evalValInvariant (CyclicFlatsMatroid, MethodFunctionWithOptions, MethodFunctionWithOptions, MethodFunctionWithOptions) := opts -> (M, Uniform, Cuspidal, Unisum) -> (
     -*
     Inputs:
-        M: CyclicFlats matroid object.
+        M: CyclicFlatsMatroid matroid object.
         Other params are evaluations of the valuative invariant on specific types of matroids indexed by tuples of integers:
         Uniform: (k, n): Uniform matroid U_{k, n}
         Cuspidal: (r, k, h, n): Cuspidal matroid L_{r, k, h, n}
         Unisum: (r, k, h, n): Sum of uniform matroids U_{r, h} + U_{k-r, n-h}
     *-
+    BaseRing := opts.BaseRing;
     k := M.rank;
     n := #(M.groundSet);
-    total := Uniform(k, n); 
+    total := if BaseRing == null then Uniform(k, n) else Uniform(k, n, BaseRing => BaseRing); 
     summy := sum apply(toList(1..k), r -> (
-                sum apply(toList(r..n), h -> ( --Requires toList because sum needs a list and r..n naturally returns a Sequence
-                        lam := countStressedSubsets(M, r, h);
+            sum apply(toList(r..n), h -> ( --Requires toList because sum needs a list and r..n naturally returns a Sequence
+                    lam := countStressedSubsets(M, r, h);
+                    if BaseRing == null then (
                         lam * (Cuspidal(r, k, h, n) - Unisum(r, k, h, n))
+                        )
+                    else (
+                        lam * (Cuspidal(r, k, h, n, BaseRing => BaseRing) - Unisum(r, k, h, n, BaseRing => BaseRing))
                         )
                     )
                 )
-            ); 
-    return total - summy
+            )
+        ); 
+    return total - summy;
 );
+    
 
-tutteRing := ZZ(monoid(["x","y"]/getSymbol));
+-- Evaluating the tutte polynomial
+
+tutteRing := ZZ[x, y];
+
 tutteUniform = method(Options => {BaseRing => tutteRing});
 tutteUniform (ZZ, ZZ) := RingElement => opts -> (k, n) -> (
     R := opts.BaseRing;
@@ -191,27 +198,71 @@ tutteCuspidal (ZZ, ZZ, ZZ, ZZ) := RingElement => opts -> (r, k, h, n) -> (
         );
     total
     );
--- Note: ./Matroids/foundations.m2 is an upstream in-development module that
--- defines Pasture / Foundation / pasture / pastureMorphism / savePasture /
--- saveFoundation / specificPasture and is not yet integrated into the public
--- Matroids package; it is intentionally not loaded here.  See
---   https://github.com/jchen419/Matroids-M2
--- for upstream development.
 
 tutteUnisum = method(Options => {BaseRing => tutteRing});
 tutteUnisum (ZZ, ZZ, ZZ, ZZ) := RingElement => opts -> (r, k, h, n) -> (
     tutteUniform(r, h) * tutteUniform(k-r, n-h)
     );
 
-tutte = method(Options => {BaseRing => tutteRing});
-tutte CyclicFlats :=  opts -> M -> (
-    R := opts.BaseRing;
-    evalValInvariant(M, tutteUniform, tutteCuspidal, tutteUnisum)
+tuttePolynomial CyclicFlatsMatroid := opts -> M -> (
+    evalValInvariant(M, tutteUniform, tutteCuspidal, tutteUnisum, BaseRing => opts.BaseRing)
     );
+
+-- Evaluating the Ehrhart polynomial
+ehrhartRing := ZZ[t];
+
+ehrhartUniform = method(Options => {BaseRing => ehrhartRing});
+ehrhartUniform (ZZ, ZZ) := RingElement => opts -> (k, n) -> (
+    R := opts.BaseRing;
+    sum apply(toList 1..k-1, j -> (
+            (-1)^j * binomial(n, j) * binomial((k-j)*R_0 + n - 1 - j, n-1)
+            )
+        )
+    );
+
+ehrhartCuspidal = method(Options => {BaseRing => ehrhartRing});
+ehrhartCuspidal (ZZ, ZZ, ZZ, ZZ) := RingElement => opts -> (r, k, h, n) -> (
+    R := opts.BaseRing;
+    -- Ehrhart polynomial of the matroid Lambda_{r,k,h,n}, evaluated at t
+    -- Parameters r, k, h, n as in Lemma 7.14; t a nonnegative integer.
+    a := n - h - k + r;
+    b := h - r;
+    m := min(h, k) - r;
+    sum(0..(m*t), i ->
+        sum(0..(n-h), j ->
+            sum(0..h, l ->
+                (-1)^(j+l)
+                * binomial(n-h, j)
+                * binomial(h, l)
+                * binomial((a-j)*t + n - h - j + i - 1, n - h - 1)
+                * binomial((b-l)*t + h - l - i - 1, h - 1)
+                )
+            )
+        )
+    );
+
+ehrhartUnisum = method(Options => {BaseRing => ehrhartRing});
+ehrhartUnisum (ZZ, ZZ, ZZ, ZZ) := RingElement => opts -> (r, k, h, n) -> (
+    );
+
+ehrhartPolynomial := method(Options => {BaseRing => ehrhartRing});
+ehrhartPolynomial CyclicFlatsMatroid :=  opts -> M -> (
+    R := opts.BaseRing;
+    evalValInvariant(M, ehrhartUniform, ehrhartCuspidal, ehrhartUnisum)
+    );
+
     
 isSplit = method()
 isSplit Poset := P -> (height P == 2)
--- End CyclicFlats Code -------------------------------------------------------
+
+-- End CyclicFlatsMatroid Code -------------------------------------------------------
+
+-- Note: ./Matroids/foundations.m2 is an upstream in-development module that
+-- defines Pasture / Foundation / pasture / pastureMorphism / savePasture /
+-- saveFoundation / specificPasture and is not yet integrated into the public
+-- Matroids package; it is intentionally not loaded here.  See
+--   https://github.com/jchen419/Matroids-M2
+-- for upstream development.
 
 --load "./Matroids/doc-Matroids.m2"
 
