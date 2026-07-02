@@ -11,33 +11,47 @@
 ---------------------------------------------------------------------------
 newPackage("ToricVectorBundles",
     Headline => "vector bundles on toric varieties",
-    Version => "1.4",
-    Date => "April 15, 2025",
+    Version => "2.0",
+    Date => "todo",
     Authors => {
-         {Name => "René Birkner"
-	  },
-         {Name => "Nathan Ilten",
-	  HomePage => "https://www.sfu.ca/~nilten/",
-	  Email => "nilten@sfu.ca"},
+        {Name => "René Birkner"},
+        {Name => "Adrian Cook",
+         HomePage => "todo",
+         Email => "todo"},
+        {Name => "Mayo Garcia",
+         HomePage => "todo",
+         Email => "todo"},
+        {Name => "Nathan Ilten",
+         HomePage => "https://www.sfu.ca/~nilten/",
+         Email => "nilten@sfu.ca"},
+        {Name => "Julia McLellan",
+         HomePage => "todo",
+         Email => "todo"},
+        {Name => "Marco ",
+         HomePage => "todo",
+         Email => "todo"},
         {Name => "Labix Liu",
-        HomePage => "https://labix-liu.github.io/",
-        Email => "sin.liu@qmul.ac.uk"},
-         {Name => "Lars Petersen"
-	  }},
+         HomePage => "https://labix-liu.github.io/",
+         Email => "sin.liu@qmul.ac.uk"},
+        {Name => "Lars Petersen"},
+        {Name => "Sasha Zotine",
+         HomePage => "https://sites.google.com/view/szotine/home",
+         Email => "sashahbc@gmail.com"},
+        },
     Keywords => {"Toric Geometry"},
     Certification => {
-	 "journal name" => "The Journal of Software for Algebra and Geometry: Macaulay2",
-	 "journal URI" => "https://msp.org/jsag/",
-	 "article title" => "Computations with equivariant toric vector bundles",
-	 "acceptance date" => "2010-06-15",
-	 "published article URI" => "https://msp.org/jsag/2010/2-1/p03.xhtml",
-	 "published article DOI" => "10.2140/jsag.2010.2.11",
-	 "published code URI" => "https://msp.org/jsag/2010/2-1/jsag-v2-n1-x03-code.zip",
-	 "release at publication" => "314a1e7a1a5f612124f23e2161c58eabeb491f46",
-	 "version at publication" => "1.0",
-	 "volume number" => "2",
-	 "volume URI" => "https://msp.org/jsag/2010/2-1/"
-	 },
+        "journal name" => "The Journal of Software for Algebra and Geometry: Macaulay2",
+        "journal URI" => "https://msp.org/jsag/",
+        "article title" => "Computations with equivariant toric vector bundles",
+        "acceptance date" => "2010-06-15",
+        "published article URI" => "https://msp.org/jsag/2010/2-1/p03.xhtml",
+        "published article DOI" => "10.2140/jsag.2010.2.11",
+        "published code URI" => "https://msp.org/jsag/2010/2-1/jsag-v2-n1-x03-code.zip",
+        "release at publication" => "314a1e7a1a5f612124f23e2161c58eabeb491f46",
+        "version at publication" => "1.0",
+        "volume number" => "2",
+        "volume URI" => "https://msp.org/jsag/2010/2-1/"
+        },
     Configuration => {},
     PackageImports => {"Varieties"},
     PackageExports => {"Isomorphism", "Polyhedra","NormalToricVarieties"},
@@ -411,7 +425,16 @@ rank ToricVectorBundleKaneyama := T -> T#"rank of the vector bundle"
 
 rank ToricVectorBundleKlyachko := T -> T#"rank of the vector bundle"
 
-ring ToricVectorBundleNew := E -> coefficientRing ring (E.variety)
+--ring ToricVectorBundleNew := E -> coefficientRing ring (E.variety)
+--TODO get rid of this below.
+-- PURPOSE : Generating the graded Ring for the cohomology groups
+--   INPUT : 'T',  a ToricVectorBundle
+--  OUTPUT : the ring of the bundle with degree space the lattice of the variety
+ring ToricVectorBundle := (cacheValue symbol gradedRing)( T -> (
+    if instance(T, ToricVectorBundleNew) then coefficientRing ring variety E;    
+    if instance(T,ToricVectorBundleKlyachko) then (T#"ring")[DegreeRank => T#"dimension of the variety"]
+    else QQ[DegreeRank => T#"dimension of the variety"]))
+
 
 filtrationJumps = method()
 filtrationJumps ToricVectorBundleNew := E -> (E.filtrationJumps)
@@ -1306,14 +1329,6 @@ findWeights ToricVectorBundleKlyachko := (cacheValue symbol weights)( T -> (
 			      Dn := Rn * (F^{0..Rrank-1});
 			      if (try(lift(Dn,ZZ); true) else false) and R*Dn == F then lift(Dn,ZZ)
 			      else continue))))))
-
-
--- PURPOSE : Generating the graded Ring for the cohomology groups
---   INPUT : 'T',  a ToricVectorBundle
---  OUTPUT : the ring of the bundle with degree space the lattice of the variety
-ring ToricVectorBundle := (cacheValue symbol gradedRing)( T -> (
-	  if instance(T,ToricVectorBundleKlyachko) then (T#"ring")[DegreeRank => T#"dimension of the variety"]
-	  else QQ[DegreeRank => T#"dimension of the variety"]))
 
 
 -- PURPOSE : Check for a ToricVectorBundleKlyachko if it is general
@@ -2469,6 +2484,15 @@ coker (ToricVectorBundleKlyachko,Matrix) := (T,M) -> (
 
 
 beginDocumentation()
+
+-- todo add contributors 
+-*
+{Name => "René Birkner"},
+        {Name => "Nathan Ilten",
+         HomePage => "https://www.sfu.ca/~nilten/",
+         Email => "nilten@sfu.ca"},
+        {Name => "Lars Petersen"},
+*-
 
 document {
      Key => ToricVectorBundles,
