@@ -135,8 +135,8 @@ CGBMainRec (List, List, List, List) := o -> (F, S, memo, RingsandThings) -> (
     if o.ReduceStrata then (
       return memo
     ) else (
-      return {(S, sub(h, R), for g in G list (
-                  g' := sub(sub(g, {l => 1}), R);
+      return {(S, sub(h, RingsandThings_0), for g in G list (
+                  g' := sub(sub(g, {l => 1}), RingsandThings_0);
                   if zero g' then continue;
                   g'))}
     )
