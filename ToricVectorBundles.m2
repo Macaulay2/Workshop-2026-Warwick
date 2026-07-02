@@ -71,11 +71,13 @@ export {
     "ToricVectorBundleKaneyama", 
     "ToricVectorBundleKlyachko",
     "ToricVectorBundleNew",
+    "ToricVectorBundleMap",
     -- Constructors
     "lineBundle",
     "toricVectorBundle",
     "trivialBundle",
     -- others
+    "displayFiltrations",
     "addBase", 
     "addBaseChange", 
     "addDegrees", 
@@ -158,6 +160,57 @@ toricVectorBundle (NormalToricVariety, List, List) := {} >> o -> (baseVariety, m
 	symbol cache => new CacheTable}
     )
 
+-- printing behavior
+-- This is just some adhoc editing, sorry to anybody trying to decipher this!
+-- But the basics are: "string | string" will adjoin things horizontally, and
+-- "string || string" will adjoin things vertically. Everything done here is
+-- gluing strings together with whitespace depending on the width/heights of
+-- the matrices here.
+-- For those trying to understand, worth pointing out that the HEIGHT of a string
+-- is obtained via "length" and NOT "height".
+vertSpace := n -> (s := ""; if n == 1 then return "" else for i to n-2 do s = s || ""; s)
+horSpace := n -> (s := " "; if n == 0 then return "" else if n == 1 then return s else for i to n-2 do s = s | " "; s)
+
+displayFiltrations = method()
+displayFiltrations ToricVectorBundleNew := E -> (
+    filtMats := filtrationMatrices E;
+    filtJumps := filtrationJumps E;
+    rng := {(min flatten filtJumps)-1, (max flatten filtJumps)+2};
+    matTable := hashTable for p in rays E list p => (
+        hashTable for i from rng_0 to rng_1 list i => filteredPiece(E,p,i)
+        );
+    h' := hashTable for p in rays E list p => max(for M in values matTable#p list length net M);
+    w := max for p in rays E list floor(((width net p)-3)/2);
+    mainStr := "";
+    rayStr := horSpace(w) | "ray" | horSpace(w);
+    colonStr := " ";
+    subsetStr := " ";
+    dotsStr := " ... ";
+    for p in rays E do (
+        h := floor((h'#p)/2);
+        c := if even h'#p and h'#p != 2 then 1 else 0;
+        rayStr = rayStr || vertSpace(h-c+1) || net p || vertSpace(h);
+        colonStr = colonStr || vertSpace(h-c+1) || " : " || vertSpace(h);
+        subsetStr = subsetStr || vertSpace(h-c+1) || " ⊃ " || vertSpace(h);
+        dotsStr = dotsStr || vertSpace(h-c+1) || " ... " || vertSpace(h);
+        );
+    mainStr = rayStr | colonStr | dotsStr | subsetStr;
+    for i from rng_0 to rng_1 do (
+        w = max({0} | (for p in rays E list ceiling(((width net (matTable#p)#i)-(width net i))/2)));
+        matStr := if max values h' == 1 then horSpace(w) | net i else (horSpace(w) | net i) || vertSpace(1);
+        for p in rays E do (
+            w' := max({0} | (for q in rays E list floor(((width net (matTable#q)#i)-(width net (matTable#p)#i))/2)));
+            h := floor((h'#p)/2);
+            c := if even h'#p and h'#p != 2 then 1 else 0;
+            if length net (matTable#p)#i == 1 then matStr = matStr || (vertSpace(h-c) || (horSpace(w') | net (matTable#p)#i) || vertSpace(h+1));
+            if length net (matTable#p)#i == 2 then matStr = matStr || ((horSpace(w') | net (matTable#p)#i) || vertSpace(2));
+            if length net (matTable#p)#i > 2 then matStr = matStr || (((horSpace(w') | net (matTable#p)#i)) || vertSpace(1));
+            );
+        mainStr = mainStr | matStr | subsetStr
+        );
+    mainStr = mainStr | dotsStr;
+    mainStr
+    )
 
 -- PURPOSE : Create the trivial bundle of rank p
 --   INPUT : "p", the rank of the bundle, and "tv", the base variety
