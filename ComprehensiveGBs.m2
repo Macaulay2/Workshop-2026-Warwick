@@ -82,14 +82,14 @@ CGBMainRec (List, List, List) := (F, S, memo) -> (
   pruneG := select(G, g -> ((first first exponents(leadMonomial sub(g,RExt))) > 0) and any(exponents(sub(leadCoefficient sub(g,RFlat[getSymbol "l"]),RFlat)), i -> any(i_(toList(0..(#X-1))), i -> i > 0)));
   pruneG = apply(pruneG, g -> leadCoefficient sub(g, RExt'));
   h := lcm pruneG;
-  H := listOfFactors h;
-  HFlat:=apply(H, i->sub(i,RFlat));
-  for i in HFlat do (
-      if isConstant i then 
-      mu:=i;
+  for i in 0..(#(factor h)-1) do (
+     if isConstant (factor h)#i#0 then(
+         h = h//(factor h)#i#0;
+         )
       );
+  -- this clean up is not enough 
   
-  memo = memo | {(S, sub(h/mu, R), for g in G list (
+  memo = memo | {(S, sub(h, R), for g in G list (
                   g' := sub(sub(g, {l => 1}), R);
                   if zero g' then continue;
                   g'))};
@@ -101,6 +101,7 @@ CGBMainRec (List, List, List) := (F, S, memo) -> (
   -- H := pruneG; -- (takes too long to terminate if we do not factor h)
   -- H := unique apply(pruneG, g -> squareFreePart g); -- (takes a bit longer to terminate)
 
+  H := listOfFactors h;
   RU := K[U];
   diffset := {};
   for hi in H do (
