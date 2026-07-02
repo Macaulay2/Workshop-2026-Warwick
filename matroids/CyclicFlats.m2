@@ -265,6 +265,8 @@ ehrhartPolynomial CyclicFlatsMatroid :=  opts -> M -> (
     );
 
     
+isSplit = method()
+isSplit Poset := P -> (height P == 2)
 
 -- End CyclicFlatsMatroid Code -------------------------------------------------------
 
@@ -278,7 +280,6 @@ ehrhartPolynomial CyclicFlatsMatroid :=  opts -> M -> (
 --load "./Matroids/doc-Matroids.m2"
 
 --load "./Matroids/tests-Matroids.m2"
-
 
 end--
 restart

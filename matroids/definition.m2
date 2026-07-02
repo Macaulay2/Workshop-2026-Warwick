@@ -13,7 +13,8 @@ for g in G do (
     )
 )
 *-
-loadPackage "Posets"
+needsPackage "Posets"
+needsPackage "CyclicFlats"
 
 areCyclicFlats = method()
 areCyclicFlats List := l -> (
@@ -67,9 +68,10 @@ areCyclicFlats List := l -> (
 
 M = {(set {},0),(set {1}, 1),(set {2}, 1),(set {3}, 1),(set {4}, 1),(set {5}, 1),(set {1,2}, 1), (set {1,5}, 2), (set {2,4}, 2), (set {2,5}, 2), (set {4,5}, 2)}
 N = {(set {},0),(set {1},1),(set {2},1),(set {1,2},2)}
-L = {(set {},0),(set {1,2},1),(set {3,4},1),(set {1,2,3,4},2)}
-L2 = {(set {},0),(set {1,2},1),(set {2,3},1),(set {1,2,3},2)}
+--L = {(set {},0),(set {1,2},1),(set {3,4},1),(set {1,2,3,4},2)}
+--L2 = {(set {},0),(set {1,2},1),(set {2,3},1),(set {1,2,3},2)}
 
+-*
 basesOfCyclicFlats = method()
 basesOfCyclicFlats HashTable := H -> (
     G := keys H;
@@ -88,3 +90,13 @@ basesOfCyclicFlats HashTable := H -> (
     );
     return bases;
 )
+*-
+///TEST
+L = cyclicFlats hashTable{(set {},0),(set {1,2},1),(set {3,4},1),(set {1,2,3,4},2)}
+assert (isWellDefined L)
+///
+
+///TEST
+L2 = cyclicFlats hashTable{(set {},0),(set {1,2},1),(set {2,3},1),(set {1,2,3},2)}
+assert (isWellDefined L2)
+///
