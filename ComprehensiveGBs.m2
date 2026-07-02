@@ -59,15 +59,6 @@ diffConstructibleByLC (List, Sequence) := (C, LC) -> (
 
 CGBMain = method();
 CGBMain (List, List) := (F, S) -> (
-  CGBMainRec(F, S, {})
-)
-
-CGBMainRec = method();
-CGBMainRec (List, List, List) := (F, S, memo) -> (
-  --print("Computing CGB for F = " | toString F | " and S = " | toString S);
-  if 1 % (ideal S) == 0 then (
-    return {}
-  );
   R := ring F_0;
   X := gens R;
   U := gens baseRing R;
@@ -76,10 +67,22 @@ CGBMainRec (List, List, List) := (F, S, memo) -> (
   l := first gens RExt;
   RFlat := K[X, U, MonomialOrder => Lex];
   RExt' := K[U][l, X, MonomialOrder => Lex];
+  RU := K[U];
+  RFlatl := RFlat[l]
+  CGBMainRec(F, S, {}, R, X, RExt, RFlat, RExt', RU, RFlatl)
+)
+
+CGBMainRec = method();
+CGBMainRec (List, List, List, PolynomialRing, List, PolynomialRing, PolynomialRing, PolynomialRing, PolynomialRing, PolynomialRing) := (F, S, memo, R, X, RExt, RFlat, RExt', RU, RFlatl) -> (
+  --print("Computing CGB for F = " | toString F | " and S = " | toString S);
+  if 1 % (ideal S) == 0 then (
+    return {}
+  );
+  l := first gens RExt;
   A := apply(F, i -> l * sub(i, RExt));
   B := apply(S, i -> (l-1) * sub(i, RExt));
   G := (entries gens gb(ideal join(A, B)))_0;
-  pruneG := select(G, g -> ((first first exponents(leadMonomial sub(g,RExt))) > 0) and any(exponents(sub(leadCoefficient sub(g,RFlat[getSymbol "l"]),RFlat)), i -> any(i_(toList(0..(#X-1))), i -> i > 0)));
+  pruneG := select(G, g -> ((first first exponents(leadMonomial sub(g,RExt))) > 0) and any(exponents(sub(leadCoefficient sub(g,RFlatl),RFlat)), i -> any(i_(toList(0..(#X-1))), i -> i > 0)));
   pruneG = apply(pruneG, g -> leadCoefficient sub(g, RExt'));
   h := lcm pruneG;
 
@@ -96,7 +99,6 @@ CGBMainRec (List, List, List) := (F, S, memo) -> (
   -- H := unique apply(pruneG, g -> squareFreePart g); -- (takes a bit longer to terminate)
 
   H := listOfFactors h;
-  RU := K[U];
   diffset := {};
   for hi in H do (
     diffset = {({sub(hi, RU)}, 1_RU)};
@@ -109,7 +111,7 @@ CGBMainRec (List, List, List) := (F, S, memo) -> (
     if isEmpty diffset then (
       continue;
     );
-    memo = CGBMainRec(F, append(S, sub(hi, R)), memo);
+    memo = CGBMainRec(F, append(S, sub(hi, R)), memo, R, X, RExt, RFlat, RExt', RU, RFlatl);
   );
   return memo
 );
