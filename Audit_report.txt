@@ -1,0 +1,128 @@
+ testAudit("gfanInterface", ScoreReport => true)
+ -- warning: reloading gfanInterface; recreate instances of types from this package
+
+o183 = exported: 57 functions, 1 types, 1 other symbols; 5 methods on external functions
+       n_tests: 28
+       style: together
+
+       test sources:
+           - gfanInterface.m2:4496
+
+       Report:
+
+       - untested functions (29):
+           - gfanGroebnerComplex
+           - gfanInteractive
+           - gfanMinkowskiSum
+           - gfanOverIntegers
+           - gfanPadicInitialIdeal
+           - gfanParsePolyhedralFan
+           - gfanRender
+           - gfanRenderStaircase
+           - gfanResultantFan
+           - gfanSecondaryFan
+           - gfanStableIntersection
+           - gfanSubstitute
+           - gfanToLatex
+           - gfanTropicalBasis
+           - gfanTropicalBruteForce
+           - gfanTropicalEvaluation
+           - gfanTropicalFunction
+           - gfanTropicalHyperSurfaceReconstruction
+           - gfanTropicalLifting
+           - gfanTropicalLinearSpace
+           - gfanTropicalMultiplicity
+           - gfanTropicalRank
+           - gfanTropicalStartingCone
+           - gfanTropicalTraverse
+           - gfanTropicalWeilDivisor
+           - multiplicitiesReorder
+           - runGfanCommand
+           - toPolymakeFormat
+           - SPACE
+
+       - untested options (67):
+           - gfan: disableSymmetryTest
+           - gfan: e
+           - gfanBuchberger: r
+           - gfanBuchberger: W
+           - gfanFanCommonRefinement: i1
+           - gfanFanCommonRefinement: i2
+           - gfanFanProduct: i1
+           - gfanFanProduct: i2
+           - gfanGroebnerComplex: groebnerComplex
+           - gfanGroebnerComplex: p
+           - gfanGroebnerCone: asfan
+           - gfanGroebnerCone: pair
+           - gfanGroebnerCone: restrict
+           - gfanGroebnerCone: vectorinput
+           - gfanGroebnerCone: xml
+           - gfanInitialForms: mark
+           - gfanInitialForms: pair
+           - gfanLatticeIdeal: t
+           - gfanLeadingTerms: m
+           - gfanMinkowskiSum: disableSymmetryTest
+           - gfanMinkowskiSum: nocones
+           - gfanMinors: d
+           - gfanMinors: dressian
+           - gfanMinors: M2
+           - gfanMinors: n
+           - gfanMinors: names
+           - gfanMinors: pluckersymmetries
+           - gfanMinors: r
+           - gfanMixedVolume: j
+           - gfanOverIntegers: groebnerBasis
+           - gfanOverIntegers: groebnerFan
+           - gfanOverIntegers: initialIdeal
+           - gfanPadicInitialIdeal: initialIdeal
+           - gfanPadicInitialIdeal: p
+           - gfanParsePolyhedralFan: GfanFileName
+           - gfanPolynomialSetUnion: s
+           - gfanRender: shiftVariables
+           - gfanRenderStaircase: d
+           - gfanRenderStaircase: m
+           - gfanResultantFan: special
+           - gfanResultantFan: vectorinput
+           - gfanSecondaryFan: scale
+           - gfanSecondaryFan: unimodular
+           - gfanStableIntersection: i1
+           - gfanStableIntersection: i2
+           - gfanToLatex: polynomialset
+           - gfanToLatex: polynomialsetlist
+           - gfanToPolyhedralFan: restrict
+           - gfanTropicalHyperSurfaceReconstruction: projection
+           - gfanTropicalIntersection: restrict
+           - gfanTropicalIntersection: stable
+           - gfanTropicalIntersection: symmetryExploit
+           - gfanTropicalIntersection: symmetryPrinting
+           - gfanTropicalIntersection: tplane
+           - gfanTropicalIntersection: tropicalbasistest
+           - gfanTropicalLinearSpace: d
+           - gfanTropicalLinearSpace: n
+           - gfanTropicalLinearSpace: trees
+           - gfanTropicalRank: kapranov
+           - gfanTropicalStartingCone: d
+           - gfanTropicalStartingCone: stable
+           - gfanTropicalTraverse: disableSymmetryTest
+           - gfanTropicalTraverse: nocones
+           - gfanTropicalTraverse: stable
+           - gfanTropicalTraverse: symsigns
+           - gfanTropicalWeilDivisor: i1
+           - gfanTropicalWeilDivisor: i2
+
+       - silenced tests (0):
+           none
+
+       - FIXME/TODO markers (0):
+           none
+
+
+       ScoreReport: 49.4737 out of 100
+           tested: 29.4737 out of 80
+           exports covered: 52.5424% (31/59)
+           functions covered: 53.2258% (33/62)
+           types covered: 100% (1/1)
+           other exports covered: 100% (1/1)
+           options covered: 23.8636% (21/88)
+           silenced tests: 10 out of 10 (0 found)
+           FIXME/TODO markers: 10 out of 10 (0 found)

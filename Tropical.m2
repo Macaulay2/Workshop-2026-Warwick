@@ -446,7 +446,7 @@ tropicalVariety (Ideal) := o -> (I) ->(
     if o.IsHomogeneous==false then
     (
 
-	--First homogenize, append variable AA to the beginning
+	--First homogenize, append variable AA to the beginningtropicalVa
     	R := ring I;
     	AA := symbol AA;
 
@@ -878,8 +878,8 @@ heightOneSlice Fan := F ->(
         emptyCones:={};
 	listOfSlicedCones:={};
 	numberOfMaxCones := length listOfMaxCones; 
-	if (numberOfMaxCones == 0) then (print "The variety is empty!"; return F;)
-	else( 
+	if (numberOfMaxCones == 0) then (print "The variety is empty!"; return F;) -- fix to not print 
+	else( -- algorithm is too expensive, instead, compute which rays exist at height 1 and work with that. 
  	    for i from 0 when i < (numberOfMaxCones) do (
 		currentMaxCone := coneFromVData( submatrix(raysMatrix, listOfMaxCones#i), linealitySpace(F));  
 		slicedMaxCone := intersection(currentMaxCone, slicePlane);
@@ -908,20 +908,21 @@ tropicalVarietyWithValExternal = method(
 --still need to add the multiplicities - currently they are empty
 tropicalVarietyWithpadicVal = (I) -> (
     d:=dim I;
-    gfanopt:=(new OptionTable) ++ {"groebnerComplex"=>true,"p"=>2};
-    GC := gfanGroebnerComplex(I,gfanopt);
+--    gfanopt:=(new OptionTable) ++ {"groebnerComplex"=>true,"p"=>2};
+--    GC := gfanGroebnerComplex(I,gfanopt);
+    GC := gfanGroebnerComplex(I, "groebnerComplex"=>true, "p"=>2);
     --First throw away cones for which the corresponding intial ideal contains a monomial
     GC = skeleton(d+1,GC);
     conesToKeep := {};
     conesToCheck:=maxCones GC;
     raysGC:=rays GC;
-    gfanopt2:=(new OptionTable) ++ {"initialIdeal"=>true,"p"=>2};
+--    gfanopt2:=(new OptionTable) ++ {"initialIdeal"=>true,"p"=>2};
     scan(conesToCheck, C->(
 	    --find initial ideal
 	    raysC:=raysGC_C;
 	    w:=flatten entries sum(rank source raysC, i-> raysC_i);
-    	    if w_0>0 then (
-	    	inI := ideal(gfanPadicInitialIdeal(I,w,gfanopt2));
+    	if w_0>0 then (
+	    	inI := ideal(gfanPadicInitialIdeal(I, w, "initialIdeal"=>true, "p"=>2));
 		-- worry about which ring this lives in
 		prodgens := product( gens ring inI, i->i);
     	    	if saturate(inI,prodgens) != ideal(promote(1,ring inI)) then 
@@ -929,9 +930,10 @@ tropicalVarietyWithpadicVal = (I) -> (
 	    );
    ));
    raysToKeep:=sort unique flatten conesToKeep;
+   
+   mults:={};
    (PC,keptCones):= heightOneSlice(fan((rays GC)_raysToKeep,linealitySpace(GC), conesToKeep));
    --Will need to work out the multiplicities later
-   mults:={};
    return(tropicalCycle1(PC,mults));
 );
 
@@ -2460,7 +2462,7 @@ I=ideal(x+y+2*z)
 T=tropicalVarietyWithpadicVal(I)
 F=fan T
 assert(rank(linealitySpace(F))==1)
-assert(#(vertices(F))==1)
+assert(rank(source(vertices(F)))==1)
 assert(#maxPolyhedra(F)==3)
 ///
 
