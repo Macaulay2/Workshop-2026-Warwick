@@ -441,13 +441,11 @@ details ToricVectorBundleKlyachko := tvb -> (
       hashTable apply(rays tvb, r -> r => (tvb#"baseTable"#r,tvb#"filtrationMatricesTable"#r)))
 
 -- This outupts a list of hash tables so that the order of the rays is displayed correctly
-details ToricVectorBundleNew := tvb ->(
-    if not tvb.cache.?details then (  
+details ToricVectorBundleNew := tvb ->( 
     raysX := rays(tvb );
     filts := filtrationMatrices (tvb);
     jumps := filtrationJumps( tvb); 
-    tvb.cache.details = hashTable for i to #raysX -1 list(  raysX_i => {filts_i, jumps_i }  ););
-    tvb.cache.details
+     hashTable for i to #raysX -1 list(  raysX_i => {filts_i, jumps_i})
 )
 
 
