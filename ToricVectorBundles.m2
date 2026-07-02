@@ -5265,6 +5265,62 @@ T4 = toricVectorBundle(PP3,filtMat,jumpsT3);
 assert areIsomorphic(T3,T4)
 ///
 
+-- Test for ring
+
+TEST///
+X = toricProjectiveSpace 2;
+T1 = trivialBundle(X,2);
+assert(ring T1 == QQ)
+Y = hirzebruchSurface(3, CoefficientRing=>ZZ/101);
+T2 = cotangentBundle(Y);
+assert(ring T2 === ZZ/101)
+///
+
+
+-- Test direct sum
+TEST///
+X= toricProjectiveSpace 2;
+T1 = trivialBundle(X,2);
+T2 = tangentBundle(X);
+T= T1++T2;
+assert( rank(T) == 4)
+assert( rank(T) == rank (T1) + rank (T2))
+assert( filteredPiece(T, {-1,-1},0) == matrix(QQ, {{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, -1, -1}, {0, 0, -1, 0}} ))
+assert( variety(T)=== variety(T2) )
+assert(filtrationJumps(T)=={{0, 0, 1, 0}, {0, 0, 1, 0}, {0, 0, 1, 0}} )
+assert(filtrationMatrices(T) == {matrix(QQ, {{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, -1, -1}, {0, 0, -1, 0}}), matrix(QQ, {{1, 0, 0, 0},{0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}}), matrix(QQ, {{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 0, 1},{0, 0, 1, 0}} )} )
+///
+
+
+-- Test direct product
+TEST///
+X= toricProjectiveSpace 2;
+T1 = trivialBundle(X,3);
+T2 = tangentBundle(X);
+T= T1**T2;
+assert( rank(T) == 6)
+assert( rank(T) == rank (T1)* rank (T2))
+assert( filteredPiece(T, {-1,-1},1) ==  matrix(QQ, {{-1, 0, 0}, {-1, 0, 0}, {0, -1, 0}, {0, -1, 0}, {0, 0, -1}, {0, 0, -1}}))
+assert( variety(T)=== variety(T2) )
+assert(filtrationJumps(T)=={{1, 0, 1, 0, 1, 0}, {1, 0, 1, 0, 1, 0}, {1, 0, 1, 0, 1, 0}})
+assert(filtrationMatrices(T) ==  {matrix(QQ, {{-1, -1, 0, 0, 0, 0}, {-1, 0, 0, 0, 0, 0}, {0, 0, -1, -1, 0, 0}, {0, 0, -1, 0, 0,      0}, {0, 0, 0, 0, -1, -1}, {0, 0, 0, 0, -1, 0}}), matrix(QQ, {{1, 0, 0, 0, 0, 0}, {0, 1, 0, 0, 0,  0}, {0, 0, 1, 0, 0, 0}, {0, 0, 0, 1, 0, 0}, {0, 0, 0, 0, 1, 0}, {0, 0, 0, 0, 0, 1}}), matrix(QQ,      {{0, 1, 0, 0, 0, 0}, {1, 0, 0, 0, 0, 0}, {0, 0, 0, 1, 0, 0}, {0, 0, 1, 0, 0, 0}, {0, 0, 0,      0, 0, 1}, {0, 0, 0, 0, 1, 0}})} )
+///
+
+
+-- Test for twist
+TEST///
+X= toricProjectiveSpace 2;
+T1 = tangentBundle(X);
+L = lineBundle(toricDivisor({1,2,-1},X));
+T = twist(T1, {1,2,-1} );
+assert( rank(T) == 2)
+assert( variety(T)=== X )
+assert(filtrationJumps(T)=={{2, 1}, {3, 2}, {0, -1}})
+assert(filtrationMatrices(T) == {matrix(QQ, {{-1, -1}, {-1, 0}}), matrix(QQ ,{{1, 0}, {0, 1}}), matrix(QQ, {{0, 1}, {1, 0}})})
+assert(areIsomorphic(T, T1**L) )
+///
+
+
 end
 
 
