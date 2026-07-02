@@ -14,20 +14,18 @@ export {
 	"CyclicFlatsMatroid",
 	"cyclicFlatsMatroid",
         "cyclicFlats",
-        "BaseRing",
         "groundSet",
         "rankSum",
         "evalValInvariant",
-        "tutte",
+        "tuttePolynomial",
+        "ehrhartPolynomial",
         "basesOfCyclicFlats"
 }
 
 needsPackage "Posets"
 
-
 CyclicFlatsMatroid = new Type of HashTable;
 CyclicFlatsMatroid.synonym = "cyclicFlatsMatroid";
-
 
 globalAssignment CyclicFlatsMatroid
 net CyclicFlatsMatroid := M -> (
@@ -206,14 +204,52 @@ tutteUnisum (ZZ, ZZ, ZZ, ZZ) := RingElement => opts -> (r, k, h, n) -> (
     tutteUniform(r, h) * tutteUniform(k-r, n-h)
     );
 
-tutte = method(Options => {BaseRing => tutteRing});
-tutte CyclicFlatsMatroid :=  opts -> M -> (
-    R := opts.BaseRing;
-    evalValInvariant(M, tutteUniform, tutteCuspidal, tutteUnisum)
+tuttePolynomial CyclicFlatsMatroid := opts -> M -> (
+    evalValInvariant(M, tutteUniform, tutteCuspidal, tutteUnisum, BaseRing => opts.BaseRing)
     );
 
 -- Evaluating the Ehrhart polynomial
--- ehrhartRing := ZZ[t];
+ehrhartRing := ZZ[t];
+
+ehrhartUniform = method(Options => {BaseRing => ehrhartRing});
+ehrhartUniform (ZZ, ZZ) := RingElement => opts -> (k, n) -> (
+    R := opts.BaseRing;
+    sum apply(toList 1..k-1, j -> (
+            (-1)^j * binomial(n, j) * binomial((k-j)*R_0 + n - 1 - j, n-1)
+            )
+        )
+    );
+
+ehrhartCuspidal = method(Options => {BaseRing => ehrhartRing});
+ehrhartCuspidal (ZZ, ZZ, ZZ, ZZ) := RingElement => opts -> (r, k, h, n) -> (
+    R := opts.BaseRing;
+    -- Ehrhart polynomial of the matroid Lambda_{r,k,h,n}, evaluated at t
+    -- Parameters r, k, h, n as in Lemma 7.14; t a nonnegative integer.
+    a := n - h - k + r;
+    b := h - r;
+    m := min(h, k) - r;
+    sum(0..(m*t), i ->
+        sum(0..(n-h), j ->
+            sum(0..h, l ->
+                (-1)^(j+l)
+                * binomial(n-h, j)
+                * binomial(h, l)
+                * binomial((a-j)*t + n - h - j + i - 1, n - h - 1)
+                * binomial((b-l)*t + h - l - i - 1, h - 1)
+                )
+            )
+        )
+    );
+
+ehrhartUnisum = method(Options => {BaseRing => ehrhartRing});
+ehrhartUnisum (ZZ, ZZ, ZZ, ZZ) := RingElement => opts -> (r, k, h, n) -> (
+    );
+
+ehrhartPolynomial := method(Options => {BaseRing => ehrhartRing});
+ehrhartPolynomial CyclicFlatsMatroid :=  opts -> M -> (
+    R := opts.BaseRing;
+    evalValInvariant(M, ehrhartUniform, ehrhartCuspidal, ehrhartUnisum)
+    );
 
     
 

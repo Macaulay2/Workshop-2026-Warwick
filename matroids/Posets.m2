@@ -181,6 +181,7 @@ export {
     "rankGeneratingFunction",
     "realRegions",
     "tuttePolynomial",
+    "BaseRing",
     "zetaPolynomial",
     "coxeterPolynomial",
     "degreePolynomial",
