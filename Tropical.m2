@@ -907,12 +907,12 @@ tropicalVarietyWithValExternal = method(
 
 --still need to add the multiplicities - currently they are empty
 tropicalVarietyWithpadicVal = (I) -> (
-    d:=dim I;
+    d:=dim I;   
 --    gfanopt:=(new OptionTable) ++ {"groebnerComplex"=>true,"p"=>2};
 --    GC := gfanGroebnerComplex(I,gfanopt);
     GC := gfanGroebnerComplex(I, "groebnerComplex"=>true, "p"=>2);
     --First throw away cones for which the corresponding intial ideal contains a monomial
-    GC = skeleton(d+1,GC);
+    GC = skeleton(d+1,GC);  
     conesToKeep := {};
     conesToCheck:=maxCones GC;
     raysGC:=rays GC;
