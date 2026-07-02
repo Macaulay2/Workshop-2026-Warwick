@@ -46,6 +46,21 @@ isConsistent (List, List) := (E, N) -> (
   any(N, p -> not isMember(p, I))
 );
 
+isConsistentRabinowitsch = method();
+isConsistentRabinowitsch (List, List) :=(E,N) -> (
+    if isEmpty (E|N) then(return false);
+    if isEmpty E then(return set(N) != 0);
+    if isEmpty N then(return false);
+    R := ring E_0;
+    S := (baseRing R)[Variables => 1+numgens R];
+    M=map(S,R, (gens S)_{0..(numgens(R)-1)});
+    any(N, f -> not isMember(1, ideal(apply(E,p->M(p))|{(M(f)*last(gens S)-1)})))
+)
+--R=QQ[x,y]
+--E={x+y}
+--N={y^2}
+--isConsistentRabinowitsch(E,N)
+
 diffLC = method();
 diffLC (Sequence, Sequence) := (A, B) -> (
   result := {(A#0 | {B#1}, A#1)} | apply(B#0, p -> (A#0, A#1 * p));
@@ -306,7 +321,6 @@ uninstallPackage "ComprehensiveGBs"
 restart
 installPackage "ComprehensiveGBs"
 viewHelp "ComprehensiveGBs"
-
 
 
 
