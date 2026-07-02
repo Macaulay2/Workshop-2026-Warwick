@@ -2511,6 +2511,114 @@ assert(dim starT== 1);
 ///
 
 
+
+-- Test 1: fan = a line (lineality only, no rays)
+
+TEST///
+FF1 := fan(map(ZZ^2,ZZ^0,0), matrix{{1},{1}}, {{}});
+(PC11,keep11) := heightOneSlice FF1;
+assert(keep11 == {0});
+assert(dim PC11 == 0);
+assert(numColumns vertices PC11 == 1);
+///
+
+-- Test 2: fan = a simplicial cone (baseline case)
+TEST///
+    FF2 := fan(matrix{{1,1},{1,-1}}, map(ZZ^2,ZZ^0,0), {{0,1}});
+    (PC22,keep22) := heightOneSlice FF2;
+    assert(keep22 == {0});
+    assert(dim PC22 == 1);
+    assert(numColumns vertices PC22 == 2);
+    assert(numColumns rays PC22 == 0);
+///
+
+-- Test 3: rays parallel to the hyperplane, slice is not a cone
+TEST///
+    FF33 := fan(matrix{{0,0,0},{1,0,-1},{0,1,-1}}, matrix{{1},{1},{1}}, {{0,1},{0,2},{1,2}});
+    (PC333,keep333) := heightOneSlice FF33;
+    assert(keep333 == {0,1,2});
+    assert(#maxPolyhedra PC333 == 3);
+    assert(dim PC333 == dim FF33 - 1);
+    assert(numColumns vertices PC333 > 0);
+    assert(numColumns rays PC333 > 0);
+///
+
+-- Test 4: mix of empty and non-empty slices
+TEST///
+FA := matrix{{1,1},{1,-1}};
+FB := matrix{{0,0},{1,-1}};
+F4 := fan(FA | FB, map(ZZ^2,ZZ^0,0), {{0,1},{2,3}});
+(PC4,keep4) := heightOneSlice F4;
+assert(keep4 == {0});
+assert(#maxPolyhedra PC4 == 1);
+///
+
+-- Test 5: empty fan -- returns F, not a pair (documents current behavior)
+TEST///
+F5 := fan(map(ZZ^2,ZZ^0,0), map(ZZ^2,ZZ^0,0), {});
+result5 := heightOneSlice F5;
+assert(result5 === F5);
+///
+
+-- Test 6: higher-dimensional cone (checks it's not just a 2D fluke)
+TEST///
+F6 := fan(matrix{{1,0,0},{0,1,0},{0,0,1}}, map(ZZ^3,ZZ^0,0), {{0,1,2}});
+(PC6,keep6) := heightOneSlice F6;
+assert(keep6 == {0});
+assert(dim PC6 == dim F6 - 1);
+///
+
+
+
+-- Test H1: mixed-dimension fan, some cones survive, some don't
+TEST///
+    raysMatrixH1 := matrix{{1,1,0,0,2,0},{1,-1,1,-1,0,-2}};
+    FH1 := fan(raysMatrixH1, map(ZZ^2,ZZ^0,0), {{0,1},{2,3},{4},{5}});
+    (PCH1,keepH1) := heightOneSlice FH1;
+    assert(keepH1 == {0,2});
+    assert(#maxPolyhedra PCH1 == 2);
+    vertCountsH1 := sort apply(maxPolyhedra PCH1, p -> ( (vi,ri) := p; numColumns (vertices PCH1)_vi ));
+    assert(vertCountsH1 == {1,2});
+///
+
+-- Test H2: partial lineality (2-dim) plus one ray, not full/pure
+TEST///
+    raysH2 := matrix{{1},{1},{0},{0}};
+    linH2 := matrix{{0,0},{0,0},{1,0},{0,1}};
+    FH2 := fan(raysH2, linH2, {{0}});
+    (PCH2,keepH2) := heightOneSlice FH2;
+    assert(keepH2 == {0});
+    assert(dim PCH2 == 2);
+    assert(numColumns vertices PCH2 == 1);
+    assert(rank source linealitySpace PCH2 == 2);
+///
+
+-- Test H3: slice is an unbounded ray, not a bounded segment
+TEST///
+    raysH3 := matrix{{0,1},{1,1}};
+    FH3 := fan(raysH3, map(ZZ^2,ZZ^0,0), {{0,1}});
+    (PCH3,keepH3) := heightOneSlice FH3;
+    assert(keepH3 == {0});
+    assert(dim PCH3 == 1);
+    assert(numColumns vertices PCH3 == 1);
+    assert(numColumns rays PCH3 == 1);
+///
+
+-- Test H4: integration test on a real tropicalVariety fan
+TEST///
+    QQ[x,y,z,w];
+    I := ideal(x+y+z+w);
+    T := tropicalVariety I;
+    (PCH4,keepH4) := heightOneSlice(fan T);
+    assert(#keepH4 == #maxCones T);
+    assert(dim PCH4 == dim T - 1);
+    mults := (multiplicities T)_keepH4;
+    assert(#mults == #keepH4);
+///
+
+
+
+
 -*
 --Rest of star test for when it's working in full dimensions
 P2=convexHull(matrix{{0},{0},{0}});
