@@ -25,7 +25,7 @@ export {
         "tutteRing",
         "tutteUniform",
         "tutteCuspidal",
-        "tutteUnisum"
+        "tutteUnisum",
         "basesOfCyclicFlats"
 }
 
@@ -127,7 +127,7 @@ basesOfCyclicFlats CyclicFlats := M -> (
             if intersectionSize > H#g then ( break );
             tracker = true;
         );
-        if tracker then ( bases = append(bases, {x}) );
+        if tracker then ( bases = append(bases, toList(x)) );
     );
     return bases;
 )
