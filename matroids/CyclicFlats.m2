@@ -22,10 +22,6 @@ export {
         "cFlats",
         "recFlats",
         "tutte",
-        "tutteRing",
-        "tutteUniform",
-        "tutteCuspidal",
-        "tutteUnisum",
         "basesOfCyclicFlats"
 }
 
@@ -61,55 +57,57 @@ cyclicFlats(HashTable) := H -> (
     if not cyclicFlatsType H then error "Incorrect type for CyclicFlats matroid.";
     H2 := new HashTable from applyPairs(H, (k, v) -> (
             set k => v
-            ));
-    cyclicFlatsAxioms := cFlats -> (
-        G := keys cFlats;
-        P := poset(G, isSubset);
-        --Z0
-        if not isLattice P then (
-            if debugLevel > 0 then printerr("Error: " | toString(P) | " is not a poset under inclusion.");
-            return false;
-            );
-        --Z1
-        if not (( isMember(set {}, G)) and  (cFlats#(set{}) == 0)) then (
-            if debugLevel > 0 then printerr("Error: " | toString(cFlats) | "does not satisfy axiom Z1."); -- TODO: Make error message more specific.
-            return false;
-        );
- 
-        --Z2
-        for g in G do (
-            for h in principalFilter(P,g) do (
-                if (g != h) then(  --maybe figure out a way around this, like just removing g from the principal filter
-                    if cFlats#h - cFlats#g == 0 or cFlats#h - cFlats#g >= #(h - g) then (
-                        if debugLevel > 0 then printerr("Error: " | toString(cFlats) | " does not satisfy axiom."); -- TODO: Make error message more specific.
-                        return false;
-                        );
-                    )
-                )
-            );
-        --Z3
-        for g in G do (
-            for h in G do (
-                rankSum := cFlats#g + cFlats#h;
-                pJoin := first posetJoin(P, g, h);
-                pMeet := first posetMeet(P, g, h);
-                rankJoin := cFlats#(pJoin);
-                rankMeet := cFlats#(pMeet);
-                if ( rankSum < rankJoin + rankMeet + #(intersect(g,h)) - #(pMeet)) then (
-                    if debugLevel > 0 then printerr("Error: " | toString(cFlats) | " does not satisfy axiom."); -- TODO: Make error message more specific.
-                    return false;
-                    );
-                );
-            );
-        true
-        );
-    if not cyclicFlatsAxioms H2 then error "Given hashtable " | toString H | " does not satisfy the axioms of a collection of cyclic flats.";
+            ));        
     M := new CyclicFlats from {
         symbol groundSet => union keys H2,
         symbol rank => max values H2,
         symbol cyclicFlats => H2
         };
     M
+    );
+
+
+isWellDefined(CyclicFlats) := M -> (
+    cFlats := M.cyclicFlats;
+    G := keys cFlats;
+    P := poset(G, isSubset);
+    --Z0
+    if not isLattice P then (
+        if debugLevel > 0 then printerr("Error: " | toString(G) | " is not a lattice under inclusion.");
+        return false;
+        );
+    --Z1
+    if not (( isMember(set {}, G)) and  (cFlats#(set{}) == 0)) then (
+        if debugLevel > 0 then printerr("Error: " | toString(cFlats) | "does not satisfy axiom Z1."); -- TODO: Make error message more specific.
+        return false;
+        );
+    
+    --Z2
+    for g in G do (
+        for h in principalFilter(P,g) do (
+            if (g != h) then(  -- Maybe figure out a way around this, like just removing g from the principal filter
+                if cFlats#h - cFlats#g == 0 or cFlats#h - cFlats#g >= #(h - g) then (
+                    if debugLevel > 0 then printerr("Error: " | toString(cFlats) | " does not satisfy axiom."); -- TODO: Make error message more specific.
+                    return false;
+                    );
+                )
+            )
+        );
+    --Z3
+    for g in G do (
+        for h in G do (
+            rankSum := cFlats#g + cFlats#h;
+            pJoin := first posetJoin(P, g, h);
+            pMeet := first posetMeet(P, g, h);
+            rankJoin := cFlats#(pJoin);
+            rankMeet := cFlats#(pMeet);
+            if ( rankSum < rankJoin + rankMeet + #(intersect(g,h)) - #(pMeet)) then (
+                if debugLevel > 0 then printerr("Error: " | toString(cFlats) | " does not satisfy axiom."); -- TODO: Make error message more specific.
+                return false;
+                );
+            );
+        );
+    true
     );
 
 basesOfCyclicFlats = method()
@@ -132,7 +130,6 @@ basesOfCyclicFlats CyclicFlats := M -> (
     return bases;
 )
 
-
 countStressedSubsets = method();
 countStressedSubsets(CyclicFlats, ZZ, ZZ) := (M, r, h) -> (
     num := 0;
@@ -140,8 +137,8 @@ countStressedSubsets(CyclicFlats, ZZ, ZZ) := (M, r, h) -> (
     num
     );
 
-evalValInvariant = method( Options => {BaseRing => tutteRing});
-evalValInvariant (CyclicFlats, MethodFunctionWithOptions, MethodFunctionWithOptions, MethodFunctionWithOptions) := opts -> (M, Uniform, Cuspidal, Unisum) -> (
+evalValInvariant = method();
+evalValInvariant (CyclicFlats, MethodFunctionWithOptions, MethodFunctionWithOptions, MethodFunctionWithOptions) := (M, Uniform, Cuspidal, Unisum) -> (
     -*
     Inputs:
         M: CyclicFlats matroid object.
@@ -163,7 +160,6 @@ evalValInvariant (CyclicFlats, MethodFunctionWithOptions, MethodFunctionWithOpti
             ); 
     return total - summy
 );
-
 
 tutteRing := ZZ(monoid(["x","y"]/getSymbol));
 tutteUniform = method(Options => {BaseRing => tutteRing});
@@ -210,7 +206,7 @@ tutteUnisum (ZZ, ZZ, ZZ, ZZ) := RingElement => opts -> (r, k, h, n) -> (
 tutte = method(Options => {BaseRing => tutteRing});
 tutte CyclicFlats :=  opts -> M -> (
     R := opts.BaseRing;
-    evalValInvariant(M, tutteUniform, tutteCuspidal, tutteUnisum, BaseRing => R)
+    evalValInvariant(M, tutteUniform, tutteCuspidal, tutteUnisum)
     );
     
 
