@@ -68,9 +68,9 @@ export{
   "Valuation",
   "isBalancedCurves",
   "BergmanFan",
-  "polyhedronFromFace"
---  "heightOneSlice"   --temporarily exported
-  }
+  "polyhedronFromFace",
+  "heightOneSlice"   --temporarily exported
+ }
 
 -- TropicalCycle1,  and tropicalVarietyWithValExternal commented out until fixed.
 
@@ -859,9 +859,12 @@ fan TropicalCycle1 := T -> (T#"PolyhedralComplex")
 multiplicities (TropicalCycle1) := T -> (T#"Multiplicities")
 
 
---Takes the height one slice in min convention - height -1 slice in max convention
--- We assume that the lineality space of the fan is contained in the height 0 slice.
--- "Height" here is the first coordinate.
+--Takes the height one slice in min convention - height -1 slice in
+-- max convention We assume that the lineality space of the fan is
+-- contained in the height 0 slice.  "Height" here is the first
+-- coordinate.  We also assume that the fan lives in a halfspace
+-- (first coordinate positive if min, negative if max)
+
 
 heightOneSlice = method(TypicalValue => Fan)
 
@@ -892,6 +895,8 @@ heightOneSlice Fan := F ->(
 --	if conesToKeep == {} then
 --	    return(polyhedralComplex(zerovector of size d, {}, zerovector      ),{});
 --TODO - deal with the empty complex case.
+--We plan to leave this until there is an empty polyhedral complex in the Polyhedra package.
+--When this is implemented, we should also implement == 0 for tropical cycles.
     	return(polyhedralComplex(listOfSlicedCones),conesToKeep);
 )	
 
