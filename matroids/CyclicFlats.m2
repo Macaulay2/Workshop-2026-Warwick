@@ -22,6 +22,7 @@ export {
         "cFlats",
         "recFlats",
         "tutte",
+        "tutteRing",
         "tutteUniform",
         "tutteCuspidal",
         "tutteUnisum"
@@ -117,8 +118,8 @@ countStressedSubsets(CyclicFlats, ZZ, ZZ) := (M, r, h) -> (
     num
     );
 
-evalValInvariant = method();
-evalValInvariant (CyclicFlats, Function, Function, Function) := (M, Uniform, Cuspidal, Unisum) -> (
+evalValInvariant = method( Options => {BaseRing => tutteRing});
+evalValInvariant (CyclicFlats, MethodFunctionWithOptions, MethodFunctionWithOptions, MethodFunctionWithOptions) := opts -> (M, Uniform, Cuspidal, Unisum) -> (
     -*
     Inputs:
         M: CyclicFlats matroid object.
@@ -129,17 +130,18 @@ evalValInvariant (CyclicFlats, Function, Function, Function) := (M, Uniform, Cus
     *-
     k := M.rank;
     n := #(M.groundSet);
-    total := Uniform(k, n);
-    total += sum apply(1..k, r -> (
-                sum apply(r..n, h -> (
+    total := Uniform(k, n); 
+    summy := sum apply(toList(1..k), r -> (
+                sum apply(toList(r..n), h -> ( --Requires toList because sum needs a list and r..n naturally returns a Sequence
+                        
                         lam := countStressedSubsets(M, r, h);
                         lam * (Cuspidal(r, k, h, n) - Unisum(r, k, h, n))
                         )
                     )
                 )
-            );
-        total
-        );
+            ); 
+    return total - summy
+);
 
 
 tutteRing := ZZ(monoid(["x","y"]/getSymbol));
@@ -157,12 +159,14 @@ tutteCuspidal (ZZ, ZZ, ZZ, ZZ) := RingElement => opts -> (r, k, h, n) -> (
     R := opts.BaseRing;
 
     alpha := (i, j, r, k) -> (
-        if i + j <= k then (R_0 - 1)^(k-i-j)*(1-((R_0-1)*(R_1-1))^(i-r)) else (R_1 - 1)^(k-i-j)*(1-((R_0-1)*(R_1-1))^(k-r-j))
+        if (i + j <= k) 
+        then (R_0 - 1)^(k-i-j)*(1-((R_0-1)*(R_1-1))^(i-r)) 
+        else (R_1 - 1)^(i+j-k)*(1-((R_0-1)*(R_1-1))^(k-r-j))
         );
     
     total := tutteUniform(k-r, n-h, BaseRing => R) * tutteUniform(r, h, BaseRing => R);
-    total += sum apply(r+1..h, i -> (
-            sum apply(0..k-r-1, j -> (
+    total += sum apply(toList(r+1..h), i -> (
+            sum apply(toList(0..k-r-1), j -> (
                     binomial(h, i) * binomial(n-h, j) * alpha(i, j, r, k)
                     )
                 )
@@ -170,6 +174,12 @@ tutteCuspidal (ZZ, ZZ, ZZ, ZZ) := RingElement => opts -> (r, k, h, n) -> (
         );
     total
     );
+-- Note: ./Matroids/foundations.m2 is an upstream in-development module that
+-- defines Pasture / Foundation / pasture / pastureMorphism / savePasture /
+-- saveFoundation / specificPasture and is not yet integrated into the public
+-- Matroids package; it is intentionally not loaded here.  See
+--   https://github.com/jchen419/Matroids-M2
+-- for upstream development.
 
 tutteUnisum = method(Options => {BaseRing => tutteRing});
 tutteUnisum (ZZ, ZZ, ZZ, ZZ) := RingElement => opts -> (r, k, h, n) -> (
@@ -177,7 +187,7 @@ tutteUnisum (ZZ, ZZ, ZZ, ZZ) := RingElement => opts -> (r, k, h, n) -> (
     );
 
 tutte = method(Options => {BaseRing => tutteRing});
-tutte CyclicFlats := RingElement => opts -> M -> (
+tutte CyclicFlats :=  opts -> M -> (
     R := opts.BaseRing;
     evalValInvariant(M, tutteUniform, tutteCuspidal, tutteUnisum, BaseRing => R)
     );
@@ -189,12 +199,6 @@ tutte CyclicFlats := RingElement => opts -> M -> (
 
 --load "./Matroids/tests-Matroids.m2"
 
--- Note: ./Matroids/foundations.m2 is an upstream in-development module that
--- defines Pasture / Foundation / pasture / pastureMorphism / savePasture /
--- saveFoundation / specificPasture and is not yet integrated into the public
--- Matroids package; it is intentionally not loaded here.  See
---   https://github.com/jchen419/Matroids-M2
--- for upstream development.
 
 end--
 restart
