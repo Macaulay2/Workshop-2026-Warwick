@@ -114,6 +114,29 @@ CGBMainRec (List, List, List) := (F, S, memo) -> (
   return memo
 );
 
+
+-*
+
+Notes on Optimisation:
+
+-- Expensive operations:
+-- > Creating a new ring on each iteration (Do this once at the start keep passing in the rings data)
+--   The rings data and all the maps can be put in a new object
+--
+-- > calling radical to check consistency, instead us Rabinowitsch
+--
+
+TODO: profiling - see what else is taking time
+
+needsPackage "ComprehensiveGBs"
+R = QQ[a,b][x,y,z, MonomialOrder => Lex]
+F = {x^3 - a, y^4 - b, x+y-z}
+profile CGBMain(F, {});
+profileSummary
+
+*-
+
+
 -*
 R = QQ[u][x];
 F = {x^2-x, x^3-1};
