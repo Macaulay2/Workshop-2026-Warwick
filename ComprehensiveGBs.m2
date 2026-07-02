@@ -134,7 +134,7 @@ CGBMainRec (List, List, List, List) := o -> (F, S, memo, RingsandThings) -> (
     return {(S, sub(h, RingsandThings_0), for g in G list (
                   g' := sub(sub(g, {l => 1}), RingsandThings_0);
                   if zero g' then continue;
-                  g'))} | flatten apply(H, hi -> CGBMainRec(F, append(S, sub(hi, RingsandThings_0))))
+                  g'))} | flatten apply(H, hi -> CGBMainRec(F, append(S, sub(hi, RingsandThings_0)), memo, RingsandThings))
   );
   return memo
 );
