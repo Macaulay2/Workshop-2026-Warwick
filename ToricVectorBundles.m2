@@ -11,33 +11,47 @@
 ---------------------------------------------------------------------------
 newPackage("ToricVectorBundles",
     Headline => "vector bundles on toric varieties",
-    Version => "1.4",
-    Date => "April 15, 2025",
+    Version => "2.0",
+    Date => "todo",
     Authors => {
-         {Name => "René Birkner"
-	  },
-         {Name => "Nathan Ilten",
-	  HomePage => "https://www.sfu.ca/~nilten/",
-	  Email => "nilten@sfu.ca"},
+        {Name => "René Birkner"},
+        {Name => "Adrian Cook",
+         HomePage => "todo",
+         Email => "todo"},
+        {Name => "Mayo Garcia",
+         HomePage => "todo",
+         Email => "todo"},
+        {Name => "Nathan Ilten",
+         HomePage => "https://www.sfu.ca/~nilten/",
+         Email => "nilten@sfu.ca"},
+        {Name => "Julia McLellan",
+         HomePage => "todo",
+         Email => "todo"},
+        {Name => "Marco ",
+         HomePage => "todo",
+         Email => "todo"},
         {Name => "Labix Liu",
-        HomePage => "https://labix-liu.github.io/",
-        Email => "sin.liu@qmul.ac.uk"},
-         {Name => "Lars Petersen"
-	  }},
+         HomePage => "https://labix-liu.github.io/",
+         Email => "sin.liu@qmul.ac.uk"},
+        {Name => "Lars Petersen"},
+        {Name => "Sasha Zotine",
+         HomePage => "https://sites.google.com/view/szotine/home",
+         Email => "sashahbc@gmail.com"},
+        },
     Keywords => {"Toric Geometry"},
     Certification => {
-	 "journal name" => "The Journal of Software for Algebra and Geometry: Macaulay2",
-	 "journal URI" => "https://msp.org/jsag/",
-	 "article title" => "Computations with equivariant toric vector bundles",
-	 "acceptance date" => "2010-06-15",
-	 "published article URI" => "https://msp.org/jsag/2010/2-1/p03.xhtml",
-	 "published article DOI" => "10.2140/jsag.2010.2.11",
-	 "published code URI" => "https://msp.org/jsag/2010/2-1/jsag-v2-n1-x03-code.zip",
-	 "release at publication" => "314a1e7a1a5f612124f23e2161c58eabeb491f46",
-	 "version at publication" => "1.0",
-	 "volume number" => "2",
-	 "volume URI" => "https://msp.org/jsag/2010/2-1/"
-	 },
+        "journal name" => "The Journal of Software for Algebra and Geometry: Macaulay2",
+        "journal URI" => "https://msp.org/jsag/",
+        "article title" => "Computations with equivariant toric vector bundles",
+        "acceptance date" => "2010-06-15",
+        "published article URI" => "https://msp.org/jsag/2010/2-1/p03.xhtml",
+        "published article DOI" => "10.2140/jsag.2010.2.11",
+        "published code URI" => "https://msp.org/jsag/2010/2-1/jsag-v2-n1-x03-code.zip",
+        "release at publication" => "314a1e7a1a5f612124f23e2161c58eabeb491f46",
+        "version at publication" => "1.0",
+        "volume number" => "2",
+        "volume URI" => "https://msp.org/jsag/2010/2-1/"
+        },
     Configuration => {},
     PackageImports => {"Varieties"},
     PackageExports => {"Isomorphism", "Polyhedra","NormalToricVarieties"},
@@ -411,7 +425,16 @@ rank ToricVectorBundleKaneyama := T -> T#"rank of the vector bundle"
 
 rank ToricVectorBundleKlyachko := T -> T#"rank of the vector bundle"
 
-ring ToricVectorBundleNew := E -> coefficientRing ring (E.variety)
+--ring ToricVectorBundleNew := E -> coefficientRing ring (E.variety)
+--TODO get rid of this below.
+-- PURPOSE : Generating the graded Ring for the cohomology groups
+--   INPUT : 'T',  a ToricVectorBundle
+--  OUTPUT : the ring of the bundle with degree space the lattice of the variety
+ring ToricVectorBundle := (cacheValue symbol gradedRing)( T -> (
+    if instance(T, ToricVectorBundleNew) then coefficientRing ring variety E;    
+    if instance(T,ToricVectorBundleKlyachko) then (T#"ring")[DegreeRank => T#"dimension of the variety"]
+    else QQ[DegreeRank => T#"dimension of the variety"]))
+
 
 filtrationJumps = method()
 filtrationJumps ToricVectorBundleNew := E -> (E.filtrationJumps)
@@ -1101,28 +1124,36 @@ areIsomorphic = method(TypicalValue => Boolean)
 -- new areIsomorphic for ToricVectorBundleNew
 -- this is just trivial for now to make sure that the == has been implemented appropriately
 areIsomorphic (ToricVectorBundleNew,ToricVectorBundleNew) := Boolean => (T1,T2) -> (
+    areTVBsIso := false;
+    --First check that the bundles have same rank, defined over same ring and have same base variety before
+    --anything else
+    if not ((rank T1 == rank T2) and (variety T1 === variety T2) and (ring T1 === ring T2)) then return false;
     --Checking if T1 and T2 have already been deemed isomorphic. If not, create entries in a cache
-    --If T1 does have an entry for iso in the cache, we check if any of the maps targets is T2
-    --i.e. check if we've already deemed T1 iso T2
-    if T1.cache.?iso then(
-        for i in T1.cache.iso do (
-            if i.target === T2 then return true --presumably don't need to store the map in cache again
-            
-            );
-        );
     if not T1.cache.?iso then (
-        T1.cache.iso = {};
+        T1.cache.iso = new MutableHashTable;
         );
     if not T2.cache.?iso then (
-        T1.cache.iso = {};
+        T2.cache.iso = new MutableHashTable;
         );
-     --Checking if isomorphic!
-     --defining the potential isomorphism as the identity from T1 to T2
-     isoMatrix := map(T2,T1,id_((coefficientRing ring variety T1)^(rank T1)));
-     --checking if this map is injective and surjective. if it is, this will tell us that
-     --these bundles are equivariantly isomorphic
-     ((isInjective isoMatrix) and (isSurjective isoMatrix))
-     
+    --If T1 does have an entry for iso in the cache, we check if any of the maps targets is T2
+    --i.e. check if we've already deemed T1 iso T2
+    if T1.cache.iso#?T2 then return true;
+    
+    if not T1.cache.iso#?T2 then (
+        --Checking if isomorphic!
+        --defining the potential isomorphism as the identity from T1 to T2
+        isoMapT1T2 := map(T2,T1,id_((ring T1)^(rank T1)));
+        --checking if this map is injective and surjective. if it is, this will tell us that
+        --these bundles are equivariantly isomorphic
+        areTVBsIso = ((isInjective isoMapT1T2) and (isSurjective isoMapT1T2));
+        if areTVBsIso then (
+            T1.cache.iso#T2 = isoMapT1T2;
+            isoMapT2T1 := map(T1,T2,id_((ring T2)^(rank T2)));
+            T2.cache.iso#T1 = isoMapT2T1;
+            );
+         );
+
+     areTVBsIso
     )
 
 areIsomorphic (ToricVectorBundleKlyachko,ToricVectorBundleKlyachko) := (T1,T2) -> (
@@ -1174,6 +1205,11 @@ areIsomorphic (ToricVectorBundleKlyachko,ToricVectorBundleKlyachko) := (T1,T2) -
 --   INPUT : '(T1,T2)',  two ToricVectorBundleKlyachko
 --  OUTPUT : The isomorphism, if they are isomorphic, otherwise an error
 --isomorphism = method(TypicalValue => Matrix)
+
+isomorphism (ToricVectorBundleNew,ToricVectorBundleNew) := Boolean => o -> (T1,T2) -> (
+    if not areIsomorphic(T1,T2) then error("The bundles are not isomorphic");
+    T1.cache.iso#T2
+    )
 isomorphism (ToricVectorBundleKlyachko,ToricVectorBundleKlyachko) := o -> (T1,T2) -> (
      if not areIsomorphic(T1,T2) then error("The bundles are not isomorphic");
      T1.cache.isoMatrix#T2)				
@@ -1330,14 +1366,6 @@ deltaE ToricVectorBundle := (cacheValue symbol deltaE)( tvb -> (
 --  OUTPUT : a Fan
 fan ToricVectorBundle := T -> T#"ToricVariety"
 
-
-
--- PURPOSE : Generating the graded Ring for the cohomology groups
---   INPUT : 'T',  a ToricVectorBundle
---  OUTPUT : the ring of the bundle with degree space the lattice of the variety
-ring ToricVectorBundle := (cacheValue symbol gradedRing)( T -> (
-	  if instance(T,ToricVectorBundleKlyachko) then (T#"ring")[DegreeRank => T#"dimension of the variety"]
-	  else QQ[DegreeRank => T#"dimension of the variety"]))
 
 
 -- PURPOSE : Check for a ToricVectorBundleKlyachko if it is general
@@ -2468,6 +2496,15 @@ coker (ToricVectorBundleKlyachko,Matrix) := (T,M) -> (
 
 
 beginDocumentation()
+
+-- todo add contributors 
+-*
+{Name => "René Birkner"},
+        {Name => "Nathan Ilten",
+         HomePage => "https://www.sfu.ca/~nilten/",
+         Email => "nilten@sfu.ca"},
+        {Name => "Lars Petersen"},
+*-
 
 document {
      Key => ToricVectorBundles,
@@ -4714,10 +4751,6 @@ assert(rank T == 2)
 assert(T#"dimension of the variety" == 2)
 ///
 
--- Test k
--- Checking toricVectorBundle for ToricVectorBundleNew
-baseVariety = toricProjectiveSpace 2;
-matrixList = {matrix{},matrix{},matrix{}}
 
 -- Test 2
 -- Checking addBaseChange and cocycleCheck
@@ -5185,7 +5218,7 @@ T1 = addDegrees(T,{matrix{{1,2},{3,1}},matrix{{-1,0},{3,1}},matrix{{1,2},{-3,-1}
 assert not isWellDefined T1 -- fails because of regCheck
 ///
 
--- Test
+-- Test 32
 -- Checking trivialBundle
 TEST ///
 X = toricProjectiveSpace 2
@@ -5229,7 +5262,7 @@ assert (isSurjective f)
 ///
 
 
--- Test
+-- Test 33
 -- Checking lineBundle
 TEST ///
 X = hirzebruchSurface 3
@@ -5244,15 +5277,120 @@ assert (numColumns filteredPiece(L, (rays X)_1, 0) == 0)
 
 ///
 
---Test
+--Test 34
 --Checking areIsomorphic
 --first test, check trivial bundles of different ranks are not isomorphic
---map doesn't allow you to define a map between these anyways! Is this what we want?
 TEST ///
-T1 = trivialBundle(toricProjectiveSpace 2,2);
-T2 = trivialBundle(toricProjectiveSpace 2,4);
+PP2 = toricProjectiveSpace 2;
+T1 = trivialBundle(PP2,2);
+T2 = trivialBundle(PP2,4);
 assert not areIsomorphic(T1,T2)
+--check that line bundles on different divisors are not isomorphic
+D0 = toricDivisor({1,0,0},PP2);
+E1 = lineBundle(D0);
+D1 = toricDivisor({0,1,0},PP2);
+E2 = lineBundle(D1);
+assert not areIsomorphic(E1,E2)
+--next checking bundles that are isomorphic
+PP3 = toricProjectiveSpace 3;
+D = toricDivisor({1,2,-1,0},PP3);
+L1 = lineBundle D;
+triv = trivialBundle(PP3,1);
+L2 = twist(triv,{1,2,-1,0});
+assert areIsomorphic(L1,L2)
+--checking isomorphic if the same bundle but different bases
+T3 = trivialBundle(PP3,3);
+basisMat = matrix{{1,0,0},{1,1,0},{1,0,1}};
+p = #(rays T3);
+filtMat = apply(p, i -> basisMat);
+jumpsT3 = filtrationJumps T3;
+T4 = toricVectorBundle(PP3,filtMat,jumpsT3);
+assert areIsomorphic(T3,T4)
 ///
+
+--Test 35
+--Test for isomorphism
+PP3 = toricProjectiveSpace 3;
+D = toricDivisor({1,2,-1,0},PP3);
+L1 = lineBundle D;
+triv = trivialBundle(PP3,1);
+L2 = twist(triv,{1,2,-1,0});
+conjIsoL1L2 = map(L2,L1,id_((ring L1)^(rank L1)));
+assert (isomorphism(L1,L2) === conjIsoL1L2)
+conjIsoL2L1 = map(L1,L2,id_((ring L2)^(rank L2)));
+assert (isomorphism(L2,L1) === conjIsoL2L1)
+--same bundle but different bases
+T3 = trivialBundle(PP3,3);
+basisMat = matrix{{1,0,0},{1,1,0},{1,0,1}};
+p = #(rays T3);
+filtMat = apply(p, i -> basisMat);
+jumpsT3 = filtrationJumps T3;
+T4 = toricVectorBundle(PP3,filtMat,jumpsT3);
+conjIsoT3T4 = map(T4,T3,id_((ring T3)^(rank T3)));
+assert (isomorphism(T3,T4) === conjIsoT3T4)
+conjIsoT4T3 = map(T3,T4,id_((ring T4)^(rank T4)));
+assert (isomorphism(T4,T3) === conjIsoT4T3)
+
+--Test 36
+--Test for ring
+
+TEST///
+X = toricProjectiveSpace 2;
+T1 = trivialBundle(X,2);
+assert(ring T1 === QQ)
+Y = hirzebruchSurface(3, CoefficientRing=>ZZ/101);
+T2 = cotangentBundle(Y);
+assert(ring T2 === ZZ/101)
+///
+
+--Test 37
+--Test direct sum
+TEST///
+X = toricProjectiveSpace 2;
+T1 = trivialBundle(X,2);
+T2 = tangentBundle(X);
+T= T1++T2;
+assert( rank(T) == 4)
+assert( rank(T) == rank (T1) + rank (T2))
+assert( filteredPiece(T, {-1,-1},0) == matrix(QQ, {{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, -1, -1}, {0, 0, -1, 0}} ))
+assert( variety(T)=== variety(T2) )
+assert(filtrationJumps(T)=={{0, 0, 1, 0}, {0, 0, 1, 0}, {0, 0, 1, 0}} )
+assert(filtrationMatrices(T) == {matrix(QQ, {{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, -1, -1}, {0, 0, -1, 0}}), matrix(QQ, {{1, 0, 0, 0},{0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}}), matrix(QQ, {{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 0, 1},{0, 0, 1, 0}} )} )
+///
+
+--Test 38
+--Test direct product
+TEST///
+X = toricProjectiveSpace 2;
+T1 = trivialBundle(X,3);
+T2 = tangentBundle(X);
+T= T1**T2;
+assert( rank(T) == 6)
+assert( rank(T) == rank (T1)* rank (T2))
+assert( filteredPiece(T, {-1,-1},1) ==  matrix(QQ, {{-1, 0, 0}, {-1, 0, 0}, {0, -1, 0}, {0, -1, 0}, {0, 0, -1}, {0, 0, -1}}))
+assert( variety(T)=== variety(T2) )
+assert(filtrationJumps(T)=={{1, 0, 1, 0, 1, 0}, {1, 0, 1, 0, 1, 0}, {1, 0, 1, 0, 1, 0}})
+assert(filtrationMatrices(T) ==  {matrix(QQ, {{-1, -1, 0, 0, 0, 0}, {-1, 0, 0, 0, 0, 0}, {0, 0, -1, -1, 0, 0}, {0, 0, -1, 0, 0,      0}, {0, 0, 0, 0, -1, -1}, {0, 0, 0, 0, -1, 0}}), matrix(QQ, {{1, 0, 0, 0, 0, 0}, {0, 1, 0, 0, 0,  0}, {0, 0, 1, 0, 0, 0}, {0, 0, 0, 1, 0, 0}, {0, 0, 0, 0, 1, 0}, {0, 0, 0, 0, 0, 1}}), matrix(QQ,      {{0, 1, 0, 0, 0, 0}, {1, 0, 0, 0, 0, 0}, {0, 0, 0, 1, 0, 0}, {0, 0, 1, 0, 0, 0}, {0, 0, 0,      0, 0, 1}, {0, 0, 0, 0, 1, 0}})} )
+///
+
+--Test 39
+--Test for twist
+TEST///
+X = toricProjectiveSpace 2;
+T1 = tangentBundle(X);
+L = lineBundle(toricDivisor({1,2,-1},X));
+T = twist(T1, {1,2,-1} );
+assert( rank(T) == 2)
+assert( variety(T)=== X )
+assert(filtrationJumps(T)=={{2, 1}, {3, 2}, {0, -1}})
+assert(filtrationMatrices(T) == {matrix(QQ, {{-1, -1}, {-1, 0}}), matrix(QQ ,{{1, 0}, {0, 1}}), matrix(QQ, {{0, 1}, {1, 0}})})
+assert(areIsomorphic(T, T1**L) )
+///
+
+--Test 40
+--Test for map for ToricVectorBundleNew
+
+
 
 end
 
@@ -5285,3 +5423,4 @@ HH^1(Endo)
 K = weilToCartier({-1,-1,-1,-1,-1,-1,-1,-1},F2)
 areIsomorphic(K,exteriorPower(3,Omega))
 restart
+
