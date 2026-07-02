@@ -4718,10 +4718,6 @@ assert(rank T == 2)
 assert(T#"dimension of the variety" == 2)
 ///
 
--- Test k
--- Checking toricVectorBundle for ToricVectorBundleNew
-baseVariety = toricProjectiveSpace 2;
-matrixList = {matrix{},matrix{},matrix{}}
 
 -- Test 2
 -- Checking addBaseChange and cocycleCheck
@@ -5189,7 +5185,7 @@ T1 = addDegrees(T,{matrix{{1,2},{3,1}},matrix{{-1,0},{3,1}},matrix{{1,2},{-3,-1}
 assert not isWellDefined T1 -- fails because of regCheck
 ///
 
--- Test
+-- Test 32
 -- Checking trivialBundle
 TEST ///
 X = toricProjectiveSpace 2
@@ -5223,7 +5219,7 @@ assert (isInjective f)
 
 
 
--- Test
+-- Test 33
 -- Checking lineBundle
 TEST ///
 X = hirzebruchSurface 3
@@ -5238,14 +5234,35 @@ assert (numColumns filteredPiece(L, (rays X)_1, 0) == 0)
 
 ///
 
---Test
+--Test 34
 --Checking areIsomorphic
 --first test, check trivial bundles of different ranks are not isomorphic
---map doesn't allow you to define a map between these anyways! Is this what we want?
 TEST ///
-T1 = trivialBundle(toricProjectiveSpace 2,2);
-T2 = trivialBundle(toricProjectiveSpace 2,4);
+PP2 = toricProjectiveSpace 2;
+T1 = trivialBundle(PP2,2);
+T2 = trivialBundle(PP2,4);
 assert not areIsomorphic(T1,T2)
+--check that line bundles on different divisors are not isomorphic
+D0 = toricDivisor({1,0,0},PP2);
+E1 = lineBundle(D0);
+D1 = toricDivisor({0,1,0},PP2);
+E2 = lineBundle(D1);
+assert not areIsomorphic(E1,E2)
+--next checking bundles that are isomorphic
+PP3 = toricProjectiveSpace 3;
+D = toricDivisor({1,2,-1,0},PP3);
+L1 = lineBundle D;
+triv = trivialBundle(PP3,1);
+L2 = twist(triv,{1,2,-1,0});
+assert areIsomorphic(L1,L2)
+--checking isomorphic if the same bundle but different bases
+T3 = trivialBundle(PP3,3);
+basisMat = matrix{{1,0,0},{1,1,0},{1,0,1}};
+p = #(rays T3);
+filtMat = apply(p, i -> basisMat)
+jumpsT3 = filtrationJumps T3;
+T4 = toricVectorBundle(PP3,filtMat,jumpsT3);
+assert areIsomorphic(T3,T4)
 ///
 
 end
@@ -5279,3 +5296,4 @@ HH^1(Endo)
 K = weilToCartier({-1,-1,-1,-1,-1,-1,-1,-1},F2)
 areIsomorphic(K,exteriorPower(3,Omega))
 restart
+
