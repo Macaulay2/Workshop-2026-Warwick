@@ -26,6 +26,7 @@ export {
         "tutteUniform",
         "tutteCuspidal",
         "tutteUnisum"
+        "basesOfCyclicFlats"
 }
 
 needsPackage "Posets"
@@ -110,6 +111,27 @@ cyclicFlats(HashTable) := H -> (
         };
     M
     );
+
+basesOfCyclicFlats = method()
+basesOfCyclicFlats CyclicFlats := M -> (
+    H := M.cyclicFlats;
+    G := keys H;
+    topSet := union G;
+    matroidRank := H#(topSet);
+    bases := {};
+    for x in subsets(topSet, matroidRank) do (
+        tracker := false;
+        for g in keys H do (
+            tracker = false;
+            intersectionSize := #(intersect(x,g));
+            if intersectionSize > H#g then ( break );
+            tracker = true;
+        );
+        if tracker then ( bases = append(bases, {x}) );
+    );
+    return bases;
+)
+
 
 countStressedSubsets = method();
 countStressedSubsets(CyclicFlats, ZZ, ZZ) := (M, r, h) -> (
