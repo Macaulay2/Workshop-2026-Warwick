@@ -969,6 +969,9 @@ areIsomorphic = method(TypicalValue => Boolean)
 -- new areIsomorphic for ToricVectorBundleNew
 -- this is just trivial for now to make sure that the == has been implemented appropriately
 areIsomorphic (ToricVectorBundleNew,ToricVectorBundleNew) := Boolean => (T1,T2) -> (
+    --First check that the bundles have same rank, defined over same ring and have same base variety before
+    --anything else
+    if not ((rank T1 == rank T2) and (variety T1 === variety T2) and (ring T1 === ring T2)) then return false;
     --Checking if T1 and T2 have already been deemed isomorphic. If not, create entries in a cache
     --If T1 does have an entry for iso in the cache, we check if any of the maps targets is T2
     --i.e. check if we've already deemed T1 iso T2
