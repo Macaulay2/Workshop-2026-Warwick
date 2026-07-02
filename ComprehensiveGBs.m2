@@ -116,7 +116,7 @@ CGBMainRec (List, List, List, List) := o -> (F, S, memo, RingsandThings) -> (
   -- H := unique apply(pruneG, g -> squareFreePart g); -- (takes a bit longer to terminate)
 
   H := listOfFactors h;
-  if o.reduceStrata then (
+  if o.ReduceStrata then (
     diffset := {};
     for hi in H do (
       diffset = {({sub(hi, RingsandThings_5)}, 1_(RingsandThings_5))};
