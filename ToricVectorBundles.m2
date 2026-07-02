@@ -243,6 +243,15 @@ tangentBundle NormalToricVariety := X -> (
     filtJumps := for p in rays X list {1} | toList((dim X-1):0);
     toricVectorBundle(X,filtMats,filtJumps)
     )
+-*
+-- Function from a fine graded module over de Cox ring of the toric variety
+-- to the Klyachko filtration associated.
+moduleToKlyachko = method()
+moduleToKlyachko(NormalToricVariety, Module ):= (X,M) ->(
+    if coefficientRing ring M =!= coefficientRing ring X then error("The coeficient rings are not the same ");
+
+)
+*-
 
 --TODO: once the overhaul is complete, we should remove these constructors.
 
@@ -2279,23 +2288,38 @@ isSurjective (ToricVectorBundleMap) := f -> (
 	)
 
 
-
-
-
--*
-image (ToricVectorBundleMap) :=(f
+-- Auxiliary fucntion for computing the jumps that happened in a list of matrices in a filtration
+jumpsAux = (L,mm) ->(
+    ref := entries transpose L_0; 
+    r:= # ref;
+    -- Extracts the porsitions where the vectors appear in the original matrix
+    Jl := apply(#L, i->(positions(ref, v -> isSubset({v}, entries transpose (L_i)  ))));
+    apply(sum(#Jl,  i ->apply(#ref, j -> if member(j, Jl_i) then 1 else 0)), n -> n+mm)
     
+)
+
+-- TODO NEEDS TO BE FIXED
+
+image (ToricVectorBundleMap) := f ->(
+    if not isWellDefined(f) then ( error (" The map is not well defined"));
+    M := f.map;
     E1:= source f;
     X:= variety E1;
-        minj:= min flatten filtrationJumps(E1);
-    maxj:= min flatten filtrationJumps(E1);
-    for i from minj to maxj do(
-        for p in Xrays do(
-        if not isSubset(image (filteredPiece(E1,p,i)*M), image filteredPiece(E2, p, i)) then (print(p,i); return false));
-        );
-    toricVectorBundle(X, )
+    Xrays := rays E1;
+    minj:= min flatten filtrationJumps(E1);
+    maxj:= max flatten filtrationJumps(E1);
+    steps:=  toList(minj..maxj);
+    L:= apply(Xrays,  p ->
+        apply(steps, i ->
+        M*filteredPiece(E1,p,i)
+        )
+    );
+    newMatrices:= apply(L, i -> i_0 );
+    newJumps := apply( L , l -> jumpsAux(l, minj) );
+    L
+    --toricVectorBundle(X, newMatrices, newJumps)
 )
-*-
+
 
 
 -- PURPOSE : Computing the image bundle of a toric vector bundle
