@@ -68,26 +68,27 @@ CGBMain (List, List) := (F, S) -> (
   RFlat := K[X, U, MonomialOrder => Lex];
   RExt' := K[U][l, X, MonomialOrder => Lex];
   RU := K[U];
-  RFlatl := RFlat[l]
-  CGBMainRec(F, S, {}, R, X, RExt, RFlat, RExt', RU, RFlatl)
+  RFlatl := RFlat[l];
+  RingsandThings := {R,X,RExt,RFlat,RExt',RU,RFlatl};
+  CGBMainRec(F, S, {}, RingsandThings)
 )
 
 CGBMainRec = method();
-CGBMainRec (List, List, List, PolynomialRing, List, PolynomialRing, PolynomialRing, PolynomialRing, PolynomialRing, PolynomialRing) := (F, S, memo, R, X, RExt, RFlat, RExt', RU, RFlatl) -> (
+CGBMainRec (List, List, List, List) := (F, S, memo, RingsandThings) -> (
   --print("Computing CGB for F = " | toString F | " and S = " | toString S);
   if 1 % (ideal S) == 0 then (
     return {}
   );
-  l := first gens RExt;
-  A := apply(F, i -> l * sub(i, RExt));
-  B := apply(S, i -> (l-1) * sub(i, RExt));
+  l := first gens RingsandThings_2;
+  A := apply(F, i -> l * sub(i, RingsandThings_2));
+  B := apply(S, i -> (l-1) * sub(i, RingsandThings_2));
   G := (entries gens gb(ideal join(A, B)))_0;
-  pruneG := select(G, g -> ((first first exponents(leadMonomial sub(g,RExt))) > 0) and any(exponents(sub(leadCoefficient sub(g,RFlatl),RFlat)), i -> any(i_(toList(0..(#X-1))), i -> i > 0)));
-  pruneG = apply(pruneG, g -> leadCoefficient sub(g, RExt'));
+  pruneG := select(G, g -> ((first first exponents(leadMonomial sub(g,RingsandThings_2))) > 0) and any(exponents(sub(leadCoefficient sub(g,RingsandThings_6),RingsandThings_3)), i -> any(i_(toList(0..(#(RingsandThings_1)-1))), i -> i > 0)));
+  pruneG = apply(pruneG, g -> leadCoefficient sub(g, RingsandThings_4));
   h := lcm pruneG;
 
-  memo = memo | {(S, sub(h, R), for g in G list (
-                  g' := sub(sub(g, {l => 1}), R);
+  memo = memo | {(S, sub(h, RingsandThings_0), for g in G list (
+                  g' := sub(sub(g, {l => 1}), RingsandThings_0);
                   if zero g' then continue;
                   g'))};
 
@@ -101,9 +102,9 @@ CGBMainRec (List, List, List, PolynomialRing, List, PolynomialRing, PolynomialRi
   H := listOfFactors h;
   diffset := {};
   for hi in H do (
-    diffset = {({sub(hi, RU)}, 1_RU)};
+    diffset = {({sub(hi, RingsandThings_5)}, 1_(RingsandThings_5))};
     for t in memo do (
-      diffset = diffConstructibleByLC(diffset, (apply(t#0, p -> sub(p, RU)), sub(t#1, RU)));
+      diffset = diffConstructibleByLC(diffset, (apply(t#0, p -> sub(p, RingsandThings_5)), sub(t#1, RingsandThings_5)));
       if isEmpty diffset then (
         break
       );
@@ -111,7 +112,7 @@ CGBMainRec (List, List, List, PolynomialRing, List, PolynomialRing, PolynomialRi
     if isEmpty diffset then (
       continue;
     );
-    memo = CGBMainRec(F, append(S, sub(hi, R)), memo, R, X, RExt, RFlat, RExt', RU, RFlatl);
+    memo = CGBMainRec(F, append(S, sub(hi, RingsandThings_0)), memo, RingsandThings);
   );
   return memo
 );
