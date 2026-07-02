@@ -11,12 +11,6 @@
 --   path = { currentDirectory() | "pathToMyFiles/", "absolutePathToMyFiles/", "etc.../" } | path 
 -- Terminate each directory name with a "/".
 
--- Edit the following lines to preload and check your package 
-needsPackage ("TestPackage", FileName => "tests/TestPackage.m2")
-check TestPackage
+load "gfanInterface-temp-test.m2"
+check "gfanInterface"
 
--- and/or run a series of examples either with
-load "tests/example.m2"
--- or with
-capture get "tests/example.m2"
--- at every push on GitHub.
