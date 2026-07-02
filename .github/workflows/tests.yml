@@ -23,9 +23,9 @@ jobs:
 
       - name: Install gfan
         run: |
-	  sudo wget -O /etc/apt/sources.list.d/macaulay2.sources https://macaulay2.com/Repositories/Debian/trixie/macaulay2.sources
-	  sudo apt-get update
-	  sudo apt-get install -y gfan
+          sudo wget -O /etc/apt/sources.list.d/macaulay2.sources https://macaulay2.com/Repositories/Debian/trixie/macaulay2.sources
+          sudo apt-get update
+          sudo apt-get install -y gfan
 
       - name: Run testbot on project branch
         run: |
