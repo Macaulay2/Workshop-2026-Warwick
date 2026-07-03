@@ -92,9 +92,13 @@ PGBMain (CGBTriple) := T -> (
         return PGB
     );
     listDiff := toList((new Set from apply(G, i->sub(i, R))) - (new Set from apply(Gr, i->sub(i, R))));
+    
     ------------------------------------------------------
     --THIS IS MY PERSONAL INTERPRETATION!
-    if length listDiff == 0 then (return {});
+    if length listDiff == 0 then (
+        breakpoint
+        return {}
+    );
     ----------------------------------------
     Gm := MDBasis(listDiff);
     H := unique(apply(Gm, g->squareFreePart(leadCoefficient(sub(g, R)))));
@@ -121,22 +125,39 @@ MDBasis (List) := (G) -> (
     Basis := {first F};
     F = delete(first F, F);
     for g in F do (
+         print("Deleting ", g, "from ", F);
          F = delete(g, F);
+         toAdd := true;
          for f in Basis do (
+            print(f, Basis);
             LTg := leadMonomial(g);
             LTf := leadMonomial(f);
             if LTg % LTf == 0 then (
+                toAdd = false;
                 break
-            );  
-            if LTf % LTg == 0 then (
+            )  
+            else if LTf % LTg == 0 then (
+                print("Deliting ", f, " from ", Basis, " and adding ", g );
                 Basis = unique(delete(f, Basis) | {g});
+                toAdd = false;
                 continue
             );
-         ); 
+         );
+         if toAdd then (
+            Basis |=  {g};
+         );
     );
-
     return Basis 
 );
+-----------------------------
+--TEST for MDBasis
+-----------------------------
+TEST /// -* Testing MDBasis on {a*x^2 − y, a*y^2 − 1, a*x − 1, (a + 1)*x − y, (a + 1)*y − a} *-
+U = U = QQ[a, MonomialOrder => Lex];
+R = U[x, y, MonomialOrder => Lex];
+G = {a*x^2 - y, a*y^2 - 1, a*x - 1, (a + 1)*x - y, (a + 1)*y - a}
+MDBasis(G)
+///
 
 end 
 restart
