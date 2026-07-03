@@ -1042,10 +1042,10 @@ dual ToricVectorBundle := {} >> opts -> tvb -> (
 -- PURPOSE : Computing the 'l'-th exterior power of a ToricVectorBundle
 --   INPUT : '(TVB, l)',  where 'l' is a strictly positive integer and 'TVB'is a TorcVectorBundle
 --  OUTPUT : the 'l'-th exterior power of TVB
-exteriorPower (ToricVectorBundleNew, ZZ) := (TVB, l) -> (
+exteriorPower (ToricVectorBundleNew, ZZ) := opts -> (TVB, l) -> (
 	if l < 0 then (
 		error("The power has to be non-negative.");
-	) else if l == 0 then (
+	) else if (l == 0 or l > rank TVB) then (
 		trivialBundle(variety TVB, 0)
 	) else (
 		R := rays variety TVB;
@@ -1059,7 +1059,7 @@ exteriorPower (ToricVectorBundleNew, ZZ) := (TVB, l) -> (
 			M := mutableMatrix(ring variety TVB,#ind,#ind);
 			for i in ind do (
 				for j in ind do (
-					M_(indtable#(rank TVB),indtable#j) = det((fM_t)^(rank TVB)_j);
+					M_(indtable#i,indtable#j) = det((fM_t)^i_j);
 				);
 			);
 			matrix M
