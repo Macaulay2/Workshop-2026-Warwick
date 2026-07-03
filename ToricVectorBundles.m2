@@ -162,7 +162,6 @@ toricVectorBundle (NormalToricVariety, List, List) := {} >> o -> (baseVariety, m
     if #matrixList != #(rays baseVariety) then error("There must be as many filtrations as rays of the base");
     if #indexesList != #(rays baseVariety) then error("There must be as many filtrations as rays of the base");
     L := apply(matrixList, m -> {numColumns m, numRows m});
-    if #(unique flatten L) != 1 then error("The filtration matrices must be square");
     if not same L then error("The sizes of the filtration matrices must be the same");
     rankE := (unique flatten L)_0;
     if any(indexesList, l -> #l != rankE) then error("The filtration data must be same length as rank");
@@ -239,7 +238,7 @@ lineBundle = method()
 lineBundle ToricDivisor := D -> (
 	X := variety D;
 	jumps := for e in entries D list {e};
-	mats := for p in rays X list matrix {{1}};
+	mats := for p in rays X list matrix(coefficientRing ring X, {{1}});
 	toricVectorBundle(X, mats, jumps)
 )
 
@@ -800,7 +799,69 @@ isWellDefined ToricVectorBundleNew := TVB -> (
 isWellDefined ToricVectorBundleKlyachko := ( T -> (
 	       L := findWeights T;
 	       all(L, l -> l != {}) and existsDecomposition(T,L)))
-  
+-*
+findWeightsNew = method()
+findWeightsNew ToricVectorBundleNew := E -> (
+    mC := apply(max variety E, C -> (rays variety E)_C);
+    n := dim variety E;
+    r := rank E;
+    -- Recursive function that goes through the rays, checks for the current ray which filtration
+    -- steps are possible, then calls itself for those.
+    -- E is the intersection of filtrations of the rays considered so far,
+    -- L is the list of remaining rays with filtration steps not chosen so far, 
+    -- R is the list of filtration steps not chosen before for rays already handled,
+    -- c is the column we are constructing
+    recursiveColumnsConstructor := (I,L,R,c) -> (
+        if L != {} then (
+            -- the recursion operates on L, this is how we know this is a finite method.
+            L = drop(L,1);
+            l := L#0;
+            flatten for e in unique l list (
+                -- Check if e admits an intersection of the filtrations
+                if ker(I|i#1) != 0 then (
+                    -- if so call the function again for the next ray
+                    j := position(l, li -> li == i);
+                    recursiveColumnsConstructor(intersectMatrices(I,i#1),L,R|{drop(l,{j,j})},c|{i#0}))
+                else continue
+                )
+            )
+        );
+    -- Recursive function that generates the columns (filtration combinations for a weight vector)
+    -- by calling the columns constructor and then, if this has created columns, call itself again
+    -- with the list of remaining filtration steps.
+    recursiveMatricesConstructor := (Ilist,L,M) -> (
+        Lnew := recursiveColumnsConstructor(Ilist#0#1,L,{},{Ilist#0#0});
+        if #L#0 != 1 then flatten apply(Lnew, (f,s) -> recursiveMatricesConstructor(drop(Ilist,1),f,M|{s}))
+        else apply(Lnew, (f,s) -> M|{s}));
+    fMats := filtrationMatrices E;
+    fJumps := filtrationJumps E;
+    rng := {(min flatten fJumps), (max flatten fJumps)};
+    matTable := hashTable for p in rays E list p => (
+        for i from rng_0 to rng_1 list filteredPiece(E,p,i)
+        );
+    apply(mC, C -> (
+            -- For each maximal cone compute the possible weightvector matrices
+            L := apply(C, p -> matTable#p);
+            I := L#0;
+            -- Compute the possible combinations of filtration steps
+            Flist := recursiveMatricesConstructor(E,drop(L,1),{});
+            Flist = apply(Flist, m -> promote(transpose matrix m,QQ));
+            R := promote(transpose matrix {C},QQ);
+            Rrank := rank R;
+            -- Check if this combination admits a weightvector matrix
+            if Rrank != n then (
+                M := R^{0..Rrank-1};
+                for F in Flist list (
+                    D := systemSolver(M,F^{0..Rrank-1});
+                    if (try(lift(D,ZZ); true) else false) and R*D == F then lift(D,ZZ)
+                    else continue))
+            else (
+                Rn := inverse R^{0..n-1};
+                for F in Flist list (
+                    Dn := Rn * (F^{0..Rrank-1});
+                    if (try(lift(Dn,ZZ); true) else false) and R*Dn == F then lift(Dn,ZZ)
+                    else continue)))))
+*-
 
 -- PURPOSE : Finding all possible sets of weight vectors for each maximal cone in the fan that admit the 
 --           filtration steps on the rays
@@ -808,60 +869,60 @@ isWellDefined ToricVectorBundleKlyachko := ( T -> (
 --  OUTPUT : a List,  where the i-th entry is the list of possible weight matrices for the i-th cone in maxCones T
 findWeights = method(TypicalValue => List)
 findWeights ToricVectorBundleKlyachko := (cacheValue symbol weights)( T -> (
-     	  -- Get the maximal cones and save their rays
-	  mC := maxCones T;
-     	  mC = apply(mC, C -> (C = (rays C); apply(numColumns C, i -> C_{i})));
-     	  n := T#"dimension of the variety";
-     	  k := rank T;
-	  -- Recursive function that goes through the rays and checks for the current ray which filtration steps are possible and for 
-	  -- these calls itself again
-	  -- E is the intersection of filtrations of the rays considered so far, L is the list of remaining rays with filtration steps not chosen so far, 
-	  -- R is the list of filtration steps not chosen before for rays already handled, these are the possible steps for the next column and newColumn 
-	  -- is the already created part of the new column
-     	  recursiveColumnsConstructer := (E,L,R,newColumn) -> (
-	       if L != {} then (
-	       	    l := L#0;
-	       	    L = drop(L,1);
-	       	    flatten for e in unique l list (
-		    	 -- Check if e admits an intersection of the filtrations
-			 if ker(E|e#1) != 0 then (
-			      -- if so call the function again for the next ray
-			      i := position(l, le -> le == e);
-			      recursiveColumnsConstructer(intersectMatrices(E,e#1),L,R|{drop(l,{i,i})},newColumn|{e#0}))
-		    	 else continue))
-	       else {(R,newColumn)});
-	  -- Recursive function that generates the columns (filtration combinations for a weight vector) by calling the columns constructor and then, if
-	  -- this has created columns, call it self again with the list of remaining filtration steps
-     	  recursiveMatricesConstructer := (Elist,L,M) -> (
-	       Lnew := recursiveColumnsConstructer(Elist#0#1,L,{},{Elist#0#0});
-	       if #L#0 != 1 then flatten apply(Lnew, (f,s) -> recursiveMatricesConstructer(drop(Elist,1),f,M|{s}))
-	       else apply(Lnew, (f,s) -> M|{s}));
-     	  fMT := T#"filtrationMatricesTable";
-     	  bT := T#"baseTable";
-     	  bundleRing := T#"ring";
-	  allRaysTable := tableForAllRays T;
-     	  apply(mC, C -> (
-		    -- For each maximal cone compute the possible weightvector matrices
-	       	    L := apply(C, r -> allRaysTable#r);
-	       	    E := L#0;
-		    -- Compute the possible combinations of filtration steps
-	       	    Flist := recursiveMatricesConstructer(E,drop(L,1),{});
-	       	    Flist = apply(Flist, m -> promote(transpose matrix m,QQ));
-	       	    R := promote(transpose matrix {C},QQ);
-		    Rrank := rank R;
-		    -- Check if this combination admits a weightvector matrix
-		    if Rrank != n then (
-			 M := R^{0..Rrank-1};
-			 for F in Flist list (
-			      D := systemSolver(M,F^{0..Rrank-1});
-			      if (try(lift(D,ZZ); true) else false) and R*D == F then lift(D,ZZ)
-			      else continue))
-		    else (
-			 Rn := inverse R^{0..n-1};
-			 for F in Flist list (
-			      Dn := Rn * (F^{0..Rrank-1});
-			      if (try(lift(Dn,ZZ); true) else false) and R*Dn == F then lift(Dn,ZZ)
-			      else continue))))))
+        -- Get the maximal cones and save their rays
+        mC := maxCones T;
+        mC = apply(mC, C -> (C = (rays C); apply(numColumns C, i -> C_{i})));
+        n := T#"dimension of the variety";
+        k := rank T;
+        -- Recursive function that goes through the rays and checks for the current ray which filtration steps are possible and for 
+        -- these calls itself again
+        -- E is the intersection of filtrations of the rays considered so far, L is the list of remaining rays with filtration steps not chosen so far, 
+        -- R is the list of filtration steps not chosen before for rays already handled, these are the possible steps for the next column and newColumn 
+        -- is the already created part of the new column
+        recursiveColumnsConstructer := (E,L,R,newColumn) -> (
+            if L != {} then (
+                l := L#0;
+                L = drop(L,1);
+                flatten for e in unique l list (
+                    -- Check if e admits an intersection of the filtrations
+                    if ker(E|e#1) != 0 then (
+                        -- if so call the function again for the next ray
+                        i := position(l, le -> le == e);
+                        recursiveColumnsConstructer(intersectMatrices(E,e#1),L,R|{drop(l,{i,i})},newColumn|{e#0}))
+                    else continue))
+            else {(R,newColumn)});
+        -- Recursive function that generates the columns (filtration combinations for a weight vector) by calling the columns constructor and then, if
+        -- this has created columns, call it self again with the list of remaining filtration steps
+        recursiveMatricesConstructer := (Elist,L,M) -> (
+            Lnew := recursiveColumnsConstructer(Elist#0#1,L,{},{Elist#0#0});
+            if #L#0 != 1 then flatten apply(Lnew, (f,s) -> recursiveMatricesConstructer(drop(Elist,1),f,M|{s}))
+            else apply(Lnew, (f,s) -> M|{s}));
+        fMT := T#"filtrationMatricesTable";
+        bT := T#"baseTable";
+        bundleRing := T#"ring";
+        allRaysTable := tableForAllRays T;
+        apply(mC, C -> (
+                -- For each maximal cone compute the possible weightvector matrices
+                L := apply(C, r -> allRaysTable#r);
+                E := L#0;
+                -- Compute the possible combinations of filtration steps
+                Flist := recursiveMatricesConstructer(E,drop(L,1),{});
+                Flist = apply(Flist, m -> promote(transpose matrix m,QQ));
+                R := promote(transpose matrix {C},QQ);
+                Rrank := rank R;
+                -- Check if this combination admits a weightvector matrix
+                if Rrank != n then (
+                    M := R^{0..Rrank-1};
+                    for F in Flist list (
+                        D := systemSolver(M,F^{0..Rrank-1});
+                        if (try(lift(D,ZZ); true) else false) and R*D == F then lift(D,ZZ)
+                        else continue))
+                else (
+                    Rn := inverse R^{0..n-1};
+                    for F in Flist list (
+                        Dn := Rn * (F^{0..Rrank-1});
+                        if (try(lift(Dn,ZZ); true) else false) and R*Dn == F then lift(Dn,ZZ)
+                        else continue))))))
 -- PURPOSE : Checking if a given List of possible degree vectors admits a Decomposition in torus eigenspaces that give the filtration
 --   INPUT : '(T,L)',  where 'T' is a ToricVectorBundleKlyachko and 'L' is a List where the i-th entry is either a matrix or a List of 
 --     	    	       matrices of possible degree vectors for the i-th cone in maxCones
@@ -2125,84 +2186,71 @@ map(ToricVectorBundleNew, ToricVectorBundleNew, Matrix):= ToricVectorBundleMap =
 
 ToricVectorBundleMap#id = E -> map(E,E, id_(ring E^(rank E) ))
 
-isWellDefined (ToricVectorBundleMap ) := Boolean => f ->(
-	if not f.cache.?isWellDefined then(
-	f.cache.isWellDefined = true;
+isWellDefined ToricVectorBundleMap := Boolean => f ->(
+    if f.cache.?isWellDefined then return f.cache.isWellDefined;
     K := keys f;
     expectedKeys := set{symbol source, symbol target, symbol map, symbol cache};
     if set K =!= expectedKeys then (
-    if debugLevel > 0 then (
-        added := toList(K - expectedKeys);
-        missing := toList(expectedKeys - K);
-        if #added > 0 then 
+        if debugLevel > 0 then (
+            added := toList(K - expectedKeys);
+            missing := toList(expectedKeys - K);
+            if #added > 0 then 
             << "-- unexpected key(s): " << toString added << endl;
-        if #missing > 0 then 
-            << "-- missing keys(s): " << toString missing << endl);
+            if #missing > 0 then 
+            << "-- missing keys(s): " << toString missing << endl
+            );
         return false
-    );
+        );
     --Check types
     if not instance(f.source, ToricVectorBundleNew) then (
-    if debugLevel > 0 then (
-        << "-- expected the source to be a ToricVectorBundleNew" << endl);
-    return false    );
+        if debugLevel > 0 then (
+            << "-- expected the source to be a ToricVectorBundleNew" << endl
+            );
+        return false
+        );
     if not instance(f.target, ToricVectorBundleNew) then (
-    if debugLevel > 0 then (
-        << "-- expected the target to be a ToricVectorBundleNew" << endl);
-    return false
-    );
+        if debugLevel > 0 then (
+            << "-- expected the target to be a ToricVectorBundleNew" << endl
+            );
+        return false
+        );
     if not instance(f.map, Matrix) then (
-    if debugLevel > 0 then (
-        << "-- expected the map to be a Matrix" << endl);
-    return false
-    );
+        if debugLevel > 0 then (
+            << "-- expected the map to be a Matrix" << endl
+            );
+        return false
+        );
     if not instance(f.cache, CacheTable) then (
         if debugLevel > 0 then (
-        << "-- expected cache to be a CacheTable" << endl);
+            << "-- expected cache to be a CacheTable" << endl
+            );
         return false
-    );    
+        );    
     --Check mathematical structure
     E1 := source f;
     E2 := target f;
     M := f.map;
-    Xrays := rays(variety(E1));
-    r :=rank E1;
-	for p in Xrays do (
-		j := flatten join(filtrationJumps source f, filtrationJumps target f);
-		m1 := min j;
-		m2 := max j;
-
-		for i from m1 to m2 do (
-			amb := module (ring E2) ^ (rank E2);
-			f1 := map(amb, , sub(M * filteredPiece(E1,p,i),QQ));
-			f2 := map(amb, , sub(filteredPiece(E2,p,i),QQ));
-
-			if not isSubset(image f1, image f2) then (
-				return false
-			);
-		);
-
-
-	);
-
-
-
-
-
--*
-    for i from minj-1 to maxj+1 do(
-        for p in Xrays do(
-        if not isSubset(image (M*filteredPiece(E1,p,i)), image filteredPiece(E2, p, i))
-		 then (print( concatenate("\n Not well defined at ray " ,toString p ," and index ", toString i)); f.cache.isWellDefined = false;);
-		 );
+    Xrays := rays variety E1;
+    r := rank E1;
+    for p in Xrays do (
+        j := flatten join(filtrationJumps source f, filtrationJumps target f);
+        m1 := min j;
+        m2 := max j;
+        for i from m1 to m2 do (
+            amb := module (ring E2) ^ (rank E2);
+            f1 := map(amb, , sub(M * filteredPiece(E1,p,i),QQ));
+            f2 := map(amb, , sub(filteredPiece(E2,p,i),QQ));
+            if not isSubset(image f1, image f2) then (
+                if debugLevel > 0 then (
+                    << ("--the image of the source is not contained in the target at index " | net i) << endl
+                    );
+                return false
+                );
+            );
         );
+    true
+    )
 
-    f.cache.isWellDefined = true and f.cache.isWellDefined ;    
-	);
-	f.cache.isWellDefined
-*-
-	);
-	true
-)
 -- PURPOSE : To check whether a given map of TVB is injective. 
 --   INPUT : "T" where T is a ToricVectorBundle. 
 --  OUTPUT : A boolean indicating whether T is injective or not. 
