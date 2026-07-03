@@ -378,6 +378,7 @@ makeVBKlyachko (ZZ,Fan) := (k,F) -> (
 	  "number of rays" => #rT,
 	  symbol cache => new CacheTable};
      tvb.cache.isVB = true;
+     --breakpoint
      tvb)
 
 --   INPUT : '(k,F,baseList,filtrationList)',  a strictly positive integer 'k', a pure and full dimensional
@@ -1103,10 +1104,10 @@ dual ToricVectorBundle := {} >> opts -> tvb -> (
 -- PURPOSE : Computing the 'l'-th exterior power of a ToricVectorBundle
 --   INPUT : '(TVB, l)',  where 'l' is a strictly positive integer and 'TVB'is a TorcVectorBundle
 --  OUTPUT : the 'l'-th exterior power of TVB
-exteriorPower (ToricVectorBundleNew, ZZ) := (TVB, l) -> (
+exteriorPower (ToricVectorBundleNew, ZZ) := opts -> (TVB, l) -> (
 	if l < 0 then (
 		error("The power has to be non-negative.");
-	) else if l == 0 then (
+	) else if (l == 0 or l > rank TVB) then (
 		trivialBundle(variety TVB, 0)
 	) else (
 		R := rays variety TVB;
@@ -1120,7 +1121,7 @@ exteriorPower (ToricVectorBundleNew, ZZ) := (TVB, l) -> (
 			M := mutableMatrix(ring variety TVB,#ind,#ind);
 			for i in ind do (
 				for j in ind do (
-					M_(indtable#(rank TVB),indtable#j) = det((fM_t)^(rank TVB)_j);
+					M_(indtable#i,indtable#j) = det((fM_t)^i_j);
 				);
 			);
 			matrix M
@@ -1165,7 +1166,6 @@ areIsomorphic = method(TypicalValue => Boolean)
 -- new areIsomorphic for ToricVectorBundleNew
 -- this is just trivial for now to make sure that the == has been implemented appropriately
 areIsomorphic (ToricVectorBundleNew,ToricVectorBundleNew) := Boolean => (T1,T2) -> (
-    areTVBsIso := false;
     --First check that the bundles have same rank, defined over same ring and have same base variety before
     --anything else
     if not ((rank T1 == rank T2) and (variety T1 === variety T2) and (ring T1 === ring T2)) then return false;
@@ -1186,14 +1186,13 @@ areIsomorphic (ToricVectorBundleNew,ToricVectorBundleNew) := Boolean => (T1,T2) 
         isoMapT1T2 := map(T2,T1,id_((ring T1)^(rank T1)));
         --checking if this map is injective and surjective. if it is, this will tell us that
         --these bundles are equivariantly isomorphic
-        areTVBsIso = ((isInjective isoMapT1T2) and (isSurjective isoMapT1T2));
+        areTVBsIso := ((isInjective isoMapT1T2) and (isSurjective isoMapT1T2));
         if areTVBsIso then (
             T1.cache.iso#T2 = isoMapT1T2;
             isoMapT2T1 := map(T1,T2,id_((ring T2)^(rank T2)));
             T2.cache.iso#T1 = isoMapT2T1;
             );
          );
-
      areTVBsIso
     )
 
@@ -2169,7 +2168,6 @@ matrix ToricVectorBundleMap := Matrix => f -> f.map
 
 -- We allow defining a map that is not well defined
 map(ToricVectorBundleNew, ToricVectorBundleNew, Matrix):= ToricVectorBundleMap => opts -> (E2, E1, M) ->(
-    if ring E1 =!= ring E2 then error "The vector bundles need to be defined over the same ring";
     if numRows M =!= rank E2 or numColumns M =!= rank E1 then error " The dimensions of the matrix don't match the ranks of the bundles";
     if ring M =!= ring E1 or ring M =!= ring E2 then error " The matrix needs to be defined over the same ring as the bundles";
     if variety E1 =!= variety E2 then error "The base varieties of the bundles have to coincide";
@@ -5249,8 +5247,9 @@ assert ((filtrationJumps E)_0 == toList(4:0))
 ///
 
 
--- Test
--- Checking the isInjective method
+-- Test 33
+-- Checking the isInjective and isSurjective method
+
 TEST ///
 X = toricProjectiveSpace 2
 D1 = toricDivisor({1,0,0},X)
@@ -5266,23 +5265,21 @@ E2 = L1 ++ L2 ++ L3
 
 f = map(E2, E1, matrix(QQ,{{1},{1},{1}}))
 
+Y = toricProjectiveSpace 3
+F1 = trivialBundle(X,5)
+F2 = trivialBundle(X,3)
+
+g = map(F2,F1,matrix(ring F1, {{1,0,0,0,0},{0,1,0,0,0},{0,0,1,0,0}}))
+
+
 assert (isInjective f)
-///
-
--- Test
--- Checking the isSurjective method
-TEST ///
-X = toricProjectiveSpace 3
-E1 = trivialBundle(X,5)
-E2 = trivialBundle(X,3)
-
-f = map(F,E,matrix(ring E, {{1,0,0,0,0},{0,1,0,0,0},{0,0,1,0,0}}))
-
-assert (isSurjective f)
+assert (not isInjective g)
+assert (isSurjective g)
+assert (not isSurjective f)
 ///
 
 
--- Test 33
+-- Test 35
 -- Checking lineBundle
 TEST ///
 X = hirzebruchSurface 3
@@ -5297,7 +5294,7 @@ assert (numColumns filteredPiece(L, (rays X)_1, 0) == 0)
 
 ///
 
---Test 34
+--Test 36
 --Checking areIsomorphic
 --first test, check trivial bundles of different ranks are not isomorphic
 TEST ///
@@ -5333,11 +5330,11 @@ basisMat1 = (filtrationMatrices TT3)#1 * (matrix{{1,0,1},{0,1,1},{0,1,0}});
 basisMat2 = (filtrationMatrices TT3)#2 * (matrix{{1,-1,1},{-1,0,1},{0,1,-1}});
 basisMat3 = (filtrationMatrices TT3)#3;
 T = toricVectorBundle(PP3,{basisMat0,basisMat1,basisMat2,basisMat3},filtrationJumps TT3);
-areIsomorphic(TT3,T)
+assert not areIsomorphic(TT3,T)
 
 ///
 
---Test 35
+--Test 37
 --Test for isomorphism
 TEST///
 PP3 = toricProjectiveSpace 3;
@@ -5361,7 +5358,7 @@ assert (isomorphism(T3,T4) === conjIsoT3T4)
 conjIsoT4T3 = map(T3,T4,id_((ring T4)^(rank T4)));
 assert (isomorphism(T4,T3) === conjIsoT4T3)
 ///
---Test 36
+--Test 38
 --Test for ring
 
 TEST///
@@ -5373,7 +5370,7 @@ T2 = cotangentBundle(Y);
 assert(ring T2 === ZZ/101)
 ///
 
---Test 37
+--Test 39
 --Test direct sum
 TEST///
 X = toricProjectiveSpace 2;
@@ -5388,7 +5385,7 @@ assert(filtrationJumps(T)=={{0, 0, 1, 0}, {0, 0, 1, 0}, {0, 0, 1, 0}} )
 assert(filtrationMatrices(T) == {matrix(QQ, {{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, -1, -1}, {0, 0, -1, 0}}), matrix(QQ, {{1, 0, 0, 0},{0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}}), matrix(QQ, {{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 0, 1},{0, 0, 1, 0}} )} )
 ///
 
---Test 38
+--Test 40
 --Test direct product
 TEST///
 X = toricProjectiveSpace 2;
@@ -5403,7 +5400,7 @@ assert(filtrationJumps(T)=={{1, 0, 1, 0, 1, 0}, {1, 0, 1, 0, 1, 0}, {1, 0, 1, 0,
 assert(filtrationMatrices(T) ==  {matrix(QQ, {{-1, -1, 0, 0, 0, 0}, {-1, 0, 0, 0, 0, 0}, {0, 0, -1, -1, 0, 0}, {0, 0, -1, 0, 0,      0}, {0, 0, 0, 0, -1, -1}, {0, 0, 0, 0, -1, 0}}), matrix(QQ, {{1, 0, 0, 0, 0, 0}, {0, 1, 0, 0, 0,  0}, {0, 0, 1, 0, 0, 0}, {0, 0, 0, 1, 0, 0}, {0, 0, 0, 0, 1, 0}, {0, 0, 0, 0, 0, 1}}), matrix(QQ,      {{0, 1, 0, 0, 0, 0}, {1, 0, 0, 0, 0, 0}, {0, 0, 0, 1, 0, 0}, {0, 0, 1, 0, 0, 0}, {0, 0, 0,      0, 0, 1}, {0, 0, 0, 0, 1, 0}})} )
 ///
 
---Test 39
+--Test 41
 --Test for twist
 TEST///
 X = toricProjectiveSpace 2;
@@ -5417,37 +5414,42 @@ assert(filtrationMatrices(T) == {matrix(QQ, {{-1, -1}, {-1, 0}}), matrix(QQ ,{{1
 assert(areIsomorphic(T, T1**L) )
 ///
 
--*
---Test 40
+
+--Test 42
 --Test for map for ToricVectorBundleNew
+TEST///
 PP3 = toricProjectiveSpace 3;
 trivPP3 = trivialBundle(PP3,3);
 tangPP3 = tangentBundle(PP3);
-M = matrix{{1,0,1},{0,1,0},{1,1,0}};
+--creates a map (maybe not well defined
+M = matrix(ring trivPP3, {{1,0,1},{0,1,0},{1,1,0}});
 tvbMap = map(trivPP3,tangPP3,M)
-assert(tvbMap.source === tangPP3)
-assert(tvbMap.target === trivPP3)
-assert(tvbMap.map === M)
-*-
---Test 41
+assert(source tvbMap === tangPP3)
+assert(target tvbMap === trivPP3)
+assert(map tvbMap === M)
+--maps from different rank bundles
+
+///
+
+--Test 43
 --Test for isWellDefined for map of ToricVectorBundleNew
---test when source is not a ToricVectorBundleNew
-
---test when target is not a ToricVectorBundleNew
-
---test when map is not a matrix
-
---test when cache is not a cachetable? can we check this?
-
---test a map that is not well defined
-
+TEST///
+X = toricProjectiveSpace 3;
+E = trivialBundle(X, 3);
+F = trivialBundle(X, 5);
 --test a map that is well defined
+assert (isWellDefined map(F, E, matrix(ring E, {{1,0,0},{0,1,0},{0,0,1},{0,0,0},{0,0,0}})))
 
-PP3 = toricProjectiveSpace 3;
-trivPP3 = trivialBundle(PP3,3);
-tangPP3 = tangentBundle(PP3);
-M = matrix{{1,0,1},{0,1,0},{1,1,0}};
-tvbMap = map(trivPP3,tangPP3,M)
+D1 = toricDivisor({1,2,-1,0},X);
+D2 = toricDivisor({3,-1,2,0},X);
+D3 = toricDivisor({5,0,1,0},X);
+L1 = lineBundle(D1)
+L2 = lineBundle(D2)
+L3 = lineBundle(D3)
+--test a map that is not well defined
+assert (not isWellDefined map(E, L1 ++ L2 ++ L3, id_((ring E)^3)))
+///
+
 
 end
 
