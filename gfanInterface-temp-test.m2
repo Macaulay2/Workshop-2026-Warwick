@@ -1,8 +1,7 @@
 restart
 needsPackage("gfanInterface", Configuration=>{"keepfiles"=>true,"verbose"=>true})
 QQ[x,y]
-F = gfanTropicalPrevariety {x+y+1}
-F = gfanTropicalPrevariety({x+y+x^2+y^2+x*y}, "halfopenrestrictions"=>{{3, {}, {(1, -1,0)}, {}}});
+F = gfanTropicalPrevariety({x+y+x^2+y^2+x*y}, "halfopenrestrictions"=>{{2, {}, {(1, -1)}, {}}});
 (rays F, maxCones F)
 I = Grassmannian(1,4)
 F = gfanTropicalPrevariety I_*
