@@ -2527,7 +2527,7 @@ gfanGroebnerComplex Ideal := opts -> (I) ->(
     (ringMap, J):= gfanConvertToNewRing I;
     --create the input string
     input := gfanRingToString(target ringMap) | gfanIdealToString J;
-    output := runGfanCommand("gfan _padic", opts, input);  --need to understand how to give p
+    output := runGfanCommand("gfan _padic", opts, input);  
     if(length(output#0)==0) then return "error: this complex is empty";
     gfanParsePolyhedralFan output#0
 )
