@@ -1,7 +1,7 @@
 -*
 What to explain in today's presentation:
 
-- Why did we get the big doefficients on the h polys? Ans: it comes from the GB
+- Why did we get the big coefficients on the h polys? Ans: it comes from the GB
 -- in M2, GBs are *almost* reduced, but the leading term may have a non-one coefficient
 -- in order to avoid denominators
 >> so we added a function to clean up the coefficients of h
@@ -31,6 +31,9 @@ uninstallPackage "ComprehensiveGBs"
 restart
 installPackage "ComprehensiveGBs"
 
+viewHelp "OlliesDocPage"
+
+
 --basic example, one polynomial
 R = QQ[a,b][x,y, MonomialOrder => Lex]
 F = {a*x + b*y}
@@ -43,13 +46,15 @@ CGB(F)
 --example 9
 R = QQ[a,b][x,y,z, MonomialOrder => Lex]
 F = {x^3 - a, y^4 - b, x+y-z}
-elapsedTime G = CGBMain(F, {}, Verbose => true);
+elapsedTime G = CGBMain(F, {}, Verbose => false);
 #G
 
 elapsedTime G = CGBMain(F, {}, ReduceStrata => true, Verbose => true);
 #G
 
-elapsedTime G = CGBMain(F, {}, ReduceStrata => true, Strategy => "Rabinowitsch", Verbose => true);
+elapsedTime G = CGBMain(F, {}, ReduceStrata => true, Strategy => "Rabinowitsch", Verbose => false);
+benchmark "G = CGBMain(F, {}, ReduceStrata => true, Strategy => \"radical\", Verbose => false)"
+
 #G
 
 
