@@ -193,14 +193,7 @@ CGBMainRec (List, List, List, List) := o -> (F, S, memo, RingsandThings) -> (
 
 Notes on Optimisation:
 
--- Expensive operations:
--- > Creating a new ring on each iteration (Do this once at the start keep passing in the rings data)
---   The rings data and all the maps can be put in a new object
---
--- > calling radical to check consistency, instead us Rabinowitsch
---
-
-TODO: profiling - see what else is taking time
+profiling - see what else is taking time
 
 needsPackage "ComprehensiveGBs"
 R = QQ[a,b][x,y,z, MonomialOrder => Lex]
@@ -236,15 +229,9 @@ for t in L do (
 );
 *-
 
--- Order of confidence:
--- 
-
--- TODO: implement cgb
-
-
 
 CGB=method(Options => {ReduceStrata => false})
-CGB(List):=F->(
+CGB(List):= o -> F->(
     s:=first entries eliminateVariables(F);
     result:=s;
     G:=CGBMain(F,s, ReduceStrata => o.ReduceStrata);
