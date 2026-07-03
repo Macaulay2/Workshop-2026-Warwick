@@ -31,7 +31,7 @@ uninstallPackage "ComprehensiveGBs"
 restart
 installPackage "ComprehensiveGBs"
 
-viewHelp "OlliesDocPage"
+viewHelp ComprehensiveGBs
 
 
 --basic example, one polynomial
