@@ -1,6 +1,7 @@
 ---------------------------------------------
 --Comprehensive Groebner Basis in Macaulay2: 
 ---------------------------------------------
+
 installPackage "ComprehensiveGBs"
 
 -- No more big coefficients in the strata   (these where coming from the GB implementation in M2, 

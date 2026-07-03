@@ -351,7 +351,7 @@ doc ///
     Verbose=>Boolean
   Outputs
     G :List
-      of @TO {"Sequence","s"}@ of the form (E,N,G), where G is a Groebner basis on the set $V(E)\setminus V(N)$
+      of Sequences of the form (E,N,G), where G is a Groebner basis on the set $V(E)\setminus V(N)$
   Description
     Text
       Implementation of the Algorithm proposed by Suzuki and Sato. Given a tower polynomial ring $R = k[U][X]$ for $U$ a set of parameters and $X$ a set of variables, $F\subset R$ an ideal of variables and parameters, and $S\subset k[U]$ an ideal satisfying $V(S)\subseteq V(\langle F\rangle\cap k[U]), CGBMain takes $F$ and $S$ as inputs and returns a comprehensive Groebner system.
@@ -384,9 +384,6 @@ doc ///
       CGBMain(F1,S1,Verbose=>true)
     Text
       CGBMain can take in one or two lists as inputs - when $S$ is not specified, the function will assume S = {}.
-  Contributors
-  References
-    @LABEL("[1]","id" => "ref1")@ Akira Suzuki and Yosuke Sato. 2006. A simple algorithm to compute comprehensive Gröbner bases using Gröbner bases. In Proceedings of the 2006 international symposium on Symbolic and algebraic computation (ISSAC '06). Association for Computing Machinery, New York, NY, USA, 326–331. https://doi.org/10.1145/1145768.1145821
   SeeAlso
     CGB
   ///
