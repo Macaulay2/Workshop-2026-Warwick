@@ -34,3 +34,12 @@ P4 = poset(keys H4, isSubset)
 assert not isSplit P4
 assert (set basesOfCyclicFlats L4 == set{set{1,2},set{1,3},set{1,4},set{1,5},set{2,3},set{2,4},set{2,5},set{3,4},set{3,5},set{4,5}}) 
 ///
+
+TEST///
+H5 = new HashTable from {{} =>0, {1,2,3} => 2, {4,5,6} => 2, {1,2,3,4,5,6} => 3}
+M5 = cyclicFlatsMatroid(H5)
+assert isWellDefined M5
+P5 = poset(keys H5, isSubset)
+assert isSplit H5
+-- assert (tuttePolynomial M5 == tuttePolynomial matroid(basesOfCyclicFlats(M5))) is not working b/c problem in Matroids.m2 tuttePolynomial
+///
