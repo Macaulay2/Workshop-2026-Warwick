@@ -82,13 +82,24 @@ diffLC (Sequence, Sequence) := opts -> (A, B) -> (
   else (
     error "Unknown strategy for diffLC"
   )
-); 
-diffConstructibleByLC = method();
-diffConstructibleByLC (List, Sequence) := (C, LC) -> (
-  flatten apply(C, t -> diffLC(t, LC))
 );
 
-CGBMain = method(Options => {ReduceStrata => false}); -- Initialises CGBMainRec
+diffConstructibleByLC = method(
+    Options => {
+        Strategy => "radical"
+        }
+    );
+diffConstructibleByLC (List, Sequence) := opts -> (C, LC) -> (
+  flatten apply(C, t -> diffLC(t, LC, opts))
+);
+
+CGBMain = method(
+    Options => {
+        ReduceStrata => false,
+        Strategy => "radical",
+        Verbose => false
+        }
+    ); -- Initialises CGBMainRec
 CGBMain (List, List) := o -> (F, S) -> (
   R := ring F_0;
   X := gens R;
@@ -101,12 +112,20 @@ CGBMain (List, List) := o -> (F, S) -> (
   RU := K[U];
   RFlatl := RFlat[l];
   RingsandThings := {R,X,RExt,RFlat,RExt',RU,RFlatl};
-  CGBMainRec(F, S, {}, RingsandThings,ReduceStrata => o.ReduceStrata)
+  CGBMainRec(F, S, {}, RingsandThings, o)
 )
 
-CGBMainRec = method(Options => {ReduceStrata => false});
+CGBMainRec = method(
+    Options => {
+        ReduceStrata => false,
+        Strategy => "radical",
+        Verbose => false
+        }
+    );
 CGBMainRec (List, List, List, List) := o -> (F, S, memo, RingsandThings) -> (
-  print("Computing CGB for F = " | toString F | " and S = " | toString S);
+  if o.Verbose then (
+      print("Computing CGB for F = " | toString F | " and S = " | toString S);
+      );
   if 1 % (ideal S) == 0 then (
     return {}
   );
@@ -150,7 +169,7 @@ CGBMainRec (List, List, List, List) := o -> (F, S, memo, RingsandThings) -> (
     for hi in H do (
       diffset = {({sub(hi, RingsandThings_5)}, 1_(RingsandThings_5))};
       for t in memo do (
-        diffset = diffConstructibleByLC(diffset, (apply(t#0, p -> sub(p, RingsandThings_5)), sub(t#1, RingsandThings_5)));
+        diffset = diffConstructibleByLC(diffset, (apply(t#0, p -> sub(p, RingsandThings_5)), sub(t#1, RingsandThings_5)), Strategy => o.Strategy);
         if isEmpty diffset then (
           break
         );
@@ -158,14 +177,14 @@ CGBMainRec (List, List, List, List) := o -> (F, S, memo, RingsandThings) -> (
       if isEmpty diffset then (
         continue;
       );
-      memo = CGBMainRec(F, append(S, sub(hi, RingsandThings_0)), memo, RingsandThings, ReduceStrata => true);
+      memo = CGBMainRec(F, append(S, sub(hi, RingsandThings_0)), memo, RingsandThings, o);
     );
     return memo
   ) else (
     return {(S, sub(h, RingsandThings_0), for g in G list (
                   g' := sub(sub(g, {l => 1}), RingsandThings_0);
                   if zero g' then continue;
-                  g'))} | flatten apply(H, hi -> CGBMainRec(F, append(S, sub(hi, RingsandThings_0)), memo, RingsandThings))
+                  g'))} | flatten apply(H, hi -> CGBMainRec(F, append(S, sub(hi, RingsandThings_0)), memo, RingsandThings, o))
   );
 );
 

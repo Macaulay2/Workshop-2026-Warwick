@@ -9,10 +9,22 @@ CGBMain(F, {})
 CGB(F)
 
 
+
+
 --example 9
 R = QQ[a,b][x,y,z, MonomialOrder => Lex]
 F = {x^3 - a, y^4 - b, x+y-z}
-G = CGBMain(F, {});
+elapsedTime G = CGBMain(F, {}, Verbose => true);
+#G
+
+elapsedTime G = CGBMain(F, {}, ReduceStrata => true, Verbose => true);
+#G
+
+elapsedTime G = CGBMain(F, {}, ReduceStrata => true, Strategy => "Rabinowitsch", Verbose => true);
+#G
+
+
+
 #G
 
 G_1
