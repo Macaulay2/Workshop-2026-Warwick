@@ -892,7 +892,9 @@ heightOneSlice Fan := F ->(
 		else emptyCones = emptyCones |{i};
         );
     	conesToKeep := select(numberOfMaxCones,i->(not(member(i,emptyCones))));
---	if conesToKeep == {} then
+	if conesToKeep == {} then error "empty tropical varieties are currently unsupported";
+	
+
 --	    return(polyhedralComplex(zerovector of size d, {}, zerovector      ),{});
 --TODO - deal with the empty complex case.
 --We plan to leave this until there is an empty polyhedral complex in the Polyhedra package.
