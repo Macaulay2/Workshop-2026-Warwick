@@ -183,8 +183,8 @@ toricVectorBundle (NormalToricVariety, List, List) := {} >> o -> (baseVariety, m
 -- the matrices here.
 -- For those trying to understand, worth pointing out that the HEIGHT of a string
 -- is obtained via "length" and NOT "height".
-vertSpace := n -> (s := ""; if n == 1 then return "" else for i to n-2 do s = s || ""; s)
-horSpace := n -> (s := " "; if n == 0 then return "" else if n == 1 then return s else for i to n-2 do s = s | " "; s)
+vertSpace = n -> (s := ""; if n == 1 then return "" else for i to n-2 do s = s || ""; s)
+horSpace = n -> (s := " "; if n == 0 then return "" else if n == 1 then return s else for i to n-2 do s = s | " "; s)
 
 displayFiltrations = method()
 displayFiltrations ToricVectorBundleNew := E -> (
