@@ -12,6 +12,7 @@ G = CGBMain(F, {});
 netList for g in G list {g_0, factor g_1}
 
 -- A *LOT* of redundant strata (where the CGB identically vanishes).. 
+
 -- So we added strata reduction!
 G = CGBMain(F, {}, ReduceStrata => true);
 netList for g in G list {g_0, factor g_1}
@@ -19,8 +20,8 @@ netList for g in G list {g_0, factor g_1}
 -- For this, at each step we have to check ideal membership 
 -- (i.e. do all leading coefficients of the GB vanish on the strata?), 
 -- and using the Rabinowitsch trick can make everything faster                                      -- (i.e. to check f in <E>, test 1 in <E, y*f-1>)
-benchmark "G = CGBMain(F, {}, ReduceStrata => true, Strategy => \"radical\", Verbose => false)"
-benchmark "G = CGBMain(F, {}, ReduceStrata => true, Strategy => \"Rabinowitsch\", Verbose => false)"
+print("Radical :", benchmark "G = CGBMain(F, {}, ReduceStrata => true, Strategy => \"radical\", Verbose => false)")
+print("Rabinowitsch:", benchmark "G = CGBMain(F, {}, ReduceStrata => true, Strategy => \"Rabinowitsch\", Verbose => false)")
 -- And we were more careful with cacheing rings.
 
 -- Dulcis in fundu: we have some DOCUMENTATION!
@@ -111,7 +112,7 @@ R = QQ[a,b,c,d][x_1,x_2,y_1,y_2,s, MonomialOrder => Lex]
 f=a*x_1^2+b*y_1
 g=c*y_2^2+d*x_2
 F = {f,g,(x_1-x_2)^2+(y_1-y_2)^2-s,diff_(x_1) f * diff_(y_2) g -diff_(y_1) f * diff_(x_2) g, diff_(x_1) f * (y_1-y_2) - diff_(y_1) f * (x_1-x_2)}
-elapsedTime G = CGBMain(F, {});
+elapsedTime G = CGBMain(F, {}, Strategy =);
  -- 1255.88s elapsed
 #G --=1637
 
