@@ -916,23 +916,20 @@ tropicalVarietyWithValExternal = method(
 
 --still need to add the multiplicities - currently they are empty
 --Also need to make work with max options
-tropicalVarietyWithpadicVal = (I) -> (
+tropicalVarietyWithpadicVal = (I,p) -> (
     d:=dim I;   
---    gfanopt:=(new OptionTable) ++ {"groebnerComplex"=>true,"p"=>2};
---    GC := gfanGroebnerComplex(I,gfanopt);
-    GC := gfanGroebnerComplex(I, "groebnerComplex"=>true, "p"=>2);
+    GC := gfanGroebnerComplex(I, "groebnerComplex"=>true, "p"=>p);
     --First throw away cones for which the corresponding intial ideal contains a monomial
     GC = skeleton(d+1,GC);  
     conesToKeep := {};
     conesToCheck:=maxCones GC;
     raysGC:=rays GC;
---    gfanopt2:=(new OptionTable) ++ {"initialIdeal"=>true,"p"=>2};
     scan(conesToCheck, C->(
 	    --find initial ideal
 	    raysC:=raysGC_C;
 	    w:=flatten entries sum(rank source raysC, i-> raysC_i);
     	if w_0>0 then (
-	    	inI := ideal(gfanPadicInitialIdeal(I, w, "initialIdeal"=>true, "p"=>2));
+	    	inI := ideal(gfanPadicInitialIdeal(I, w, "initialIdeal"=>true, "p"=>p));
 		-- worry about which ring this lives in
 		prodgens := product( gens ring inI, i->i);
     	    	if saturate(inI,prodgens) != ideal(promote(1,ring inI)) then 
@@ -1961,6 +1958,41 @@ doc///
 		maxCones T
 		linealitySpace T
 ///
+
+
+
+doc///
+        Key
+	  tropicalVarietyWithpadicVal
+	Headline
+	    the tropical variety of a prime ideal with respect to the p-adic valuation
+	Usage
+	    tropicalVarietyWithpadicVal(I,p)
+	Inputs
+	    I:Ideal
+	     	of polynomials
+	    p:ZZ
+	Outputs
+	    T:TropicalCycle1
+	Description
+	    Text
+	    	Computes the tropical variety of a d-dimensional homogeneous 
+	    	prime ideal with respect to the p-adic valuation of a given 
+	    	prime integer p. This uses the gfanInterface package.
+	    	
+	    	The output is a tropical cycle T, consisting of a polyhedral
+	    	complex and a list of multiplicities associated to maximal
+	    	polyhedra in the polyhedral complex.
+		
+    	    	If the ideal is d-dimensional in n variables, the polyhedral
+    	    	complex is a pure, d-dimensional polyhedral complex in R^n, 
+    	    	so with a lineality space of dimension at least one.
+	    Example
+	        QQ[x,y,z]
+	        I = ideal(x+y+2*z)
+	        T = tropicalVarietyWithpadicVal(I,2)       
+///
+
 
 -*
 doc ///
