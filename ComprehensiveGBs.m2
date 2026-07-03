@@ -617,12 +617,13 @@ assert(result#0 == expected1 or result#1 == expected2);
 ///
 
 -*
-TEST /// -* [insert short title for this test] *-
+TEST ///
 -- test code and assertions here
 -- may have as many TEST sections as needed
 
 ///
--*
+*-
+
 
 end--
 
