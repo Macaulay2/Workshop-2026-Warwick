@@ -14,9 +14,12 @@ tuttePolynomial matroid(basesOfCyclicFlats(M2))
 H4 = new HashTable from {{} =>0, {1,2,3} => 2, {2,3,4} => 2, {1,2,3,4,5,6} => 3}
 M4 = cyclicFlatsMatroid(H4)
 
-H5 = new HashTable from {{} =>0, toList(1..14) => 13,  toList(1..28) => 14}
+H5 = new HashTable from {{} =>0, toList(1..13) => 12,  toList(1..26) => 13}
 M5 = cyclicFlatsMatroid(H5)
 tuttePolynomial M5
-tuttePolynomial matroid basesOfCyclicFlats M5
+
+M = uniformMatroid(10,5)
+
+B := basesOfCyclicFlats M5
 
 

@@ -147,7 +147,6 @@ evalValInvariant (CyclicFlatsMatroid, MethodFunctionWithOptions, MethodFunctionW
         Unisum: (r, k, h, n): Sum of uniform matroids U_{r, h} + U_{k-r, n-h}
     *-
     BaseRing := opts.BaseRing;
-    print BaseRing;
     k := M.rank;
     n := #(M.groundSet);
     total := if not BaseRing then Uniform(k, n) else Uniform(k, n, BaseRing => BaseRing); 
