@@ -1,5 +1,8 @@
 needsPackage "CyclicFlats"
 needsPackage "Matroids"
+needsPackage "TestAudit"
+
+testAudit "CyclicFlats"
 
 H1 = new HashTable from {{} =>0,  {1,2,3,4} => 2}
 M1 = cyclicFlatsMatroid(H1)
@@ -11,8 +14,12 @@ M2 = cyclicFlatsMatroid(H2)
 tuttePolynomial M2
 tuttePolynomial matroid(basesOfCyclicFlats(M2))
 
-H4 = new HashTable from {{} =>0, {1,2,3} => 2, {2,3,4} => 2, {1,2,3,4,5,6} => 3}
+H4 = new HashTable from {{} =>0, {1,2,3} => 2, {4,5,6} => 2, {1,2,3,4,5,6} => 3}
 M4 = cyclicFlatsMatroid(H4)
+tuttePolynomial M4
+tuttePolynomial matroid(basesOfCyclicFlats(M4))
+
+
 
 H5 = new HashTable from {{} =>0, toList(1..14) => 8,  toList(1..28) => 14}
 M5 = cyclicFlatsMatroid(H5)

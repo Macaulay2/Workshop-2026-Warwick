@@ -282,6 +282,9 @@ isSplit Poset := P -> (height P == 2)
 
 --load "./Matroids/tests-Matroids.m2"
 
+
+load "tests-CyclicFlats.m2"
+
 end--
 restart
 loadPackage(     "CyclicFlats", Reload => true)
