@@ -232,7 +232,6 @@ trivialBundle = method()
 trivialBundle (NormalToricVariety, ZZ) := (tv,r) -> (
 	p := #(rays tv);
 	toricVectorBundle(tv, apply(p, i -> id_((coefficientRing ring tv)^r)), apply(p, i -> toList(r:0)))
-	toricVectorBundle(tv, apply(p, i -> id_((coefficientRing ring tv)^r)), apply(p, i -> toList(r:0)))
 )
 
 lineBundle = method()
@@ -2337,7 +2336,7 @@ jumpsAux = (L,mm) ->(
     r:= # ref;
     -- Extracts the porsitions where the vectors appear in the original matrix
     Jl := apply(#L, i->(positions(ref, v -> isSubset({v}, transpose entries  (L_i)  ))));
-    apply(sum(#Jl,  i ->apply(#ref, j -> if member(j, Jl_i) then 1 else 0)), n -> n+mm)
+    apply(sum(#Jl,  i ->apply(#ref, j -> if member(j, Jl_i) then 1 else 0)), n -> n+mm-1)
     
 )
 
@@ -2386,7 +2385,6 @@ kernel (ToricVectorBundleMap) := opts -> f ->(
     L:= apply(Xrays,  p ->
         apply(steps, i ->(
             ipr*inducedMap(kerM,intersect(image map(amb, , filteredPiece(E1,p,i)), kerM))
-            --map(source pr, intersect(image map(amb, , filteredPiece(E1,p,i) ), kernel M ), ipr)
         ))
     );
     newMatrices:= apply(L, i -> i_0 );
