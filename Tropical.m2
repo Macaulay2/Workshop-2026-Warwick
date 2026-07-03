@@ -1023,33 +1023,6 @@ tropicalVarietyWithPuiseuxVal (Ideal) := o -> (I) ->(
 	listOfSlicedCones := {};
 	T := tropicalVariety(I);
     	(PC,conesToKeep):=heightOneSlice(fan T);
---     -- now slice the fan with a plane at height 1 for min convention (or -1) for max convention
--- 	addsemiringAdd := minmax();
--- 	heightCut := 0;
--- 	if (addsemiringAdd == "Min") then
--- 		heightCut = 1
--- 	else heightCut = -1;
--- 	M := matrix{{join(toSequence{1},(numgens ring I -1): 0)}}; 
--- 	N := matrix{{(numgens ring I): 0}}; 
--- 	slicePlane := polyhedronFromHData(N, matrix{{0}}, M, matrix{{heightCut}});
--- 	--- for each cone in the fan fan T, slice and append to PolyhedralComplexOutput		
--- 	raysMatrix := rays (T);
--- 	listOfMaxCones := maxCones(T);
--- 	numberOfMaxCones := length listOfMaxCones; 
--- 	if (numberOfMaxCones == 0) then (print "The variety is empty!"; return T;)
--- 	else( 
---  	    for i from 0 when i < (numberOfMaxCones) do (
--- 		currentMaxCone := coneFromVData( submatrix(raysMatrix, listOfMaxCones#i), linealitySpace(T));  
--- 		slicedMaxCone := intersection(currentMaxCone, slicePlane);
--- --		A := submatrix'(id_(ZZ^(numgens ring I)), {0}, );
--- 		newSlicedMaxCone := convexHull(submatrix'(vertices slicedMaxCone ,{0},),submatrix'(rays slicedMaxCone ,{0},), submatrix'(linealitySpace slicedMaxCone ,{0},));
--- 		if dim(newSlicedMaxCone)>-1 then 
--- 		         listOfSlicedCones = listOfSlicedCones | {newSlicedMaxCone}
--- 		else emptyCones = emptyCones |{i};
---             )	
--- 	);
---     	conesToKeep := select(numberOfMaxCones,i->(not(member(i,emptyCones))));
-	mults:=(multiplicities(T))_conesToKeep;
 --	    Really we should output the empty tropical cycle here, but the command below appears to give null...
 --	    PC := tropicalCycle1(polyhedralComplex({emptyPolyhedron(numgens(ring(I))-1)}),mults)
 	if (#conesToKeep == 0) then (
