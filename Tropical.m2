@@ -916,23 +916,20 @@ tropicalVarietyWithValExternal = method(
 
 --still need to add the multiplicities - currently they are empty
 --Also need to make work with max options
-tropicalVarietyWithpadicVal = (I) -> (
+tropicalVarietyWithpadicVal = (I,p) -> (
     d:=dim I;   
---    gfanopt:=(new OptionTable) ++ {"groebnerComplex"=>true,"p"=>2};
---    GC := gfanGroebnerComplex(I,gfanopt);
-    GC := gfanGroebnerComplex(I, "groebnerComplex"=>true, "p"=>2);
+    GC := gfanGroebnerComplex(I, "groebnerComplex"=>true, "p"=>p);
     --First throw away cones for which the corresponding intial ideal contains a monomial
     GC = skeleton(d+1,GC);  
     conesToKeep := {};
     conesToCheck:=maxCones GC;
     raysGC:=rays GC;
---    gfanopt2:=(new OptionTable) ++ {"initialIdeal"=>true,"p"=>2};
     scan(conesToCheck, C->(
 	    --find initial ideal
 	    raysC:=raysGC_C;
 	    w:=flatten entries sum(rank source raysC, i-> raysC_i);
     	if w_0>0 then (
-	    	inI := ideal(gfanPadicInitialIdeal(I, w, "initialIdeal"=>true, "p"=>2));
+	    	inI := ideal(gfanPadicInitialIdeal(I, w, "initialIdeal"=>true, "p"=>p));
 		-- worry about which ring this lives in
 		prodgens := product( gens ring inI, i->i);
     	    	if saturate(inI,prodgens) != ideal(promote(1,ring inI)) then 
@@ -940,7 +937,6 @@ tropicalVarietyWithpadicVal = (I) -> (
 	    );
    ));
    raysToKeep:=sort unique flatten conesToKeep;
-   
    mults:={};
    (PC,keptCones):= heightOneSlice(fan((rays GC)_raysToKeep,linealitySpace(GC), conesToKeep));
    --Will need to work out the multiplicities later
@@ -2469,7 +2465,7 @@ assert(rank(source(vertices(fan(T))))==8)
 TEST///
 R=QQ[x,y,z]
 I=ideal(x+y+2*z)
-T=tropicalVarietyWithpadicVal(I)
+T=tropicalVarietyWithpadicVal(I,2)
 F=fan T
 assert(rank(linealitySpace(F))==1)
 assert(rank(source(vertices(F)))==1)
