@@ -59,17 +59,28 @@ echo "==> Cloning B"
 git clone --single-branch --branch "$DST_BRANCH" "$DST_URL" "$WORK/dst"
 echo
 
-# ---- 2a. PRECONDITION CHECK: F on A must match F on B (if B already has it) ----
-echo "==> Precondition check: F on A vs F on B"
-SRC_BLOB="$(git -C "$WORK/src" rev-parse "HEAD:$DST_PATH")"
+# ---- 2a. PRECONDITION CHECK: B must sit at A's INITIAL version of F ----
+# The workflow is "F was copied from B into A, then evolved in A". So B's
+# current content should equal A's *first* commit of F (the shared origin),
+# NOT A's tip (A is intentionally ahead). We verify common origin, then the
+# merge advances B to A's tip carrying all intermediate history.
+echo "==> Precondition check: B is at A's initial version of F"
+SRC_INITIAL_COMMIT="$(git -C "$WORK/src" log --reverse --format='%H' -- "$DST_PATH" | head -1)"
+SRC_INITIAL_BLOB="$(git -C "$WORK/src" rev-parse "$SRC_INITIAL_COMMIT:$DST_PATH")"
+SRC_TIP_BLOB="$(git -C "$WORK/src" rev-parse "HEAD:$DST_PATH")"
 if DST_BLOB="$(git -C "$WORK/dst" rev-parse "HEAD:$DST_PATH" 2>/dev/null)"; then
-    if [ "$SRC_BLOB" = "$DST_BLOB" ]; then
-        echo "    OK: F is byte-identical in A and B (blob $SRC_BLOB)."
+    if [ "$DST_BLOB" = "$SRC_INITIAL_BLOB" ]; then
+        echo "    OK: B matches A's initial commit of F ($SRC_INITIAL_COMMIT, blob $SRC_INITIAL_BLOB)."
+        echo "        A has since evolved F; the merge will advance B to A's tip."
+    elif [ "$DST_BLOB" = "$SRC_TIP_BLOB" ]; then
+        echo "    OK: B already matches A's tip version of F (blob $SRC_TIP_BLOB); nothing new to import."
     else
-        echo "    ABORT: '$DST_PATH' exists in B but differs from A's version." >&2
-        echo "      A blob: $SRC_BLOB" >&2
-        echo "      B blob: $DST_BLOB" >&2
-        echo "      inspect: git -C $WORK/dst diff $DST_BLOB $SRC_BLOB" >&2
+        echo "    ABORT: B's F is neither A's initial nor A's tip version." >&2
+        echo "      B blob         : $DST_BLOB" >&2
+        echo "      A initial blob : $SRC_INITIAL_BLOB ($SRC_INITIAL_COMMIT)" >&2
+        echo "      A tip blob     : $SRC_TIP_BLOB" >&2
+        echo "      B has diverged from the shared origin; reconcile manually." >&2
+        echo "      inspect: git -C $WORK/dst diff $DST_BLOB $SRC_INITIAL_BLOB" >&2
         exit 2   # refuse to proceed; the user resolves the divergence deliberately
     fi
 elif [ "${ALLOW_FRESH_IMPORT:-0}" = "1" ]; then
@@ -88,21 +99,31 @@ fi
 echo
 
 # ---- 2b. Pull in the filtered history and merge (unrelated histories) ----
-echo "==> Merging filtered history into B"
+# Both sides "add" F (B at the shared origin, A at its evolved tip), so the
+# merge conflicts on content. The precondition proved B is A's ancestor, so
+# A's version must win: -X theirs auto-resolves every conflict to the incoming
+# (filtered A) side.  Note: -X theirs only affects F here, since F is the only
+# path the two histories share.
+echo "==> Merging filtered history into B (A's version wins on conflict)"
 git -C "$WORK/dst" remote add filtered "$WORK/src"
 git -C "$WORK/dst" fetch filtered "$SRC_BRANCH"
 if ! git -C "$WORK/dst" merge --allow-unrelated-histories --no-edit \
+        -X theirs \
         -m "Import $FILE with history from Workshop-2026-Warwick" \
         "filtered/$SRC_BRANCH"; then
     echo >&2
-    echo "    Merge stopped with conflicts (B already tracks '$DST_PATH')." >&2
-    echo "    To accept A's incoming version, run:" >&2
-    echo "      git -C $WORK/dst checkout --theirs $DST_PATH" >&2
-    echo "      git -C $WORK/dst add $DST_PATH" >&2
-    echo "      git -C $WORK/dst commit --no-edit" >&2
-    echo "    Then re-run the inspection/push steps printed above." >&2
+    echo "    Merge failed unexpectedly. Inspect: git -C $WORK/dst status" >&2
     exit 3
 fi
+
+# Safety: after the merge, B's F must exactly equal A's tip version.
+POST_BLOB="$(git -C "$WORK/dst" rev-parse "HEAD:$DST_PATH")"
+if [ "$POST_BLOB" != "$SRC_TIP_BLOB" ]; then
+    echo "    ABORT: after merge, F does not match A's tip." >&2
+    echo "      merged blob: $POST_BLOB   A tip blob: $SRC_TIP_BLOB" >&2
+    exit 4
+fi
+echo "    OK: merged F matches A's tip (blob $SRC_TIP_BLOB)."
 echo
 
 # ---- 3. Report; leave the push to the user ----
