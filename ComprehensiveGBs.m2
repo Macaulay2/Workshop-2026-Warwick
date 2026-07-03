@@ -204,6 +204,8 @@ profileSummary
 *-
 
 
+
+-- What is the code below about? Should we put it in examples or delete it?
 -*
 R = QQ[u][x];
 F = {x^2-x, x^3-1};
