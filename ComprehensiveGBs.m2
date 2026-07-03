@@ -68,7 +68,7 @@ isConsistentRabinowitsch (List, List) :=(E,N) -> (
 
 diffLC = method(
     Options => {
-        Strategy => "radical" -- "radical" or "Rabinowitsch"
+        Strategy => "Rabinowitsch" -- "radical" or "Rabinowitsch"
     }
 );
 diffLC (Sequence, Sequence) := opts -> (A, B) -> (
@@ -118,7 +118,7 @@ CGBMain (List, List) := o -> (F, S) -> (
 CGBMainRec = method(
     Options => {
         ReduceStrata => false,
-        Strategy => "radical",
+        Strategy => "Rabinowitsch",
         Verbose => false
         }
     );
@@ -232,11 +232,15 @@ for t in L do (
 *-
 
 
-CGB=method(Options => {ReduceStrata => false})
+CGB=method( Options => {
+        ReduceStrata => false,
+        Strategy => "Rabinowitsch",
+        Verbose => false
+        })
 CGB(List):= o -> F->(
     s:=first entries eliminateVariables(F);
     result:=s;
-    G:=CGBMain(F,s, ReduceStrata => o.ReduceStrata);
+    G:=CGBMain(F,s, ReduceStrata => o.ReduceStrata, Strategy => o.Strategy , Verbose => o.Verbose);
     for i in G do (
         result=result|(i_2);
         );
@@ -412,8 +416,7 @@ assert(GG == expectedGG);
 ///
 
 
-
-TEST /// -* Testing  CGBMain on a*x+b*y  with verbose option *-
+TEST /// -* Testing  CGBMain on a*x+b*y  with Verbose option *-
 Ptest = QQ[a,b];
 Rtest = Ptest[x,y, MonomialOrder => Lex];
 
