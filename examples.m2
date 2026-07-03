@@ -1,5 +1,5 @@
 ---------------------------------------------
-Comprehensive Groebner Basis in Macaulay2: 
+--Comprehensive Groebner Basis in Macaulay2: 
 ---------------------------------------------
 installPackage "ComprehensiveGBs"
 
@@ -20,22 +20,10 @@ netList for g in G list {g_0, factor g_1}
 -- and using the Rabinowitsch trick can make everything faster                                      -- (i.e. to check f in <E>, test 1 in <E, y*f-1>)
 benchmark "G = CGBMain(F, {}, ReduceStrata => true, Strategy => \"radical\", Verbose => false)"
 benchmark "G = CGBMain(F, {}, ReduceStrata => true, Strategy => \"Rabinowitsch\", Verbose => false)"
+-- And we were more careful with cacheing rings.
 
-
-
->> We have a first implementation of KSW algorithm
-
-
-- We did some optimisations to Suzuki-Sato:
->> Rabinowitsch trick for checking consistency (explain what this means)
->> Keeping the same rings for the whole computations
-
-[TODO: cache the ring used for the Rabinowitsch trick]
-
->> We implemented options (Strategy => "radical" / "Rabinowitsch"; ReduceStrata => Boolean )
-
-[TODO: some documentation; more tests (see TestAudit results)]
-
+-- Dulcis in fundu: we have some DOCUMENTATION!
+viewHelp ComprehensiveGBs
 *-
 
 
