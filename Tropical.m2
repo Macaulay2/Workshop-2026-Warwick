@@ -1002,26 +1002,12 @@ tropicalVarietyWithPuiseuxVal = method(
     }
 );
 
---Temporary code until we get affineImage fixed in Polyhedra
---input: polyhedron
---tempaffineImage = (A,P) ->(
---    Mv := A*(vertices P);
---    Mr := A*(rays P);
---    zeros:=transpose matrix({apply(rank target A,i->0_QQ)});
---    convexHull(Mv,Mr)+coneFromVData(zeros,A*(linealitySpace P))
---)   
-
--- We shouldn't need something as complicated as affineImage. We have a polyhedron inside of
--- a slice in R^n where the first coordinate is constant, and we just want to think of it
--- as a polyhedron in R^{n-1}.
--- input: polyhedron inside a slice in R^n where the first coordinate is constant
--- output: polyhedron in R^{n-1}
-
 
 tropicalVarietyWithPuiseuxVal (Ideal) := o -> (I) ->(
     --- we expect that we are working over 	QQ{{t}}, where t is the first variable of the poly ring.
 	listOfSlicedCones := {};
 	T := tropicalVariety(I);
+	mults={};
     	(PC,conesToKeep):=heightOneSlice(fan T);
 --	    Really we should output the empty tropical cycle here, but the command below appears to give null...
 --	    PC := tropicalCycle1(polyhedralComplex({emptyPolyhedron(numgens(ring(I))-1)}),mults)
