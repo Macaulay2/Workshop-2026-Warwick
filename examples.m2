@@ -1,6 +1,6 @@
--*
-Comprehensive Groebner Basis in Macaulay2:
-
+---------------------------------------------
+Comprehensive Groebner Basis in Macaulay2: 
+---------------------------------------------
 installPackage "ComprehensiveGBs"
 
 -- No more big coefficients in the strata   (these where coming from the GB implementation in M2, 
@@ -10,12 +10,17 @@ F = {x^3 - a, y^4 - b, x+y-z}
 G = CGBMain(F, {});
 netList for g in G list {g_0, factor g_1}
 
--- A LOT of repeated strata.. So we added strata reduction!
-
-G = CGBMain(F, {}, ReduceStrata => true, Verbose => true);
+-- A *LOT* of redundant strata (where the CGB identically vanishes).. 
+-- So we added strata reduction!
+G = CGBMain(F, {}, ReduceStrata => true);
 netList for g in G list {g_0, factor g_1}
 
->> Strata reduction
+-- For this, at each step we have to check ideal membership 
+-- (i.e. do all leading coefficients of the GB vanish on the strata?), 
+-- and using the Rabinowitsch trick can make everything faster                                      -- (i.e. to check f in <E>, test 1 in <E, y*f-1>)
+benchmark "G = CGBMain(F, {}, ReduceStrata => true, Strategy => \"radical\", Verbose => false)"
+benchmark "G = CGBMain(F, {}, ReduceStrata => true, Strategy => \"Rabinowitsch\", Verbose => false)"
+
 
 
 >> We have a first implementation of KSW algorithm
