@@ -880,6 +880,7 @@ heightOneSlice Fan := F ->(
 	--- for each cone in the fan fan T, slice and append to PC
         emptyCones:={};
 	listOfSlicedCones:={};
+	--Change here
 	numberOfMaxCones := length listOfMaxCones;
 	for i from 0 when i < (numberOfMaxCones) do (
 	    	currentMaxCone := listOfMaxCones#i;
