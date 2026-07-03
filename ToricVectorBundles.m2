@@ -5324,13 +5324,14 @@ jumpsT3 = filtrationJumps T3;
 T4 = toricVectorBundle(PP3,filtMat,jumpsT3);
 assert areIsomorphic(T3,T4)
 --checking isomorphic for changing basis filtration matrices in different ways
-TT3 = tangentBundle PP3;
+TT3 = trivialBundle(PP3,3);
 basisMat0 = (filtrationMatrices TT3)#0 * (matrix{{1,0,0},{1,1,0},{1,0,1}});
 basisMat1 = (filtrationMatrices TT3)#1 * (matrix{{1,0,1},{0,1,1},{0,1,0}});
 basisMat2 = (filtrationMatrices TT3)#2 * (matrix{{1,-1,1},{-1,0,1},{0,1,-1}});
 basisMat3 = (filtrationMatrices TT3)#3;
 T = toricVectorBundle(PP3,{basisMat0,basisMat1,basisMat2,basisMat3},filtrationJumps TT3);
-assert not areIsomorphic(TT3,T)
+assert areIsomorphic(TT3,T)
+assert areIsomorphic(T,TT3)
 
 ///
 
