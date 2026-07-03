@@ -2108,7 +2108,6 @@ matrix ToricVectorBundleMap := Matrix => f -> f.map
 
 -- We allow defining a map that is not well defined
 map(ToricVectorBundleNew, ToricVectorBundleNew, Matrix):= ToricVectorBundleMap => opts -> (E2, E1, M) ->(
-    if ring E1 =!= ring E2 then error "The vector bundles need to be defined over the same ring";
     if numRows M =!= rank E2 or numColumns M =!= rank E1 then error " The dimensions of the matrix don't match the ranks of the bundles";
     if ring M =!= ring E1 or ring M =!= ring E2 then error " The matrix needs to be defined over the same ring as the bundles";
     if variety E1 =!= variety E2 then error "The base varieties of the bundles have to coincide";
@@ -2124,6 +2123,13 @@ map(ToricVectorBundleNew, ToricVectorBundleNew, Matrix):= ToricVectorBundleMap =
 
 
 ToricVectorBundleMap#id = E -> map(E,E, id_(ring E^(rank E) ))
+
+
+
+
+
+
+
 
 isWellDefined (ToricVectorBundleMap ) := Boolean => f ->(
 	if not f.cache.?isWellDefined then(
@@ -5383,23 +5389,22 @@ assert(tvbMap.map === M)
 *-
 --Test 41
 --Test for isWellDefined for map of ToricVectorBundleNew
---test when source is not a ToricVectorBundleNew
+TEST///
+X = toricProjectiveSpace 3;
+E = trivialBundle(X, 3);
+F = trivialBundle(X, 5);
 
---test when target is not a ToricVectorBundleNew
+assert (isWellDefined map(F, E, matrix(ring E, {{1,0,0},{0,1,0},{0,0,1},{0,0,0},{0,0,0}})))
 
---test when map is not a matrix
+D1 = toricDivisor({1,2,-1,0},X);
+D2 = toricDivisor({3,-1,2,0},X);
+D3 = toricDivisor({5,0,1,0},X);
+L1 = lineBundle(D1)
+L2 = lineBundle(D2)
+L3 = lineBundle(D3)
 
---test when cache is not a cachetable? can we check this?
-
---test a map that is not well defined
-
---test a map that is well defined
-
-PP3 = toricProjectiveSpace 3;
-trivPP3 = trivialBundle(PP3,3);
-tangPP3 = tangentBundle(PP3);
-M = matrix{{1,0,1},{0,1,0},{1,1,0}};
-tvbMap = map(trivPP3,tangPP3,M)
+assert (not isWellDefined map(E, L1 ++ L2 ++ L3, id_((ring E)^3)))
+///
 
 end
 
