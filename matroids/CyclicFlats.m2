@@ -121,7 +121,7 @@ basesOfCyclicFlats CyclicFlatsMatroid := M -> (
             if intersectionSize > H#g then ( break );
             tracker = true;
         );
-        if tracker then ( bases = append(bases, toList(x)) );
+        if tracker then ( bases = append(bases, x) );
     );
     return bases;
 );
