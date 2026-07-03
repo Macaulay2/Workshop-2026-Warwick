@@ -443,19 +443,124 @@ assert member(expected3, resultTest);
 ///
 
 
+TEST /// -* Testing  CGB on a*x+b*y  with Verbose option  *-
+PTest = QQ[aTest,bTest];
+RTest = PTest[xTest,yTest, MonomialOrder => Lex];
+
+fTest = aTest*xTest + bTest*yTest;
+
+expected1 = aTest*xTest + bTest*yTest;
+expected2 = aTest^2*xTest + aTest*bTest*yTest;
+
+result = CGB({fTest}, Verbose=> true);
+
+assert(#result == 2);
+assert(result#0 == expected1 or result#1 == expected1);
+assert(result#0 == expected1 or result#1 == expected2);
+
+///
+
+
+TEST /// -*Testing  CGB on a*x+b*y  with Strategy => "radical" option  *-
+PTest = QQ[aTest,bTest];
+RTest = PTest[xTest,yTest, MonomialOrder => Lex];
+
+fTest = aTest*xTest + bTest*yTest;
+
+expected1 = aTest*xTest + bTest*yTest;
+expected2 = aTest^2*xTest + aTest*bTest*yTest;
+
+result = CGB({fTest}, Strategy=> "radical");
+
+assert(#result == 2);
+assert(result#0 == expected1 or result#1 == expected1);
+assert(result#0 == expected1 or result#1 == expected2);
+///
+
+
+
+TEST /// -* Testing  CGB on a*x+b*y  with Strategy => "radical" option *-
+
+Ptest = QQ[a,b];
+Rtest = Ptest[x,y, MonomialOrder => Lex];
+
+params = gens Ptest;
+variables = gens Rtest
+
+aR = promote (params#0 , Rtest);
+bR = promote (params#1 , Rtest);
+   
+xR = variables#0;
+yR = variables#1;
+
+
+resultTest = CGBMain({aR*xR + bR*yR}, {}, Strategy => "radical");
+
+expected1 = ({},aR, {aR*xR + bR*yR});
+expected2 = ({aR},bR,{aR^2*xR + aR*bR*yR, aR*xR + bR*yR});
+expected3 = ({aR,bR}, 1_Rtest, {aR*xR + bR*yR});
+
+assert(#resultTest == 3);
+
+assert member(expected1, resultTest);
+assert member(expected2, resultTest);
+assert member(expected3, resultTest);
+
+///
+
+
+TEST /// -* Testing  CGBMain on a*x+b*y  with ReduceStrata => true option *-
+Ptest = QQ[a,b];
+Rtest = Ptest[x,y, MonomialOrder => Lex];
+
+params = gens Ptest;
+variables = gens Rtest
+
+aR = promote (params#0 , Rtest);
+bR = promote (params#1 , Rtest);
+   
+xR = variables#0;
+yR = variables#1;
+
+
+resultTest = CGBMain({aR*xR + bR*yR}, {},  ReduceStrata => true);
+
+expected1 = ({},aR, {aR*xR + bR*yR});
+expected2 = ({aR},bR,{aR^2*xR + aR*bR*yR, aR*xR + bR*yR});
+expected3 = ({aR,bR}, 1_Rtest, {aR*xR + bR*yR});
+
+assert(#resultTest == 3);
+
+assert member(expected1, resultTest);
+assert member(expected2, resultTest);
+assert member(expected3, resultTest);
+
+///
+
+TEST /// -* Testing  CGBMain on a*x+b*y  with ReduceStrata => true option *-
+PTest = QQ[aTest,bTest];
+RTest = PTest[xTest,yTest, MonomialOrder => Lex];
+
+fTest = aTest*xTest + bTest*yTest;
+
+expected1 = aTest*xTest + bTest*yTest;
+expected2 = aTest^2*xTest + aTest*bTest*yTest;
+
+result = CGB({fTest}, ReduceStrata=> true);
+
+assert(#result == 2);
+assert(result#0 == expected1 or result#1 == expected1);
+assert(result#0 == expected1 or result#1 == expected2);
+
+///
+
+-*
 TEST /// -* [insert short title for this test] *-
 -- test code and assertions here
 -- may have as many TEST sections as needed
 
 ///
-
-TEST /// -* [insert short title for this test] *-
--- test code and assertions here
--- may have as many TEST sections as needed
-
-///
-
-
+-*
 
 end--
 
