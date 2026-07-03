@@ -22,11 +22,11 @@ newPackage(
 export {
     "CGBMain",
     "CGB",
-    "cgbOnGraph"
+    "cgbOnGraph",
+    "ReduceStrata"
     } -- functions, objects to export
 
 protect CGBMainTriples
-protect ReduceStrata
 
 -* Code section *-
 
