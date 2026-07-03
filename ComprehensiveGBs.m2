@@ -674,35 +674,6 @@ restart
 installPackage "ComprehensiveGBs"
 viewHelp "ComprehensiveGBs"
 
--*
-\begin{definition}
-    For an ideal $I \subseteq K[\boldsymbol{U}, \boldsymbol{X}]$, and $S \subseteq L^m$, $\mathcal{G} \subseteq K[\boldsymbol{U},\boldsymbol{X}]$ is a \emph{comprehensive Gr\"obner basis} (\emph{CGB}) of $I$ on $S$, if for all $\boldsymbol{a} \in S$, $\sigma_{\boldsymbol{a}}(\mathcal{G})$ is a Gr\"obner basis of the ideal $\sigma_{\boldsymbol{a}}(I)$ on $L[\boldsymbol{X}]$. Where 
-    \begin{itemize}
-        \item $K,L$ are two fields ($L$ is an algebraic closure of $K$),
-        \item $\boldsymbol{X}$ (\emph{main variables}) and $\boldsymbol{U}$ (\emph{parameters}) are two independent sets of variables,
-        \item $\sigma_{\boldsymbol{a}}: K[\boldsymbol{U}][\boldsymbol{X}] \rightarrow L[\boldsymbol{X}]$ is the natural extension of the canonical specialization homomorphism induced by $\boldsymbol{a}$.
-    \end{itemize}
-\end{definition}
-
-%A CGB $\mathcal{G}$ of a parametric ideal $I$ is called \emph{minimal} if no proper subset of $\mathcal{G}$ is also a CGB of $I$.
-
-    Comprehensive Gr\"obner Bases are constructed form a Comprehensive Gröbner Systems, which are defined below.
-\begin{definition}
-    Let 
-    \begin{itemize}
-        \item $E_i, N_i$ be subsets of $K[\boldsymbol{U}]$, $i=1,\ldots \ell$, such that $\cup_{i=1}^{\ell} V(E_i) \setminus V(N_i)$ covers $L^m$,
-        \item $F\subset K[\boldsymbol{U},\boldsymbol{X}]$ and,
-        \item $G_1,\ldots, G_\ell\subset K[\boldsymbol{U}, \boldsymbol{X}]$.
-    \end{itemize}
-    
-    A finite set of triples 
-    \[
-    \mathcal{G} = \{(E_1,N_1,G_1),\ldots, (E_\ell,N_\ell,G_\ell)\}
-    \]
-    is called \emph{comprehensive Gr\"obner system (CGS) for $F$}, if $\sigma_{\boldsymbol{a}}(G_i)$ is a Gr\"obner basis of the ideal $\langle\sigma_{\boldsymbol{a}}(F)\rangle$ in $L[\boldsymbol{X}]$ for each $i=1,\ldots,\ell$ and $\boldsymbol{a} \in V(E_i) \setminus V(N_i)$. Each $(E_i,N_i,G_i)$ is called \emph{segment} of $\mathcal{G}$. 
-\end{definition}
-*-
-
 
 Description
        Text
