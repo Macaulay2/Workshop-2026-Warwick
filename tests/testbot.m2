@@ -11,6 +11,6 @@
 --   path = { currentDirectory() | "pathToMyFiles/", "absolutePathToMyFiles/", "etc.../" } | path 
 -- Terminate each directory name with a "/".
 
--- load "gfanInterface-temp-test.m2"
--- check "gfanInterface"
-
+load "gfanInterface-temp-test.m2"
+check "gfanInterface"
+installPackage "gfanInterface"

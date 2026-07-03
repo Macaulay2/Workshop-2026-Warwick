@@ -1,7 +1,19 @@
 restart
 needsPackage("gfanInterface", Configuration=>{"keepfiles"=>true,"verbose"=>true})
 QQ[x,y]
-gfanTropicalPrevariety {x+y, x+y+1} 
+F = gfanTropicalPrevariety {x+y+1}
+F = gfanTropicalPrevariety({x+y+x^2+y^2+x*y}, "halfopenrestrictions"=>{{3, {}, {(1, -1,0)}, {}}});
+(rays F, maxCones F)
+I = Grassmannian(1,4)
+F = gfanTropicalPrevariety I_*
+assert(dim F == 7)
+assert(numColumns linealitySpace F == 5)
+-- (closed) positive quadrant
+positive ={10, entries map(ZZ^10), {}, {}}
+F = gfanTropicalPrevariety (I_*, "halfopenrestrictions" => {positive}) 
+dim F
+linealitySpace F == 0
+rays F
 -*
 _application PolyhedralFan
 _version 2.2
