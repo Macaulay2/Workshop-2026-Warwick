@@ -1132,7 +1132,6 @@ areIsomorphic (ToricVectorBundleNew,ToricVectorBundleNew) := Boolean => (T1,T2) 
             T2.cache.iso#T1 = isoMapT2T1;
             );
          );
-    error "";
      areTVBsIso
     )
 
@@ -5397,7 +5396,7 @@ TEST///
 X = toricProjectiveSpace 3;
 E = trivialBundle(X, 3);
 F = trivialBundle(X, 5);
-
+--test a map that is well defined
 assert (isWellDefined map(F, E, matrix(ring E, {{1,0,0},{0,1,0},{0,0,1},{0,0,0},{0,0,0}})))
 
 D1 = toricDivisor({1,2,-1,0},X);
@@ -5406,14 +5405,7 @@ D3 = toricDivisor({5,0,1,0},X);
 L1 = lineBundle(D1)
 L2 = lineBundle(D2)
 L3 = lineBundle(D3)
-
-
---test when cache is not a cachetable? can we check this?
-
 --test a map that is not well defined
-
---test a map that is well defined
-
 assert (not isWellDefined map(E, L1 ++ L2 ++ L3, id_((ring E)^3)))
 ///
 
