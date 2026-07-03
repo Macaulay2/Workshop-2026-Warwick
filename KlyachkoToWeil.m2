@@ -19,13 +19,28 @@ weilDecoration := (V) -> (
 	);
 	wDecoration:={{strataIntersections#0,infinity}};
 	for i from 1 to length (weilDecorationImage)-1 do (
-		wDecoration= append (wDecoration, {strataIntersections#i,weilDecorationImage#i});
+		wDecoration= append (wDecoration, {gens strataIntersections#i,weilDecorationImage#i});
 	);
-	wDecoration
+	{variety V, wDecoration}
 )
 
+weilToKlyachko (NormalToricVariety, list, list) := (X,E,D) ->(
+	L:=flatten D;
+	amin:= min L;
+	amax:= max L;
+
+	H=new MutableHashTable;
+	
+	(M,J)= to sequence transpose for i from 0 to #(rays X)-1 do (
+
+	);
+
+
+)
+
+
 --Test 
---Checking weilDecoration on the tangent bundle of P^2 and the direct sum of the tangent bundle with a line bundle.
+--Checking weilDecoration on the direct sum of the tangent bundle with a line bundle on P2.
 TEST ///
 M=toricProjectiveSpace 2;
 V=tangentBundle M++lineBundle(M_1);
