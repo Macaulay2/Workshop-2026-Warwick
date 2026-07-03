@@ -47,7 +47,7 @@ isConsistent (List, List) := (E, N) -> (
   any(N, p -> not isMember(p, I))
 );
 
-isConsistentRabinowitsch = method();
+isConsistentRabinowitsch = method(); -- isConsistent, using the Rabinowitsch trick
 isConsistentRabinowitsch (List, List) :=(E,N) -> (
     if isEmpty (E|N) then(return false);
     if isEmpty E then(
@@ -96,10 +96,14 @@ diffConstructibleByLC (List, Sequence) := opts -> (C, LC) -> (
 CGBMain = method(
     Options => {
         ReduceStrata => false,
-        Strategy => "radical",
+        Strategy => "Rabinowitsch",
         Verbose => false
         }
     ); -- Initialises CGBMainRec
+
+CGBMain (List) := o -> (F) -> (
+  CGBMain(List,{},o)
+)
 CGBMain (List, List) := o -> (F, S) -> (
   R := ring F_0;
   X := gens R;
@@ -298,7 +302,65 @@ doc ///
     @LABEL("[1]","id" => "ref1")@ Akira Suzuki and Yosuke Sato. 2006. A simple algorithm to compute comprehensive Gröbner bases using Gröbner bases. In Proceedings of the 2006 international symposium on Symbolic and algebraic computation (ISSAC '06). Association for Computing Machinery, New York, NY, USA, 326–331. https://doi.org/10.1145/1145768.1145821
 ///
 
-
+doc ///
+  Key
+    CGBMain
+    (CGBMain, List, List)
+    (CGBMain, List)
+  Headline
+    A method that computes a Comprehensive Groebner System
+  Usage
+    CGBMain(F,S)
+    CGBMain(F)
+  Inputs
+    F :List
+      of polynomials of a ring $R = k[U][X]$
+    S :List
+      of polynomials of a ring $RU = k[U]$
+    ReduceStrata=>Boolean
+    Strategy=>String
+    Verbose=>Boolean
+  Outputs
+    G :List
+      of @TO {"Sequence","s"}@ of the form (E,N,G), where G is a Groebner basis on the set $V(E)\setminus V(N)$
+  Description
+    Text
+      Implementation of the Algorithm proposed by Suzuki and Sato. Given a tower polynomial ring $R = k[U][X]$ for $U$ a set of parameters and $X$ a set of variables, $F\subset R$ an ideal of variables and parameters, and $S\subset k[U]$ an ideal satisfying $V(S)\subseteq V(\langle F\rangle\cap k[U]), CGBMain takes $F$ and $S$ as inputs and returns a comprehensive Groebner system.
+      The function itself passes $F$ and $S$ to CGBMainRec after initialising various objects.
+      As above, the ring must be initialised as a tower ring:
+    Example
+      R1 = QQ[a,b][x,y]
+    Text
+      Here $X = \{x,y\}$ and $U = \{a,b\}$. If we wanted to find a comprehensive Groebner system over $QQ^2$ for $F = \langle ax+by\rangle$, we input the following:
+    Example
+      F1 = {a*x+b*y};
+      S1 = {};
+      CGBMain(F1,S1)
+    Text
+      CGBMain has several options: ReduceStrata, Strategy, and Verbose. ReduceStrata is an option to ignore computations on strata which have already been considered. This value is set to false by default. For smaller examples, changing this to true can reduce computation times, as for the following example. It will also give more easily parseable results.
+    Example
+      R2 = QQ[a,b][x,y,z];
+      F2 = {x^2-a,y^3-b,x+y-z};
+      S2 = {};
+    Text
+      The value is false by default as this is not true in general - for the example below (which will not be computed to save time, though the reader may verify if they desire) the option being false has an execution time of less than a minute. Setting ReduceStrata to true increases this execution time significantly (a rough estimate for time has not been found, as the computation takes so long).
+    Example
+      R3 = QQ[a,b][x,y,z,s, MonomialOrder => Lex];
+      f=(x-a)^2+b*y^2+b;
+      F3 = {f-z,x^2+y^2+z^2-s,x+z*diff(x, f),y+z*diff(y, f)}
+    Text
+      Strategy is an option that depends on ReduceStrata, and has two valid inputs, being "radical" and "Rabinowitsch" - other inputs will return an error. The former reduces strata by directly computing radicals of ideals, and the latter utilises the Rabinowitsch trick. The latter is, in general, considerably faster.
+      Setting Verbose to True will print whatever $F$ and $S$ that CGBMainRec is currently working on:
+    Example
+      CGBMain(F1,S1,Verbose=>true)
+    Text
+      CGBMain can take in one or two lists as inputs - when $S$ is not specified, the function will assume S = {}.
+  Contributors
+  References
+    @LABEL("[1]","id" => "ref1")@ Akira Suzuki and Yosuke Sato. 2006. A simple algorithm to compute comprehensive Gröbner bases using Gröbner bases. In Proceedings of the 2006 international symposium on Symbolic and algebraic computation (ISSAC '06). Association for Computing Machinery, New York, NY, USA, 326–331. https://doi.org/10.1145/1145768.1145821
+  SeeAlso
+    @TO CGB@
+  ///
 -* Test section *-
 TEST /// -* Testing  CGBMain on a*x+b*y *-
 
