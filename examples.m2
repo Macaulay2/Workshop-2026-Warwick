@@ -1,3 +1,32 @@
+-*
+What to explain in today's presentation:
+
+- Why did we get the big doefficients on the h polys? Ans: it comes from the GB
+-- in M2, GBs are *almost* reduced, but the leading term may have a non-one coefficient
+-- in order to avoid denominators
+>> so we added a function to clean up the coefficients of h
+
+
+>> Strata reduction
+
+
+>> We have a first implementation of KSW algorithm
+
+
+- We did some optimisations to Suzuki-Sato:
+>> Rabinowitsch trick for checking consistency (explain what this means)
+>> Keeping the same rings for the whole computations
+
+[TODO: cache the ring used for the Rabinowitsch trick]
+
+>> We implemented options (Strategy => "radical" / "Rabinowitsch"; ReduceStrata => Boolean )
+
+[TODO: some documentation; more tests (see TestAudit results)]
+
+*-
+
+
+
 uninstallPackage "ComprehensiveGBs"
 restart
 installPackage "ComprehensiveGBs"
@@ -24,9 +53,6 @@ elapsedTime G = CGBMain(F, {}, ReduceStrata => true, Strategy => "Rabinowitsch",
 #G
 
 
-
-#G
-
 G_1
 G_2
 G_3
@@ -43,8 +69,11 @@ G={V,E}
 (F,GG)=cgbOnGraph(G,2);
 
 -- strata
-netList for g in GG list g_{0,1}
+netList for g in GG list {g_0, {g_1}}
 
+
+-- we should get the cgbOnGraph to return just the polys
+-- to allow the user to select how they want the CGB alg to run
 
 --example on graph=square
 E={(1,2),(1,3),(3,4),(2,4)}
