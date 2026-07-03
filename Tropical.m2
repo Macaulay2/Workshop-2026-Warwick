@@ -1007,7 +1007,7 @@ tropicalVarietyWithPuiseuxVal (Ideal) := o -> (I) ->(
     --- we expect that we are working over 	QQ{{t}}, where t is the first variable of the poly ring.
 	listOfSlicedCones := {};
 	T := tropicalVariety(I);
-	mults={};
+	mults:={};
     	(PC,conesToKeep):=heightOneSlice(fan T);
 --	    Really we should output the empty tropical cycle here, but the command below appears to give null...
 --	    PC := tropicalCycle1(polyhedralComplex({emptyPolyhedron(numgens(ring(I))-1)}),mults)
