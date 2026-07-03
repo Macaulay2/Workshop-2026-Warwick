@@ -288,11 +288,6 @@ cgbOnGraph(List,ZZ):=(G,d)->(
   (F, CGBMain(F, {}))
 )
 
-
-
-
-
-
 -* Documentation section *-
 
 beginDocumentation()
@@ -394,6 +389,48 @@ doc ///
   SeeAlso
     @TO CGB@
   ///
+
+doc ///
+  Key
+    cgbOnGraph
+    (cgbOnGraph,List,ZZ)
+  Headline
+    A method for creating parametrised polynomial systems from a graph and calculating a Comprehensive Groebner basis for them.
+  Usage
+    (F, GG) = cgbOnGraph(G,d)
+  Inputs
+    G: List
+      A list consisting of a list of vertices and a list of edges.
+    d: ZZ
+      A postive integer
+  Outputs
+    F: List
+      A list of polynomials
+    GG: List
+      The Comprehensive Groebner Basis of the polynomials
+  Description
+    Text
+      Let $G=(V,E)$ be graph and fix a positive integer $d$.
+      Consider the paramaterised polynomial systems $F=\{f_e\}_{e\in E}\subseteq K[\lambda_e\:e\in E][x_{v,k}:v\in V,1\leq k \leq d]$,
+      where $K\in \{\mathbb{C},\mathbb{R}\}$ and
+      \[   f_{ij}=\sum_{k=1}^{d}(x_{i,k}-x_{j,k})^2  -\lambda_{ij} \].
+      cgbOnGraph returns the polynomial systems $F$ and a Combrehensive Groebner Basis of $F$
+
+    Example
+      (F,GG)=cgbOnGraph({{1,2,3},{(1,2),(2,3),(3,1)}},1);
+      netList F
+      GG_0
+    
+      --cgbOnGraph({{1,2,3,4},{(1,2),(1,3),(1,4),(2,3),(2,4)}},1)
+
+  Caveat
+    This function is not set up to take in Type Graph. User will have to convert to list.
+  SeeAlso
+    ComprehensiveGBs
+
+///
+
+
 -* Test section *-
 TEST /// -* Testing  CGBMain on a*x+b*y *-
 
