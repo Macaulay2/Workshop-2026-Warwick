@@ -25,7 +25,7 @@ SRC_URL="${SRC_URL:-https://github.com/Macaulay2/Workshop-2026-Warwick.git}"
 SRC_BRANCH="${SRC_BRANCH:-Tropical}"
 DST_URL="${DST_URL:-https://github.com/antonleykin/M2.git}"
 DST_BRANCH="${DST_BRANCH:-gfanInterface}"
-DST_PATH="${DST_PATH:-Macaulay2/packages/gfanInterface.m2}"                 # where F should land in B
+DST_PATH="${DST_PATH:-M2/Macaulay2/packages/gfanInterface.m2}"              # where F should land in B
 
 command -v git-filter-repo >/dev/null 2>&1 || {
     echo "ERROR: git-filter-repo not found on PATH." >&2
@@ -41,8 +41,10 @@ echo
 
 # ---- 1. Fresh clone of A, filter to just F, rename to B's path ----
 echo "==> Cloning A and filtering to '$FILE'"
-git clone "$SRC_URL" "$WORK/src"
-git -C "$WORK/src" checkout "$SRC_BRANCH"
+# --single-branch avoids fetching sibling refs that may collide on a
+# case-insensitive filesystem (e.g. both 'Tropical' and 'TROPICAL' exist),
+# which would otherwise break git-filter-repo's ref rewriting.
+git clone --single-branch --branch "$SRC_BRANCH" "$SRC_URL" "$WORK/src"
 # git-filter-repo wants a fresh clone; --force acknowledges we made it ourselves.
 # --path keeps only F; --path-rename rewrites every commit so F lives at DST_PATH.
 git -C "$WORK/src" filter-repo \
@@ -54,8 +56,7 @@ echo
 
 # ---- 2. Clone B ----
 echo "==> Cloning B"
-git clone "$DST_URL" "$WORK/dst"
-git -C "$WORK/dst" checkout "$DST_BRANCH"
+git clone --single-branch --branch "$DST_BRANCH" "$DST_URL" "$WORK/dst"
 echo
 
 # ---- 2a. PRECONDITION CHECK: F on A must match F on B (if B already has it) ----
@@ -71,8 +72,18 @@ if DST_BLOB="$(git -C "$WORK/dst" rev-parse "HEAD:$DST_PATH" 2>/dev/null)"; then
         echo "      inspect: git -C $WORK/dst diff $DST_BLOB $SRC_BLOB" >&2
         exit 2   # refuse to proceed; the user resolves the divergence deliberately
     fi
+elif [ "${ALLOW_FRESH_IMPORT:-0}" = "1" ]; then
+    echo "    note: B has no '$DST_PATH' yet; ALLOW_FRESH_IMPORT=1, importing fresh."
 else
-    echo "    note: B has no '$DST_PATH' yet; nothing to compare, importing fresh."
+    # A missing file is usually a wrong DST_PATH, not a genuine fresh import.
+    # Refuse by default so a typo can't masquerade as "nothing to compare".
+    echo "    ABORT: B has no file at '$DST_PATH'." >&2
+    echo "      This usually means DST_PATH is wrong. Existing gfanInterface.m2 paths in B:" >&2
+    git -C "$WORK/dst" ls-tree -r --name-only "$DST_BRANCH" \
+        | grep -i "$(basename "$FILE")" | sed 's/^/        /' >&2 \
+        || echo "        (none found)" >&2
+    echo "      If a genuinely fresh import is intended, re-run with ALLOW_FRESH_IMPORT=1." >&2
+    exit 2
 fi
 echo
 
