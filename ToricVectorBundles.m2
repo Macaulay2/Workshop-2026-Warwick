@@ -800,7 +800,7 @@ isWellDefined ToricVectorBundleNew := TVB -> (
 isWellDefined ToricVectorBundleKlyachko := ( T -> (
 	       L := findWeights T;
 	       all(L, l -> l != {}) and existsDecomposition(T,L)))
--*
+
 findWeightsNew = method()
 findWeightsNew ToricVectorBundleNew := E -> (
     mC := apply(max variety E, C -> (rays variety E)_C);
@@ -861,8 +861,11 @@ findWeightsNew ToricVectorBundleNew := E -> (
                 for F in Flist list (
                     Dn := Rn * (F^{0..Rrank-1});
                     if (try(lift(Dn,ZZ); true) else false) and R*Dn == F then lift(Dn,ZZ)
-                    else continue)))))
-*-
+                    else continue)
+                )
+            )
+        )
+    )
 
 -- PURPOSE : Finding all possible sets of weight vectors for each maximal cone in the fan that admit the 
 --           filtration steps on the rays
