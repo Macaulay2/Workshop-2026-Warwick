@@ -1043,10 +1043,10 @@ dual ToricVectorBundle := {} >> opts -> tvb -> (
 -- PURPOSE : Computing the 'l'-th exterior power of a ToricVectorBundle
 --   INPUT : '(TVB, l)',  where 'l' is a strictly positive integer and 'TVB'is a TorcVectorBundle
 --  OUTPUT : the 'l'-th exterior power of TVB
-exteriorPower (ToricVectorBundleNew, ZZ) := (TVB, l) -> (
+exteriorPower (ToricVectorBundleNew, ZZ) := opts -> (TVB, l) -> (
 	if l < 0 then (
 		error("The power has to be non-negative.");
-	) else if l == 0 then (
+	) else if (l == 0 or l > rank TVB) then (
 		trivialBundle(variety TVB, 0)
 	) else (
 		R := rays variety TVB;
@@ -1060,7 +1060,7 @@ exteriorPower (ToricVectorBundleNew, ZZ) := (TVB, l) -> (
 			M := mutableMatrix(ring variety TVB,#ind,#ind);
 			for i in ind do (
 				for j in ind do (
-					M_(indtable#(rank TVB),indtable#j) = det((fM_t)^(rank TVB)_j);
+					M_(indtable#i,indtable#j) = det((fM_t)^i_j);
 				);
 			);
 			matrix M
@@ -2108,7 +2108,6 @@ matrix ToricVectorBundleMap := Matrix => f -> f.map
 
 -- We allow defining a map that is not well defined
 map(ToricVectorBundleNew, ToricVectorBundleNew, Matrix):= ToricVectorBundleMap => opts -> (E2, E1, M) ->(
-    if ring E1 =!= ring E2 then error "The vector bundles need to be defined over the same ring";
     if numRows M =!= rank E2 or numColumns M =!= rank E1 then error " The dimensions of the matrix don't match the ranks of the bundles";
     if ring M =!= ring E1 or ring M =!= ring E2 then error " The matrix needs to be defined over the same ring as the bundles";
     if variety E1 =!= variety E2 then error "The base varieties of the bundles have to coincide";
@@ -2124,6 +2123,13 @@ map(ToricVectorBundleNew, ToricVectorBundleNew, Matrix):= ToricVectorBundleMap =
 
 
 ToricVectorBundleMap#id = E -> map(E,E, id_(ring E^(rank E) ))
+
+
+
+
+
+
+
 
 isWellDefined (ToricVectorBundleMap ) := Boolean => f ->(
 	if not f.cache.?isWellDefined then(
@@ -5202,7 +5208,8 @@ assert ((filtrationJumps E)_0 == toList(4:0))
 
 
 -- Test 33
--- Checking the isInjective method
+-- Checking the isInjective and isSurjective method
+
 TEST ///
 X = toricProjectiveSpace 2
 D1 = toricDivisor({1,0,0},X)
@@ -5218,19 +5225,17 @@ E2 = L1 ++ L2 ++ L3
 
 f = map(E2, E1, matrix(QQ,{{1},{1},{1}}))
 
+Y = toricProjectiveSpace 3
+F1 = trivialBundle(X,5)
+F2 = trivialBundle(X,3)
+
+g = map(F2,F1,matrix(ring F1, {{1,0,0,0,0},{0,1,0,0,0},{0,0,1,0,0}}))
+
+
 assert (isInjective f)
-///
-
--- Test 34
--- Checking the isSurjective method
-TEST ///
-X = toricProjectiveSpace 3
-E1 = trivialBundle(X,5)
-E2 = trivialBundle(X,3)
-
-f = map(F,E,matrix(ring E, {{1,0,0,0,0},{0,1,0,0,0},{0,0,1,0,0}}))
-
-assert (isSurjective f)
+assert (not isInjective g)
+assert (isSurjective g)
+assert (not isSurjective f)
 ///
 
 
@@ -5388,17 +5393,29 @@ assert(map tvbMap === M)
 
 --Test 43
 --Test for isWellDefined for map of ToricVectorBundleNew
---test when source is not a ToricVectorBundleNew
+TEST///
+X = toricProjectiveSpace 3;
+E = trivialBundle(X, 3);
+F = trivialBundle(X, 5);
 
---test when target is not a ToricVectorBundleNew
+assert (isWellDefined map(F, E, matrix(ring E, {{1,0,0},{0,1,0},{0,0,1},{0,0,0},{0,0,0}})))
 
---test when map is not a matrix
+D1 = toricDivisor({1,2,-1,0},X);
+D2 = toricDivisor({3,-1,2,0},X);
+D3 = toricDivisor({5,0,1,0},X);
+L1 = lineBundle(D1)
+L2 = lineBundle(D2)
+L3 = lineBundle(D3)
+
 
 --test when cache is not a cachetable? can we check this?
 
 --test a map that is not well defined
 
 --test a map that is well defined
+
+assert (not isWellDefined map(E, L1 ++ L2 ++ L3, id_((ring E)^3)))
+///
 
 
 end
