@@ -5208,7 +5208,7 @@ assert ((filtrationJumps E)_0 == toList(4:0))
 
 
 -- Test
--- Checking the isInjective method
+-- Checking the isInjective and isSurjective method
 TEST ///
 X = toricProjectiveSpace 2
 D1 = toricDivisor({1,0,0},X)
@@ -5224,19 +5224,17 @@ E2 = L1 ++ L2 ++ L3
 
 f = map(E2, E1, matrix(QQ,{{1},{1},{1}}))
 
+Y = toricProjectiveSpace 3
+F1 = trivialBundle(X,5)
+F2 = trivialBundle(X,3)
+
+g = map(F2,F1,matrix(ring F1, {{1,0,0,0,0},{0,1,0,0,0},{0,0,1,0,0}}))
+
+
 assert (isInjective f)
-///
-
--- Test
--- Checking the isSurjective method
-TEST ///
-X = toricProjectiveSpace 3
-E1 = trivialBundle(X,5)
-E2 = trivialBundle(X,3)
-
-f = map(F,E,matrix(ring E, {{1,0,0,0,0},{0,1,0,0,0},{0,0,1,0,0}}))
-
-assert (isSurjective f)
+assert (not isInjective g)
+assert (isSurjective g)
+assert (not isSurjective f)
 ///
 
 
