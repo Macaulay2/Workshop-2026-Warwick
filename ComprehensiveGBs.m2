@@ -394,8 +394,26 @@ restart
 installPackage "ComprehensiveGBs"
 viewHelp "ComprehensiveGBs"
 
+-*
+\begin{definition}
+    Let $F$ be a subset of $K[\boldsymbol{U},\boldsymbol{X}]$, $\mathcal{A}_1,\ldots,\mathcal{A}_l$ be algebraically constructible subsets of $L^m$ and $G_1,\ldots, G_l$ be subsets of $K[\boldsymbol{U}, \boldsymbol{X}]$. Let $\mathcal{S}$ be a subset of $L^m$ such that $\mathcal{S} \subseteq \mathcal{A}_1 \cup \ldots \cup \mathcal{A}_l$. $S$ is called the \emph{parameter space}. A finite set $\mathcal{G} = \{(\mathcal{A}_1,G_1),\ldots, (\mathcal{A}_l,G_l)\}$ of pairs is called \emph{comprehensive Gr\"obner system (CGS) on $\mathcal{S}$ for $F$} if $\sigma_{\boldsymbol{a}}(G_i)$ is a Gr\"obner basis of the ideal $\langle\sigma_{\boldsymbol{a}}(F)\rangle$ in $L[\boldsymbol{X}]$ for each $i=1,\ldots,l$ and $\boldsymbol{a} \in \mathcal{A}_i$. Each $(\mathcal{A}_i,G_i)$ is called \emph{segment} of $\mathcal{G}$. We simply say $\mathcal{G}$ is a \emph{comprehensive Gr\"obner system (CGS) for $F$} if $\mathcal{S} = L^m$. 
+\end{definition}
 
+If a segment has the form $(E,N,G)$, with $E,N$ subsets of $K[\boldsymbol{U}]$, the associated algebraically constructible set is $V(E)\setminus V(N)$. With an abuse of terminology, the word ``segment'' is used in the following for both the couple $(\mathcal{A}_i,G_i)$ and for the constructible set $\mathcal{A}_i \subseteq L^m$.
 
+\begin{definition}
+    Given an ideal $I \subseteq K[\boldsymbol{U}, \boldsymbol{X}]$, and $S \subseteq L^m$ the parameter space, a finite set $\mathcal{G} \subseteq K[\boldsymbol{U},\boldsymbol{X}]$ is called \emph{comprehensive Gr\"obner basis} (\emph{CGB}) of $I$ on $S$, if for all $\boldsymbol{a} \in S$, $\sigma_{\boldsymbol{a}}(\mathcal{G})$ is a Gr\"obner basis of the ideal $\sigma_{\boldsymbol{a}}(I)$ on $L[\boldsymbol{X}]$. We simply say $\mathcal{G}$ is a \emph{CGB} of $I$ if $S=L^m$.
+\end{definition}
+A CGB $\mathcal{G}$ of a parametric ideal $I$ is called \emph{minimal} if no proper subset of $\mathcal{G}$ is also a CGB of $I$.
+
+\begin{remark}
+    Notice that, in contrast to the standard definition of Gr\"obner basis, neither a CGB or the sets $G_i$ of a CGS are required to be a subset of $I$. 
+\end{remark}
+
+\begin{definition}
+    A CGB of a parametric ideal $I$ is \emph{faithful} if the CGB is a subset of $I$. In the same way, a CGS for a parametric system $F$ is \emph{faithful} if each set $G_i$, $i=1,\ldots,l$, is contained in $\langle F \rangle$.
+\end{definition}
+*-
 
 
 Description
