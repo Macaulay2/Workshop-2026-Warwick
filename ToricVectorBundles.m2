@@ -218,14 +218,14 @@ displayFiltrations ToricVectorBundleNew := E -> (
 trivialBundle = method()
 trivialBundle (NormalToricVariety, ZZ) := (tv,r) -> (
 	p := #(rays tv);
-	toricVectorBundle(tv, apply(p, i -> id_((ring tv)^r)), apply(p, i -> toList(r:0)))
+	toricVectorBundle(tv, apply(p, i -> id_((coefficientRing ring tv)^r)), apply(p, i -> toList(r:0)))
 )
 
 lineBundle = method()
 lineBundle ToricDivisor := D -> (
 	X := variety D;
 	jumps := for e in entries D list {e};
-	mats := for p in rays X list matrix {{1}};
+	mats := for p in rays X list matrix {{1_(coefficientRing ring X)}};
 	toricVectorBundle(X, mats, jumps)
 )
 
@@ -2290,10 +2290,10 @@ isSurjective (ToricVectorBundleMap) := f -> (
 
 -- Auxiliary fucntion for computing the jumps that happened in a list of matrices in a filtration
 jumpsAux = (L,mm) ->(
-    ref := entries transpose L_0; 
+    ref := transpose entries L_0; 
     r:= # ref;
     -- Extracts the porsitions where the vectors appear in the original matrix
-    Jl := apply(#L, i->(positions(ref, v -> isSubset({v}, entries transpose (L_i)  ))));
+    Jl := apply(#L, i->(positions(ref, v -> isSubset({v}, transpose entries  (L_i)  ))));
     apply(sum(#Jl,  i ->apply(#ref, j -> if member(j, Jl_i) then 1 else 0)), n -> n+mm)
     
 )
@@ -2301,6 +2301,7 @@ jumpsAux = (L,mm) ->(
 -- TODO NEEDS TO BE FIXED
 
 image (ToricVectorBundleMap) := f ->(
+    if isSurjective(f) then( return source f ); 
     if not isWellDefined(f) then ( error (" The map is not well defined"));
     M := f.map;
     E1:= source f;
@@ -2309,15 +2310,45 @@ image (ToricVectorBundleMap) := f ->(
     minj:= min flatten filtrationJumps(E1);
     maxj:= max flatten filtrationJumps(E1);
     steps:=  toList(minj..maxj);
+    -- Map that will make the image of te filtrations square by "projecting them"
+    pr:= (prune image (M)).cache.pruningMap;
+    -- Get the image of the pieces
     L:= apply(Xrays,  p ->
-        apply(steps, i ->
-        M*filteredPiece(E1,p,i)
-        )
+        apply(steps, i ->(
+        pr*filteredPiece(E1,p,i)
+        ))
+    );
+    newMatrices:= apply(L, i -> i_0 );
+    newJumps := apply( L , l -> jumpsAux(l, minj ) );
+    toricVectorBundle(X, newMatrices, newJumps)
+)
+
+-- TODO fix jumps
+
+kernel (ToricVectorBundleMap) := opts -> f ->(
+    E1:= source f;
+    X:= variety E1;
+    if isInjective(f) then( return trivialBundle(X,0) ); 
+    if not isWellDefined(f) then ( error (" The map is not well defined"));
+    M := f.map;
+    Xrays := rays E1;
+    minj:= min flatten filtrationJumps(E1);
+    maxj:= max flatten filtrationJumps(E1);
+    steps:=  toList(minj..maxj);
+    kerM := kernel M;
+    amb:= target gens kerM;
+    pr:= (prune kernel (M)).cache.pruningMap;
+    ipr := map(source pr, target pr, inverse pr);
+    -- Get the kernel of the pieces
+    L:= apply(Xrays,  p ->
+        apply(steps, i ->(
+            ipr*inducedMap(kerM,intersect(image map(amb, , filteredPiece(E1,p,i)), kerM))
+            --map(source pr, intersect(image map(amb, , filteredPiece(E1,p,i) ), kernel M ), ipr)
+        ))
     );
     newMatrices:= apply(L, i -> i_0 );
     newJumps := apply( L , l -> jumpsAux(l, minj) );
-    L
-    --toricVectorBundle(X, newMatrices, newJumps)
+    toricVectorBundle(X, newMatrices, newJumps)
 )
 
 
