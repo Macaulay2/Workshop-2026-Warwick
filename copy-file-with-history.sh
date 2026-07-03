@@ -24,7 +24,8 @@ FILE="${FILE:-gfanInterface.m2}"                                            # pa
 SRC_URL="${SRC_URL:-https://github.com/Macaulay2/Workshop-2026-Warwick.git}"
 SRC_BRANCH="${SRC_BRANCH:-Tropical}"
 DST_URL="${DST_URL:-https://github.com/antonleykin/M2.git}"
-DST_BRANCH="${DST_BRANCH:-gfanInterface}"
+DST_BRANCH="${DST_BRANCH:-development}"                                     # existing branch in B to base the work on
+NEW_BRANCH="${NEW_BRANCH:-import-gfanInterface-history}"                    # new branch created in B; the merge lands here
 DST_PATH="${DST_PATH:-M2/Macaulay2/packages/gfanInterface.m2}"              # where F should land in B
 
 command -v git-filter-repo >/dev/null 2>&1 || {
@@ -36,7 +37,7 @@ command -v git-filter-repo >/dev/null 2>&1 || {
 WORK="$(mktemp -d)"
 trap 'echo; echo "Working directory left in place for inspection: $WORK"' EXIT
 echo "Working in $WORK"
-echo "Copying '$FILE' (branch $SRC_BRANCH of A)  ->  '$DST_PATH' (branch $DST_BRANCH of B)"
+echo "Copying '$FILE' (branch $SRC_BRANCH of A)  ->  '$DST_PATH' (new branch $NEW_BRANCH of B, based on $DST_BRANCH)"
 echo
 
 # ---- 1. Fresh clone of A, filter to just F, rename to B's path ----
@@ -54,9 +55,12 @@ git -C "$WORK/src" filter-repo \
 echo "    filtered history now contains only '$DST_PATH'"
 echo
 
-# ---- 2. Clone B ----
-echo "==> Cloning B"
+# ---- 2. Clone B and branch off for the import ----
+echo "==> Cloning B and creating new branch '$NEW_BRANCH' off '$DST_BRANCH'"
 git clone --single-branch --branch "$DST_BRANCH" "$DST_URL" "$WORK/dst"
+# Do the import on a NEW branch so B's existing branch is never modified;
+# the result is reviewed/PR'd from $NEW_BRANCH.
+git -C "$WORK/dst" checkout -b "$NEW_BRANCH"
 echo
 
 # ---- 2a. PRECONDITION CHECK: B must sit at A's INITIAL version of F ----
@@ -104,7 +108,7 @@ echo
 # A's version must win: -X theirs auto-resolves every conflict to the incoming
 # (filtered A) side.  Note: -X theirs only affects F here, since F is the only
 # path the two histories share.
-echo "==> Merging filtered history into B (A's version wins on conflict)"
+echo "==> Merging filtered history into '$NEW_BRANCH' (A's version wins on conflict)"
 git -C "$WORK/dst" remote add filtered "$WORK/src"
 git -C "$WORK/dst" fetch filtered "$SRC_BRANCH"
 if ! git -C "$WORK/dst" merge --allow-unrelated-histories --no-edit \
@@ -127,11 +131,12 @@ echo "    OK: merged F matches A's tip (blob $SRC_TIP_BLOB)."
 echo
 
 # ---- 3. Report; leave the push to the user ----
-echo "==> Done. Merged into $WORK/dst on branch $DST_BRANCH."
+echo "==> Done. Imported history onto new branch '$NEW_BRANCH' in $WORK/dst."
+echo "    ('$DST_BRANCH' in B was used only as the base and is left unmodified.)"
 echo
 echo "Inspect the imported history:"
 echo "  git -C $WORK/dst log --oneline -- $DST_PATH"
 echo "  git -C $WORK/dst log --follow --format='%an %ad %s' -- $DST_PATH | tail"
 echo
-echo "When satisfied, push to B with:"
-echo "  git -C $WORK/dst push origin $DST_BRANCH"
+echo "When satisfied, push the NEW branch to B with:"
+echo "  git -C $WORK/dst push -u origin $NEW_BRANCH"
