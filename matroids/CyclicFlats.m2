@@ -8,7 +8,8 @@ newPackage("CyclicFlats",
 	Headline => "computations with cyclic flats",
 	Keywords => {"Matroids"},
 	HomePage => "",
-        DebuggingMode => true
+        DebuggingMode => true,
+        PackageExports => {"Posets"}
 )
 export {
 	"CyclicFlatsMatroid",
@@ -17,13 +18,10 @@ export {
         "groundSet",
         "rankSum",
         "evalValInvariant",
-        "tuttePolynomial",
         "ehrhartPolynomial",
         "ehrhartCuspidal",
         "basesOfCyclicFlats"
 }
-
-needsPackage "Posets"
 
 CyclicFlatsMatroid = new Type of HashTable;
 CyclicFlatsMatroid.synonym = "cyclicFlatsMatroid";
@@ -153,7 +151,7 @@ evalValInvariant (CyclicFlatsMatroid, MethodFunctionWithOptions, MethodFunctionW
     summy := sum apply(toList(1..k), r -> (
             sum apply(toList(r..n), h -> ( --Requires toList because sum needs a list and r..n naturally returns a Sequence
                     lam := countStressedSubsets(M, r, h);
-                    if not BaseRing then (
+                    if BaseRing == null then (
                         lam * (Cuspidal(r, k, h, n) - Unisum(r, k, h, n))
                         )
                     else (
@@ -203,7 +201,7 @@ tutteCuspidal (ZZ, ZZ, ZZ, ZZ) := RingElement => opts -> (r, k, h, n) -> (
 
 tutteUnisum = method(Options => {BaseRing => tutteRing});
 tutteUnisum (ZZ, ZZ, ZZ, ZZ) := RingElement => opts -> (r, k, h, n) -> (
-    tutteUniform(r, h) * tutteUniform(k-r, n-h)
+    tutteUniform(r, h, BaseRing => opts.BaseRing) * tutteUniform(k-r, n-h, BaseRing => opts.BaseRing)
     );
 
 tuttePolynomial CyclicFlatsMatroid := opts -> M -> (
@@ -262,7 +260,7 @@ ehrhartUnisum (ZZ, ZZ, ZZ, ZZ) := RingElement => opts -> (r, k, h, n) -> (
 ehrhartPolynomial := method(Options => {BaseRing => ehrhartRing});
 ehrhartPolynomial CyclicFlatsMatroid :=  opts -> M -> (
     R := opts.BaseRing;
-    evalValInvariant(M, ehrhartUniform, ehrhartCuspidal, ehrhartUnisum)
+    evalValInvariant(M, ehrhartUniform, ehrhartCuspidal, ehrhartUnisum, BaseRing => R)
     );
 
     
