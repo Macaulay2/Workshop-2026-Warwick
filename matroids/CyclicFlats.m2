@@ -135,7 +135,8 @@ countStressedSubsets(CyclicFlatsMatroid, ZZ, ZZ) := (M, r, h) -> (
     num
     );
 
-evalValInvariant = method(Options => {BaseRing => null});
+
+evalValInvariant = method(Options => {BaseRing => false});
 evalValInvariant (CyclicFlatsMatroid, MethodFunctionWithOptions, MethodFunctionWithOptions, MethodFunctionWithOptions) := opts -> (M, Uniform, Cuspidal, Unisum) -> (
     -*
     Inputs:
@@ -148,11 +149,11 @@ evalValInvariant (CyclicFlatsMatroid, MethodFunctionWithOptions, MethodFunctionW
     BaseRing := opts.BaseRing;
     k := M.rank;
     n := #(M.groundSet);
-    total := if BaseRing == null then Uniform(k, n) else Uniform(k, n, BaseRing => BaseRing); 
+    total := if not BaseRing then Uniform(k, n) else Uniform(k, n, BaseRing => BaseRing); 
     summy := sum apply(toList(1..k), r -> (
             sum apply(toList(r..n), h -> ( --Requires toList because sum needs a list and r..n naturally returns a Sequence
                     lam := countStressedSubsets(M, r, h);
-                    if BaseRing == null then (
+                    if not BaseRing then (
                         lam * (Cuspidal(r, k, h, n) - Unisum(r, k, h, n))
                         )
                     else (

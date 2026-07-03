@@ -1,4 +1,4 @@
--- Copyright 2011, 2012, 2013, 2014: David Cook II, Sonja Mapes, Gwyn Whieldon
+    -- Copyright 2011, 2012, 2013, 2014: David Cook II, Sonja Mapes, Gwyn Whieldon
 -- You may redistribute this file under the terms of the GNU General Public
 -- License as published by the Free Software Foundation, either version 2
 -- of the License, or any later version.
@@ -1666,9 +1666,9 @@ realRegions(List, Ring) := ZZ => (A, R) -> (
     )
 
 -- G. Gordon, ``A Tutte polynomial for partially ordered sets,'' J. Combin. Theory Ser. B 59 (1993), no. 1, 132--155. 
-tuttePolynomial = method(Options => {BaseRing => null})
-tuttePolynomial Poset := RingElement => opts -> P -> (
-    R := if BaseRing == null then QQ(monoid [getSymbol "t", getSymbol "z"]) else opts.BaseRing;
+tuttePolynomial =  method(Options => {BaseRing => false}) -- method()
+tuttePolynomial Poset :=  opts -> P -> (
+    R := if not opts.BaseRing then QQ(monoid [getSymbol "t", getSymbol "z"]) else opts.BaseRing;
     sum(antichains P, a -> ( f := filter(P, a); (R_0)^#f * (R_1+1)^(#(f - set a))))
     )
 
