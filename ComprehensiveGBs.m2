@@ -68,12 +68,11 @@ isConsistentRabinowitsch (List, List) :=(E,N) -> (
 
 diffLC = method(
     Options => {
-        Strategy => "radical"
+        Strategy => "radical" -- "radical" or "Rabinowitsch"
     }
 );
 diffLC (Sequence, Sequence) := opts -> (A, B) -> (
   result := {(A#0 | {B#1}, A#1)} | apply(B#0, p -> (A#0, A#1 * p));
-  breakpoint
   if opts.Strategy == "radical" then (
     select(result, t -> isConsistent(t#0, {t#1}))
     ) 
