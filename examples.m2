@@ -1,6 +1,51 @@
+---------------------------------------------
+Comprehensive Groebner Basis in Macaulay2: 
+---------------------------------------------
+installPackage "ComprehensiveGBs"
+
+-- No more big coefficients in the strata   (these where coming from the GB implementation in M2, 
+--                                          which tries to avoid denominatoris when possible)
+R = QQ[a,b][x,y,z, MonomialOrder => Lex]
+F = {x^3 - a, y^4 - b, x+y-z}
+G = CGBMain(F, {});
+netList for g in G list {g_0, factor g_1}
+
+-- A *LOT* of redundant strata (where the CGB identically vanishes).. 
+-- So we added strata reduction!
+G = CGBMain(F, {}, ReduceStrata => true);
+netList for g in G list {g_0, factor g_1}
+
+-- For this, at each step we have to check ideal membership 
+-- (i.e. do all leading coefficients of the GB vanish on the strata?), 
+-- and using the Rabinowitsch trick can make everything faster                                      -- (i.e. to check f in <E>, test 1 in <E, y*f-1>)
+benchmark "G = CGBMain(F, {}, ReduceStrata => true, Strategy => \"radical\", Verbose => false)"
+benchmark "G = CGBMain(F, {}, ReduceStrata => true, Strategy => \"Rabinowitsch\", Verbose => false)"
+
+
+
+>> We have a first implementation of KSW algorithm
+
+
+- We did some optimisations to Suzuki-Sato:
+>> Rabinowitsch trick for checking consistency (explain what this means)
+>> Keeping the same rings for the whole computations
+
+[TODO: cache the ring used for the Rabinowitsch trick]
+
+>> We implemented options (Strategy => "radical" / "Rabinowitsch"; ReduceStrata => Boolean )
+
+[TODO: some documentation; more tests (see TestAudit results)]
+
+*-
+
+
+
 uninstallPackage "ComprehensiveGBs"
 restart
 installPackage "ComprehensiveGBs"
+
+viewHelp ComprehensiveGBs
+
 
 --basic example, one polynomial
 R = QQ[a,b][x,y, MonomialOrder => Lex]
@@ -14,18 +59,17 @@ CGB(F)
 --example 9
 R = QQ[a,b][x,y,z, MonomialOrder => Lex]
 F = {x^3 - a, y^4 - b, x+y-z}
-elapsedTime G = CGBMain(F, {}, Verbose => true);
+elapsedTime G = CGBMain(F, {}, Verbose => false);
 #G
 
 elapsedTime G = CGBMain(F, {}, ReduceStrata => true, Verbose => true);
 #G
 
-elapsedTime G = CGBMain(F, {}, ReduceStrata => true, Strategy => "Rabinowitsch", Verbose => true);
-#G
-
-
+elapsedTime G = CGBMain(F, {}, ReduceStrata => true, Strategy => "Rabinowitsch", Verbose => false);
+benchmark "G = CGBMain(F, {}, ReduceStrata => true, Strategy => \"radical\", Verbose => false)"
 
 #G
+
 
 G_1
 G_2
@@ -33,7 +77,7 @@ G_3
 debug ComprehensiveGBs
 
 -- list of strata
-netList for g in G list g_{0,1}
+netList for g in G list {g_0, factor g_1}
 
 
 --example on graph=triangle
@@ -43,8 +87,11 @@ G={V,E}
 (F,GG)=cgbOnGraph(G,2);
 
 -- strata
-netList for g in GG list g_{0,1}
+netList for g in GG list {g_0, {g_1}}
 
+
+-- we should get the cgbOnGraph to return just the polys
+-- to allow the user to select how they want the CGB alg to run
 
 --example on graph=square
 E={(1,2),(1,3),(3,4),(2,4)}

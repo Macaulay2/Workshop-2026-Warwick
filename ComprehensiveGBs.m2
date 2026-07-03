@@ -3,7 +3,7 @@ newPackage(
     Version => "0.1",
     Date => "",
     Headline => "A package for computing Comprehensive Groebner Bases (CGBs)",
-    Authors => {{ Name => "", Email => "", HomePage => ""},
+    Authors => {
         { Name => "Lorenzo De Biase", Email => "lorenzo.debiase@enea.it", HomePage => "https://sites.google.com/viewlorenzodebiase/"},
         { Name => "Weijia Wang", Email => "weijia.wang@lip6.fr", HomePage => "https://weijia.perso.lip6.fr/"},
         { Name => "Angelo El Saliby", Email => "angelo.el.saliby@mis.mpg.de", HomePage => "angeloelsaliby.github.io"},
@@ -68,7 +68,7 @@ isConsistentRabinowitsch (List, List) :=(E,N) -> (
 
 diffLC = method(
     Options => {
-        Strategy => "radical" -- "radical" or "Rabinowitsch"
+        Strategy => "Rabinowitsch" -- "radical" or "Rabinowitsch"
     }
 );
 diffLC (Sequence, Sequence) := opts -> (A, B) -> (
@@ -122,7 +122,7 @@ CGBMain (List, List) := o -> (F, S) -> (
 CGBMainRec = method(
     Options => {
         ReduceStrata => false,
-        Strategy => "radical",
+        Strategy => "Rabinowitsch",
         Verbose => false
         }
     );
@@ -236,11 +236,15 @@ for t in L do (
 *-
 
 
-CGB=method(Options => {ReduceStrata => false})
+CGB=method( Options => {
+        ReduceStrata => false,
+        Strategy => "Rabinowitsch",
+        Verbose => false
+        })
 CGB(List):= o -> F->(
     s:=first entries eliminateVariables(F);
     result:=s;
-    G:=CGBMain(F,s, ReduceStrata => o.ReduceStrata);
+    G:=CGBMain(F,s, ReduceStrata => o.ReduceStrata, Strategy => o.Strategy , Verbose => o.Verbose);
     for i in G do (
         result=result|(i_2);
         );
@@ -298,10 +302,39 @@ doc ///
     ComprehensiveGBs
   Headline
     A package for computing Comprehensive Groebner Bases (CGBs). Based on @HREF("#ref1","[1]")@.
+  Description
+    Text
+
+      Based on @HREF("#ref1","[1]")@
+
+      
   References
     @LABEL("[1]","id" => "ref1")@ Akira Suzuki and Yosuke Sato. 2006. A simple algorithm to compute comprehensive Gröbner bases using Gröbner bases. In Proceedings of the 2006 international symposium on Symbolic and algebraic computation (ISSAC '06). Association for Computing Machinery, New York, NY, USA, 326–331. https://doi.org/10.1145/1145768.1145821
 ///
 
+
+
+doc ///
+  Key
+    "OlliesDocPage"
+  Headline
+    A small example
+  Description
+    Text 
+      Description of the page you can insert some code snippets too:
+      Here is a ring $R = \QQ[a,b][x,y]$ with a Lex monomial order ..
+    Example
+      R = QQ[a,b][x,y, MonomialOrder => Lex]
+      F = {a*x + b*y}
+      CGBMain(F, {})
+    Text
+      Amazing!
+      A link to the package: @TO "ComprehensiveGBs"@.
+      Sometimes we talk about @TT "true"@ things.
+      
+  SeeAlso
+    ComprehensiveGBs
+///
 doc ///
   Key
     CGBMain
@@ -409,12 +442,187 @@ assert(result#0 == expected1 or result#1 == expected2);
 ///
 
 
+TEST /// -* Testing cgbOnGraph  on  E = {(1,2)}, V = {1,2} *-
+
+E = {(1,2)};
+V = {1,2};
+G = {V,E};
+
+(F,GG) = cgbOnGraph(G,2);
+
+
+
+Rtest = ring first F;
+
+
+Stest = coefficientRing Rtest;
+
+x11 = Rtest_0;
+x12 = Rtest_1;
+x21 = Rtest_2;
+x22 = Rtest_3;
+
+w12 = promote(Stest_0,Rtest);
+
+expectedF = {x11^2 - 2*x11*x21 + x21^2 + x12^2 - 2*x12*x22 + x22^2 - w12 };
+expectedGG = {
+    ({}, 1, expectedF)
+};
+
+assert(F == expectedF);
+assert(GG == expectedGG);
+
+///
+
+
+TEST /// -* Testing  CGBMain on a*x+b*y  with Verbose option *-
+Ptest = QQ[a,b];
+Rtest = Ptest[x,y, MonomialOrder => Lex];
+
+params = gens Ptest;
+variables = gens Rtest
+
+aR = promote (params#0 , Rtest);
+bR = promote (params#1 , Rtest);
+   
+xR = variables#0;
+yR = variables#1;
+
+
+resultTest = CGBMain({aR*xR + bR*yR}, {}, Verbose => true);
+
+expected1 = ({},aR, {aR*xR + bR*yR});
+expected2 = ({aR},bR,{aR^2*xR + aR*bR*yR, aR*xR + bR*yR});
+expected3 = ({aR,bR}, 1_Rtest, {aR*xR + bR*yR});
+
+assert(#resultTest == 3);
+
+assert member(expected1, resultTest);
+assert member(expected2, resultTest);
+assert member(expected3, resultTest);
+
+
+///
+
+
+TEST /// -* Testing  CGB on a*x+b*y  with Verbose option  *-
+PTest = QQ[aTest,bTest];
+RTest = PTest[xTest,yTest, MonomialOrder => Lex];
+
+fTest = aTest*xTest + bTest*yTest;
+
+expected1 = aTest*xTest + bTest*yTest;
+expected2 = aTest^2*xTest + aTest*bTest*yTest;
+
+result = CGB({fTest}, Verbose=> true);
+
+assert(#result == 2);
+assert(result#0 == expected1 or result#1 == expected1);
+assert(result#0 == expected1 or result#1 == expected2);
+
+///
+
+
+TEST /// -*Testing  CGB on a*x+b*y  with Strategy => "radical" option  *-
+PTest = QQ[aTest,bTest];
+RTest = PTest[xTest,yTest, MonomialOrder => Lex];
+
+fTest = aTest*xTest + bTest*yTest;
+
+expected1 = aTest*xTest + bTest*yTest;
+expected2 = aTest^2*xTest + aTest*bTest*yTest;
+
+result = CGB({fTest}, Strategy=> "radical");
+
+assert(#result == 2);
+assert(result#0 == expected1 or result#1 == expected1);
+assert(result#0 == expected1 or result#1 == expected2);
+///
+
+
+
+TEST /// -* Testing  CGB on a*x+b*y  with Strategy => "radical" option *-
+
+Ptest = QQ[a,b];
+Rtest = Ptest[x,y, MonomialOrder => Lex];
+
+params = gens Ptest;
+variables = gens Rtest
+
+aR = promote (params#0 , Rtest);
+bR = promote (params#1 , Rtest);
+   
+xR = variables#0;
+yR = variables#1;
+
+
+resultTest = CGBMain({aR*xR + bR*yR}, {}, Strategy => "radical");
+
+expected1 = ({},aR, {aR*xR + bR*yR});
+expected2 = ({aR},bR,{aR^2*xR + aR*bR*yR, aR*xR + bR*yR});
+expected3 = ({aR,bR}, 1_Rtest, {aR*xR + bR*yR});
+
+assert(#resultTest == 3);
+
+assert member(expected1, resultTest);
+assert member(expected2, resultTest);
+assert member(expected3, resultTest);
+
+///
+
+
+TEST /// -* Testing  CGBMain on a*x+b*y  with ReduceStrata => true option *-
+Ptest = QQ[a,b];
+Rtest = Ptest[x,y, MonomialOrder => Lex];
+
+params = gens Ptest;
+variables = gens Rtest
+
+aR = promote (params#0 , Rtest);
+bR = promote (params#1 , Rtest);
+   
+xR = variables#0;
+yR = variables#1;
+
+
+resultTest = CGBMain({aR*xR + bR*yR}, {},  ReduceStrata => true);
+
+expected1 = ({},aR, {aR*xR + bR*yR});
+expected2 = ({aR},bR,{aR^2*xR + aR*bR*yR, aR*xR + bR*yR});
+expected3 = ({aR,bR}, 1_Rtest, {aR*xR + bR*yR});
+
+assert(#resultTest == 3);
+
+assert member(expected1, resultTest);
+assert member(expected2, resultTest);
+assert member(expected3, resultTest);
+
+///
+
+TEST /// -* Testing  CGBMain on a*x+b*y  with ReduceStrata => true option *-
+PTest = QQ[aTest,bTest];
+RTest = PTest[xTest,yTest, MonomialOrder => Lex];
+
+fTest = aTest*xTest + bTest*yTest;
+
+expected1 = aTest*xTest + bTest*yTest;
+expected2 = aTest^2*xTest + aTest*bTest*yTest;
+
+result = CGB({fTest}, ReduceStrata=> true);
+
+assert(#result == 2);
+assert(result#0 == expected1 or result#1 == expected1);
+assert(result#0 == expected1 or result#1 == expected2);
+
+///
+
+-*
 TEST /// -* [insert short title for this test] *-
 -- test code and assertions here
 -- may have as many TEST sections as needed
 
 ///
-
+-*
 
 end--
 
@@ -430,8 +638,34 @@ restart
 installPackage "ComprehensiveGBs"
 viewHelp "ComprehensiveGBs"
 
+-*
+\begin{definition}
+    For an ideal $I \subseteq K[\boldsymbol{U}, \boldsymbol{X}]$, and $S \subseteq L^m$, $\mathcal{G} \subseteq K[\boldsymbol{U},\boldsymbol{X}]$ is a \emph{comprehensive Gr\"obner basis} (\emph{CGB}) of $I$ on $S$, if for all $\boldsymbol{a} \in S$, $\sigma_{\boldsymbol{a}}(\mathcal{G})$ is a Gr\"obner basis of the ideal $\sigma_{\boldsymbol{a}}(I)$ on $L[\boldsymbol{X}]$. Where 
+    \begin{itemize}
+        \item $K,L$ are two fields ($L$ is an algebraic closure of $K$),
+        \item $\boldsymbol{X}$ (\emph{main variables}) and $\boldsymbol{U}$ (\emph{parameters}) are two independent sets of variables,
+        \item $\sigma_{\boldsymbol{a}}: K[\boldsymbol{U}][\boldsymbol{X}] \rightarrow L[\boldsymbol{X}]$ is the natural extension of the canonical specialization homomorphism induced by $\boldsymbol{a}$.
+    \end{itemize}
+\end{definition}
 
+%A CGB $\mathcal{G}$ of a parametric ideal $I$ is called \emph{minimal} if no proper subset of $\mathcal{G}$ is also a CGB of $I$.
 
+    Comprehensive Gr\"obner Bases are constructed form a Comprehensive Gröbner Systems, which are defined below.
+\begin{definition}
+    Let 
+    \begin{itemize}
+        \item $E_i, N_i$ be subsets of $K[\boldsymbol{U}]$, $i=1,\ldots \ell$, such that $\cup_{i=1}^{\ell} V(E_i) \setminus V(N_i)$ covers $L^m$,
+        \item $F\subset K[\boldsymbol{U},\boldsymbol{X}]$ and,
+        \item $G_1,\ldots, G_\ell\subset K[\boldsymbol{U}, \boldsymbol{X}]$.
+    \end{itemize}
+    
+    A finite set of triples 
+    \[
+    \mathcal{G} = \{(E_1,N_1,G_1),\ldots, (E_\ell,N_\ell,G_\ell)\}
+    \]
+    is called \emph{comprehensive Gr\"obner system (CGS) for $F$}, if $\sigma_{\boldsymbol{a}}(G_i)$ is a Gr\"obner basis of the ideal $\langle\sigma_{\boldsymbol{a}}(F)\rangle$ in $L[\boldsymbol{X}]$ for each $i=1,\ldots,\ell$ and $\boldsymbol{a} \in V(E_i) \setminus V(N_i)$. Each $(E_i,N_i,G_i)$ is called \emph{segment} of $\mathcal{G}$. 
+\end{definition}
+*-
 
 
 Description
@@ -450,7 +684,9 @@ doc ///
      Key
      Headline
      Usage
+       degreeMap phi
      Inputs
+       phi: ...
      Outputs
      Consequences
        Item
