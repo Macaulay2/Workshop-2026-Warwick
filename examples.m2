@@ -1,11 +1,19 @@
 -*
-What to explain in today's presentation:
+Comprehensive Groebner Basis in Macaulay2:
 
-- Why did we get the big coefficients on the h polys? Ans: it comes from the GB
--- in M2, GBs are *almost* reduced, but the leading term may have a non-one coefficient
--- in order to avoid denominators
->> so we added a function to clean up the coefficients of h
+installPackage "ComprehensiveGBs"
 
+-- No more big coefficients in the strata   (these where coming from the GB implementation in M2, 
+--                                          which tries to avoid denominatoris when possible)
+R = QQ[a,b][x,y,z, MonomialOrder => Lex]
+F = {x^3 - a, y^4 - b, x+y-z}
+G = CGBMain(F, {});
+netList for g in G list {g_0, factor g_1}
+
+-- A LOT of repeated strata.. So we added strata reduction!
+
+G = CGBMain(F, {}, ReduceStrata => true, Verbose => true);
+netList for g in G list {g_0, factor g_1}
 
 >> Strata reduction
 
@@ -64,7 +72,7 @@ G_3
 debug ComprehensiveGBs
 
 -- list of strata
-netList for g in G list g_{0,1}
+netList for g in G list {g_0, factor g_1}
 
 
 --example on graph=triangle
