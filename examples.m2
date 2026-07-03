@@ -26,6 +26,14 @@ benchmark "G = CGBMain(F, {}, ReduceStrata => true, Strategy => \"Rabinowitsch\"
 viewHelp ComprehensiveGBs
 *-
 
+end
+
+
+
+
+
+
+
 
 
 uninstallPackage "ComprehensiveGBs"
