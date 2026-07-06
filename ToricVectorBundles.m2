@@ -18,9 +18,9 @@ newPackage("ToricVectorBundles",
         {Name => "Adrian Cook",
          HomePage => "todo",
          Email => "todo"},
-        {Name => "Mayo Garcia",
+        {Name => "Mayo Mayo Garcia",
          HomePage => "todo",
-         Email => "todo"},
+         Email => "mayo.mayo-garcia@warwick.ac.uk"},
         {Name => "Nathan Ilten",
          HomePage => "https://www.sfu.ca/~nilten/",
          Email => "nilten@sfu.ca"},
@@ -166,6 +166,7 @@ toricVectorBundle (NormalToricVariety, List, List) := {} >> o -> (baseVariety, m
     L := apply(matrixList, m -> {numColumns m, numRows m});
     if not same L then error("The sizes of the filtration matrices must be the same");
     rankE := (unique flatten L)_0;
+    --rankE := rank matrixList_0;
     if any(indexesList, l -> #l != rankE) then error("The filtration data must be same length as rank");
     new ToricVectorBundleNew from {
 	symbol variety => baseVariety,
@@ -183,8 +184,8 @@ toricVectorBundle (NormalToricVariety, List, List) := {} >> o -> (baseVariety, m
 -- the matrices here.
 -- For those trying to understand, worth pointing out that the HEIGHT of a string
 -- is obtained via "length" and NOT "height".
-vertSpace = n -> (s := ""; if n == 1 then return "" else for i to n-2 do s = s || ""; s)
-horSpace = n -> (s := " "; if n == 0 then return "" else if n == 1 then return s else for i to n-2 do s = s | " "; s)
+vertSpace := n -> (s := ""; if n == 1 then return "" else for i to n-2 do s = s || ""; s)
+horSpace := n -> (s := " "; if n == 0 then return "" else if n == 1 then return s else for i to n-2 do s = s | " "; s)
 
 displayFiltrations = method()
 displayFiltrations ToricVectorBundleNew := E -> (
@@ -476,7 +477,7 @@ details ToricVectorBundleKaneyama := tvb -> (
 details ToricVectorBundleKlyachko := tvb -> (
       hashTable apply(rays tvb, r -> r => (tvb#"baseTable"#r,tvb#"filtrationMatricesTable"#r)))
 
--- This outupts a list of hash tables so that the order of the rays is displayed correctly
+
 details ToricVectorBundleNew := tvb ->( 
     raysX := rays(tvb );
     filts := filtrationMatrices (tvb);
@@ -790,7 +791,7 @@ maxCones ToricVectorBundle := T -> (
     -- sort maxCones T#"ToricVariety"
    )
 
-
+-- TODO: fintish for ToricVectorBundleNew
 isWellDefined ToricVectorBundleNew := TVB -> (
 	mC := maxCones variety TVB
 
@@ -1145,6 +1146,45 @@ exteriorPower (ToricVectorBundleNew, ZZ) := opts -> (TVB, l) -> (
 		toricVectorBundle(variety TVB, newfM, newfJ)
 	)
 )
+
+
+-- PURPOSE : Constructs the symmetric power of a given bundle. 
+--   INPUT : '(TVB, l)', where "TVB" is a bundle and l is the rank, 
+--  OUTPUT : the lth symmetric power of TVB. 
+symmetricPower (ToricVectorBundleNew, ZZ) := (TVB, l) -> (
+	if l < 0 then (
+		error("The power has to be non-negative.");
+	) else if l == 0 then (
+		trivialBundle(variety TVB, 0)
+	) else (
+		R := rays variety TVB;
+		fM := filtrationMatrices TVB;
+		fJ := filtrationJumps TVB;
+     	
+		ind := sort apply(subsets(rank TVB + l - 1,l),s -> apply(#s, i -> s#i-i));
+     	allind := sort unique flatten apply(ind, permutations);
+     	indtable := hashTable apply(#ind, i -> ind#i => i);
+
+		newfM := apply(#R, t -> (
+			M := mutableMatrix(ring TVB,#ind,#ind);
+			for i in ind do (
+				for j in allind do (
+					M_(indtable#(sort j),indtable#i) = M_(indtable#(sort j),indtable#i) + product apply(#j, k -> ((fM_t)_i)_(j#k,k))
+				);
+			);
+			matrix M
+		));
+
+		newfJ := apply(#R, t -> (
+			apply(ind, j -> sum (fJ_t)_j)
+		));
+
+		toricVectorBundle(variety TVB, newfM, newfJ)
+	)
+)
+
+
+
 
 --TODO: Two extraction methods. should modify to match our new type.
 
@@ -1507,42 +1547,6 @@ randomDeformation (ToricVectorBundleKlyachko,ZZ,ZZ) := (tvb,l,h) -> (
 --     	     0 and 'h'
 randomDeformation (ToricVectorBundleKlyachko,ZZ) := (tvb,h) -> randomDeformation(tvb,0,h)
 
-
--- PURPOSE : Constructs the symmetric power of a given bundle. 
---   INPUT : '(TVB, l)', where "TVB" is a bundle and l is the rank, 
---  OUTPUT : the lth symmetric power of TVB. 
-symmetricPower (ToricVectorBundleNew, ZZ) := (TVB, l) -> (
-	if l < 0 then (
-		error("The power has to be non-negative.");
-	) else if l == 0 then (
-		trivialBundle(variety TVB, 0)
-	) else (
-		R := rays variety TVB;
-		fM := filtrationMatrices TVB;
-		fJ := filtrationJumps TVB;
-     	
-		ind := sort apply(subsets(rank TVB + l - 1,l),s -> apply(#s, i -> s#i-i));
-     	allind := sort unique flatten apply(ind, permutations);
-     	indtable := hashTable apply(#ind, i -> ind#i => i);
-
-		newfM := apply(#R, t -> (
-			M := mutableMatrix(ring TVB,#ind,#ind);
-			for i in ind do (
-				for j in allind do (
-					M_(indtable#(sort j),indtable#i) = M_(indtable#(sort j),indtable#i) + product apply(#j, k -> ((fM_t)_i)_(j#k,k))
-				);
-			);
-			matrix M
-		));
-
-		newfJ := apply(#R, t -> (
-			apply(ind, j -> sum (fJ_t)_j)
-		));
-
-		toricVectorBundle(variety TVB, newfM, newfJ)
-	)
-)
-
 -- PURPOSE : Computing the tangent bundle on a smooth, pure, and full dimensional Toric Variety 
 --   INPUT : 'F',  a smooth, pure, and full dimensional Fan
 --  OUTPUT : 'tvb',  a ToricVectorBundle
@@ -1689,6 +1693,7 @@ cartierIndex (List,Fan) := (L,F) -> (
 
 
 -- PURPOSE : Generating the Vector Bundle given by a divisor
+-- This is the NEW lineBundle in the case of ToricVectorBundleKlyachko 
 weilToCartier = method(Options => {"Type" => "Klyachko"})
 
 --   INPUT : '(L,F)',  a list 'L' of weight vectors, one for each ray of the Fan 'F'
@@ -2394,6 +2399,37 @@ kernel (ToricVectorBundleMap) := opts -> f ->(
     toricVectorBundle(X, newMatrices, newJumps)
 )
 
+cokernel (ToricVectorBundleMap) := f ->(
+    if isSurjective(f) then( return trivialBundle(variety source (f), 0) ); 
+    if not isWellDefined(f) then ( error (" The map is not well defined"));
+    M := f.map;
+    E1:= source f;
+    E2 := target f;
+    X:= variety E1;
+    Xrays := rays E1;
+    minj:= min flatten join(filtrationJumps(E1), filtrationJumps(E2));
+    maxj:= max flatten join(filtrationJumps(E1), filtrationJumps(E2));
+    steps:=  toList(minj..maxj);
+    cokerM := cokernel M;
+    pr:= (prune cokerM).cache.pruningMap;
+    ipr := map(source pr, target pr, inverse pr);
+    L:= apply(Xrays,  p ->
+        apply(steps, i ->(
+            -- TO DO: fix this
+            amb := module (ring E2) ^ (rank E2);
+            f1 := image map(amb, , sub(M * filteredPiece(E1,p,i),QQ));
+            f2 := image map(amb, , sub(filteredPiece(E2,p,i),QQ));
+            ipr*inducedMap(cokerM, f2/f1 ) 
+
+        ))
+    );
+    newMatrices:= apply(L, i -> i_0 );
+    newJumps := apply( L , l -> jumpsAux(l, minj ) );
+    -- Mayo:
+    -- For the example coker f where f is defined in WWWDemo.m2, the output "makes sense" but the matrices are not square
+    -- This reminds me of the problem discused when recovering the Klyachko data from the Weil decoration
+    toricVectorBundle(X, newMatrices, newJumps)
+)
 
 
 -- PURPOSE : Computing the image bundle of a toric vector bundle
@@ -2593,6 +2629,17 @@ weilDecoration = (V) -> (
 )
 
 weilToKlyachko = method()
+-- Mayo: Someone was working in another version of the method, it is below
+weilToKlyachko (List) := (WD) ->(
+        X := variety (WD_(-1))_1;
+        -- The drop is there to get rid of the divisor infinity
+	WDnew := apply( drop(WD,1), i ->{i_0, entries i_1} );
+        -- I create a matrix with jumps for each ray that will later be refined
+        Maux :=  matrix transpose flatten apply(apply(WDnew, m -> m_0 ), a ->  transpose entries a ) ;
+        Jaux := apply(#((WDnew_0)_1), j ->{Maux,
+                flatten join(apply(WDnew, p -> toList(numColumns p_0 :(p_1)_j) ))}
+            )
+)
 weilToKlyachko (NormalToricVariety, List, List) := (X,E,D) ->(
 	L:=flatten D;
 	amin:= min L;
