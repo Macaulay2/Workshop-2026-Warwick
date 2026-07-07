@@ -1526,6 +1526,21 @@ randomDeformation = method(TypicalValue => ToricVectorBundleKlyachko)
 --  OUTPUT : a ToricVectorBundleKlyachko, a random deformation
 -- COMMENT : Simply replaces the base matrices by random matrices of full rank with entries between 
 --     	     'l' and 'h'
+
+randomDeformation ( ToricVectorBundleNew ) :=(tvb) ->(
+     k := rank tvb;
+     R:= ring tvb;
+     -- Change the matrices in the filtration and preserve the jumps
+     newMatrices := apply(filtrationMatrices tvb, M ->(
+            -- TODO How do we want to get the random matrices?
+	       A := random(R^k, R^k );
+	       while det A == 0 do (A = random(R^k, R^k ));
+           A)
+	       );
+    toricVectorBundle( variety tvb, newMatrices , filtrationJumps tvb )
+)
+
+
 randomDeformation (ToricVectorBundleKlyachko,ZZ,ZZ) := (tvb,l,h) -> (
      -- Checking for input errors
      if l > h then error("Expected the first integer to be less or equal than the second integer.");
