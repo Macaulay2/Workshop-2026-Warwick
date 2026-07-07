@@ -2346,6 +2346,34 @@ jumpsAux = (L,mm) ->(
     apply(sum(#Jl,  i ->apply(#ref, j -> if member(j, Jl_i) then 1 else 0)), n -> n+mm-1)
     
 )
+-- Auxiliary fucntion to simplify the choice of basis done
+-- The input is of the form ML={Matrix, List}
+adaptedBasis = (ML) -> (
+    M:= ML_0;
+    L:= ML_1;
+    rk := rank M;
+    if rk== numColumns M then( return {M,L});
+    levels := reverse sort unique L;
+    cols := {};
+    jumps := {};
+    B := M_{};
+    for a from 0 to #levels-1 do (
+        inds := positions(L, i -> i == levels_a);
+        for i from 0 to #inds-1 do (
+            C := M_(cols |{inds_i});
+            if rank C > rank B then (
+                cols = append(cols,inds_i);
+                jumps = append(jumps,levels_a);
+                B = C;
+                if rank C == rk then( break);
+            );
+        );
+    );
+    {M_cols, jumps}
+)
+
+
+
 
 -- TODO NEEDS TO BE FIXED
 
@@ -2367,8 +2395,15 @@ image (ToricVectorBundleMap) := f ->(
         pr*filteredPiece(E1,p,i)
         ))
     );
-    newMatrices:= apply(L, i -> i_0 );
+    -- Define the new data
+    -- The command matrix is there so that the map is simplify to be betweent free modules
+    newMatrices:= apply(L, i -> matrix i_0 );
     newJumps := apply( L , l -> jumpsAux(l, minj ) );
+    newData := transpose {newMatrices, newJumps};
+    -- Refine it it needed
+    newData = transpose apply( newData, a -> adaptedBasis(a) );
+    newMatrices = newData_0;
+    newJumps= newData_1;
     toricVectorBundle(X, newMatrices, newJumps)
 )
 
@@ -2394,8 +2429,15 @@ kernel (ToricVectorBundleMap) := opts -> f ->(
             ipr*inducedMap(kerM,intersect(image map(amb, , filteredPiece(E1,p,i)), kerM))
         ))
     );
-    newMatrices:= apply(L, i -> i_0 );
-    newJumps := apply( L , l -> jumpsAux(l, minj) );
+    -- Define the new data
+    -- The command matrix is there so that the map is simplify to be betweent free modules
+    newMatrices:= apply(L, i -> matrix i_0 );
+    newJumps := apply( L , l -> jumpsAux(l, minj ) );
+    newData := transpose {newMatrices, newJumps};
+    -- Refine it it needed
+    newData = transpose apply( newData, a -> adaptedBasis(a) );
+    newMatrices = newData_0;
+    newJumps= newData_1;
     toricVectorBundle(X, newMatrices, newJumps)
 )
 
@@ -2423,11 +2465,15 @@ cokernel (ToricVectorBundleMap) := f ->(
 
         ))
     );
-    newMatrices:= apply(L, i -> i_0 );
+    -- Define the new data
+    -- The command matrix is there so that the map is simplify to be betweent free modules
+    newMatrices:= apply(L, i -> matrix i_0 );
     newJumps := apply( L , l -> jumpsAux(l, minj ) );
-    -- Mayo:
-    -- For the example coker f where f is defined in WWWDemo.m2, the output "makes sense" but the matrices are not square
-    -- This reminds me of the problem discused when recovering the Klyachko data from the Weil decoration
+    newData := transpose {newMatrices, newJumps};
+    -- Refine it it needed
+    newData = transpose apply( newData, a -> adaptedBasis(a) );
+    newMatrices = newData_0;
+    newJumps= newData_1;
     toricVectorBundle(X, newMatrices, newJumps)
 )
 
@@ -2638,7 +2684,10 @@ weilToKlyachko (List) := (WD) ->(
         Maux :=  matrix transpose flatten apply(apply(WDnew, m -> m_0 ), a ->  transpose entries a ) ;
         Jaux := apply(#((WDnew_0)_1), j ->{Maux,
                 flatten join(apply(WDnew, p -> toList(numColumns p_0 :(p_1)_j) ))}
-            )
+            );
+        -- Simplify the data to get square matrices
+        data:= transpose apply( Jaux, a -> adaptedBasis(a));
+        toricVectorBundle( X, data_0, data_1)
 )
 weilToKlyachko (NormalToricVariety, List, List) := (X,E,D) ->(
 	L:=flatten D;
