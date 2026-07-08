@@ -184,8 +184,8 @@ toricVectorBundle (NormalToricVariety, List, List) := {} >> o -> (baseVariety, m
 -- the matrices here.
 -- For those trying to understand, worth pointing out that the HEIGHT of a string
 -- is obtained via "length" and NOT "height".
-vertSpace := n -> (s := ""; if n == 1 then return "" else for i to n-2 do s = s || ""; s)
-horSpace := n -> (s := " "; if n == 0 then return "" else if n == 1 then return s else for i to n-2 do s = s | " "; s)
+vertSpace = n -> (s := ""; if n == 1 then return "" else for i to n-2 do s = s || ""; s)
+horSpace = n -> (s := " "; if n == 0 then return "" else if n == 1 then return s else for i to n-2 do s = s | " "; s)
 
 displayFiltrations = method()
 displayFiltrations ToricVectorBundleNew := E -> (
@@ -1475,6 +1475,41 @@ fan ToricVectorBundle := T -> T#"ToricVariety"
 --     	     codim \bigcap E^r_j(i_j) = min {\sum codim E^r_j(i_j),rank E}
 --     	     holds.
 isGeneral = method()
+
+-- TODO: find and example of a non general bundle to test
+isGeneral ToricVectorBundleNew :=  E -> (
+    if E.cache.?isGeneral then( return E.cache.isGeneral);
+    -- list the max cones
+    MCones:=  (variety(E)).max;
+    raysX := rays E;
+    r := rank E;
+    R := ring E;
+    fJumps := filtrationJumps E;
+    E.cache.isGeneral = true;
+    -- Get a list for each ray of the posible filtered pieces
+    allPieces := apply(#raysX, p -> apply( unique (fJumps_p), i -> image filteredPiece(E, raysX_p, i) ) );
+    -- For a maximal cone, we perform a recursive check: 
+    -- the input is a list of as many list as rays the cone had of vector spaces that we have to compare
+    recursiveCheck := (L,Es) ->(
+        if L =!= {} then (apply( L_0, vs -> recursiveCheck(drop(L,1), Es|{vs}) ))
+        else(
+            -- at this point we have L empty and Es the list of vector spaces to compare
+            minCodim:= min(r, sum apply( Es, vs -> r - rank vs));
+            E:= image id_(R^r);
+            scan(Es, A -> E = intersect(E,A));
+            dimInt:= r - rank E;
+            if minCodim != dimInt then( E.cache.isGeneral = false; return E.cache.isGeneral );
+
+            
+        );
+
+    );
+    -- We apply the check to all the cones
+    apply( MCones, sigm -> recursiveCheck(allPieces_sigm ,{}) );
+    E.cache.isGeneral
+
+)
+
 isGeneral ToricVectorBundleKlyachko := (cacheValue symbol isGeneral)( tvb -> (
 	  fT := tvb#"filtrationMatricesTable";
      	  fT = hashTable apply(pairs fT, p -> p#0 => flatten entries p#1);
@@ -1686,6 +1721,36 @@ twist (ToricVectorBundleKlyachko,List) := (T,d) -> (
 --  OUTPUT : The smallest multiple of the divisor which is Cartier if the divisor is QQ-Cartier, if not 
 --     	     an error is returned
 cartierIndex = method(TypicalValue => ZZ)
+
+cartierIndex (NormalToricVariety, List) := (X, L) ->(
+    -- TODO : add checks for the Cartier index to make sense    
+    if any(L, l -> not instance(l,ZZ)) then error("The weights have to be in ZZ.");
+    denom := 1; 
+    raysX := rays X;
+    maxCs := X.max;
+    Frays := transpose  matrix raysX;
+    L = hashTable apply(#raysX, i -> rl_i => L_i);
+    n:= ambDim ( fan X);
+    scan(maxCs, C -> (
+	       rC := Frays_C;
+	       -- Taking the first n x n submatrix
+	       rC1 := rC_{0..n-1};
+	       -- Setting up the solution vector by composing the corresponding weights
+	       v := matrix apply(n, i -> (c := entries rC1_{i}; {-(L#c)}));
+	       -- Computing the degree vector
+	       w := vertices polyhedronFromHData(matrix {toList(n:0)},matrix {{0}},transpose rC1,v);
+	       -- Checking if w also fulfils the equations given by the remaining rays
+	       if numColumns rC != n then (
+		    v = v || matrix apply(toList(n..(numColumns rC)-1), i -> {-(L#(entries rC_{i}))});
+	            if (transpose rC)*w - v != 0 then error("The weights do not define a Cartier divisor."));
+	       -- Check if w is QQ-Cartier
+	       scan(flatten entries w, e -> denom = lcm(denominator e ,denom))));
+     denom
+     )
+
+
+
+
 cartierIndex (List,Fan) := (L,F) -> (
      rl := raySortOfFan F;
      -- Checking for input errors
@@ -1718,6 +1783,18 @@ cartierIndex (List,Fan) := (L,F) -> (
 -- PURPOSE : Generating the Vector Bundle given by a divisor
 -- This is the NEW lineBundle in the case of ToricVectorBundleKlyachko 
 weilToCartier = method(Options => {"Type" => "Klyachko"})
+
+weilToCartier (NormalToricVariety, List ):= {} >> o ->(X,L ) -> (
+    -- The errors check is done in cartierIndex
+	  ind := cartierIndex(X,L);
+	  if ind != 1 then L = apply(L, p -> ind*p);
+	  T := lineBundle( X, L);
+        T.cache.isVectorBundle = true;
+	  T
+)
+
+weilToCartier ToricDivisor := {} >> o ->(D ) -> (weilToCartier(variety D , entries D) )
+
 
 --   INPUT : '(L,F)',  a list 'L' of weight vectors, one for each ray of the Fan 'F'
 --  OUTPUT : 'tvb',  a ToricVectorBundle
