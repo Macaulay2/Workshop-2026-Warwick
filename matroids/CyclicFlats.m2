@@ -17,9 +17,8 @@ export {
         "cyclicFlats",
         "groundSet",
         "rankSum",
-        "evalValInvariant",
         "ehrhartPolynomial",
-        "ehrhartCuspidal",
+        "evalValInvariant",
         "basesOfCyclicFlats"
 }
 
@@ -134,8 +133,8 @@ countStressedSubsets(CyclicFlatsMatroid, ZZ, ZZ) := (M, r, h) -> (
     );
 
 
-evalValInvariant = method(Options => {BaseRing => null});
-evalValInvariant (CyclicFlatsMatroid, MethodFunctionWithOptions, MethodFunctionWithOptions, MethodFunctionWithOptions) := opts -> (M, Uniform, Cuspidal, Unisum) -> (
+evalValInvariant = method();
+evalValInvariant (CyclicFlatsMatroid, Function, Function, Function) := (M, Uniform, Cuspidal, Unisum) -> (
     -*
     Inputs:
         M: CyclicFlatsMatroid matroid object.
@@ -144,19 +143,13 @@ evalValInvariant (CyclicFlatsMatroid, MethodFunctionWithOptions, MethodFunctionW
         Cuspidal: (r, k, h, n): Cuspidal matroid L_{r, k, h, n}
         Unisum: (r, k, h, n): Sum of uniform matroids U_{r, h} + U_{k-r, n-h}
     *-
-    BaseRing := opts.BaseRing;
     k := M.rank;
     n := #(M.groundSet);
-    total := if BaseRing == null then Uniform(k, n) else Uniform(k, n, BaseRing => BaseRing); 
-    summy := sum apply(toList(1..k), r -> (
-            sum apply(toList(r..n), h -> ( --Requires toList because sum needs a list and r..n naturally returns a Sequence
+    total := Uniform(k, n); 
+    summy := sum (1..k, r -> (
+            sum (r..n, h -> (
                     lam := countStressedSubsets(M, r, h);
-                    if BaseRing == null then (
-                        lam * (Cuspidal(r, k, h, n) - Unisum(r, k, h, n))
-                        )
-                    else (
-                        lam * (Cuspidal(r, k, h, n, BaseRing => BaseRing) - Unisum(r, k, h, n, BaseRing => BaseRing))
-                        )
+                    lam * (Cuspidal(r, k, h, n) - Unisum(r, k, h, n))
                     )
                 )
             )
@@ -189,8 +182,8 @@ tutteCuspidal (ZZ, ZZ, ZZ, ZZ) := RingElement => opts -> (r, k, h, n) -> (
         );
 
     total := tutteUniform(k-r, n-h, BaseRing => R) * tutteUniform(r, h, BaseRing => R);
-    total += sum apply(toList(r+1..h), i -> (
-            sum apply(toList(0..k-r-1), j -> (
+    total += sum (r+1..h, i -> (
+            sum (0..k-r-1, j -> (
                     binomial(h, i) * binomial(n-h, j) * alpha(i, j, r, k)
                     )
                 )
@@ -205,7 +198,11 @@ tutteUnisum (ZZ, ZZ, ZZ, ZZ) := RingElement => opts -> (r, k, h, n) -> (
     );
 
 tuttePolynomial CyclicFlatsMatroid := opts -> M -> (
-    evalValInvariant(M, tutteUniform, tutteCuspidal, tutteUnisum, BaseRing => opts.BaseRing)
+    R := opts.BaseRing;
+    uni := (k, n) -> tutteUniform(k, n, BaseRing => R);
+    cusp := (r, h, k, n) -> tutteCuspidal(r, h, k, n, BaseRing => R);
+    unisum := (r, h, k, n) -> tutteUnisum(r, h, k, n, BaseRing => R);
+    evalValInvariant(M, uni, cusp, unisum)
     );
 
 -- Evaluating the Ehrhart polynomial
@@ -214,7 +211,7 @@ ehrhartRing := QQ[t];
 ehrhartUniform = method(Options => {BaseRing => ehrhartRing});
 ehrhartUniform (ZZ, ZZ) := RingElement => opts -> (k, n) -> (
     R := opts.BaseRing;
-    sum apply(toList 1..k-1, j -> (
+    sum (1..k-1, j -> (
             (-1)^j * binomial(n, j) * binomial((k-j)*R_0 + n - 1 - j, n-1)
             )
         )
@@ -222,6 +219,10 @@ ehrhartUniform (ZZ, ZZ) := RingElement => opts -> (k, n) -> (
 
 ehrhartCuspidal = method(Options => {BaseRing => ehrhartRing});
 ehrhartCuspidal (ZZ, ZZ, ZZ, ZZ) := RingElement => opts -> (r, k, h, n) -> (
+    safeBinomial := (a, b) -> (
+        if b < 0 or a < b then 0 else binomial(a, b)
+        );
+    
     R := opts.BaseRing;
     ehr := (r, k, h, n, s) -> (
         -- Ehrhart polynomial of the matroid Lambda_{r,k,h,n}, evaluated at t
@@ -229,9 +230,9 @@ ehrhartCuspidal (ZZ, ZZ, ZZ, ZZ) := RingElement => opts -> (r, k, h, n) -> (
         a := n - h - k + r;
         b := h - r;
         m := min(h, k) - r;
-        sum apply(toList(0..(m*s)), i ->
-            sum apply(toList(0..(n-h)), j ->
-                sum apply(toList(0..h), l ->
+        sum (0..(m*s), i ->
+            sum (0..(n-h), j ->
+                sum (0..h, l ->
                      binomial(n-h, j) * binomial(h, l) * binomial((a-j)*s + n - h - j + i - 1, n - h - 1) * binomial((b-l)*s + h - l - i - 1, h - 1)
                     )
                 )
@@ -240,13 +241,12 @@ ehrhartCuspidal (ZZ, ZZ, ZZ, ZZ) := RingElement => opts -> (r, k, h, n) -> (
     -- Lagrange interpolating the Ehrhart polynomial
     d := n-1;
     pts := for s from 0 to d list (s, ehr(r, k, h, n, s));
-    print(pts);
-    sum apply(toList(pts), p -> (
+    sum (pts, p -> (
             s0 := first p;
             val := last p;
             val * product apply(toList(pts), q -> (
                     s1 := first q;
-                    if s1 == s0 then 1_R else (t-s1)/(s0-s1)
+                    if s1 == s0 then 1_R else (R_0-s1)/(s0-s1)
                     )
                 )
             )
@@ -255,12 +255,16 @@ ehrhartCuspidal (ZZ, ZZ, ZZ, ZZ) := RingElement => opts -> (r, k, h, n) -> (
 
 ehrhartUnisum = method(Options => {BaseRing => ehrhartRing});
 ehrhartUnisum (ZZ, ZZ, ZZ, ZZ) := RingElement => opts -> (r, k, h, n) -> (
+    ehrhartUniform(r, h, BaseRing => opts.BaseRing) * ehrhartUniform(k-r, n-h, BaseRing => opts.BaseRing)
     );
 
-ehrhartPolynomial := method(Options => {BaseRing => ehrhartRing});
+ehrhartPolynomial = method(Options => {BaseRing => ehrhartRing});
 ehrhartPolynomial CyclicFlatsMatroid :=  opts -> M -> (
     R := opts.BaseRing;
-    evalValInvariant(M, ehrhartUniform, ehrhartCuspidal, ehrhartUnisum, BaseRing => R)
+    uni := (k, n) -> ehrhartUniform(k, n, BaseRing => R);
+    cusp := (r, h, k, n) -> ehrhartCuspidal(r, h, k, n, BaseRing => R);
+    unisum := (r, h, k, n) -> ehrhartUnisum(r, h, k, n, BaseRing => R);
+    evalValInvariant(M, uni, cusp, unisum)
     );
 
     

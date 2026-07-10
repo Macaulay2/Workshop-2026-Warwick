@@ -1665,10 +1665,11 @@ realRegions(List, Ring) := ZZ => (A, R) -> (
     sum apply(L.GroundSet, i -> abs(M#(ideal 0_R, i)))
     )
 
--- G. Gordon, ``A Tutte polynomial for partially ordered sets,'' J. Combin. Theory Ser. B 59 (1993), no. 1, 132--155. 
-tuttePolynomial =  method(Options => {BaseRing => null}) -- method()
+-- G. Gordon, ``A Tutte polynomial for partially ordered sets,'' J. Combin. Theory Ser. B 59 (1993), no. 1, 132--155.
+tutteRing := QQ(monoid [getSymbol "t", getSymbol "z"])
+tuttePolynomial =  method(Options => {BaseRing => tutteRing}) -- method()
 tuttePolynomial Poset :=  opts -> P -> (
-    R := if opts.BaseRing == null then QQ(monoid [getSymbol "t", getSymbol "z"]) else opts.BaseRing;
+    R := opts.BaseRing;
     sum(antichains P, a -> ( f := filter(P, a); (R_0)^#f * (R_1+1)^(#(f - set a))))
     )
 
