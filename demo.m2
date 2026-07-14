@@ -1,7 +1,7 @@
-needsPackage "NormalToricVarieties";
+M2
 needsPackage "ToricVectorBundles";
 
-weilDecoration := (V) -> (
+weilDecoration = (V) -> (
 	L:=flatten (filtrationJumps V);
 	amin:=min(L);
 	amax:=max(L);
@@ -21,31 +21,31 @@ weilDecoration := (V) -> (
 	for i from 1 to length (weilDecorationImage)-1 do (
 		wDecoration= append (wDecoration, {gens strataIntersections#i,weilDecorationImage#i});
 	);
-	wDecoration
+	{variety V, wDecoration}
 )
 
-weilToKlyachko (NormalToricVariety, list, list) := (X,E,D) ->(
-	L:=flatten D;
-	amin:= min L;
-	amax:= max L;
+Y=toricProjectiveSpace 2;
+V=tangentBundle Y; displayFiltrations V
+w1=weilDecoration V
 
-	H=new MutableHashTable;
+V2=V ++ lineBundle Y_0 ++ lineBundle (Y_0+3*Y_2); displayFiltrations V2
+w2=weilDecoration V2
 
-	(M,J)= to sequence transpose for i from 0 to #(rays X)-1 do (
+-- Update on image and kernel
+X = toricProjectiveSpace 3
+TX = tangentBundle X; details TX
+triv = trivialBundle(X,1);
 
-	);
+sumoflbs = lineBundle X_0 ++ lineBundle X_1 ++ lineBundle X_2 ++ lineBundle X_3;
+f = map(sumoflbs,triv,matrix(QQ,{{1},{1},{1},{1}})); f.map
+isWellDefined f
+isInjective f
+g = map(TX,sumoflbs, transpose sub(matrix rays X,QQ)); g.map
+isWellDefined g
+isSurjective g
+-- New things 
+Kg = kernel g; displayFiltrations Kg
+If = image f; displayFiltrations If
+areIsomorphic(Kg,If)
 
-
-)
-
-
---Test 
---Checking weilDecoration on the direct sum of the tangent bundle with a line bundle on P2.
-TEST ///
-M=toricProjectiveSpace 2;
-V=tangentBundle M++lineBundle(M_1);
-W=weilDecoration V;
-L={{0,infinity},{1,{1,0,0}},{2,{0,1,0}},{1,{0,0,1}},{3,{0,0,0}}};
-WL= apply (W, i -> {rank i#0, i#1});
-assert (L==WL);
-///
+toricDivisor({1,0,3},Y)
