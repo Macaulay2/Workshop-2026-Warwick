@@ -2818,6 +2818,28 @@ weilToKlyachko (NormalToricVariety, List, List) := (X,E,D) ->(
 *-
 )
 
+--------------------------------------------------------------
+-- GETTER FUNCTIONS FOR WEIL DECORATIONS
+--------------------------------------------------------------
+--not sure what other getter functions we would want, just one to recover the torus-invariant divisors
+--for now
+
+--do we want WEILDECORATION to be a type, or keep it as a list?
+
+--for now, this simply gives the list of divisors as a list of ordered coefficients
+--I would like to implement it so that they return as a list of ToricDivisors if that
+--would make sense? So we need to associate our Weil Decoration to the appropriate NormalToricVariety?
+weilDecorationDivisors = method()
+weilDecorationDivisors List := weilDecorationList -> (
+    divList := {};
+    --assumes first entry in weilDecorationList is {0,infinity}
+    for i from 1 to #weilDecorationList - 1 do (
+        divList = append(divList, weilDecorationList#i#1)
+        );
+    divList
+    )
+
+
 
 ---------------------------------------
 -- DOCUMENTATION
@@ -5531,7 +5553,7 @@ assert(cartierIndex({1,1,1},F) == 3)
 assert(cartierIndex({3,3,3},F) == 1)
 ///
 
--- ADDING NEW TESTS JUNE 2026
+-- ADDING NEW TESTS JUNE/JULY 2026
 -- Test 31
 -- Checking isWellDefined (Kaneyama) (combining the tests for cocycleCheck and regCheck)
 TEST ///
@@ -5675,9 +5697,9 @@ assert (isomorphism(T3,T4) === conjIsoT3T4)
 conjIsoT4T3 = map(T3,T4,id_((ring T4)^(rank T4)));
 assert (isomorphism(T4,T3) === conjIsoT4T3)
 ///
+
 --Test 37
 --Test for ring
-
 TEST///
 X = toricProjectiveSpace 2;
 T1 = trivialBundle(X,2);
@@ -5738,7 +5760,7 @@ TEST///
 PP3 = toricProjectiveSpace 3;
 trivPP3 = trivialBundle(PP3,3);
 tangPP3 = tangentBundle(PP3);
---creates a map (maybe not well defined
+--creates a map (maybe not well defined)
 M = matrix(ring trivPP3, {{1,0,1},{0,1,0},{1,1,0}});
 tvbMap = map(trivPP3,tangPP3,M)
 assert(source tvbMap === tangPP3)
@@ -5783,7 +5805,7 @@ assert( E== V)
 ///
 
 -- Test 44
--- Test for image, kenel and cokernel
+-- Test for image, kernel and cokernel
 TEST ///
 X = toricProjectiveSpace(3, CoefficientRing=> ZZ/101);
 TX = tangentBundle X;
