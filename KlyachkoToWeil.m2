@@ -29,7 +29,6 @@ weilToKlyachko (NormalToricVariety, list, list) := (X,E,D) ->(
 	amin:= min L;
 	amax:= max L;
 
-	H=new MutableHashTable;
 	
 	(M,J)= to sequence transpose for i from 0 to #(rays X)-1 do (
 
