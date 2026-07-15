@@ -102,7 +102,7 @@ CGBMain = method(
     ); -- Initialises CGBMainRec
 
 CGBMain (List) := o -> (F) -> (
-  CGBMain(List,{},o)
+  CGBMain(F,{},o)
 )
 CGBMain (List, List) := o -> (F, S) -> (
   R := ring F_0;
