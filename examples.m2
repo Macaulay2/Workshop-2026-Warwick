@@ -147,3 +147,35 @@ F = {
     }
 elapsedTime GG = CGBMain(F, {});
 #GG
+
+
+
+
+--Examples from Game Theory
+U = QQ[a_{1,1}..a_{2,2}]
+R = U[p_{1,1}..p_{2,2}]
+M1 = matrix({
+    {p_{1,1}+p_{1,2}, a_{1,1}*p_{1,1}+ a_{1,2}*p_{1,2}}, 
+    {p_{2,1}+ p_{2,2}, a_{2,1}*p_{2,1}+ a_{2,2}*p_{2,2}}})
+
+M2 = matrix({
+    {p_{1,1}+p_{2,1}, a_{1,1}*p_{1,1}+ a_{2,1}*p_{2,1}}, 
+    {p_{1,2}+ p_{2,2}, a_{1,2}*p_{1,2}+ a_{2,2}*p_{2,2}}})
+
+F = {det M1, det M2}
+
+U = QQ[a_{1,1}..a_{2,2}, b_{1,1}..b_{2,2}]
+R = U[p_{1,1}..p_{2,2}]
+
+M1 = matrix({
+    {p_{1,1}+p_{1,2}, a_{1,1}*p_{1,1}+ a_{1,2}*p_{1,2}}, 
+    {p_{2,1}+ p_{2,2}, a_{2,1}*p_{2,1}+ a_{2,2}*p_{2,2}}})
+
+M2 = matrix({
+    {p_{1,1}+p_{2,1}, b_{1,1}*p_{1,1}+ b_{2,1}*p_{2,1}}, 
+    {p_{1,2}+ p_{2,2}, b_{1,2}*p_{1,2}+ b_{2,2}*p_{2,2}}})
+
+F = {det M1, det M2} -- Defining equations for the Sphon variety of a 2x2 game with payoff matrices A= (a_{i, j}) and B = (b_{i,j})
+
+spohnMatrix = method();
+spohnMatrix 
