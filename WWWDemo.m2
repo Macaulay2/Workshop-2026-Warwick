@@ -1,4 +1,4 @@
-restart
+--restart
 needsPackage "ToricVectorBundles"
 -- Unlike previously, the package now
 -- interfaces with NormalToricVarieties.
