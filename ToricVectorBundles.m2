@@ -2703,7 +2703,7 @@ weilDecoration = (V) -> (
 	);
         -- It turns the list into a divisor, to recover the list use "entries"
         --weilDecorationImage = apply(weilDecorationImage, i -> toricDivisor(i, variety V));
-	wDecoration:={{strataIntersections#0,infinity}};
+	wDecoration:={{gens strataIntersections#0,infinity}};
 	for i from 1 to length (weilDecorationImage)-1 do (
 		wDecoration= append (wDecoration, {gens strataIntersections#i,weilDecorationImage#i});
 	);
