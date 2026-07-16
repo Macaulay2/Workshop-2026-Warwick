@@ -1768,6 +1768,7 @@ cartierIndex (NormalToricVariety, List) := (X, L) ->(
     raysX := rays X;
     maxCs := X.max;
     Frays := transpose  matrix raysX;
+    rl := raySortOfFan(fan(X));
     L = hashTable apply(#raysX, i -> rl_i => L_i);
     n:= ambDim ( fan X);
     scan(maxCs, C -> (
@@ -1828,7 +1829,7 @@ weilToCartier (NormalToricVariety, List ):= {} >> o ->(X,L ) -> (
 	  ind := cartierIndex(X,L);
 	  if ind != 1 then L = apply(L, p -> ind*p);
 	  T := lineBundle( X, L);
-        T.cache.isVectorBundle = true;
+        T.cache.isWellDefined = true;
 	  T
 )
 
@@ -2801,7 +2802,7 @@ coker (ToricVectorBundleKlyachko,Matrix) := (T,M) -> (
 ---------------------------------------
 
 
-weilDecoration = (V) -> (
+weilDecoration = (ToricVectorBundleNew) := (V) -> (
 	L:=flatten (filtrationJumps V);
 	amin:=min(L);
 	amax:=max(L);
