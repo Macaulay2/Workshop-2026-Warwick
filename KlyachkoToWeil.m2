@@ -17,13 +17,14 @@ weilDecoration := (V) -> (
 		if isMember(int,strataIntersections)==false then (strataIntersections= append (strataIntersections, int);
 			weilDecorationImage= append (weilDecorationImage, a));
 	);
-	wDecoration:={{strataIntersections#0,infinity}};
+	--wDecoration:={{gens strataIntersections#0,infinity}};
+        wDecoration := {};
 	for i from 1 to length (weilDecorationImage)-1 do (
 		wDecoration= append (wDecoration, {gens strataIntersections#i,weilDecorationImage#i});
 	);
 	wDecoration
 )
-
+-*
 weilToKlyachko (NormalToricVariety, list, list) := (X,E,D) ->(
 	L:=flatten D;
 	amin:= min L;
@@ -37,6 +38,33 @@ weilToKlyachko (NormalToricVariety, list, list) := (X,E,D) ->(
 
 
 )
+*-
+
+tvbPosetChains := (D,n) -> (
+    if n < 0 then return error("need nonnegative n");
+    if n == 0 then return apply(D,l -> {{numcols l_0, l_1}});
+    divs := flatten tvbPosetChains(D,0);
+    prevChains := tvbPosetChains(D,n-1);
+    flatten for c in prevChains list (
+        currdiv := first c;
+        for newdiv in divs list (
+            if currdiv_0 >= newdiv_0 then continue
+            else
+            if any(transpose {currdiv_1, newdiv_1}, p -> p_0 < p_1) then continue
+            else {newdiv} | c
+            )
+        )
+    )
+tvbPosetChains = memoize tvbPosetChains
+
+tvbChernClass ToricVectorBundleNew := E -> (
+    D := weilDecoration E;
+    r := rank E;
+    sum flatten for i to r-1 list (
+        ichains := tvbPosetChains(D,i);
+        for c in ichains list (-1)^i * (last c)_0 * (first c)_1
+        )
+    )
 
 
 --Test 
