@@ -162,7 +162,9 @@ M2 = matrix({
     {p_{1,1}+p_{2,1}, a_{1,1}*p_{1,1}+ a_{2,1}*p_{2,1}}, 
     {p_{1,2}+ p_{2,2}, a_{1,2}*p_{1,2}+ a_{2,2}*p_{2,2}}})
 
-F = {det M1, det M2}
+F = {det M1, det M2};
+L = CGBMain(F, ReduceStrata => true);
+netList for l in L list {l_0, l_1};
 
 U = QQ[a_{1,1}..a_{2,2}, b_{1,1}..b_{2,2}]
 R = U[p_{1,1}..p_{2,2}]
