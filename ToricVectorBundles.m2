@@ -106,6 +106,8 @@ export {
     "existsDecomposition", 
     "filtration", 
     "findWeights", 
+    "moduleToKlyachko",
+    "klyachkoToModule",
     "isGeneral","filteredPiece",
     --"isomorphism", 
     "weilDecoration",
@@ -267,15 +269,7 @@ tangentBundle NormalToricVariety := X -> (
     filtJumps := for p in rays X list {1} | toList((dim X-1):0);
     toricVectorBundle(X,filtMats,filtJumps)
     )
--*
--- Function from a fine graded module over de Cox ring of the toric variety
--- to the Klyachko filtration associated.
-moduleToKlyachko = method()
-moduleToKlyachko(NormalToricVariety, Module ):= (X,M) ->(
-    if coefficientRing ring M =!= coefficientRing ring X then error("The coeficient rings are not the same ");
 
-)
-*-
 
 --TODO: once the overhaul is complete, we should remove these constructors.
 
@@ -1729,7 +1723,7 @@ cartierIndex (NormalToricVariety, List) := (X, L) ->(
     raysX := rays X;
     maxCs := X.max;
     Frays := transpose  matrix raysX;
-    L = hashTable apply(#raysX, i -> rl_i => L_i);
+    L = hashTable apply(#raysX, i -> Frays_i => L_i);
     n:= ambDim ( fan X);
     scan(maxCs, C -> (
 	       rC := Frays_C;
@@ -1789,7 +1783,7 @@ weilToCartier (NormalToricVariety, List ):= {} >> o ->(X,L ) -> (
 	  ind := cartierIndex(X,L);
 	  if ind != 1 then L = apply(L, p -> ind*p);
 	  T := lineBundle( X, L);
-        T.cache.isVectorBundle = true;
+        T.cache.isVB = true;
 	  T
 )
 
@@ -2818,6 +2812,46 @@ weilToKlyachko (NormalToricVariety, List, List) := (X,E,D) ->(
 *-
 )
 
+
+---------------------------------------
+-- COX MODULES CONVERSION
+---------------------------------------
+
+-- Given a fine graded module over the Cox ring of a toric variety we obtain an equivariant sheaf.
+
+-- The code that follows take a module, assuming that it defines a toric vector bundle and returns its Klyachko description. 
+
+moduleToKlyachko = method()
+-- M: presentation of the module we are sheafifying
+moduleToKlyachko (NormalToricVariety, Matrix):= (X,A) -> (
+    -- Obtain the ToricVectorBundleMap associated to the presentation
+    -- The source and target are direct sums of line bundles and the associated sheaf is the cokernel of said map
+    coxX := ring A;
+    if coxX =!= ring X then (error("The module is not defined over the Cox ring of the toric variety"););
+    if  all( flatten entries A , p -> # terms p == 1) != true then( error("The presentation matrix is not equivariant"););
+    degSour := degrees source A;
+    degTarg := degrees target A;
+    s0:= trivialBundle( X,0) ;
+    sour := scan(degSour, l -> s0 = s0 ++ lineBundle(X, l ));
+    t0:= trivialBundle( X,0);
+    targ := scan(degTarg, l -> t0 = t0 ++ lineBundle(X, l ));
+    -- TODO check that this is in fact the map that we want
+    -- The map evaluates the variables to be 1 which should give the map at the fiber over the identity point
+    phi := map( ring X, coxX, toList(# gens coxX:1));
+    f:= map( targ, sour, phi**A);
+    coker f
+)
+
+-- The code that follows take a toric vector bundle with Klyachko description and returns a module over the Cox ring of the toric variety, M, such that the sheafification of M is the starting vector bundle.
+-- Note that different modules can have the same associated sheaf. 
+
+klyachkoToModule = method()
+-- TODO
+klyachkoToModule (ToricVectorBundleNew):= E -> (
+    S := ring variety E;
+    
+    E
+)
 
 ---------------------------------------
 -- DOCUMENTATION
