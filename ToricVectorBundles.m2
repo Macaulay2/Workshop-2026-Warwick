@@ -2883,6 +2883,21 @@ weilDecorationDivisors List := weilDecorationList -> (
 
 -- The code that follows take a module, assuming that it defines a toric vector bundle and returns its Klyachko description. 
 
+-- TODO this function should take a module and turn it into a fine graded module
+auxFine = (M) -> (
+    n := # gens ring M;
+    fineDeg := entries( id_(ZZ^n));
+    zer := toList(n:0);
+    S := newRing(ring M, Degrees => fineDeg);
+    Mnew := sub(M, S);
+    l := numgens source Mnew;
+    D :=splice{l:zer};
+    aux :=apply(entries Mnew, m -> select(m, i -> i != 0 ));
+    sh := apply(aux, m -> if m != {} then degree m_0 else zer);
+    -- TODO check that it makes sense to assume that the source has no twists
+    map(S^sh, S^D, Mnew)
+);
+
 moduleToKlyachko = method()
 -- M: presentation of the module we are sheafifying
 moduleToKlyachko (NormalToricVariety, Matrix):= (X,A) -> (
@@ -2890,16 +2905,18 @@ moduleToKlyachko (NormalToricVariety, Matrix):= (X,A) -> (
     -- The source and target are direct sums of line bundles and the associated sheaf is the cokernel of said map
     coxX := ring A;
     if coxX =!= ring X then (error("The module is not defined over the Cox ring of the toric variety"););
-    if  all( flatten entries A , p -> # terms p == 1) != true then( error("The presentation matrix is not equivariant"););
-    degSour := degrees source A;
-    degTarg := degrees target A;
+    if  all( flatten entries A , p -> # terms p <= 1) != true then( error("The presentation matrix is not equivariant"););
+    n := # gens ring A;
+    Anew := auxFine(A);
+    degSour := degrees source Anew;
+    degTarg := degrees target Anew;
     s0:= trivialBundle( X,0) ;
-    sour := scan(degSour, l -> s0 = s0 ++ lineBundle(X, l ));
+    sour := fold(directSum,s0,  apply(degSour, l -> (if l != splice{n:0} then( lineBundle(X, -l ))else(trivialBundle (X,1)) )) );
     t0:= trivialBundle( X,0);
-    targ := scan(degTarg, l -> t0 = t0 ++ lineBundle(X, l ));
+    targ := fold(directSum,s0,  apply(degTarg, l -> (if l != splice{n:0} then( lineBundle(X, -l ))else(trivialBundle (X,1)) )) );
     -- TODO check that this is in fact the map that we want
     -- The map evaluates the variables to be 1 which should give the map at the fiber over the identity point
-    phi := map( ring X, coxX, toList(# gens coxX:1));
+    phi := map( coefficientRing coxX, coxX, toList(# gens coxX:1));
     f:= map( targ, sour, phi**A);
     coker f
 )
