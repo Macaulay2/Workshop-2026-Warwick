@@ -2795,8 +2795,8 @@ coker (ToricVectorBundleKlyachko,Matrix) := (T,M) -> (
 -- WEIL DECORATIONS
 ---------------------------------------
 
-
-weilDecoration = (ToricVectorBundleNew) := (V) -> (
+weilDecoration = method()
+weilDecoration (ToricVectorBundleNew) := (V) -> (
 	L:=flatten (filtrationJumps V);
 	amin:=min(L);
 	amax:=max(L);
@@ -2909,10 +2909,9 @@ moduleToKlyachko (NormalToricVariety, Matrix):= (X,A) -> (
 
 klyachkoToModule = method()
 -- TODO
-klyachkoToModule (ToricVectorBundleNew):= E -> (
+klyachkoToModule ToricVectorBundleNew := E ->(
     S := ring variety E;
-    
-    E
+
 )
 
 ---------------------------------------
