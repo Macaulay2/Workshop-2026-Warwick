@@ -148,9 +148,6 @@ F = {
 elapsedTime GG = CGBMain(F, {});
 #GG
 
-
-
-
 --Examples from Game Theory
 U = QQ[a_{1,1}..a_{2,2}]
 R = U[p_{1,1}..p_{2,2}]
@@ -181,3 +178,10 @@ F = {det M1, det M2} -- Defining equations for the Sphon variety of a 2x2 game w
 
 spohnMatrix = method();
 spohnMatrix 
+
+---------------------------
+-- TODO:
+-- try examples of generic initial ideal 'gin'?
+-- recursion depth limit
+-- How big can we go?
+>>>>>>> 527bfb3 (add todos)
