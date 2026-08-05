@@ -197,7 +197,7 @@ CGBMainRec (List, List, List, List) := o -> (F, S, memo, RingsandThings) -> (
 
 Notes on Optimisation:
 
-profiling - see what else is taking time
+-- profiling - see what else is taking time
 
 needsPackage "ComprehensiveGBs"
 R = QQ[a,b][x,y,z, MonomialOrder => Lex]
