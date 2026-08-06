@@ -44,7 +44,7 @@ RExt := K[getSymbol "l", X, U, MonomialOrder => Lex]; -- maybe construct the ord
 
 7. Check the completeness of the Docs and Tests
 
-8. ** Lorenzo ** In TestAudit package, what does a 'Silenced Test' mean?
+
 
 
 # Future and long term TODOs
@@ -54,3 +54,5 @@ RExt := K[getSymbol "l", X, U, MonomialOrder => Lex]; -- maybe construct the ord
 2. Speed testing across all the different algorithms
 
 # DONE
+
+8. ** Lorenzo ** In TestAudit package, what does a 'Silenced Test' mean? (fixed, ScoreReport: 100 out of 100)
