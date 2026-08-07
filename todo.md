@@ -29,6 +29,9 @@ profile CGBMain(F, {});
 profileSummary
 ```
 
+Profiling shows that the nested sub(sub(g, {l => 1}), R) operation in the different returns is executed 690 times and accounts for about 36% of the runtime. 
+Can we replace it with a precomputed ring map (RExt \to R) evaluating (l) at 1, and reuse the converted Gröbner basis?
+
 5. ** Weijia ** In SS (CGBMain), construct a monomial order for `RExt` that extends the ordering in R.
 Currently, we just use a Lex order:
 
