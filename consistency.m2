@@ -92,7 +92,7 @@ PGBMain (CGBTriple) := T -> (
     -- To keep track of the original rings down the line and in the output, 
     -- we never return an empty GB.
     if length Gr == 0 then (
-        Gr = {0_U};
+        Gr = {0_U}; 
     );
     productList := unique(totalListProduct(Gr, N)); --The list obtained by multiplying every element in Gr with every element in N
     if length(productList) == 0 then (
