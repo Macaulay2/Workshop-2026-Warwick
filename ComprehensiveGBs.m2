@@ -9,7 +9,7 @@ newPackage(
         { Name => "Angelo El Saliby", Email => "angelo.el.saliby@mis.mpg.de", HomePage => "angeloelsaliby.github.io"},
         { Name => "Oliver Clarke", Email => "oliver.clarke@durham.ac.uk", HomePage => "https://www.oliverclarkemath.com"},
         { Name => "Sam Knight", Email => "samdeckardknight@gmail.com", HomePage => ""},
-        { Name => "Agustina Cagliero", Email => "mariaagustina.cagliero@kuleuven.be", HomePage => ""},
+        { Name => "Agustina Cagliero", Email => "mariaagustina.cagliero@kuleuven.be", HomePage => "https://sites.google.com/view/mariaagustinacagliero/"},
         { Name => "Giulia Gaggero", Email => "gaggerog@mcmaster.ca", HomePage => ""},
         { Name => "Woody Cohen", Email => "2597103@swansea.ac.uk", HomePage => ""}
         },
