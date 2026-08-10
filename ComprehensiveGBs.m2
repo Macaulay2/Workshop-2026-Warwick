@@ -30,6 +30,30 @@ protect CGBMainTriples
 
 -* Code section *-
 
+CGBTriple = new Type of HashTable
+
+protect coefficientsRing  --Probably needs to be changed
+                          --b/c too similar to coefficientRing
+protect totalRing
+protect flattenedRing
+protect triple            --Probably needs to be changed b/c 
+                          --too generic?
+
+CGBFromTriple = method(); --Constructor for a CGBTriple starting from
+                          --a list {E, F, G} where V(E)\V(F) is the 
+                          --parametric strata and G is the set of 
+                          --polynomial to be studied on it.
+
+CGBFromTriple List := CGB => (L) -> (
+    if(length L == 3 and length L_0 > 0 and length L_2 > 0) then (
+        R := ring L_2_0;
+        coeff := coefficientRing R;
+        scalarRing := coefficientRing coeff;
+        return new CGBTriple from {triple => L, coefficientsRing => coeff, totalRing => R , flattenedRing => scalarRing[gens R, gens coeff, MonomialOrder => Lex] };
+        );
+);
+
+
 listOfFactors = method() -- returns the list of factors of a ring element
 listOfFactors (RingElement) := (h) -> (
   hfac := factor h;
@@ -287,6 +311,145 @@ cgbOnGraph(List,ZZ):=(G,d)->(
   F:=for i in E list(sum(1..d,k->(R_(2*i_0+k-3)-R_(2*i_1+k-3))^2)-S_(position(E, j -> j === i)));
   (F, CGBMain(F, {}))
 )
+
+--Given two lists A and B return the list
+--{a*b s.t. a in A and b in B}
+totalListProduct = method();
+totalListProduct (List, List) := (A, B) -> (
+    return flatten(
+        for a in A list(
+            for b in B list (
+                a*b
+            )
+        )
+    )
+);
+
+
+--------------------------------------------------
+-- Implementing definition 4.1 of 
+-- "An efficient algorithm for computing a 
+-- comprehensive Gröbner system of a parametric 
+-- polynomial system", D.Kapur Y. Sun D. Wang, 
+-- J. of Symbolic Computation issue 49, 2013
+--------------------------------------------------
+MDBasis = method();
+MDBasis (List) := (G) -> (
+    F := G;
+    Basis := {first F};
+    F = delete(first F, F); 
+    for g in F do ( --loop through elements of G
+         --print("Deleting ", g, "from ", F);
+         F = delete(g, F); 
+         toAdd := true; --At the end of the loop, if LT_x(g) is not already implied 
+                        --by elements in Basis, we should add g to our Basis
+         for f in Basis do (
+            --print(f, Basis);
+            LTg := leadMonomial(g);
+            LTf := leadMonomial(f);
+            if LTg % LTf == 0 then (
+                toAdd = false; --LTg is already in Basis, exit the loop and do not add g to Basis
+                break
+            )  
+            else if LTf % LTg == 0 then ( --LTg divides something in Basis, so it can replace it
+                --print("Deliting ", f, " from ", Basis, " and adding ", g );
+                Basis = unique(delete(f, Basis) | {g});
+                toAdd = false; --avoid adding g multiple times
+                continue --might happen that LTg divides other leading terms in Basis
+            );
+         );
+         if toAdd then ( -- if toAdd is true here, then LTg is not implied by anything in Basis
+            Basis |=  {g};
+         );
+    );
+    return Basis 
+);
+
+
+--------------------------------------------------
+--Implementing algorithm in section 4.1 of 
+--"An efficient algorithm for computing a 
+--comprehensive Gröbner system of a parametric 
+--polynomial system", D.Kapur Y. Sun D. Wang, 
+--J. of Symbolic Computation issue 49, 2013
+--------------------------------------------------
+PGBMain = method();
+PGBMain (CGBTriple) := T -> (
+    {E, N, F} := T#triple;
+    --print(E, length N);
+    if not(isConsistentRabinowitsch(E, N)) then (
+        return {} --The domain is empty
+    );
+    R := T#totalRing; --Ring with parameters and variables
+    RFlat := T#flattenedRing; --Ring where parameters are consdiered variables
+    CoeffRing := T#coefficientsRing; -- Ring with only parameters
+    --Compute the GB of union(E, F), but viewing the parameters as variables
+    G := first entries gens(gb (ideal(apply((E | F), e -> sub(e, RFlat)))));
+    if member(sub(1, RFlat), G) then (
+        return {{E, N, {promote(1, R)}}} --Trivial case where the vanishing set is empty
+    );
+    Gr := for g in G list ( --The polynomials in G that only contain the parameters
+        l := lift(sub(g, R), CoeffRing, Verify =>false);
+        --lift() with Verify=>false returns Null when the lift is not possible
+        --i.e. when the polynomial contains something other than parametetrs
+        if instance(l, Nothing) then (continue);
+        l
+    );
+    -- By convention, an empty list for a GB means that the 
+    -- corresponding vanishing set is the whole space, 
+    -- which is equivalent to only containing the 0 element.
+    -- To keep track of the original rings down the line and in the output, 
+    -- we never return an empty GB.
+    if length Gr == 0 then (
+        Gr = {0_CoeffRing}; 
+    );
+    productList := unique(totalListProduct(Gr, N)); --The list obtained by multiplying every element in Gr with every element in N
+    if length(productList) == 0 then (
+        productList = {0_CoeffRing};
+    );
+    PGB := {};
+    if isConsistentRabinowitsch(E, productList) then (
+        PGB = {{E, productList, {1_R}}};
+    );
+    if not(isConsistentRabinowitsch(productList, N)) then (
+        return PGB
+    );
+    listDiff := toList((new Set from apply(G, i->sub(i, R))) - (new Set from apply(Gr, i->sub(i, R))));
+    
+    ------------------------------------------------------
+    --THIS IS MY PERSONAL INTERPRETATION!
+    if length listDiff == 0 then (
+        breakpoint
+        return {}
+    );
+    ----------------------------------------
+    Gm := MDBasis(listDiff);
+    H := unique(apply(Gm, g->squareFreePart(leadCoefficient(sub(g, R)))));
+    h := squareFreePart(lcm(H));
+    productList = unique(apply(totalListProduct(N, {sub(h, CoeffRing)}), i -> squareFreePart(i)));
+    if isConsistentRabinowitsch(Gr, productList) then (
+        PGB = unique(PGB | {{Gr, productList, Gm}});
+    );
+    --breakpoint
+    for i in 0..(length(H)-1) do (
+        if i == 0 then (
+            PGB = unique(PGB | PGBMain(CGBFromTriple({
+            unique(Gr | {H_i}), 
+            N, 
+            listDiff}
+            )))
+        ) else (
+        PGB = unique(PGB | PGBMain(CGBFromTriple({
+            unique(Gr | {H_i}), 
+            unique(totalListProduct(N, {squareFreePart(product(H_{0..(i-1)}))})), 
+            listDiff}
+        ))));
+    );
+
+    return PGB  
+);
+
+
 
 -* Documentation section *-
 
@@ -659,6 +822,17 @@ assert(result#0 == expected1 or result#1 == expected1);
 assert(result#0 == expected2 or result#1 == expected2);
 
 ///
+
+-----------------------------
+--TEST for MDBasis
+-----------------------------
+TEST /// -* Testing MDBasis on {a*x^2 − y, a*y^2 − 1, a*x − 1, (a + 1)*x − y, (a + 1)*y − a} *-
+U = U = QQ[a, MonomialOrder => Lex];
+R = U[x, y, MonomialOrder => Lex];
+G = {a*x^2 - y, a*y^2 - 1, a*x - 1, (a + 1)*x - y, (a + 1)*y - a}
+MDBasis(G)
+///
+
 
 
 
