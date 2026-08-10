@@ -123,11 +123,18 @@ PGBMain (CGBTriple) := T -> (
     );
     --breakpoint
     for i in 0..(length(H)-1) do (
+        if i == 0 then (
+            PGB = unique(PGB | PGBMain(CGBFromTriple({
+            unique(Gr | {H_i}), 
+            N, 
+            listDiff}
+            )))
+        ) else (
         PGB = unique(PGB | PGBMain(CGBFromTriple({
             unique(Gr | {H_i}), 
             unique(totalListProduct(N, {squareFreePart(product(H_{0..(i-1)}))})), 
             listDiff}
-        )));
+        ))));
     );
 
     return PGB  
