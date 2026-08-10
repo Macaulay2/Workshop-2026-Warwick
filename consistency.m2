@@ -57,30 +57,44 @@ totalListProduct (List, List) := (A, B) -> (
         )
     )
 );
-
+--------------------------------------------------
+--Implementing algorithm in section 4.1 of 
+--"An efficient algorithm for computing a 
+--comprehensive Gröbner system of a parametric 
+--polynomial system", D.Kapur Y. Sun D. Wang, 
+--J. of Symbolic Computation issue 49, 2013
+--------------------------------------------------
 PGBMain = method();
 PGBMain (CGBTriple) := T -> (
     {E, N, F} := T#triple;
     --print(E, length N);
     if not(isConsistentRabinowitsch(E, N)) then (
-        return {}
+        return {} --The domain is empty
     );
-    R := T#totalRing;
-    RFlat = T#flattenedRing;
-    CoeffRing = T#coefficientsRing;
+    R := T#totalRing; --Ring with parameters and variables
+    RFlat = T#flattenedRing; --Ring where parameters are consdiered variables
+    CoeffRing = T#coefficientsRing; -- Ring with only parameters
+    --Compute the GB of union(E, F), but viewing the parameters as variables
     G := first entries gens(gb (ideal(apply((E | F), e -> sub(e, RFlat)))));
     if member(sub(1, RFlat), G) then (
-        return {{E, N, {promote(1, R)}}}
+        return {{E, N, {promote(1, R)}}} --Trivial case where the vanishing set is empty
     );
-    Gr := for g in G list (
+    Gr := for g in G list ( --The polynomials in G that only contain the parameters
         l := lift(sub(g, R), CoeffRing, Verify =>false);
+        --lift() with Verify=>false returns Null when the lift is not possible
+        --i.e. when the polynomial contains something other than parametetrs
         if instance(l, Nothing) then (continue);
         l
     );
+    -- By convention, an empty list for a GB means that the 
+    -- corresponding vanishing set is the whole space, 
+    -- which is equivalent to only containing the 0 element.
+    -- To keep track of the original rings down the line and in the output, 
+    -- we never return an empty GB.
     if length Gr == 0 then (
         Gr = {0_U};
     );
-    productList := unique(totalListProduct(Gr, N));
+    productList := unique(totalListProduct(Gr, N)); --The list obtained by multiplying every element in Gr with every element in N
     if length(productList) == 0 then (
         productList = {0_CoeffRing};
     );
