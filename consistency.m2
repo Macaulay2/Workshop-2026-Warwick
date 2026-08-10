@@ -140,31 +140,40 @@ PGBMain (CGBTriple) := T -> (
     return PGB  
 );
 
+
+--------------------------------------------------
+-- Implementing definition 4.1 of 
+-- "An efficient algorithm for computing a 
+-- comprehensive Gröbner system of a parametric 
+-- polynomial system", D.Kapur Y. Sun D. Wang, 
+-- J. of Symbolic Computation issue 49, 2013
+--------------------------------------------------
 MDBasis = method();
 MDBasis (List) := (G) -> (
     F := G;
     Basis := {first F};
-    F = delete(first F, F);
-    for g in F do (
-         print("Deleting ", g, "from ", F);
-         F = delete(g, F);
-         toAdd := true;
+    F = delete(first F, F); 
+    for g in F do ( --loop through elements of G
+         --print("Deleting ", g, "from ", F);
+         F = delete(g, F); 
+         toAdd := true; --At the end of the loop, if LT_x(g) is not already implied 
+                        --by elements in Basis, we should add g to our Basis
          for f in Basis do (
-            print(f, Basis);
+            --print(f, Basis);
             LTg := leadMonomial(g);
             LTf := leadMonomial(f);
             if LTg % LTf == 0 then (
-                toAdd = false;
+                toAdd = false; --LTg is already in Basis, exit the loop and do not add g to Basis
                 break
             )  
-            else if LTf % LTg == 0 then (
-                print("Deliting ", f, " from ", Basis, " and adding ", g );
+            else if LTf % LTg == 0 then ( --LTg divides something in Basis, so it can replace it
+                --print("Deliting ", f, " from ", Basis, " and adding ", g );
                 Basis = unique(delete(f, Basis) | {g});
-                toAdd = false;
-                continue
+                toAdd = false; --avoid adding g multiple times
+                continue --might happen that LTg divides other leading terms in Basis
             );
          );
-         if toAdd then (
+         if toAdd then ( -- if toAdd is true here, then LTg is not implied by anything in Basis
             Basis |=  {g};
          );
     );
