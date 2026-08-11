@@ -145,6 +145,11 @@ CGBMain (List, List) := o -> (F, S) -> (
   RExt' := KU[l, X, MonomialOrder => {Lex => 1} | ringOrder R];
   RFlatl := RFlat[l];
   RingsandThings := {R,X,RExt,RFlat,RExt',KU,RFlatl};
+  RtoRExt := map(RExt, R, (gens RExt)_{1..numgens R});
+  RExttoRFlatl:= map(RFlatl,RExt, {l} | gens RFlat);
+  RExttoRExt':= map(RExt',RExt, gens RExt'| gens KU);
+  RExttoR:= map(R, RExt, {1} | gens R | gens coefficientRing R);
+  MapsandThings := {RtoRExt,RExttoRFlatl,RExttoRExt',RExttoR};
   CGBMainRec(F, S, {}, RingsandThings, o)
 )
 
@@ -165,7 +170,7 @@ CGBMainRec (List, List, List, List) := o -> (F, S, memo, RingsandThings) -> (
   l := first gens RingsandThings_2;
   A := apply(F, i -> l * sub(i, RingsandThings_2));
   B := apply(S, i -> (l-1) * sub(i, RingsandThings_2));
-  G := (entries gens gb(ideal join(A, B)))_0;
+  G := (entries gens gb(ideal join(A, B)))_0; -- isn't G in RExt? why do we substitute it in the line below?
   pruneG := select(G, g -> ((first first exponents(leadMonomial sub(g,RingsandThings_2))) > 0) and any(exponents(sub(leadCoefficient sub(g,RingsandThings_6),RingsandThings_3)), i -> any(i_(toList(0..(#(RingsandThings_1)-1))), i -> i > 0)));
   pruneG = apply(pruneG, g -> leadCoefficient sub(g, RingsandThings_4));
   h := lcm pruneG;
