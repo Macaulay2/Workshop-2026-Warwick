@@ -39,6 +39,11 @@ protect flattenedRing
 protect triple            --Probably needs to be changed b/c 
                           --too generic?
 
+ringOrder = method(); -- returns the monomial order of a polynomial ring
+ringOrder PolynomialRing := List => (R) -> (
+    select(toList (options R).MonomialOrder, orderEntry -> not member(first orderEntry, {MonomialSize, Position}))
+);
+
 CGBFromTriple = method(); --Constructor for a CGBTriple starting from
                           --a list {E, F, G} where V(E)\V(F) is the 
                           --parametric strata and G is the set of 
@@ -49,7 +54,7 @@ CGBFromTriple List := CGB => (L) -> (
         R := ring L_2_0;
         coeff := coefficientRing R;
         scalarRing := coefficientRing coeff;
-        return new CGBTriple from {triple => L, coefficientsRing => coeff, totalRing => R , flattenedRing => scalarRing[gens R, gens coeff, MonomialOrder => Lex] };
+        return new CGBTriple from {triple => L, coefficientsRing => coeff, totalRing => R , flattenedRing => scalarRing[gens R, gens coeff, MonomialOrder => ringOrder R | ringOrder coeff] };
         );
 );
 
@@ -131,15 +136,15 @@ CGBMain (List) := o -> (F) -> (
 CGBMain (List, List) := o -> (F, S) -> (
   R := ring F_0;
   X := gens R;
-  U := gens baseRing R;
-  K := baseRing baseRing R;
-  RExt := K[getSymbol "l", X, U, MonomialOrder => Lex]; -- maybe construct the ordering from R?
+  KU := coefficientRing R;
+  U := gens KU;
+  K := coefficientRing KU;
+  RExt := K[getSymbol "l", X, U, MonomialOrder => {Lex => 1} | ringOrder R | ringOrder KU];
   l := first gens RExt;
-  RFlat := K[X, U, MonomialOrder => Lex];
-  RExt' := K[U][l, X, MonomialOrder => Lex];
-  RU := K[U];
+  RFlat := K[X, U, MonomialOrder => ringOrder R | ringOrder KU];
+  RExt' := KU[l, X, MonomialOrder => {Lex => 1} | ringOrder R];
   RFlatl := RFlat[l];
-  RingsandThings := {R,X,RExt,RFlat,RExt',RU,RFlatl};
+  RingsandThings := {R,X,RExt,RFlat,RExt',KU,RFlatl};
   CGBMainRec(F, S, {}, RingsandThings, o)
 )
 
@@ -281,18 +286,19 @@ eliminateVariables=method()
 eliminateVariables(List):=F->(
     R:=ring first F;
     n:=numgens(R);
-    m:=numgens(coefficientRing(R));
+    C:=coefficientRing R;
+    m:=numgens C;
     x:=getSymbol "x";
     u:=getSymbol "u";
-    S:=QQ[x_1..x_n,u_1..u_m, MonomialOrder => Eliminate n];
-    U:=gens coefficientRing(R);
+    K:=coefficientRing C;
+    S:=K[x_1..x_n,u_1..u_m, MonomialOrder => ringOrder R | ringOrder C];
+    U:=gens C;
     X:=gens R;
     l1:=for i from 0 to m-1 list U_i=>S_(i+n);
     l2:=for j from 0 to n-1 list X_j=>S_j;
     F':=apply(F,h->sub(h,l1|l2));
     F'gbgens:=gens gb(ideal(F'));
-    S':=selectInSubring(1,F'gbgens);
-    C:=coefficientRing R;
+    S':=selectInSubring(#(ringOrder R),F'gbgens);
     mm:=map(C,ring S',
         toList(n:0)|gens C   
         );
