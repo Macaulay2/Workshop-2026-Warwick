@@ -6,9 +6,18 @@ whenever it recurses, the Depth is decremented by 1 and if the Depth reaches 0 t
 we do not recurse (so putting Depth => 0 would return just the generic stratum for example)
 
 2. ** Angelo, Giulia, Agustina ** Kapur-Sun-Wang (KSW) algorithm (consistency.m2)
-- Moved to main file, now can (almost) delete consistency.m2
+- [DONE] Moved to main file, now can (almost) delete consistency.m2
+- Determine what should happen if listDiff is empty 
 
-3. ** Ollie ** In the SS (CGBMain) - we can create a computation object type (Similar / compatible with
+2.1 **Everyone** In the KSW algorithm there are some optimisations for the consistency check in Section 5
+  this involves three algorithms (1,2,3) that are checked in some order and if all fail then the standard
+  consistency check is used.
+- [1 of 3 DONE] Add the algorithms
+- Write a consistency check method that combines them all
+- [FUTURE] think about whether the consistency check method should use hooks
+- [FUTURE] understand the optimisations in Section 7 
+
+3. ** Ollie, Angelo ** In the SS (CGBMain) - we can create a computation object type (Similar / compatible with
 CGBTriple from consistency.m2) that holds all the objects (Rings, Maps, etc). Currently, this
 is just a list:
 
@@ -43,11 +52,14 @@ U := gens baseRing R;
 K := baseRing baseRing R;
 RExt := K[getSymbol "l", X, U, MonomialOrder => Lex]; -- maybe construct the ordering from R?
 ```
+- Think about what happens to Weight orders - maybe they need to be shifted into the right position
+  or maybe it's okay - so we should add a test 
 
 6. ** Agustina ** Code clean-up: I would prefer to use maps instead of 'sub' and a few other small M2 code things
 
 7. Check the completeness of the Docs and Tests
 
+8. **Ollie ask Doug/Anton** For mapping elements of a ring to say their coefficient ring, what is the correct way? sub? lift?
 
 
 
