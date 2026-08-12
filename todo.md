@@ -6,6 +6,7 @@ whenever it recurses, the Depth is decremented by 1 and if the Depth reaches 0 t
 we do not recurse (so putting Depth => 0 would return just the generic stratum for example)
 
 2. ** Angelo, Giulia, Agustina ** Kapur-Sun-Wang (KSW) algorithm (consistency.m2)
+- Moved to main file, now can (almost) delete consistency.m2
 
 3. ** Ollie ** In the SS (CGBMain) - we can create a computation object type (Similar / compatible with
 CGBTriple from consistency.m2) that holds all the objects (Rings, Maps, etc). Currently, this
