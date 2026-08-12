@@ -25,6 +25,10 @@ is just a list:
 RingsandThings := {R,X,RExt,RFlat,RExt',RU,RFlatl};
 
 ```
+- Add the ring maps to this objects
+- Include the ring maps to this object too 
+- Move lists of elements in a ring to a single row matrix of elements in the ring : this allows us to apply maps to
+  matrices, we will implicitly check that elements belong to the correct ring because the ring of the matrix is fixed 
 
 4. ** Lorenzo ** More optimisations to SS / documentation of them: we can use profiling to check what
 takes a long time and see if it suggests a optimisation.
