@@ -12,6 +12,7 @@ R = U[x,y,z, MonomialOrder => Lex];
 G = {a*x*y + b*x, b*x^2*y+c*z, a*b*x+a*x*y+z, a*y+z, c*x + c*z^2}
 T = CGBFromTriple({{0_U}, {1_U}, G})
 L= PGBMain(T)
+matrix {MDBasis(G)} == matrix {{a*y + z, c*x + c*z^2}}
 assert({a*y + z, c*x + c*z^2} == MDBasis(G));
 
 --Example 9
