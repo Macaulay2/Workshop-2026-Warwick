@@ -73,6 +73,10 @@ squareFreePart (RingElement) := (h) -> (
   product listOfFactors h
 );
 
+squareFreePart (ZZ) := (h) -> (
+  1
+);
+
 isConsistent = method(); -- returns whether or not rad(E) intersect N is empty
 isConsistent (List, List) := (E, N) -> (
   I := radical ideal E;
