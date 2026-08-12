@@ -60,7 +60,11 @@ CGBFromTriple List := CGB => (L) -> (
         R := ring L_2_0;
         coeff := coefficientRing R;
         scalarRing := coefficientRing coeff;
-        return new CGBTriple from {triple => L, coefficientsRing => coeff, totalRing => R , flattenedRing => scalarRing[gens R, gens coeff, MonomialOrder => ringOrder R | ringOrder coeff] };
+        return new CGBTriple from {
+            triple => L,
+            coefficientsRing => coeff,
+            totalRing => R ,
+            flattenedRing => scalarRing(monoid[gens R, gens coeff, MonomialOrder => ringOrder R | ringOrder coeff])};
         );
 );
 
@@ -180,10 +184,11 @@ CGBMainRec (List, List, List, List) := o -> (F, S, memo, RingsandThings) -> (
   l := first gens RingsandThings_2;
   A := apply(F, i -> l * sub(i, RingsandThings_2));
   B := apply(S, i -> (l-1) * sub(i, RingsandThings_2));
-  G := (entries gens gb(ideal join(A, B)))_0; -- isn't G in RExt? why do we substitute it in the line below?
-                                              -- I (Angelo) think it's because we want to select the ones whose leading term respect certain 
-                                              -- properties, with respect to different leading terms (see line 7 in Sato algorithm)
-  pruneG := select(G, g -> ((first first exponents(leadMonomial sub(g,RingsandThings_2))) > 0) and any(exponents(sub(leadCoefficient sub(g,RingsandThings_6),RingsandThings_3)), i -> any(i_(toList(0..(#(RingsandThings_1)-1))), i -> i > 0)));
+  G := (entries gens gb(ideal join(A, B)))_0; -- isn't G in RExt? why do we substitute it in the line below? Let's clean it up without a sub
+
+  pruneG := select(G, g -> (
+          (first first exponents(leadMonomial sub(g,RingsandThings_2))) > 0) and
+      any(exponents(sub(leadCoefficient sub(g,RingsandThings_6),RingsandThings_3)), i -> any(i_(toList(0..(#(RingsandThings_1)-1))), i -> i > 0)));
   pruneG = apply(pruneG, g -> leadCoefficient sub(g, RingsandThings_4));
   h := lcm pruneG;
   for i in 0..(#(factor h)-1) do (
