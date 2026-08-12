@@ -378,7 +378,7 @@ MDBasis (List) := (G) -> (
                 continue --might happen that LTg divides other leading terms in Basis
             );
          );
-         if toAdd then ( -- if toAdd is true here, then LTg is not implied by anything in Basis
+         if toAdd then ( -- LTg is not implied by anything in Basis
             Basis |=  {g};
          );
     );
