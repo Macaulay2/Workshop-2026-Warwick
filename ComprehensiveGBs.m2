@@ -42,6 +42,9 @@ protect flattenedRing
 protect triple            --Probably needs to be changed b/c 
                           --too generic?
 
+
+-- We may need to take some cases on what kinds of orders the ring comes with
+-- E.g. Weight order, Lex, GRevLex, etc.
 ringOrder = method(); -- returns the monomial order of a polynomial ring
 ringOrder PolynomialRing := List => (R) -> (
     select(toList (options R).MonomialOrder, orderEntry -> not member(first orderEntry, {MonomialSize, Position}))
@@ -146,7 +149,7 @@ CGBMain (List, List) := o -> (F, S) -> (
   KU := coefficientRing R;
   U := gens KU;
   K := coefficientRing KU;
-  RExt := K[getSymbol "l", X, U, MonomialOrder => {Lex => 1} | ringOrder R | ringOrder KU];
+  RExt := K[getSymbol "l", X, U, MonomialOrder => {Lex => 1} | ringOrder R | ringOrder KU]; -- we may need to shift the weight orders of ringOrder R and KU
   l := first gens RExt;
   RFlat := K[X, U, MonomialOrder => ringOrder R | ringOrder KU];
   RExt' := KU[l, X, MonomialOrder => {Lex => 1} | ringOrder R];
