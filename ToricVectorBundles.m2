@@ -1768,7 +1768,7 @@ cartierIndex (NormalToricVariety, List) := (X, L) ->(
     raysX := rays X;
     maxCs := X.max;
     Frays := transpose  matrix raysX;
-    L = hashTable apply(#raysX, i -> rl_i => L_i);
+    L = hashTable apply(#raysX, i -> raysX_i => L_i);
     n:= ambDim ( fan X);
     scan(maxCs, C -> (
 	       rC := Frays_C;
@@ -1818,7 +1818,6 @@ cartierIndex (List,Fan) := (L,F) -> (
 	       scan(flatten entries w, e -> denom = lcm(denominator e ,denom))));
      denom)
 
-
 -- PURPOSE : Generating the Vector Bundle given by a divisor
 -- This is the NEW lineBundle in the case of ToricVectorBundleKlyachko 
 weilToCartier = method(Options => {"Type" => "Klyachko"})
@@ -1828,7 +1827,7 @@ weilToCartier (NormalToricVariety, List ):= {} >> o ->(X,L ) -> (
 	  ind := cartierIndex(X,L);
 	  if ind != 1 then L = apply(L, p -> ind*p);
 	  T := lineBundle( X, L);
-        T.cache.isVectorBundle = true;
+        --T.cache.isVectorBundle = true;
 	  T
 )
 
@@ -2801,37 +2800,41 @@ coker (ToricVectorBundleKlyachko,Matrix) := (T,M) -> (
 ---------------------------------------
 
 
-weilDecoration = (V) -> (
-	L:=flatten (filtrationJumps V);
-	amin:=min(L);
-	amax:=max(L);
-	d:=length (filtrationJumps V);
-	alist:= reverse(toList(toList (d:amin).. toList (d:amax)));
-	strataIntersections:={};
-	weilDecorationImage:={};
-	for a in alist do (	strata:={}; 
-		for i from 0 to d-1 do(
-			strata = append (strata,filteredPiece (V, (rays (variety V))#i, a#i));
-		);
-		int:=intersect (apply (strata, i -> image i));
-		if isMember(int,strataIntersections)==false then (strataIntersections= append (strataIntersections, int);
-			weilDecorationImage= append (weilDecorationImage, a));
-	);
-        -- It turns the list into a divisor, to recover the list use "entries"
-        --weilDecorationImage = apply(weilDecorationImage, i -> toricDivisor(i, variety V));
-	wDecoration:={{strataIntersections#0,infinity}};
-	for i from 1 to length (weilDecorationImage)-1 do (
-		wDecoration= append (wDecoration, {gens strataIntersections#i,weilDecorationImage#i});
-	);
-	wDecoration
-)
+weilDecoration = method()
+weilDecoration ToricVectorBundleNew := E -> (
+    jumps := flatten filtrationJumps E;
+    amin := min jumps;
+    amax := max jumps;
+    d := length filtrationJumps E;
+    alist:= reverse(toList(toList(d:amin) .. toList(d:amax)));
+    strataIntersections := {};
+    weilDecorationImage := {};
+    for a in alist do (
+        strata := {}; 
+        for i from 0 to d-1 do (
+            strata = append (strata,filteredPiece (E, (rays (variety E))#i, a#i));
+            );
+        int := intersect(strata/image);
+        if isMember(int, strataIntersections) == false then (
+            strataIntersections = append(strataIntersections, int);
+            weilDecorationImage = append(weilDecorationImage, a)
+            );
+        );
+    --wDecoration:={{gens strataIntersections#0,infinity}};
+    wDecoration := {};
+    for i from 1 to length (weilDecorationImage)-1 do (
+        wDecoration= append (wDecoration, {gens strataIntersections#i,weilDecorationImage#i});
+        );
+    wDecoration
+    )
 
+-*
 weilToKlyachko = method()
 -- The inputu is the list of Weil decorations assuming that the first entry is {image 0,infinity}
 weilToKlyachko (NormalToricVariety, List) := (X, WD) ->(
 
         -- The drop is there to get rid of the divisor infinity
-        WDnew := drop(WD,1);
+        --WDnew := drop(WD,1);
 	--WDnew := apply( drop(WD,1), i ->{i_0, entries i_1} );
         -- I create a matrix with jumps for each ray that will later be refined
         Maux :=  matrix transpose flatten apply(apply(WDnew, m -> m_0 ), a ->  transpose entries a ) ;
@@ -2847,7 +2850,6 @@ weilToKlyachko (NormalToricVariety, List, List) := (X,E,D) ->(
 	L:=flatten D;
 	amin:= min L;
 	amax:= max L;
-        -*
 	H=new MutableHashTable;
 
 	(M,J)= to sequence transpose for i from 0 to #(rays X)-1 do (
@@ -2855,7 +2857,48 @@ weilToKlyachko (NormalToricVariety, List, List) := (X,E,D) ->(
 	);
 
 *-
-)
+
+posetChains := (D,n) -> (
+    if n < 0 then return error("need nonnegative n");
+    if n == 0 then return apply(D,l -> {{numcols l_0, l_1}});
+    divs := flatten posetChains(D,0);
+    prevChains := posetChains(D,n-1);
+    flatten for c in prevChains list (
+        currdiv := first c;
+        for newdiv in divs list (
+            if currdiv_0 >= newdiv_0 then continue
+            else
+            if any(transpose {currdiv_1, newdiv_1}, p -> p_0 < p_1) then continue
+            else {newdiv} | c
+            )
+        )
+    )
+posetChains = memoize posetChains
+
+firstChernClass = method()
+firstChernClass ToricVectorBundleNew := E -> (
+    D := weilDecoration E;
+    r := rank E;
+    sum flatten for i to r-1 list (
+        ichains := posetChains(D,i);
+        for c in ichains list (-1)^i * (last c)_0 * (first c)_1
+        )
+    )
+
+-*
+X = hirzebruchSurface 3
+E = tangentBundle X
+firstChernClass E
+
+X = toricProjectiveSpace 2
+mats = toList (3:id_(ZZ^6))
+--todo these jumps is wrong
+jumps = {{0,-1,-2,0,-1,0},{1,1,1,0,0,1},{-1,0,1,0,1,1}}
+E = toricVectorBundle(X,mats,jumps)
+D = weilDecoration E
+#D
+firstChernClass E
+*-
 
 --------------------------------------------------------------
 -- GETTER FUNCTIONS FOR WEIL DECORATIONS
