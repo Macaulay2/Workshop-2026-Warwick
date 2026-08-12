@@ -23,7 +23,10 @@ export {
     "CGBMain",
     "CGB",
     "cgbOnGraph",
-    "ReduceStrata"
+    "ReduceStrata", 
+    "CGBFromTriple", 
+    "PGBMain", 
+    "MDBasis"
     } -- functions, objects to export
 
 protect CGBMainTriples
