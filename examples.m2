@@ -177,7 +177,13 @@ M2 = matrix({
 F = {det M1, det M2} -- Defining equations for the Sphon variety of a 2x2 game with payoff matrices A= (a_{i, j}) and B = (b_{i,j})
 
 spohnMatrix = method();
-spohnMatrix 
+spohnMatrix
+
+--KSS example for checking Minimal Dickson Basis
+R = QQ[a,y,x, MonomialOrder => Lex]
+G = {a*x^2-y,a*y^2-1,a*x-1,(a+1)*x-y,(a+1)*y-a}
+MDBasis(G)
+
 
 ---------------------------
 -- TODO:

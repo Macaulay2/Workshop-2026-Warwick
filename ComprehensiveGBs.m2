@@ -153,8 +153,8 @@ CGBMain (List, List) := o -> (F, S) -> (
   RFlatl := RFlat[l];
   RingsandThings := {R,X,RExt,RFlat,RExt',KU,RFlatl};
   RtoRExt := map(RExt, R, (gens RExt)_{1..numgens R});
-  RExttoRFlatl:= map(RFlatl,RExt, {l} | gens RFlat);
-  RExttoRExt':= map(RExt',RExt, gens RExt'| gens KU);
+  RExttoRFlatl:= map(RFlatl,RExt, gens RFlatl | gens coefficientRing RFlatl);
+  RExttoRExt':= map(RExt',RExt, gens RExt'| gens coefficientRing RExt');
   RExttoR:= map(R, RExt, {1} | gens R | gens coefficientRing R);
   MapsandThings := {RtoRExt,RExttoRFlatl,RExttoRExt',RExttoR};
   CGBMainRec(F, S, {}, RingsandThings, o)
