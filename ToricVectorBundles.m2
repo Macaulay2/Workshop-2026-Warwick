@@ -106,7 +106,10 @@ export {
     "eulerChi", 
     "existsDecomposition", 
     "filtration", 
-    "findWeights",
+    "findWeights", 
+    
+    "moduleToKlyachko",
+    "klyachkoToModule",
     "findWeightsNew",  
     "isGeneral","filteredPiece",
     --"isomorphism", 
@@ -269,15 +272,7 @@ tangentBundle NormalToricVariety := X -> (
     filtJumps := for p in rays X list {1} | toList((dim X-1):0);
     toricVectorBundle(X,filtMats,filtJumps)
     )
--*
--- Function from a fine graded module over de Cox ring of the toric variety
--- to the Klyachko filtration associated.
-moduleToKlyachko = method()
-moduleToKlyachko(NormalToricVariety, Module ):= (X,M) ->(
-    if coefficientRing ring M =!= coefficientRing ring X then error("The coeficient rings are not the same ");
 
-)
-*-
 
 --TODO: once the overhaul is complete, we should remove these constructors.
 
@@ -1768,7 +1763,7 @@ cartierIndex (NormalToricVariety, List) := (X, L) ->(
     raysX := rays X;
     maxCs := X.max;
     Frays := transpose  matrix raysX;
-    L = hashTable apply(#raysX, i -> raysX_i => L_i);
+    L = hashTable apply(#raysX, i -> Frays_i => L_i);
     n:= ambDim ( fan X);
     scan(maxCs, C -> (
 	       rC := Frays_C;
@@ -1824,12 +1819,13 @@ weilToCartier = method(Options => {"Type" => "Klyachko"})
 
 weilToCartier (NormalToricVariety, List ):= {} >> o ->(X,L ) -> (
     -- The errors check is done in cartierIndex
-	  ind := cartierIndex(X,L);
-	  if ind != 1 then L = apply(L, p -> ind*p);
-	  T := lineBundle( X, L);
-        --T.cache.isVectorBundle = true;
-	  T
-)
+    ind := cartierIndex(X,L);
+    if ind != 1 then L = apply(L, p -> ind*p);
+    T := lineBundle( X, L);
+    --T.cache.isVectorBundle = true;
+    T.cache.isVB = true;
+    T
+    )
 
 weilToCartier ToricDivisor := {} >> o ->(D ) -> (weilToCartier(variety D , entries D) )
 
@@ -2799,64 +2795,110 @@ coker (ToricVectorBundleKlyachko,Matrix) := (T,M) -> (
 -- WEIL DECORATIONS
 ---------------------------------------
 
+-- Torus-invariant Weil divisors are compared componentwise.  This is a partial
+-- order, so incomparable pairs are reported as such.
+ToricDivisor ? ToricDivisor := (D1, D2) -> (
+    a := entries vector D1;
+    b := entries vector D2;
+    if a === b then symbol ==
+    else if all(a, b, (i, j) -> i <= j) then symbol <
+    else if all(a, b, (i, j) -> i >= j) then symbol >
+    else symbol incomparable)
+
+-- Meet and join for that order.  The join is what cuts out an intersection of
+-- two stratum closures: E_{>= D1} * E_{>= D2} = E_{>= D1 v D2}.
+gcd(ToricDivisor, ToricDivisor) := ToricDivisor => (D1, D2) -> toricDivisor(
+    apply(entries vector D1, entries vector D2, min), variety D1)
+lcm(ToricDivisor, ToricDivisor) := ToricDivisor => (D1, D2) -> toricDivisor(
+    apply(entries vector D1, entries vector D2, max), variety D1)
+
+-- A Weil decoration of a toric vector bundle, in the sense of Altmann,
+-- Hochenegger and Witt: the map sending a vector of the fiber over the identity
+-- to the largest torus-invariant Weil divisor D with e in E_{>= D}.  Since the
+-- map is constant on strata, it is recorded by its strata: each stratum closure,
+-- which is a subspace of the fiber, paired with the divisor decorating it.  The
+-- zero subspace is decorated by infinity.
+WeilDecoration = new Type of HashTable
+WeilDecoration.synonym = "Weil decoration"
+globalAssignment WeilDecoration
+
+net WeilDecoration := WD -> (
+    "Weil decoration of rank " | toString WD.rank |
+    " with " | toString(#WD.strata - 1) | " nonzero strata")
+
+variety WeilDecoration := WD -> WD.variety
+rank WeilDecoration := ZZ => WD -> WD.rank
+
+-- The stratum closures with their divisors, sorted by dimension.
+strata = method()
+strata WeilDecoration := List => WD -> WD.strata
 
 weilDecoration = method()
-weilDecoration ToricVectorBundleNew := E -> (
-    jumps := flatten filtrationJumps E;
-    amin := min jumps;
-    amax := max jumps;
-    d := length filtrationJumps E;
-    alist:= reverse(toList(toList(d:amin) .. toList(d:amax)));
-    strataIntersections := {};
-    weilDecorationImage := {};
-    for a in alist do (
-        strata := {}; 
-        for i from 0 to d-1 do (
-            strata = append (strata,filteredPiece (E, (rays (variety E))#i, a#i));
-            );
-        int := intersect(strata/image);
-        if isMember(int, strataIntersections) == false then (
-            strataIntersections = append(strataIntersections, int);
-            weilDecorationImage = append(weilDecorationImage, a)
-            );
-        );
-    --wDecoration:={{gens strataIntersections#0,infinity}};
-    wDecoration := {};
-    for i from 1 to length (weilDecorationImage)-1 do (
-        wDecoration= append (wDecoration, {gens strataIntersections#i,weilDecorationImage#i});
-        );
-    wDecoration
-    )
+weilDecoration ToricVectorBundleNew := WeilDecoration => V -> (
+    X := variety V;
+    A := rays X;
+    L := flatten filtrationJumps V;
+    n := length A;
+    minInds := toList(n : min L);
+    maxInds := toList(n : max L);
+    -- For each subspace arising as an intersection of filtered pieces, record the
+    -- componentwise *largest* index vector producing it, since the decoration of
+    -- a vector is the largest D with e in E_{>= D}.  If two index vectors produce
+    -- the same intersection then so does their componentwise maximum, so that
+    -- maximum is also the lexicographic maximum; traversing the box in
+    -- lexicographic order and overwriting therefore leaves it behind.
+    strataIntersections := new MutableHashTable;
+    for inds in minInds .. maxInds do (
+	-- the filtered piece on each ray at the given index
+	pieces := apply(A, inds, (rho, j) -> image filteredPiece(V, rho, j));
+	W := intersect pieces;
+	-- a vanishing intersection is not a stratum: the zero vector is decorated
+	-- by infinity, handled separately below
+	if rank W > 0 then strataIntersections#W = toList inds);
+    -- Sort the strata by dimension, breaking ties by the index vector.  Note that
+    -- the Matroids package globally redefines sort(List, Function) with a
+    -- deepSplice that flattens any sequences in the list, so a list of pairs must
+    -- not be sorted that way; sorting an auxiliary list of triples is safe.
+    ks := keys strataIntersections;
+    S := apply(sort apply(#ks, i -> (rank ks#i, strataIntersections#(ks#i), i)),
+	t -> (ks#(last t), strataIntersections#(ks#(last t))));
+    new WeilDecoration from {
+	symbol variety => X,
+	symbol strata  => prepend(
+	    (image filteredPiece(V, A#0, infinity), infinity),
+	    apply(S, (W, inds) -> (W, toricDivisor(inds, X)))),
+	symbol rank    => rank V,
+	symbol cache   => new CacheTable})
 
--*
 weilToKlyachko = method()
--- The inputu is the list of Weil decorations assuming that the first entry is {image 0,infinity}
-weilToKlyachko (NormalToricVariety, List) := (X, WD) ->(
+weilToKlyachko WeilDecoration := ToricVectorBundleNew => WD ->
+    weilToKlyachko(variety WD, WD)
 
-        -- The drop is there to get rid of the divisor infinity
-        --WDnew := drop(WD,1);
-	--WDnew := apply( drop(WD,1), i ->{i_0, entries i_1} );
-        -- I create a matrix with jumps for each ray that will later be refined
-        Maux :=  matrix transpose flatten apply(apply(WDnew, m -> m_0 ), a ->  transpose entries a ) ;
-        Jaux := apply(#((WDnew_0)_1), j ->{Maux,
-                flatten join(apply(WDnew, p -> toList(numColumns p_0 :(p_1)_j) ))}
-            );
-        -- Simplify the data to get square matrices
-        data:= transpose apply( Jaux, a -> adaptedBasis(a));
-        toricVectorBundle( X, data_0, data_1)
-)
+weilToKlyachko(NormalToricVariety, WeilDecoration) := ToricVectorBundleNew => (X, WD) ->
+    weilToKlyachko(X, apply(drop(strata WD, 1), (W, D) -> (W, entries vector D)))
 
-weilToKlyachko (NormalToricVariety, List, List) := (X,E,D) ->(
-	L:=flatten D;
-	amin:= min L;
-	amax:= max L;
-	H=new MutableHashTable;
+weilToKlyachko(NormalToricVariety, List) := (X, WD) ->(
+    -- The input is a list of pairs (stratum closure, list of divisor
+    -- coefficients).  If it still carries the leading (0, infinity) entry
+    -- produced by weilDecoration, drop it.
+    WDnew := if (WD#0)#1 === infinity then drop(WD, 1) else WD;
+    -- create a matrix with jumps for each ray that will later be refined
+    Maux := matrix transpose flatten apply(WDnew, (V, inds) -> entries \ V_*);
+    Jaux := apply(#rays X, j -> { Maux, flatten apply(WDnew, (V, inds) -> toList(numgens V : inds_j)) });
+    -- Simplify the data to get square matrices
+    data := transpose apply(Jaux, adaptedBasis);
+    toricVectorBundle(X, data_0, data_1))
 
-	(M,J)= to sequence transpose for i from 0 to #(rays X)-1 do (
-
+weilToKlyachko(NormalToricVariety, List, List) := (X, E, D) -> (
+    L := flatten D;
+    amin := min L;
+    amax := max L;
+    -*
+    H := new MutableHashTable;
+    (M, J) := to sequence transpose for i from 0 to #(rays X)-1 do (
 	);
-
-*-
+    *-
+    )
 
 posetChains := (D,n) -> (
     if n < 0 then return error("need nonnegative n");
@@ -2922,6 +2964,62 @@ weilDecorationDivisors List := weilDecorationList -> (
     )
 
 
+
+---------------------------------------
+-- COX MODULES CONVERSION
+---------------------------------------
+
+-- Given a fine graded module over the Cox ring of a toric variety we obtain an equivariant sheaf.
+
+-- The code that follows take a module, assuming that it defines a toric vector bundle and returns its Klyachko description. 
+
+-- TODO this function should take a module and turn it into a fine graded module
+auxFine = (M) -> (
+    n := # gens ring M;
+    fineDeg := entries( id_(ZZ^n));
+    zer := toList(n:0);
+    S := newRing(ring M, Degrees => fineDeg);
+    Mnew := sub(M, S);
+    l := numgens source Mnew;
+    D :=splice{l:zer};
+    aux :=apply(entries Mnew, m -> select(m, i -> i != 0 ));
+    sh := apply(aux, m -> if m != {} then degree m_0 else zer);
+    -- TODO check that it makes sense to assume that the source has no twists
+    map(S^sh, S^D, Mnew)
+);
+
+moduleToKlyachko = method()
+-- M: presentation of the module we are sheafifying
+moduleToKlyachko (NormalToricVariety, Matrix):= (X,A) -> (
+    -- Obtain the ToricVectorBundleMap associated to the presentation
+    -- The source and target are direct sums of line bundles and the associated sheaf is the cokernel of said map
+    coxX := ring A;
+    if coxX =!= ring X then (error("The module is not defined over the Cox ring of the toric variety"););
+    if  all( flatten entries A , p -> # terms p <= 1) != true then( error("The presentation matrix is not equivariant"););
+    n := # gens ring A;
+    Anew := auxFine(A);
+    degSour := degrees source Anew;
+    degTarg := degrees target Anew;
+    s0:= trivialBundle( X,0) ;
+    sour := fold(directSum,s0,  apply(degSour, l -> (if l != splice{n:0} then( lineBundle(X, -l ))else(trivialBundle (X,1)) )) );
+    t0:= trivialBundle( X,0);
+    targ := fold(directSum,s0,  apply(degTarg, l -> (if l != splice{n:0} then( lineBundle(X, -l ))else(trivialBundle (X,1)) )) );
+    -- TODO check that this is in fact the map that we want
+    -- The map evaluates the variables to be 1 which should give the map at the fiber over the identity point
+    phi := map( coefficientRing coxX, coxX, toList(# gens coxX:1));
+    f:= map( targ, sour, phi**A);
+    coker f
+)
+
+-- The code that follows take a toric vector bundle with Klyachko description and returns a module over the Cox ring of the toric variety, M, such that the sheafification of M is the starting vector bundle.
+-- Note that different modules can have the same associated sheaf. 
+
+klyachkoToModule = method()
+-- TODO
+klyachkoToModule ToricVectorBundleNew := E ->(
+    S := ring variety E;
+
+)
 
 ---------------------------------------
 -- DOCUMENTATION
