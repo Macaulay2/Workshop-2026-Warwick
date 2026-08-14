@@ -188,7 +188,7 @@ CGBMainRec (List, List, List, List) := o -> (F, S, memo, RingsandThings) -> (
   pruneG := select(G, g -> (
           (first first exponents(leadMonomial sub(g,RingsandThings_2))) > 0) and
       any(exponents(sub(leadCoefficient RingsandThings_8(g),RingsandThings_3)), i -> any(i_(toList(0..(#(RingsandThings_1)-1))), i -> i > 0)));
-  pruneG = apply(pruneG, g -> leadCoefficient sub(g, RingsandThings_4));
+  pruneG = apply(pruneG, g -> leadCoefficient RingsandThings_9(g));
   h := lcm pruneG;
   for i in 0..(#(factor h)-1) do (
     if isConstant (factor h)#i#0 then(
@@ -208,7 +208,7 @@ CGBMainRec (List, List, List, List) := o -> (F, S, memo, RingsandThings) -> (
       return memo
     ) else (
       return {(S, sub(h, RingsandThings_0), for g in G list (
-                  g' := sub(sub(g, {l => 1}), RingsandThings_0);
+                  g' := RingsandThings_10(g);
                   if zero g' then continue;
                   g'))}
     )
@@ -236,7 +236,7 @@ CGBMainRec (List, List, List, List) := o -> (F, S, memo, RingsandThings) -> (
     return memo
   ) else (
     return {(S, sub(h, RingsandThings_0), for g in G list (
-                  g' := sub(sub(g, {l => 1}), RingsandThings_0);
+                  g' := RingsandThings_10(g);
                   if zero g' then continue;
                   g'))} | flatten apply(H, hi -> CGBMainRec(F, append(S, sub(hi, RingsandThings_0)), memo, RingsandThings, o))
   );
