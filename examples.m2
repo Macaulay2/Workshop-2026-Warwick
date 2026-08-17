@@ -179,6 +179,17 @@ F = {det M1, det M2} -- Defining equations for the Sphon variety of a 2x2 game w
 spohnMatrix = method();
 spohnMatrix
 
+--Example 6.1 KSW
+R = QQ[x,y,a,b,c,
+    MonomialOrder => {
+        GRevLex => 2,
+        GRevLex => 3
+    }
+];
+F={a*x-b,b*y-a,c*x^2-y,c*y^2-x}
+
+
+
 
 
 ---------------------------

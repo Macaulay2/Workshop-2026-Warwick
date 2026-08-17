@@ -15,7 +15,7 @@ newPackage(
         },
     Keywords => {""},
     AuxiliaryFiles => false,
-    PackageImports => {"MinimalPrimes"},
+    PackageImports => {"MinimalPrimes","RealRoots"},
     DebuggingMode => true
     )
 
@@ -476,17 +476,27 @@ PGBMain (CGBTriple) := T -> (
     return PGB  
 );
 
---zeroDimCheck = method();
---zeroDimCheck (List, RingElement) := (E, f) -> (
-  --  I := ideal E;
-  --  pf := characteristicPolynomial(f, I);
-  --  d := first degree pf;
-  --  lambda := first gens ring pf;
-  --  if pf == lambda^d then
-    --    false
-    --else
-        --true
---);
+-----------------------------
+--zeroDimCheck if for those
+--cases in which <E> is
+--zero dimensional.
+--It uses RealRoots.
+-----------------------------
+
+zeroDimCheck = method();
+zeroDimCheck (List, RingElement) := (E, f) -> (
+    I := ideal E;
+    pf := characteristicPolynomial(f, I);
+    d := first degree pf;
+    lambda := first gens ring pf;
+    if pf == lambda^d then
+        false --inconsistent
+    else
+        true --consistent
+);
+
+-------------------------
+
 
 
 
