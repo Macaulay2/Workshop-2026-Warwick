@@ -29,7 +29,7 @@ newPackage("ToricVectorBundles",
          Email => "todo"},
         {Name => "Marco Fava",
          HomePage => "todo",
-         Email => "todo"},
+         Email => "marco.fava@warwick.ac.uk"},
         {Name => "Labix Liu",
          HomePage => "https://labix-liu.github.io/",
          Email => "sin.liu@qmul.ac.uk"},
@@ -2865,7 +2865,7 @@ weilDecoration ToricVectorBundleNew := WeilDecoration => V -> (
     new WeilDecoration from {
 	symbol variety => X,
 	symbol strata  => prepend(
-	    (image filteredPiece(V, A#0, infinity), infinity),
+	    (image filteredPiece(V, A#0, max L), infinity),
 	    apply(S, (W, inds) -> (W, toricDivisor(inds, X)))),
 	symbol rank    => rank V,
 	symbol cache   => new CacheTable})
@@ -6027,6 +6027,29 @@ CKg = coker g;
 assert(CKg== trivialBundle(X,0) )
 ///
 
+
+--Test 45
+--Test for toricDivisor ? toricDivisor, gcd and lcm
+TEST ///
+--toricDivisor ? toricDivisor
+PP2=toricProjectiveSpace 2;
+D1=toricDivisor({2,5,-7},PP2);
+D2=toricDivisor({2,5,-7},PP2);
+--check ==
+assert((D2?D1) === symbol ==)
+D3=toricDivisor({2,4,-7},PP2);
+--check <
+assert((D3?D1) === symbol <)
+D4=toricDivisor({2,5,-6},PP2);
+--check >
+assert((D4?D1) === symbol >)
+D5=toricDivisor({2,4,-6},PP2);
+--check incomparable
+assert((D5?D1) === symbol incomparable)
+
+--in progress
+
+///
 end
 
 
