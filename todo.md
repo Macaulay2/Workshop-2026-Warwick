@@ -7,7 +7,7 @@ we do not recurse (so putting Depth => 0 would return just the generic stratum f
 
 - TODO: return the correct result in CGBMainRec before going through the list H 
 
-2. ** Angelo, Giulia, Agustina ** Kapur-Sun-Wang (KSW) algorithm (consistency.m2)
+2. ** Angelo, Giulia, Agustina ** [DONE - ADD TESTS] Kapur-Sun-Wang (KSW) algorithm (consistency.m2)
 - [DONE] Moved to main file, now can (almost) delete consistency.m2
 - Determine what should happen if listDiff is empty 
 
@@ -48,7 +48,9 @@ profileSummary
 Profiling shows that the nested sub(sub(g, {l => 1}), R) operation in the different returns is executed 690 times and accounts for about 36% of the runtime. 
 Can we replace it with a precomputed ring map (RExt \to R) evaluating (l) at 1, and reuse the converted Gröbner basis?
 
-5. ** Weijia ** In SS (CGBMain), construct a monomial order for `RExt` that extends the ordering in R.
+- [UPDATE] the nested sub is now a map in RingsAndThings (Agustina knows everything here). So we should check again what are any new bottlenecks in the computation. 
+
+5. ** Weijia ** [DONE] In SS (CGBMain), construct a monomial order for `RExt` that extends the ordering in R.
 Currently, we just use a Lex order:
 
 ```macaulay2
@@ -63,6 +65,8 @@ RExt := K[getSymbol "l", X, U, MonomialOrder => Lex]; -- maybe construct the ord
 
 6. ** Agustina ** Code clean-up: I would prefer to use maps instead of 'sub' and a few other small M2 code things
 
+- Currently: change the sub's into the coefficient ring into lift's 
+
 7. Check the completeness of the Docs and Tests
 
 8. **Ollie ask Doug/Anton** For mapping elements of a ring to say their coefficient ring, what is the correct way? sub? lift?
@@ -73,9 +77,6 @@ which is also contained in the examples.m2 file:
 ```macaulay2
 U = QQ[a,b,c, MonomialOrder => GRevLex]
 R = U[x,y, MonomialOrder => GRevLex]
-
-U = QQ[a,b,c, MonomialOrder => Lex]
-R = U[x,y, MonomialOrder => Lex]
 
 F={a*x-b,b*y-a,c*x^2-y,c*y^2-x}
 T = CGBFromTriple({{0_U}, {1_U}, F})
@@ -90,6 +91,9 @@ These two methods should return something similar / compatible but they are very
 Notice that in the generic stratum, there is an element `b*c^2-b` in the SS-CGB but that condition
 does not appear in second column. Investigate the line that defines and modifies `pruneG` [line 191-2],
 there may be a mistake with the implementation or the write up on the line that defines $\{h_1, \dots, h_\ell\} := \dots$.
+
+10. Add other ways to call PGBMain (like CGBMain) where the user supplied just the list of polynomials etc.
+
 
 # Future and long term TODOs
 
