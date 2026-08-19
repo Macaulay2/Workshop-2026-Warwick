@@ -1,7 +1,7 @@
 # TODOs
 
 
-1. ** Ollie ** Add an optional argument `Depth => -1` to CGB functions that such that
+1. ** Ollie ** [DONE / Needs testing] Add an optional argument `Depth => -1` to CGB functions that such that
 whenever it recurses, the Depth is decremented by 1 and if the Depth reaches 0 then
 we do not recurse (so putting Depth => 0 would return just the generic stratum for example)
 
