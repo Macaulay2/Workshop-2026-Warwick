@@ -16,8 +16,8 @@ matrix {MDBasis(G)} == matrix {{a*y + z, c*x + c*z^2}}
 assert({a*y + z, c*x + c*z^2} == MDBasis(G));
 
 --Example 9
-U = QQ[a, b, c, MonomialOrder => Lex]
-R = U[x,y,z, MonomialOrder => Lex];
+U = QQ[a, b, c]
+R = U[x,y,z]
 F = {x^3 - a, y^4 - b, x+y-z}
 T = CGBFromTriple({{0_U}, {1_U}, F})
 L= PGBMain(T)
@@ -27,6 +27,13 @@ R = U[x,y, MonomialOrder => Lex]
 F = {a*x + b*y}
 T = CGBFromTriple({{0_U}, {1_U}, F})
 L =PGBMain(T)
+
+U = QQ[a,b]
+R = U[x,y,z]
+F = {x^3 - a, y^4 - b, x+y-z}
+T = CGBFromTriple({{0_U}, {1_U}, F})
+L = PGBMain(T)
+LL = CGBMain(F, {}, Verbose => false);
 
 
 consistent = method();
