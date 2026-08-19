@@ -32,6 +32,35 @@ viewHelp ComprehensiveGBs
 end
 
 
+R = QQ[a,b][x,y,z, MonomialOrder => Lex]
+F = {x^3 - a, y^4 - b, x+y-z}
+G = CGBMain(F, {});
+netList for g in G list {g_0, factor g_1}
+
+-- strata reduction
+G = CGBMain(F, {}, ReduceStrata => true);
+netList for g in G list {g_0, factor g_1}
+
+-- Some options for Depth
+G0 = CGBMain(F, {}, Depth => 0);
+netList for g in G0 list {g_0, factor g_1}
+G0' = CGBMain(F, {}, Depth => 0, ReduceStrata => true);
+netList for g in G0' list {g_0, factor g_1}
+
+
+G1 = CGBMain(F, {}, Depth => 1);
+netList for g in G1 list {g_0, factor g_1}
+G1' = CGBMain(F, {}, Depth => 1, ReduceStrata => true);
+netList for g in G1' list {g_0, factor g_1}
+
+
+G2 = CGBMain(F, {}, Depth => 2);
+netList for g in G2 list {g_0, factor g_1}
+G2' = CGBMain(F, {}, Depth => 2, ReduceStrata => true);
+netList for g in G2' list {g_0, factor g_1}
+
+
+
 
 
 
