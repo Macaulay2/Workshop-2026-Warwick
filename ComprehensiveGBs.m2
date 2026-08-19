@@ -43,11 +43,11 @@ protect triple            --Probably needs to be changed b/c
                           --too generic?
 
 
--- We may need to take some cases on what kinds of orders the ring comes with
--- E.g. Weight order, Lex, GRevLex, etc.
-ringOrder = method(); -- returns the monomial order of a polynomial ring
-ringOrder PolynomialRing := List => (R) -> (
-    select(toList (options R).MonomialOrder, orderEntry -> not member(first orderEntry, {MonomialSize, Position}))
+ringOrder = method(); -- returns the monomial order of a polynomial ring after an offset
+ringOrder (PolynomialRing, ZZ) := List => (R, offset) -> (
+    if offset < 0 then error "Offset must be non-negative";
+    order := select(toList (options R).MonomialOrder, orderEntry -> not member(first orderEntry, {MonomialSize, Position}));
+    apply(order, orderEntry -> if first orderEntry === Weights then Weights => (toList(offset : 0) | last orderEntry) else orderEntry)
 );
 
 CGBFromTriple = method(); --Constructor for a CGBTriple starting from
@@ -64,7 +64,7 @@ CGBFromTriple List := CGB => (L) -> (
             triple => L,
             coefficientsRing => coeff,
             totalRing => R ,
-            flattenedRing => scalarRing(monoid[gens R, gens coeff, MonomialOrder => ringOrder R | ringOrder coeff])};
+            flattenedRing => scalarRing(monoid[gens R, gens coeff, MonomialOrder => ringOrder(R, 0) | ringOrder(coeff, numgens R)])};
         );
 );
 
@@ -153,10 +153,10 @@ CGBMain (List, List) := o -> (F, S) -> (
   KU := coefficientRing R;
   U := gens KU;
   K := coefficientRing KU;
-  RExt := K[getSymbol "l", X, U, MonomialOrder => {Lex => 1} | ringOrder R | ringOrder KU]; -- we may need to shift the weight orders of ringOrder R and KU
+  RExt := K[getSymbol "l", X, U, MonomialOrder => {Lex => 1} | ringOrder(R, 1) | ringOrder(KU, 1 + numgens R)];
   l := first gens RExt;
-  RFlat := K[X, U, MonomialOrder => ringOrder R | ringOrder KU];
-  RExt' := KU[l, X, MonomialOrder => {Lex => 1} | ringOrder R];
+  RFlat := K[X, U, MonomialOrder => ringOrder(R, 0) | ringOrder(KU, numgens R)];
+  RExt' := KU[l, X, MonomialOrder => {Lex => 1} | ringOrder(R, 1)];
   RFlatl := RFlat[l];
   RtoRExt := map(RExt, R, (gens RExt)_{1..numgens R});
   RExttoRFlatl:= map(RFlatl,RExt, gens RFlatl | gens coefficientRing RFlatl);
@@ -312,14 +312,15 @@ eliminateVariables(List):=F->(
     x:=getSymbol "x";
     u:=getSymbol "u";
     K:=coefficientRing C;
-    S:=K[x_1..x_n,u_1..u_m, MonomialOrder => ringOrder R | ringOrder C];
+    S:=K[x_1..x_n,u_1..u_m, MonomialOrder => ringOrder(R, 0) | ringOrder(C, n)];
     U:=gens C;
     X:=gens R;
     l1:=for i from 0 to m-1 list U_i=>S_(i+n);
     l2:=for j from 0 to n-1 list X_j=>S_j;
     F':=apply(F,h->sub(h,l1|l2));
     F'gbgens:=gens gb(ideal(F'));
-    S':=selectInSubring(#(ringOrder R),F'gbgens);
+    variableBlocks := select(ringOrder(R, 0), orderEntry -> first orderEntry =!= Weights);
+    S':=selectInSubring(#variableBlocks,F'gbgens);
     mm:=map(C,ring S',
         toList(n:0)|gens C   
         );
