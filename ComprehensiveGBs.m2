@@ -364,6 +364,9 @@ totalListProduct (List, List) := (A, B) -> (
 MDBasis = method();
 MDBasis (List) := (G) -> (
     F := G;
+    if length F == 0 then (
+        return {}
+        );
     Basis := {first F};
     F = delete(first F, F); 
     for g in F do ( --loop through elements of G
@@ -390,7 +393,7 @@ MDBasis (List) := (G) -> (
             Basis |=  {g};
          );
     );
-    return Basis 
+    return Basis
 );
 
 
@@ -444,16 +447,6 @@ PGBMain (CGBTriple) := T -> (
     );
     --Elements of GB that do not only contain parameters
     listDiff := toList((new Set from apply(G, i->sub(i, R))) - (new Set from apply(Gr, i->sub(i, R))));
-    ----------------------------------------
-    --THIS IS MY PERSONAL INTERPRETATION!
-    if length listDiff == 0 then (
-        breakpoint
-        --PGB = unique(PGB | {Gr, {1_R}, {0_R}});
-        listDiff = {0_R};
-    );
-    ----------------------------------------
-    --breakpoint
-    
     Gm := MDBasis(listDiff);
     H := unique(apply(Gm, g->squareFreePart(leadCoefficient(sub(g, R)))));
     h := squareFreePart(lcm(H));
