@@ -448,15 +448,18 @@ PGBMain (CGBTriple) := T -> (
     if not(isConsistentRabinowitsch(productList, N)) then (
         return PGB
     );
+    --Elements of GB that do not only contain parameters
     listDiff := toList((new Set from apply(G, i->sub(i, R))) - (new Set from apply(Gr, i->sub(i, R))));
-    
-    ------------------------------------------------------
+    ----------------------------------------
     --THIS IS MY PERSONAL INTERPRETATION!
     if length listDiff == 0 then (
         breakpoint
-        return {}
+        --PGB = unique(PGB | {Gr, {1_R}, {0_R}});
+        listDiff = {0_R};
     );
     ----------------------------------------
+    --breakpoint
+    
     Gm := MDBasis(listDiff);
     H := unique(apply(Gm, g->squareFreePart(leadCoefficient(sub(g, R)))));
     h := squareFreePart(lcm(H));
