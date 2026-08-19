@@ -1,9 +1,11 @@
 # TODOs
 
 
-1. ** Ollie ** [DONE / Needs testing] Add an optional argument `Depth => -1` to CGB functions that such that
+1. ** Ollie ** [DONE] Add an optional argument `Depth => -1` to CGB functions that such that
 whenever it recurses, the Depth is decremented by 1 and if the Depth reaches 0 then
 we do not recurse (so putting Depth => 0 would return just the generic stratum for example)
+
+- TODO: return the correct result in CGBMainRec before going through the list H 
 
 2. ** Angelo, Giulia, Agustina ** Kapur-Sun-Wang (KSW) algorithm (consistency.m2)
 - [DONE] Moved to main file, now can (almost) delete consistency.m2
@@ -65,7 +67,29 @@ RExt := K[getSymbol "l", X, U, MonomialOrder => Lex]; -- maybe construct the ord
 
 8. **Ollie ask Doug/Anton** For mapping elements of a ring to say their coefficient ring, what is the correct way? sub? lift?
 
+9. Investigate the CGBMain algorithm, there seems to be a problem SS CGBMain. Here is an example,
+which is also contained in the examples.m2 file:
 
+```macaulay2
+U = QQ[a,b,c, MonomialOrder => GRevLex]
+R = U[x,y, MonomialOrder => GRevLex]
+
+U = QQ[a,b,c, MonomialOrder => Lex]
+R = U[x,y, MonomialOrder => Lex]
+
+F={a*x-b,b*y-a,c*x^2-y,c*y^2-x}
+T = CGBFromTriple({{0_U}, {1_U}, F})
+L= PGBMain(T)
+netList oo
+
+LL = apply(CGBMain(F, {}, ReduceStrata => true), e -> toList e)
+netList oo
+```
+These two methods should return something similar / compatible but they are very different.
+
+Notice that in the generic stratum, there is an element `b*c^2-b` in the SS-CGB but that condition
+does not appear in second column. Investigate the line that defines and modifies `pruneG` [line 191-2],
+there may be a mistake with the implementation or the write up on the line that defines $\{h_1, \dots, h_\ell\} := \dots$.
 
 # Future and long term TODOs
 
