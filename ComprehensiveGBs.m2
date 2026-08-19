@@ -198,23 +198,31 @@ CGBMainRec (List, List, List, List) := o -> (F, S, memo, RingsandThings) -> (
          h = h//(factor h)#i#0;
          )
       );
-  
+
   if o.ReduceStrata then (
-    memo = memo | {(S, sub(h, RingsandThings_0), for g in G list (
+      memo = memo | {
+          (S, sub(h, RingsandThings_0),
+              for g in G list (
                   g' := RingsandThings_10(g);
                   if zero g' then continue;
-                  g'))};
-  );
+                  g')
+              )
+          };
+      );
 
   if pruneG == {} then (
     if o.ReduceStrata then (
       return memo
     ) else (
-      return {(S, sub(h, RingsandThings_0), for g in G list (
+      return {
+          (S, sub(h, RingsandThings_0),
+              for g in G list (
                   g' := RingsandThings_10(g);
                   if zero g' then continue;
-                  g'))}
-    )
+                  g')
+              )
+          }
+      )
   );
 
   -- H := pruneG; -- (takes too long to terminate if we do not factor h)
@@ -222,29 +230,34 @@ CGBMainRec (List, List, List, List) := o -> (F, S, memo, RingsandThings) -> (
 
   H := listOfFactors h;
   if o.ReduceStrata then (
-    diffset := {};
-    for hi in H do (
-      diffset = {({sub(hi, RingsandThings_5)}, 1_(RingsandThings_5))};
-      for t in memo do (
-        diffset = diffConstructibleByLC(diffset, (apply(t#0, p -> sub(p, RingsandThings_5)), sub(t#1, RingsandThings_5)), Strategy => o.Strategy);
-        if isEmpty diffset then (
-          break
-        );
+      diffset := {};
+      for hi in H do (
+          diffset = {({sub(hi, RingsandThings_5)}, 1_(RingsandThings_5))};
+          for t in memo do (
+              diffset = diffConstructibleByLC(diffset, (apply(t#0, p -> sub(p, RingsandThings_5)), sub(t#1, RingsandThings_5)), Strategy => o.Strategy);
+              if isEmpty diffset then (
+                  break
+                  );
+              );
+          if isEmpty diffset then (
+              continue;
+              );
+          if o.Depth != 0 then (
+              memo = CGBMainRec(F, append(S, sub(hi, RingsandThings_0)), memo, RingsandThings, o ++ {Depth => o.Depth -1});
+              )
+          );
+      return memo
+      ) else (
+      return {
+          (S, sub(h, RingsandThings_0),
+              for g in G list (
+                  g' := RingsandThings_10(g);
+                  if zero g' then continue;
+                  g')
+              )
+          } | if o.Depth == 0 then {} else flatten apply(H, hi -> CGBMainRec(F, append(S, sub(hi, RingsandThings_0)), memo, RingsandThings, o ++ {Depth => o.Depth -1}))
       );
-      if isEmpty diffset then (
-        continue;
-      );
-      memo = CGBMainRec(F, append(S, sub(hi, RingsandThings_0)), memo, RingsandThings, o ++ {Depth => o.Depth -1});
-    );
-    return memo
-  ) else (
-    return {
-        (S, sub(h, RingsandThings_0), for g in G list (
-                g' := RingsandThings_10(g);
-                if zero g' then continue;
-                g'))} | flatten apply(H, hi -> CGBMainRec(F, append(S, sub(hi, RingsandThings_0)), memo, RingsandThings, o ++ {Depth => o.Depth -1}))
   );
-);
 
 
 -*

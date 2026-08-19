@@ -17,6 +17,7 @@ netList for g in G list {g_0, factor g_1}
 G = CGBMain(F, {}, ReduceStrata => true);
 netList for g in G list {g_0, factor g_1}
 
+
 -- For this, at each step we have to check ideal membership 
 -- (i.e. do all leading coefficients of the GB vanish on the strata?), 
 -- and using the Rabinowitsch trick can make everything faster                                      -- (i.e. to check f in <E>, test 1 in <E, y*f-1>)
