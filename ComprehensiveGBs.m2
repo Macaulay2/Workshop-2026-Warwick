@@ -26,7 +26,8 @@ export {
     "ReduceStrata", 
     "CGBFromTriple", 
     "PGBMain", 
-    "MDBasis"
+    "MDBasis",
+    "Depth"
     } -- functions, objects to export
 
 protect CGBMainTriples
@@ -140,7 +141,8 @@ CGBMain = method(
     Options => {
         ReduceStrata => false,
         Strategy => "Rabinowitsch",
-        Verbose => false
+        Verbose => false,
+        Depth => -1
         }
     ); -- Initialises CGBMainRec
 
@@ -170,7 +172,8 @@ CGBMainRec = method(
     Options => {
         ReduceStrata => false,
         Strategy => "Rabinowitsch",
-        Verbose => false
+        Verbose => false,
+        Depth => -1
         }
     );
 CGBMainRec (List, List, List, List) := o -> (F, S, memo, RingsandThings) -> (
@@ -260,12 +263,13 @@ profileSummary
 CGB=method( Options => {
         ReduceStrata => false,
         Strategy => "Rabinowitsch",
-        Verbose => false
+        Verbose => false,
+        Depth => -1
         })
 CGB(List):= o -> F->(
     s:=first entries eliminateVariables(F);
     result:=s;
-    G:=CGBMain(F,s, ReduceStrata => o.ReduceStrata, Strategy => o.Strategy , Verbose => o.Verbose);
+    G:=CGBMain(F,s, ReduceStrata => o.ReduceStrata, Strategy => o.Strategy , Verbose => o.Verbose, Depth => o.Depth);
     for i in G do (
         result=result|(i_2);
         );
