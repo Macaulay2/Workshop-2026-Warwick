@@ -344,6 +344,12 @@ cgbOnGraph(List,ZZ):=(G,d)->(
 --{a*b s.t. a in A and b in B}
 totalListProduct = method();
 totalListProduct (List, List) := (A, B) -> (
+    if length A == 0 then (
+      return B
+    );
+    if length B == 0 then (
+      return A
+    );
     return flatten(
         for a in A list(
             for b in B list (
