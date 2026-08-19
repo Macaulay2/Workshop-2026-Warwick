@@ -15,6 +15,9 @@ L= PGBMain(T)
 matrix {MDBasis(G)} == matrix {{a*y + z, c*x + c*z^2}}
 assert({a*y + z, c*x + c*z^2} == MDBasis(G));
 
+LL = CGBMain(G, {}, ReduceStrata => true, Depth => 0)
+
+
 --Example 9
 U = QQ[a, b, c]
 R = U[x,y,z]

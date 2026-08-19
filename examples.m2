@@ -34,7 +34,7 @@ end
 
 R = QQ[a,b][x,y,z, MonomialOrder => Lex]
 F = {x^3 - a, y^4 - b, x+y-z}
-G = CGBMain(F, {});
+G = CGBMain(F, {}, ReduceStrata => true);
 netList for g in G list {g_0, factor g_1}
 
 -- strata reduction
@@ -216,10 +216,20 @@ R = QQ[x,y,a,b,c,
         GRevLex => 3
     }
 ];
+
+U = QQ[a,b,c, MonomialOrder => GRevLex]
+R = U[x,y, MonomialOrder => GRevLex]
+
+U = QQ[a,b,c, MonomialOrder => Lex]
+R = U[x,y, MonomialOrder => Lex]
+
 F={a*x-b,b*y-a,c*x^2-y,c*y^2-x}
+T = CGBFromTriple({{0_U}, {1_U}, F})
+L= PGBMain(T)
+netList oo
 
-
-
+LL = apply(CGBMain(F, {}, ReduceStrata => true), e -> toList e)
+netList oo
 
 
 ---------------------------
