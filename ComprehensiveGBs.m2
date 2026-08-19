@@ -644,6 +644,36 @@ doc ///
 
 
 -* Test section *-
+TEST ///
+-* Testing ringOrder on various polynomial rings *-
+debug needsPackage "ComprehensiveGBs";
+
+RGRevLex = QQ[a..d];
+RLex = QQ[a..d, MonomialOrder => Lex];
+RGLex = QQ[a..d, MonomialOrder => GLex];
+RWeights = QQ[a..d, MonomialOrder => {Weights => {1, 3, 2, 4}, Lex}];
+REliminate = QQ[a..d, MonomialOrder => Eliminate 2];
+RGroupLex = QQ[a..d, MonomialOrder => GroupLex => 2, Global => false];
+RGroupRevLex = QQ[a..d, MonomialOrder => GroupRevLex => 2, Global => false];
+RProduct = QQ[a..d, MonomialOrder => ProductOrder {2, 2}];
+RBlock = QQ[a..d, MonomialOrder => {Lex => 2, GRevLex => 2}];
+RRevLex = QQ[a..d, MonomialOrder => RevLex, Global => false];
+
+assert(ringOrder(RGRevLex, 0) === {GRevLex => {1, 1, 1, 1}});
+assert(ringOrder(RLex, 0) === {Lex => 4});
+assert(ringOrder(RGLex, 0) === {Weights => {1, 1, 1, 1}, Lex => 4});
+assert(ringOrder(RWeights, 0) === {Weights => {1, 3, 2, 4}, Lex => 4});
+assert(ringOrder(RWeights, 2) === {Weights => {0, 0, 1, 3, 2, 4}, Lex => 4});
+assert(ringOrder(REliminate, 0) === {Weights => {1, 1}, GRevLex => {1, 1, 1, 1}});
+assert(ringOrder(REliminate, 2) === {Weights => {0, 0, 1, 1}, GRevLex => {1, 1, 1, 1}});
+assert(ringOrder(RGroupLex, 0) === {GroupLex => 2, GRevLex => {1, 1}});
+assert(ringOrder(RGroupRevLex, 0) === {GroupRevLex => 2, GRevLex => {1, 1}});
+assert(ringOrder(RProduct, 0) === {GRevLex => {1, 1}, GRevLex => {1, 1}});
+assert(ringOrder(RBlock, 0) === {Lex => 2, GRevLex => {1, 1}});
+assert(ringOrder(RRevLex, 0) === {RevLex => 4});
+///
+
+
 TEST /// 
 -* Testing  CGBMain on a*x+b*y *-
 
