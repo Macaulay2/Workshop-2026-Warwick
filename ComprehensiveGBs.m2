@@ -467,7 +467,7 @@ PGBMain (CGBTriple) := T -> (
     if isConsistentRabinowitsch(Gr, productList) then (
         PGB = unique(PGB | {{Gr, productList, Gm}});
     );
-    --breakpoint
+
     for i in 0..(length(H)-1) do (
         if i == 0 then (
             PGB = unique(PGB | PGBMain(CGBFromTriple({
