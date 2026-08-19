@@ -234,14 +234,15 @@ CGBMainRec (List, List, List, List) := o -> (F, S, memo, RingsandThings) -> (
       if isEmpty diffset then (
         continue;
       );
-      memo = CGBMainRec(F, append(S, sub(hi, RingsandThings_0)), memo, RingsandThings, o);
+      memo = CGBMainRec(F, append(S, sub(hi, RingsandThings_0)), memo, RingsandThings, o ++ {Depth => o.Depth -1});
     );
     return memo
   ) else (
-    return {(S, sub(h, RingsandThings_0), for g in G list (
-                  g' := RingsandThings_10(g);
-                  if zero g' then continue;
-                  g'))} | flatten apply(H, hi -> CGBMainRec(F, append(S, sub(hi, RingsandThings_0)), memo, RingsandThings, o))
+    return {
+        (S, sub(h, RingsandThings_0), for g in G list (
+                g' := RingsandThings_10(g);
+                if zero g' then continue;
+                g'))} | flatten apply(H, hi -> CGBMainRec(F, append(S, sub(hi, RingsandThings_0)), memo, RingsandThings, o ++ {Depth => o.Depth -1}))
   );
 );
 
