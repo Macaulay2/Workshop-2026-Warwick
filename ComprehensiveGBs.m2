@@ -257,35 +257,6 @@ profileSummary
 
 *-
 
-
-
--- What is the code below about? Should we put it in examples or delete it?
--*
-R = QQ[u][x];
-F = {x^2-x, x^3-1};
-S = {u-1};
-CGBMain(F, S)
-*-
-
--*
-R = QQ[a, b][x, y, z];
-F = {x^3-a, y^4-b, x+y-z};
-S = {};
-L = CGBMain(F, S);
-print("");
-
-R' = QQ[x, y, z, a, b, MonomialOrder => Lex];
-for t in L do (
-  E = apply(t_0, p -> sub(p, R'));
-  N = sub(t_1, R');
-  G = apply(t_2, p -> sub(p, R'));
-  I = first entries gens eliminate(saturate(ideal (E | G), ideal N), {x, y});
-  print("E = " | toString E | ", N = {" | toString squareFreePart N | "}");
-  print("Minimal polynomial of z: " | toString last I);
-);
-*-
-
-
 CGB=method( Options => {
         ReduceStrata => false,
         Strategy => "Rabinowitsch",
@@ -977,5 +948,4 @@ doc ///
      SeeAlso
 
      ///
-
 
