@@ -29,7 +29,7 @@ newPackage("ToricVectorBundles",
          Email => "todo"},
         {Name => "Marco Fava",
          HomePage => "todo",
-         Email => "todo"},
+         Email => "marco.fava@warwick.ac.uk"},
         {Name => "Labix Liu",
          HomePage => "https://labix-liu.github.io/",
          Email => "sin.liu@qmul.ac.uk"},
@@ -1813,19 +1813,19 @@ cartierIndex (List,Fan) := (L,F) -> (
 	       scan(flatten entries w, e -> denom = lcm(denominator e ,denom))));
      denom)
 
-
 -- PURPOSE : Generating the Vector Bundle given by a divisor
 -- This is the NEW lineBundle in the case of ToricVectorBundleKlyachko 
 weilToCartier = method(Options => {"Type" => "Klyachko"})
 
 weilToCartier (NormalToricVariety, List ):= {} >> o ->(X,L ) -> (
     -- The errors check is done in cartierIndex
-	  ind := cartierIndex(X,L);
-	  if ind != 1 then L = apply(L, p -> ind*p);
-	  T := lineBundle( X, L);
-        T.cache.isVB = true;
-	  T
-)
+    ind := cartierIndex(X,L);
+    if ind != 1 then L = apply(L, p -> ind*p);
+    T := lineBundle( X, L);
+    --T.cache.isVectorBundle = true;
+    T.cache.isVB = true;
+    T
+    )
 
 weilToCartier ToricDivisor := {} >> o ->(D ) -> (weilToCartier(variety D , entries D) )
 
@@ -2795,62 +2795,152 @@ coker (ToricVectorBundleKlyachko,Matrix) := (T,M) -> (
 -- WEIL DECORATIONS
 ---------------------------------------
 
+-- Torus-invariant Weil divisors are compared componentwise.  This is a partial
+-- order, so incomparable pairs are reported as such.
+ToricDivisor ? ToricDivisor := (D1, D2) -> (
+    a := entries vector D1;
+    b := entries vector D2;
+    if a === b then symbol ==
+    else if all(a, b, (i, j) -> i <= j) then symbol <
+    else if all(a, b, (i, j) -> i >= j) then symbol >
+    else symbol incomparable)
+
+-- Meet and join for that order.  The join is what cuts out an intersection of
+-- two stratum closures: E_{>= D1} * E_{>= D2} = E_{>= D1 v D2}.
+gcd(ToricDivisor, ToricDivisor) := ToricDivisor => (D1, D2) -> toricDivisor(
+    apply(entries vector D1, entries vector D2, min), variety D1)
+lcm(ToricDivisor, ToricDivisor) := ToricDivisor => (D1, D2) -> toricDivisor(
+    apply(entries vector D1, entries vector D2, max), variety D1)
+
+-- A Weil decoration of a toric vector bundle, in the sense of Altmann,
+-- Hochenegger and Witt: the map sending a vector of the fiber over the identity
+-- to the largest torus-invariant Weil divisor D with e in E_{>= D}.  Since the
+-- map is constant on strata, it is recorded by its strata: each stratum closure,
+-- which is a subspace of the fiber, paired with the divisor decorating it.  The
+-- zero subspace is decorated by infinity.
+WeilDecoration = new Type of HashTable
+WeilDecoration.synonym = "Weil decoration"
+globalAssignment WeilDecoration
+
+net WeilDecoration := WD -> (
+    "Weil decoration of rank " | toString WD.rank |
+    " with " | toString(#WD.strata - 1) | " nonzero strata")
+
+variety WeilDecoration := WD -> WD.variety
+rank WeilDecoration := ZZ => WD -> WD.rank
+
+-- The stratum closures with their divisors, sorted by dimension.
+strata = method()
+strata WeilDecoration := List => WD -> WD.strata
+
 weilDecoration = method()
-weilDecoration (ToricVectorBundleNew) := (V) -> (
-	L:=flatten (filtrationJumps V);
-	amin:=min(L);
-	amax:=max(L);
-	d:=length (filtrationJumps V);
-	alist:= reverse(toList(toList (d:amin).. toList (d:amax)));
-	strataIntersections:={};
-	weilDecorationImage:={};
-	for a in alist do (	strata:={}; 
-		for i from 0 to d-1 do(
-			strata = append (strata,filteredPiece (V, (rays (variety V))#i, a#i));
-		);
-		int:=intersect (apply (strata, i -> image i));
-		if isMember(int,strataIntersections)==false then (strataIntersections= append (strataIntersections, int);
-			weilDecorationImage= append (weilDecorationImage, a));
-	);
-        -- It turns the list into a divisor, to recover the list use "entries"
-        --weilDecorationImage = apply(weilDecorationImage, i -> toricDivisor(i, variety V));
-	wDecoration:={{gens strataIntersections#0,infinity}};
-	for i from 1 to length (weilDecorationImage)-1 do (
-		wDecoration= append (wDecoration, {gens strataIntersections#i,weilDecorationImage#i});
-	);
-	wDecoration
-)
+weilDecoration ToricVectorBundleNew := WeilDecoration => V -> (
+    X := variety V;
+    A := rays X;
+    L := flatten filtrationJumps V;
+    n := length A;
+    minInds := toList(n : min L);
+    maxInds := toList(n : max L);
+    -- For each subspace arising as an intersection of filtered pieces, record the
+    -- componentwise *largest* index vector producing it, since the decoration of
+    -- a vector is the largest D with e in E_{>= D}.  If two index vectors produce
+    -- the same intersection then so does their componentwise maximum, so that
+    -- maximum is also the lexicographic maximum; traversing the box in
+    -- lexicographic order and overwriting therefore leaves it behind.
+    strataIntersections := new MutableHashTable;
+    for inds in minInds .. maxInds do (
+	-- the filtered piece on each ray at the given index
+	pieces := apply(A, inds, (rho, j) -> image filteredPiece(V, rho, j));
+	W := intersect pieces;
+	-- a vanishing intersection is not a stratum: the zero vector is decorated
+	-- by infinity, handled separately below
+	if rank W > 0 then strataIntersections#W = toList inds);
+    -- Sort the strata by dimension, breaking ties by the index vector.  Note that
+    -- the Matroids package globally redefines sort(List, Function) with a
+    -- deepSplice that flattens any sequences in the list, so a list of pairs must
+    -- not be sorted that way; sorting an auxiliary list of triples is safe.
+    ks := keys strataIntersections;
+    S := apply(sort apply(#ks, i -> (rank ks#i, strataIntersections#(ks#i), i)),
+	t -> (ks#(last t), strataIntersections#(ks#(last t))));
+    new WeilDecoration from {
+	symbol variety => X,
+	symbol strata  => prepend(
+	    (image filteredPiece(V, A#0, max L), infinity),
+	    apply(S, (W, inds) -> (W, toricDivisor(inds, X)))),
+	symbol rank    => rank V,
+	symbol cache   => new CacheTable})
 
 weilToKlyachko = method()
--- The inputu is the list of Weil decorations assuming that the first entry is {image 0,infinity}
-weilToKlyachko (NormalToricVariety, List) := (X, WD) ->(
+weilToKlyachko WeilDecoration := ToricVectorBundleNew => WD ->
+    weilToKlyachko(variety WD, WD)
 
-        -- The drop is there to get rid of the divisor infinity
-        WDnew := drop(WD,1);
-	--WDnew := apply( drop(WD,1), i ->{i_0, entries i_1} );
-        -- I create a matrix with jumps for each ray that will later be refined
-        Maux :=  matrix transpose flatten apply(apply(WDnew, m -> m_0 ), a ->  transpose entries a ) ;
-        Jaux := apply(#((WDnew_0)_1), j ->{Maux,
-                flatten join(apply(WDnew, p -> toList(numColumns p_0 :(p_1)_j) ))}
-            );
-        -- Simplify the data to get square matrices
-        data:= transpose apply( Jaux, a -> adaptedBasis(a));
-        toricVectorBundle( X, data_0, data_1)
-)
+weilToKlyachko(NormalToricVariety, WeilDecoration) := ToricVectorBundleNew => (X, WD) ->
+    weilToKlyachko(X, apply(drop(strata WD, 1), (W, D) -> (W, entries vector D)))
 
-weilToKlyachko (NormalToricVariety, List, List) := (X,E,D) ->(
-	L:=flatten D;
-	amin:= min L;
-	amax:= max L;
-        -*
-	H=new MutableHashTable;
+weilToKlyachko(NormalToricVariety, List) := (X, WD) ->(
+    -- The input is a list of pairs (stratum closure, list of divisor
+    -- coefficients).  If it still carries the leading (0, infinity) entry
+    -- produced by weilDecoration, drop it.
+    WDnew := if (WD#0)#1 === infinity then drop(WD, 1) else WD;
+    -- create a matrix with jumps for each ray that will later be refined
+    Maux := matrix transpose flatten apply(WDnew, (V, inds) -> entries \ V_*);
+    Jaux := apply(#rays X, j -> { Maux, flatten apply(WDnew, (V, inds) -> toList(numgens V : inds_j)) });
+    -- Simplify the data to get square matrices
+    data := transpose apply(Jaux, adaptedBasis);
+    toricVectorBundle(X, data_0, data_1))
 
-	(M,J)= to sequence transpose for i from 0 to #(rays X)-1 do (
-
+weilToKlyachko(NormalToricVariety, List, List) := (X, E, D) -> (
+    L := flatten D;
+    amin := min L;
+    amax := max L;
+    -*
+    H := new MutableHashTable;
+    (M, J) := to sequence transpose for i from 0 to #(rays X)-1 do (
 	);
+    *-
+    )
 
+posetChains := (D,n) -> (
+    if n < 0 then return error("need nonnegative n");
+    if n == 0 then return apply(D,l -> {{numcols l_0, l_1}});
+    divs := flatten posetChains(D,0);
+    prevChains := posetChains(D,n-1);
+    flatten for c in prevChains list (
+        currdiv := first c;
+        for newdiv in divs list (
+            if currdiv_0 >= newdiv_0 then continue
+            else
+            if any(transpose {currdiv_1, newdiv_1}, p -> p_0 < p_1) then continue
+            else {newdiv} | c
+            )
+        )
+    )
+posetChains = memoize posetChains
+
+firstChernClass = method()
+firstChernClass ToricVectorBundleNew := E -> (
+    D := weilDecoration E;
+    r := rank E;
+    sum flatten for i to r-1 list (
+        ichains := posetChains(D,i);
+        for c in ichains list (-1)^i * (last c)_0 * (first c)_1
+        )
+    )
+
+-*
+X = hirzebruchSurface 3
+E = tangentBundle X
+firstChernClass E
+
+X = toricProjectiveSpace 2
+mats = toList (3:id_(ZZ^6))
+--todo these jumps is wrong
+jumps = {{0,-1,-2,0,-1,0},{1,1,1,0,0,1},{-1,0,1,0,1,1}}
+E = toricVectorBundle(X,mats,jumps)
+D = weilDecoration E
+#D
+firstChernClass E
 *-
-)
 
 --------------------------------------------------------------
 -- GETTER FUNCTIONS FOR WEIL DECORATIONS
@@ -5993,6 +6083,29 @@ assert( filtrationMatrices (H) ==  {map(QQ^1,QQ^1,{{1}}),map(QQ^1,QQ^1,{{1}}),ma
 assert( rank H == 1)
 ///
 
+
+--Test 45
+--Test for toricDivisor ? toricDivisor, gcd and lcm
+TEST ///
+--toricDivisor ? toricDivisor
+PP2=toricProjectiveSpace 2;
+D1=toricDivisor({2,5,-7},PP2);
+D2=toricDivisor({2,5,-7},PP2);
+--check ==
+assert((D2?D1) === symbol ==)
+D3=toricDivisor({2,4,-7},PP2);
+--check <
+assert((D3?D1) === symbol <)
+D4=toricDivisor({2,5,-6},PP2);
+--check >
+assert((D4?D1) === symbol >)
+D5=toricDivisor({2,4,-6},PP2);
+--check incomparable
+assert((D5?D1) === symbol incomparable)
+
+--in progress
+
+///
 end
 
 
