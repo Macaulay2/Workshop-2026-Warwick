@@ -189,21 +189,32 @@ CGBMainRec = method(
         }
     );
 CGBMainRec (List, List, List, List) := o -> (F, S, memo, RingsandThings) -> (
+  R := RingsandThings_0;
+  X := RingsandThings_1;
+  RExt := RingsandThings_2;
+  RFlat := RingsandThings_3;
+  RExt' := RingsandThings_4;
+  KU := RingsandThings_5;
+  RFlatl := RingsandThings_6;
+  RtoRExt := RingsandThings_7;
+  RExttoRFlatl := RingsandThings_8;
+  RExttoRExt' := RingsandThings_9;
+  RExttoR := RingsandThings_10;
   if o.Verbose then (
       print("Computing CGB for F = " | toString F | " and S = " | toString S);
       );
   if 1 % (ideal S) == 0 then (
     return {}
   );
-  l := first gens RingsandThings_2;
-  A := apply(F, i -> l * RingsandThings_7(i));
-  B := apply(S, i -> (l-1) * RingsandThings_7(i));
+  l := first gens RExt;
+  A := apply(F, i -> l * RtoRExt(i));
+  B := apply(S, i -> (l-1) * RtoRExt(i));
   G := (entries gens gb(ideal join(A, B)))_0; -- isn't G in RExt? why do we substitute it in the line below? Let's clean it up without a sub
 
   pruneG := select(G, g -> (
-          (first first exponents(leadMonomial sub(g,RingsandThings_2))) > 0) and
-      any(exponents(sub(leadCoefficient RingsandThings_8(g),RingsandThings_3)), i -> any(i_(toList(0..(#(RingsandThings_1)-1))), i -> i > 0)));
-  pruneG = apply(pruneG, g -> leadCoefficient RingsandThings_9(g));
+          (first first exponents(leadMonomial sub(g,RExt))) > 0) and
+      any(exponents(sub(leadCoefficient RExttoRFlatl(g),RFlat)), i -> any(i_(toList(0..(#(X)-1))), i -> i > 0)));
+  pruneG = apply(pruneG, g -> leadCoefficient RExttoRExt'(g));
   h := lcm pruneG;
   for i in 0..(#(factor h)-1) do (
     if isConstant (factor h)#i#0 then(
@@ -213,9 +224,9 @@ CGBMainRec (List, List, List, List) := o -> (F, S, memo, RingsandThings) -> (
 
   if o.ReduceStrata then (
       memo = memo | {
-          (S, sub(h, RingsandThings_0),
+          (S, sub(h, R),
               for g in G list (
-                  g' := RingsandThings_10(g);
+                  g' := RExttoR(g);
                   if zero g' then continue;
                   g')
               )
@@ -227,9 +238,9 @@ CGBMainRec (List, List, List, List) := o -> (F, S, memo, RingsandThings) -> (
       return memo
     ) else (
       return {
-          (S, sub(h, RingsandThings_0),
+          (S, sub(h, R),
               for g in G list (
-                  g' := RingsandThings_10(g);
+                  g' := RExttoR(g);
                   if zero g' then continue;
                   g')
               )
@@ -249,9 +260,9 @@ CGBMainRec (List, List, List, List) := o -> (F, S, memo, RingsandThings) -> (
   if o.ReduceStrata then (
       diffset := {};
       for hi in H do (
-          diffset = {({sub(hi, RingsandThings_5)}, 1_(RingsandThings_5))};
+          diffset = {({sub(hi, KU)}, 1_(KU))};
           for t in memo do (
-              diffset = diffConstructibleByLC(diffset, (apply(t#0, p -> sub(p, RingsandThings_5)), sub(t#1, RingsandThings_5)), Strategy => o.Strategy);
+              diffset = diffConstructibleByLC(diffset, (apply(t#0, p -> sub(p, KU)), sub(t#1, KU)), Strategy => o.Strategy);
               if isEmpty diffset then (
                   break
                   );
@@ -260,19 +271,19 @@ CGBMainRec (List, List, List, List) := o -> (F, S, memo, RingsandThings) -> (
               continue;
               );
           if o.Depth != 0 then (
-              memo = CGBMainRec(F, append(S, sub(hi, RingsandThings_0)), memo, RingsandThings, o ++ {Depth => o.Depth -1});
+              memo = CGBMainRec(F, append(S, sub(hi, R)), memo, RingsandThings, o ++ {Depth => o.Depth -1});
               )
           );
       return memo
       ) else (
       return {
-          (S, sub(h, RingsandThings_0),
+          (S, sub(h, R),
               for g in G list (
-                  g' := RingsandThings_10(g);
+                  g' := RExttoR(g);
                   if zero g' then continue;
                   g')
               )
-          } | if o.Depth == 0 then {} else flatten apply(H, hi -> CGBMainRec(F, append(S, sub(hi, RingsandThings_0)), memo, RingsandThings, o ++ {Depth => o.Depth -1}))
+          } | if o.Depth == 0 then {} else flatten apply(H, hi -> CGBMainRec(F, append(S, sub(hi, R)), memo, RingsandThings, o ++ {Depth => o.Depth -1}))
       );
   );
 
