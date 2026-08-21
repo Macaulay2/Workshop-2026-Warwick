@@ -165,6 +165,18 @@ CGBMain (List, List) := o -> (F, S) -> (
   RExttoRExt':= map(RExt',RExt, gens RExt'| gens coefficientRing RExt');
   RExttoR:= map(R, RExt, {1} | gens R | gens coefficientRing R);
   RingsandThings := {R,X,RExt,RFlat,RExt',KU,RFlatl,RtoRExt,RExttoRFlatl,RExttoRExt',RExttoR};
+  R = RingsandThings_0;
+  X = RingsandThings_1;
+  RExt = RingsandThings_2;
+  RFlat = RingsandThings_3;
+  RExt' = RingsandThings_4;
+  KU = RingsandThings_5;
+  RFlatl = RingsandThings_6;
+  RtoRExt = RingsandThings_7;
+  RExttoRFlatl = RingsandThings_8;
+  RExttoRExt' = RingsandThings_9;
+  RExttoR = RingsandThings_10;
+  RingsandThings := {R,X,RExt,RFlat,RExt',KU,RFlatl,RtoRExt,RExttoRFlatl,RExttoRExt',RExttoR};
   CGBMainRec(F, S, {}, RingsandThings, o)
 )
 
