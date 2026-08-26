@@ -1175,7 +1175,7 @@ exteriorPower (ToricVectorBundleNew, ZZ) := opts -> (TVB, l) -> (
     	indtable := hashTable apply(#ind, i -> ind#i => i);
 
 		newfM := apply(#R, t -> (
-			M := mutableMatrix(ring variety TVB,#ind,#ind);
+			M := mutableMatrix(ring TVB,#ind,#ind);
 			for i in ind do (
 				for j in ind do (
 					M_(indtable#i,indtable#j) = det((fM_t)^i_j);
@@ -1282,7 +1282,7 @@ areIsomorphic (ToricVectorBundleNew,ToricVectorBundleNew) := Boolean => (T1,T2) 
         r := rank T1;
         A := submatrix'(sort  ( (filtrationMatrices( T1))_1 ||matrix( ring T1, {(filtrationJumps (T1))_1} )),{r}, );
         B := submatrix'(sort (  ( filtrationMatrices T2)_1||matrix(ring T2, { (filtrationJumps T2)_1})),{r}, );
-        isoMatrix := A * (B^-1);
+        isoMatrix := B * (A^-1);
         isoMapT1T2 := map(T2,T1,isoMatrix);
         --isoMapT1T2 := map(T2,T1,id_((ring T1)^(rank T1)));
         --checking if this map is injective and surjective. if it is, this will tell us that
@@ -6131,7 +6131,7 @@ assert((D5?D1) === symbol incomparable)
 end
 
 
---Test 45
+--Test 47
 --Checking exteriorPower
 TEST ///
 X = hirzebruchSurface 2;
