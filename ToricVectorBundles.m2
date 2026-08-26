@@ -1259,6 +1259,12 @@ ToricVectorBundleNew == ToricVectorBundleNew := (T1,T2) -> (areIsomorphic(T1,T2)
 
 areIsomorphic = method(TypicalValue => Boolean)
 
+
+-- TODO:
+-- to construct the isomorphism we need to be more clever. We need to attempt
+-- to construct the iso by looking at filtered pieces, recreating a basis for
+-- the full vector space
+
 -- new areIsomorphic for ToricVectorBundleNew
 -- this is just trivial for now to make sure that the == has been implemented appropriately
 areIsomorphic (ToricVectorBundleNew,ToricVectorBundleNew) := Boolean => (T1,T2) -> (
@@ -1280,8 +1286,8 @@ areIsomorphic (ToricVectorBundleNew,ToricVectorBundleNew) := Boolean => (T1,T2) 
         --Checking if isomorphic!
         --defining the potential isomorphism as the identity from T1 to T2
         r := rank T1;
-        A := submatrix'(sort  ( (filtrationMatrices( T1))_1 ||matrix( ring T1, {(filtrationJumps (T1))_1} )),{r}, );
-        B := submatrix'(sort (  ( filtrationMatrices T2)_1||matrix(ring T2, { (filtrationJumps T2)_1})),{r}, );
+        A := submatrix'(sort  ( (filtrationMatrices( T1))_0 ||matrix( ring T1, {(filtrationJumps (T1))_0} )),{r}, );
+        B := submatrix'(sort (  ( filtrationMatrices T2)_0||matrix(ring T2, { (filtrationJumps T2)_0})),{r}, );
         isoMatrix := B * (A^-1);
         isoMapT1T2 := map(T2,T1,isoMatrix);
         --isoMapT1T2 := map(T2,T1,id_((ring T1)^(rank T1)));
@@ -2625,7 +2631,7 @@ cokernel (ToricVectorBundleMap) := f ->(
     newMatrices:= apply(L, i -> matrix i_0 );
     newJumps := apply( L , l -> jumpsAux(l, minj ) );
     newData := transpose {newMatrices, newJumps};
-    -- Refine it it needed
+    -- Refine it if needed
     newData = transpose apply( newData, a -> adaptedBasis(a) );
     newMatrices = newData_0;
     newJumps= newData_1;
