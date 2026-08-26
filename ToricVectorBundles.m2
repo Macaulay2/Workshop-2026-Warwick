@@ -1162,8 +1162,10 @@ dual ToricVectorBundle := {} >> opts -> tvb -> (
 exteriorPower (ToricVectorBundleNew, ZZ) := opts -> (TVB, l) -> (
 	if l < 0 then (
 		error("The power has to be non-negative.");
-	) else if (l == 0 or l > rank TVB) then (
-		trivialBundle(variety TVB, 0)
+	) else if l == 0 then (
+	        trivialBundle(variety TVB, 1)
+        ) else if l > rank TVB then (
+                trivialBundle(variety TVB, 0)
 	) else (
 		R := rays variety TVB;
 		fM := filtrationMatrices TVB;
@@ -2462,7 +2464,7 @@ isSurjective (ToricVectorBundleMap) := f -> (
 	
 	if not isSurjective (map f) then (
 		if debugLevel > 0 then (
-			<< "-- the map is not injective" << endl);
+			<< "-- the map is not surjective" << endl);
 		return false
 	);
 	
@@ -5967,6 +5969,8 @@ assert(filtrationJumps(T)=={{0, 0, 1, 0}, {0, 0, 1, 0}, {0, 0, 1, 0}} )
 assert(filtrationMatrices(T) == {matrix(QQ, {{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, -1, -1}, {0, 0, -1, 0}}), matrix(QQ, {{1, 0, 0, 0},{0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}}), matrix(QQ, {{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 0, 1},{0, 0, 1, 0}} )} )
 ///
 
+
+
 --Test 39
 --Test tensor product
 TEST///
@@ -6125,6 +6129,19 @@ assert((D5?D1) === symbol incomparable)
 
 ///
 end
+
+
+--Test 45
+--Checking exteriorPower
+TEST ///
+X = hirzebruchSurface 2;
+E = tangentBundle X;
+assert(exteriorPower(E,1) == E)
+assert(rank exteriorPower(E++E,2) == 6)
+D = toricDivisor({1,2,4,5},X)
+L = lineBundle(D)
+assert(areIsomorphic(exteriorPower(E++L, 2),(exteriorPower(E,0)**exteriorPower(L,2))++(exteriorPower(E,1)**exteriorPower(L,1))++(exteriorPower(E,2)**exteriorPower(L,0))))
+///
 
 
 ---------------------------------------
