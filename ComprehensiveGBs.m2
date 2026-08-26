@@ -381,7 +381,7 @@ totalListProduct (List, List) := (A, B) -> (
 -- Implementing definition 4.1 of 
 -- "An efficient algorithm for computing a 
 -- comprehensive Gröbner system of a parametric 
--- polynomial system", D.Kapur Y. Sun D. Wang, 
+-- polynomial system", D. Kapur Y. Sun D. Wang, 
 -- J. of Symbolic Computation issue 49, 2013
 --------------------------------------------------
 MDBasis = method();
@@ -473,6 +473,7 @@ PGBMain (CGBTriple) := T -> (
     Gm := MDBasis(listDiff);
     H := unique(apply(Gm, g->squareFreePart(leadCoefficient(sub(g, R)))));
     h := squareFreePart(lcm(H));
+    if h == 1 then h = 1_CoeffRing;
     productList = unique(apply(totalListProduct(N, {sub(h, CoeffRing)}), i -> squareFreePart(i)));
     if isConsistentRabinowitsch(Gr, productList) then (
         PGB = unique(PGB | {{Gr, productList, Gm}});
@@ -934,7 +935,28 @@ MDBasis(G)
 ///
 
 
+------------------------------------------------
+--TEST for PGBMain
+-- From Example 6.1 of 
+-- "An efficient algorithm for computing a 
+-- comprehensive Gröbner system of a parametric 
+-- polynomial system", D. Kapur Y. Sun D. Wang, 
+-- J. of Symbolic Computation issue 49, 2013
+------------------------------------------------
+TEST /// -* Testing PGBMain on {a*x-, b*y-a, c*x^2-y, c*y^2-x}
+U := QQ[a, b, c, MonomialOrder => GRevLex]
+R := U[x,y,z, MonomialOrder => GRevLex]
+G := {a*x-b, b*y-a, c*x^2-y, c*y^2-x}
+L := PGBMain(CGBFromTriple({{0_U}, {1_U}, G}))
+ExpResult = set{
+  {{0_U}, {b*c^2-b, a*c^2-a, b^3*c-a^3, a^3*c-b^3, a^6-b^6}, {1_R}}, 
+  {{b*c^2-b, a*c^2-a, b^3*c-a^3, a^3*c-b^3, a^6-b^6}, {a*b}, {a^2*y-b^2*c, b*x-a*c*y}}, 
+  {{b, a}, {c}, {c*x^2-y, c*y^2-x}}, 
+  {{c, b, a}, {1_U}, {y, x}}
+}
+assert((new Set from L) == ExpResult  )
 
+///
 
 
 end--
