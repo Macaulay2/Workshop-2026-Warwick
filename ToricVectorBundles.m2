@@ -1161,8 +1161,10 @@ dual ToricVectorBundle := {} >> opts -> tvb -> (
 exteriorPower (ToricVectorBundleNew, ZZ) := opts -> (TVB, l) -> (
 	if l < 0 then (
 		error("The power has to be non-negative.");
-	) else if (l == 0 or l > rank TVB) then (
-		trivialBundle(variety TVB, 0)
+	) else if l == 0 then (
+	        trivialBundle(variety TVB, 1)
+        ) else if l > rank TVB then (
+                trivialBundle(variety TVB, 0)
 	) else (
 		R := rays variety TVB;
 		fM := filtrationMatrices TVB;
@@ -2456,7 +2458,7 @@ isSurjective (ToricVectorBundleMap) := f -> (
 	
 	if not isSurjective (map f) then (
 		if debugLevel > 0 then (
-			<< "-- the map is not injective" << endl);
+			<< "-- the map is not surjective" << endl);
 		return false
 	);
 	
@@ -5851,6 +5853,9 @@ T = toricVectorBundle(PP3,{basisMat0,basisMat1,basisMat2,basisMat3},filtrationJu
 assert areIsomorphic(TT3,T)
 assert areIsomorphic(T,TT3)
 
+--there is an issue with T1++T2 is not isomorphic to T2++T1
+assert(T1++T2,T2++T1)
+
 ///
 
 --Test 36
@@ -5903,6 +5908,8 @@ assert( variety(T)=== variety(T2) )
 assert(filtrationJumps(T)=={{0, 0, 1, 0}, {0, 0, 1, 0}, {0, 0, 1, 0}} )
 assert(filtrationMatrices(T) == {matrix(QQ, {{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, -1, -1}, {0, 0, -1, 0}}), matrix(QQ, {{1, 0, 0, 0},{0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}}), matrix(QQ, {{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 0, 1},{0, 0, 1, 0}} )} )
 ///
+
+
 
 --Test 39
 --Test tensor product
@@ -6028,6 +6035,19 @@ assert(CKg== trivialBundle(X,0) )
 ///
 
 end
+
+
+--Test 45
+--Checking exteriorPower
+TEST ///
+X = hirzebruchSurface 2;
+E = tangentBundle X;
+assert(exteriorPower(E,1) == E)
+assert(rank exteriorPower(E++E,2) == 6)
+D = toricDivisor({1,2,4,5},X)
+L = lineBundle(D)
+assert(areIsomorphic(exteriorPower(E++L, 2),(exteriorPower(E,0)**exteriorPower(L,2))++(exteriorPower(E,1)**exteriorPower(L,1))++(exteriorPower(E,2)**exteriorPower(L,0))))
+///
 
 
 ---------------------------------------
