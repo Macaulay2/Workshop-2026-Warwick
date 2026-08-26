@@ -6125,7 +6125,13 @@ D5=toricDivisor({2,4,-6},PP2);
 --check incomparable
 assert((D5?D1) === symbol incomparable)
 
---in progress
+
+--gcd
+D6=toricDivisor({2,4,-7},PP2);
+assert(gcd(D1,D5) == D6)
+--lcm
+D7=toricDivisor({2,5,-6},PP2);
+assert(lcm(D1,D5) == D7)
 
 ///
 end
