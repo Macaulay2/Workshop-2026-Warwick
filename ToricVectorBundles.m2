@@ -244,6 +244,7 @@ trivialBundle (NormalToricVariety, ZZ) := (tv,r) -> (
 
 lineBundle = method()
 lineBundle(NormalToricVariety , List ):= (X, L) ->(
+    if # L != # rays X then( error("The list should have an entry for each ray in the fan"););
 	jumps := for e in L list {e};
     mats := for p in rays X list matrix {{1_(coefficientRing ring X)}};
 	toricVectorBundle(X, mats, jumps)
@@ -1276,13 +1277,18 @@ areIsomorphic (ToricVectorBundleNew,ToricVectorBundleNew) := Boolean => (T1,T2) 
     if not T1.cache.iso#?T2 then (
         --Checking if isomorphic!
         --defining the potential isomorphism as the identity from T1 to T2
-        isoMapT1T2 := map(T2,T1,id_((ring T1)^(rank T1)));
+        r := rank T1;
+        A := submatrix'(sort  ( (filtrationMatrices( T1))_1 ||matrix( ring T1, {(filtrationJumps (T1))_1} )),{r}, );
+        B := submatrix'(sort (  ( filtrationMatrices T2)_1||matrix(ring T2, { (filtrationJumps T2)_1})),{r}, );
+        isoMatrix := A * (B^-1);
+        isoMapT1T2 := map(T2,T1,isoMatrix);
+        --isoMapT1T2 := map(T2,T1,id_((ring T1)^(rank T1)));
         --checking if this map is injective and surjective. if it is, this will tell us that
         --these bundles are equivariantly isomorphic
         areTVBsIso := ((isInjective isoMapT1T2) and (isSurjective isoMapT1T2));
         if areTVBsIso then (
             T1.cache.iso#T2 = isoMapT1T2;
-            isoMapT2T1 := map(T1,T2,id_((ring T2)^(rank T2)));
+            isoMapT2T1 := map(T1,T2, isoMatrix^-1);
             T2.cache.iso#T1 = isoMapT2T1;
             );
          );
@@ -5899,6 +5905,15 @@ T = toricVectorBundle(PP3,{basisMat0,basisMat1,basisMat2,basisMat3},filtrationJu
 assert areIsomorphic(TT3,T)
 assert areIsomorphic(T,TT3)
 
+X = toricProjectiveSpace 3;
+L1 = lineBundle(X, {1,2,3,4} );
+L2 = lineBundle(X ,{0,1,0,2});
+T1 = L1++L2;
+T2 = L2++L1;
+
+assert areIsomorphic( T1, T2)
+assert (map isomorphism( T1, T2) == matrix( ring T1,{{0, 1}, {1, 0}} ))
+
 ///
 
 --Test 36
@@ -6087,7 +6102,7 @@ assert( rank H == 1)
 ///
 
 
---Test 45
+--Test 46
 --Test for toricDivisor ? toricDivisor, gcd and lcm
 TEST ///
 --toricDivisor ? toricDivisor
