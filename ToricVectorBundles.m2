@@ -2979,7 +2979,7 @@ moduleToKlyachko = method()
 -- A: presentation of the module we are sheafifying that is fine-graded
 moduleToKlyachko (NormalToricVariety, Matrix):= (X,A) -> (
     
-  if not isHomogeneous A then(error("The map is not homogeneous with respect to the fine-grading" ))
+  if not isHomogeneous A then(error("The map is not homogeneous with respect to the fine-grading" ););
     S := ring A;
     coxX := ring X;
     n:= numgens S;
@@ -3053,7 +3053,7 @@ moduleToKlyachko (NormalToricVariety, Module):= (X,M) -> (
   tdegs := - apply(q , i -> NS#i );
   R := newRing( S, Degrees => entries id_(ZZ^(n)));
   AM := map(R^tdegs,R^sdegs,sub(A, R) );
-  if not isHomogeneous AM then(error("The module is not homogeneous with respect to the fine-grading" ));
+  if not isHomogeneous AM then(error("The module is not homogeneous with respect to the fine-grading" ););
     moduleToKlyachko(X, AM)
 )
 
