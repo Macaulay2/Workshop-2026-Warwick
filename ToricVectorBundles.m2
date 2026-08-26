@@ -2865,7 +2865,7 @@ weilDecoration ToricVectorBundleNew := WeilDecoration => V -> (
     new WeilDecoration from {
 	symbol variety => X,
 	symbol strata  => prepend(
-	    (image filteredPiece(V, A#0, max L), infinity),
+	    (image filteredPiece(V, A#0, max L+1), infinity),
 	    apply(S, (W, inds) -> (W, toricDivisor(inds, X)))),
 	symbol rank    => rank V,
 	symbol cache   => new CacheTable})
