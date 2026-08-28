@@ -6,10 +6,14 @@ installPackage "ComprehensiveGBs"
 
 -- No more big coefficients in the strata   (these where coming from the GB implementation in M2, 
 --                                          which tries to avoid denominatoris when possible)
-R = QQ[a,b][x,y,z, MonomialOrder => Lex]
+U = QQ[a,b]
+R = U[x,y,z, MonomialOrder => GRevLex]
 F = {x^3 - a, y^4 - b, x+y-z}
 G = CGBMain(F, {});
+L = PGBMain(CGBFromTriple({{0_U}, {1_U}, F}))
+
 netList for g in G list {g_0, factor g_1}
+netList L
 
 -- A *LOT* of redundant strata (where the CGB identically vanishes).. 
 

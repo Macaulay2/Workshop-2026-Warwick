@@ -195,7 +195,7 @@ CGBMain (List, List) := o -> (F, S) -> (
   RExttoRFlatl = RingsandThings_8;
   RExttoRExt' = RingsandThings_9;
   RExttoR = RingsandThings_10;
-  RingsandThings := {R,X,RExt,RFlat,RExt',KU,RFlatl,RtoRExt,RExttoRFlatl,RExttoRExt',RExttoR};
+  RingsandThings = {R,X,RExt,RFlat,RExt',KU,RFlatl,RtoRExt,RExttoRFlatl,RExttoRExt',RExttoR};
   CGBMainRec(F, S, {}, RingsandThings, o)
 )
 
@@ -1015,18 +1015,41 @@ MDBasis(G)
 -- polynomial system", D. Kapur Y. Sun D. Wang, 
 -- J. of Symbolic Computation issue 49, 2013
 ------------------------------------------------
-TEST /// -* Testing PGBMain on {a*x-, b*y-a, c*x^2-y, c*y^2-x}
+TEST /// -* Testing PGBMain on {a*x-, b*y-a, c*x^2-y, c*y^2-x} *-
 U := QQ[a, b, c, MonomialOrder => GRevLex]
 R := U[x,y,z, MonomialOrder => GRevLex]
 G := {a*x-b, b*y-a, c*x^2-y, c*y^2-x}
 L := PGBMain(CGBFromTriple({{0_U}, {1_U}, G}))
+U' = ring first first first L
+R' = ring first last first L
 ExpResult = set{
-  {{0_U}, {b*c^2-b, a*c^2-a, b^3*c-a^3, a^3*c-b^3, a^6-b^6}, {1_R}}, 
-  {{b*c^2-b, a*c^2-a, b^3*c-a^3, a^3*c-b^3, a^6-b^6}, {a*b}, {a^2*y-b^2*c, b*x-a*c*y}}, 
-  {{b, a}, {c}, {c*x^2-y, c*y^2-x}}, 
-  {{c, b, a}, {1_U}, {y, x}}
+  {
+    set ((f -> sub(f, U')) \ {0}),
+    set ((f -> sub(f, U')) \ {b*c^2-b, a*c^2-a, b^3*c-a^3, a^3*c-b^3, a^6-b^6}),
+    set ((f -> sub(f, R')) \ {1})
+    },
+  {
+    set ((f -> sub(f, U')) \ {b*c^2-b, a*c^2-a, b^3*c-a^3, a^3*c-b^3, a^6-b^6}),
+    set ((f -> sub(f, U')) \ {a*b}),
+    set ((f -> sub(f, R')) \ {a^2*y-b^2*c, b*x-a*c*y})
+  },
+  {
+    set ((f -> sub(f, U')) \ {b, a}),
+    set ((f -> sub(f, U')) \ {c}),
+    set ((f -> sub(f, R')) \ {c*x^2-y, c*y^2-x})
+    },
+  {
+    set ((f -> sub(f, U')) \ {c, b, a}),
+    set ((f -> sub(f, U')) \ {1_U'}),
+    set ((f -> sub(f, R')) \ {y, x})
+    }
 }
-assert((new Set from L) == ExpResult  )
+LSet = set for stratum in L list for i from 0 to 2 list set (stratum_i)
+
+ring first (L_3)_1 -- Problem is that this element is in ZZ and not U'
+ring first (L_2)_1 -- ... like this element
+
+assert((new Set from L) == ExpResult )
 
 ///
 
