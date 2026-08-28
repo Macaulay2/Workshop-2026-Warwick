@@ -535,7 +535,60 @@ zeroDimCheck (List, RingElement) := (E, f) -> (
         true --consistent
 );
 
--------------------------
+-----------------------------
+--CCheck if for those
+--cases in which <E> is
+--of positive dimensional.
+-----------------------------
+
+CCheck = method();
+CCheck (List, RingElement) := (E, f) -> (
+    R := ring f;
+    U := gens R;
+
+    supports := apply(E, g -> (
+        e := first exponents(leadMonomial g);
+        select(0..(#e-1), i -> e_i != 0)
+    ));
+
+    V := {};
+
+    for i from 0 to (#U - 1) do (
+        candidate := V | {i};
+
+        if not any(supports, S -> all(S, j -> member(j, candidate))) then (
+            V = candidate;
+        );
+    );
+    alpha := apply(V, i -> random(-100,100));
+
+    remaining := select(0..(#U-1), i -> not member(i,V));
+
+    newR := coefficientRing R[apply(remaining, i -> U_i)];
+    newU := gens newR;
+
+    images := toList  apply(0..(#U-1), i -> (
+        if member(i,V) then (
+            alpha_(position(V, j -> j == i))
+        ) else (
+            newU_(position(remaining, j -> j == i))
+        )
+    ));
+    phi := map(newR,R,images);
+ 
+    spE := gb ideal apply(E, g -> phi(g));
+    fAlpha := phi(f);
+    fAlpha = sub(fAlpha, newR);
+    GspE := flatten entries gens spE;
+
+    if zeroDimCheck(GspE, fAlpha) then (
+        return true;
+    );
+    return false
+  
+);
+
+
 
 
 
