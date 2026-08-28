@@ -599,6 +599,14 @@ CCheck (List, RingElement) := (E, f) -> (
 
 
 
+ICheck = method(
+    Options => {
+        Loops => 5
+        }
+    )
+ICheck (List, RingElement) := (E, f) -> (
+
+    )
 
 
 
