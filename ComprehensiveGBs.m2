@@ -560,11 +560,13 @@ CCheck (List, RingElement) := (E, f) -> (
             V = candidate;
         );
     );
-    alpha := apply(V, i -> random(-100,100));
+    alpha := apply(numgens R, i -> random(-100,100));
 
+
+    -*
     remaining := select(0..(#U-1), i -> not member(i,V));
 
-    newR := coefficientRing R[apply(remaining, i -> U_i)];
+    newR := coefficientRing R[apply(remaining, i -> U_i)]; --
     newU := gens newR;
 
     images := toList  apply(0..(#U-1), i -> (
@@ -574,17 +576,24 @@ CCheck (List, RingElement) := (E, f) -> (
             newU_(position(remaining, j -> j == i))
         )
     ));
-    phi := map(newR,R,images);
- 
-    spE := gb ideal apply(E, g -> phi(g));
+    *-
+
+    phi := map(R,R,for i from 0 to numgens R-1 list if member(i, V) then alpha_i else R_i);
+
+    spE := gb (ideal apply(E, g -> phi(g)) + ideal(for i in V list R_i));
+    -- the above is a little different from KSW where they restrict to a smaller ring
+    -- and check that spE is zero dimensional there
+    -- Here we add in the variables in order to avoid constructing a new polynomial ring
+    -- and hopefully the GB computation is just as fast
+
     fAlpha := phi(f);
-    fAlpha = sub(fAlpha, newR);
+    -- fAlpha = sub(fAlpha, newR); -- shouldn't need this
     GspE := flatten entries gens spE;
 
     if zeroDimCheck(GspE, fAlpha) then (
-        return true;
+        return true; -- certifies consistency
     );
-    return false
+    return false -- unknown consistency (i.e., it could still be consistent)
   
 );
 
