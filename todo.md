@@ -7,7 +7,7 @@ we do not recurse (so putting Depth => 0 would return just the generic stratum f
 
 - TODO: return the correct result in CGBMainRec before going through the list H 
 
-2. ** Angelo, Giulia, Agustina ** [DONE - ADD TESTS] Kapur-Sun-Wang (KSW) algorithm (consistency.m2)
+2. ** Angelo, Giulia, Agustina ** [DONE - ADD TESTS (1 test - maybe some other examples)] Kapur-Sun-Wang (KSW) algorithm (consistency.m2)
 - [DONE] Moved to main file, now can (almost) delete consistency.m2
 - Determine what should happen if listDiff is empty 
 
