@@ -516,6 +516,15 @@ PGBMain (CGBTriple) := T -> (
     return PGB  
 );
 
+PGBMain List := F -> (
+    if #F == 0 then error("List must be non-empty");
+    R := ring first F;
+    U := coefficientRing R;
+    PGBMain(CGBFromTriple({{0_U}, {1_U}, F}))
+    )
+
+
+
 -----------------------------
 --zeroDimCheck if for those
 --cases in which <E> is

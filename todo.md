@@ -14,7 +14,7 @@ we do not recurse (so putting Depth => 0 would return just the generic stratum f
 2.1 **Everyone** In the KSW algorithm there are some optimisations for the consistency check in Section 5
   this involves three algorithms (1,2,3) that are checked in some order and if all fail then the standard
   consistency check is used.
-- [1 of 3 DONE] Add the algorithms
+- [2 of 3 DONE] Add the algorithms - Next steps to check CCheck and implement ICheck
 - Write a consistency check method that combines them all
 - [FUTURE] think about whether the consistency check method should use hooks
 - [FUTURE] understand the optimisations in Section 7 
@@ -27,7 +27,7 @@ is just a list:
 RingsandThings := {R,X,RExt,RFlat,RExt',RU,RFlatl};
 
 ```
-- Add the ring maps to this objects
+- [DONE - needs to be implemented in CGBMainRec] Add the ring maps to this objects 
 - Include the ring maps to this object too 
 - Move lists of elements in a ring to a single row matrix of elements in the ring : this allows us to apply maps to
   matrices, we will implicitly check that elements belong to the correct ring because the ring of the matrix is fixed 
@@ -92,7 +92,7 @@ Notice that in the generic stratum, there is an element `b*c^2-b` in the SS-CGB 
 does not appear in second column. Investigate the line that defines and modifies `pruneG` [line 191-2],
 there may be a mistake with the implementation or the write up on the line that defines $\{h_1, \dots, h_\ell\} := \dots$.
 
-10. Add other ways to call PGBMain (like CGBMain) where the user supplied just the list of polynomials etc.
+10. [DONE] Add other ways to call PGBMain (like CGBMain) where the user supplied just the list of polynomials etc.
 
 
 # Future and long term TODOs
