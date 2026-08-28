@@ -137,6 +137,10 @@ diffConstructibleByLC (List, Sequence) := opts -> (C, LC) -> (
   flatten apply(C, t -> diffLC(t, LC, opts))
 );
 
+
+-- store all the maps and rings of a CGB computation in a object
+CGBData = new Type of HashTable
+
 CGBMain = method(
     Options => {
         ReduceStrata => false,
@@ -165,6 +169,21 @@ CGBMain (List, List) := o -> (F, S) -> (
   RExttoRExt':= map(RExt',RExt, gens RExt'| gens coefficientRing RExt');
   RExttoR:= map(R, RExt, {1} | gens R | gens coefficientRing R);
   RingsandThings := {R,X,RExt,RFlat,RExt',KU,RFlatl,RtoRExt,RExttoRFlatl,RExttoRExt',RExttoR};
+
+  cgbData := new CGBData from {
+    "R"             => R,
+    "X"             => X,
+    "RExt"          => RExt,
+    "RFlat"         => RFlat,
+    "RExt'"         => RExt',
+    "KU"            => KU,
+    "RFlatl"        => RFlatl,
+    "RtoRExt"       => RtoRExt,
+    "RExttoRFlatl"  => RExttoRFlatl,
+    "RExttoRExt'"   => RExttoRExt',
+    "RExttoR"       => RExttoR
+    };
+
   R = RingsandThings_0;
   X = RingsandThings_1;
   RExt = RingsandThings_2;
