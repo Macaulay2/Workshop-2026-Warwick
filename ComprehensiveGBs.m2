@@ -641,7 +641,7 @@ doc ///
     A package for computing Comprehensive Groebner Bases (CGBs).
   Description
     Text
-    This package provides the implementations of two differnt algorithm for constucting a comprehensive Gr\"obner system and a comprehensive Gr\"obner basis of a parametric ideal. 
+    This package provides the implementations of two differnt algorithms for computing a comprehensive Gr\"obner system and a comprehensive Gr\"obner basis of a parametric ideal. 
     For a definition see Definition 2 of @HREF("#ref2","[2]")@ and Definition 2.1 of @HREF("ref2","[2]")@
 
     The function @TO "CBGMain"@ is the implementation of Algorithm CGBMain of @HREF("#ref2","[2]")@.
