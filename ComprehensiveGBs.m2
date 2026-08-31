@@ -44,11 +44,9 @@ protect triple            --Probably needs to be changed b/c
                           --too generic?
 
 
-ringOrder = method(); -- returns the monomial order of a polynomial ring after an offset
-ringOrder (PolynomialRing, ZZ) := List => (R, offset) -> (
-    if offset < 0 then error "Offset must be non-negative";
-    order := select(toList (options R).MonomialOrder, orderEntry -> not member(first orderEntry, {MonomialSize, Position}));
-    apply(order, orderEntry -> if first orderEntry === Weights then Weights => (toList(offset : 0) | last orderEntry) else orderEntry)
+ringOrder = method(); -- returns the monomial order of a polynomial ring
+ringOrder PolynomialRing := List => R -> (
+    select(toList (options R).MonomialOrder, orderEntry -> not member(first orderEntry, {MonomialSize, Position}))
 );
 
 CGBFromTriple = method(); --Constructor for a CGBTriple starting from
@@ -65,7 +63,7 @@ CGBFromTriple List := CGB => (L) -> (
             triple => L,
             coefficientsRing => coeff,
             totalRing => R ,
-            flattenedRing => scalarRing(monoid[gens R, gens coeff, MonomialOrder => ringOrder(R, 0) | ringOrder(coeff, numgens R)])};
+            flattenedRing => scalarRing(monoid[gens R, gens coeff, MonomialOrder => ringOrder R | ringOrder coeff])};
         );
 );
 
@@ -159,10 +157,10 @@ CGBMain (List, List) := o -> (F, S) -> (
   KU := coefficientRing R;
   U := gens KU;
   K := coefficientRing KU;
-  RExt := K[getSymbol "l", X, U, MonomialOrder => {Lex => 1} | ringOrder(R, 1) | ringOrder(KU, 1 + numgens R)];
+  RExt := K[getSymbol "l", X, U, MonomialOrder => {Lex => 1} | ringOrder R | ringOrder KU];
   l := first gens RExt;
-  RFlat := K[X, U, MonomialOrder => ringOrder(R, 0) | ringOrder(KU, numgens R)];
-  RExt' := KU[l, X, MonomialOrder => {Lex => 1} | ringOrder(R, 1)];
+  RFlat := K[X, U, MonomialOrder => ringOrder R | ringOrder KU];
+  RExt' := KU[l, X, MonomialOrder => {Lex => 1} | ringOrder R];
   RFlatl := RFlat[l];
   RtoRExt := map(RExt, R, drop(gens RExt, 1));
   RExttoRFlatl:= map(RFlatl,RExt, gens RFlatl | gens coefficientRing RFlatl);
@@ -348,14 +346,14 @@ eliminateVariables(List):=F->(
     x:=getSymbol "x";
     u:=getSymbol "u";
     K:=coefficientRing C;
-    S:=K[x_1..x_n,u_1..u_m, MonomialOrder => ringOrder(R, 0) | ringOrder(C, n)];
+    S:=K[x_1..x_n,u_1..u_m, MonomialOrder => ringOrder R | ringOrder C];
     U:=gens C;
     X:=gens R;
     l1:=for i from 0 to m-1 list U_i=>S_(i+n);
     l2:=for j from 0 to n-1 list X_j=>S_j;
     F':=apply(F,h->sub(h,l1|l2));
     F'gbgens:=gens gb(ideal(F'));
-    variableBlocks := select(ringOrder(R, 0), orderEntry -> first orderEntry =!= Weights);
+    variableBlocks := select(ringOrder R, orderEntry -> first orderEntry =!= Weights);
     S':=selectInSubring(#variableBlocks,F'gbgens);
     mm:=map(C,ring S',
         toList(n:0)|gens C   
@@ -777,18 +775,16 @@ RProduct = QQ[a..d, MonomialOrder => ProductOrder {2, 2}];
 RBlock = QQ[a..d, MonomialOrder => {Lex => 2, GRevLex => 2}];
 RRevLex = QQ[a..d, MonomialOrder => RevLex, Global => false];
 
-assert(ringOrder(RGRevLex, 0) === {GRevLex => {1, 1, 1, 1}});
-assert(ringOrder(RLex, 0) === {Lex => 4});
-assert(ringOrder(RGLex, 0) === {Weights => {1, 1, 1, 1}, Lex => 4});
-assert(ringOrder(RWeights, 0) === {Weights => {1, 3, 2, 4}, Lex => 4});
-assert(ringOrder(RWeights, 2) === {Weights => {0, 0, 1, 3, 2, 4}, Lex => 4});
-assert(ringOrder(REliminate, 0) === {Weights => {1, 1}, GRevLex => {1, 1, 1, 1}});
-assert(ringOrder(REliminate, 2) === {Weights => {0, 0, 1, 1}, GRevLex => {1, 1, 1, 1}});
-assert(ringOrder(RGroupLex, 0) === {GroupLex => 2, GRevLex => {1, 1}});
-assert(ringOrder(RGroupRevLex, 0) === {GroupRevLex => 2, GRevLex => {1, 1}});
-assert(ringOrder(RProduct, 0) === {GRevLex => {1, 1}, GRevLex => {1, 1}});
-assert(ringOrder(RBlock, 0) === {Lex => 2, GRevLex => {1, 1}});
-assert(ringOrder(RRevLex, 0) === {RevLex => 4});
+assert(ringOrder RGRevLex === {GRevLex => {1, 1, 1, 1}});
+assert(ringOrder RLex === {Lex => 4});
+assert(ringOrder RGLex === {Weights => {1, 1, 1, 1}, Lex => 4});
+assert(ringOrder RWeights === {Weights => {1, 3, 2, 4}, Lex => 4});
+assert(ringOrder REliminate === {Weights => {1, 1}, GRevLex => {1, 1, 1, 1}});
+assert(ringOrder RGroupLex === {GroupLex => 2, GRevLex => {1, 1}});
+assert(ringOrder RGroupRevLex === {GroupRevLex => 2, GRevLex => {1, 1}});
+assert(ringOrder RProduct === {GRevLex => {1, 1}, GRevLex => {1, 1}});
+assert(ringOrder RBlock === {Lex => 2, GRevLex => {1, 1}});
+assert(ringOrder RRevLex === {RevLex => 4});
 ///
 
 
