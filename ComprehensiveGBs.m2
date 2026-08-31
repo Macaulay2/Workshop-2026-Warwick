@@ -638,15 +638,19 @@ doc ///
   Key
     ComprehensiveGBs
   Headline
-    A package for computing Comprehensive Groebner Bases (CGBs). Based on @HREF("#ref1","[1]")@.
+    A package for computing Comprehensive Groebner Bases (CGBs).
   Description
     Text
+    This package provides the implementations of two differnt algorithm for constucting a comprehensive Gr\"obner system and a comprehensive Gr\"obner basis of a parametric ideal. 
+    For a definition see Definition 2 of @HREF("#ref2","[2]")@ and Definition 2.1 of @HREF("ref2","[2]")@
 
-      Based on @HREF("#ref1","[1]")@
+    The function @TO "CBGMain"@ is the implementation of Algorithm CGBMain of @HREF("#ref2","[2]")@.
 
+    Instead the function @TO "PGBMain"@ corresponds to the Algorithm PGBMain of @HREF("ref1","[2]")@.
       
   References
-    @LABEL("[1]","id" => "ref1")@ Akira Suzuki and Yosuke Sato. 2006. A simple algorithm to compute comprehensive Gröbner bases using Gröbner bases. In Proceedings of the 2006 international symposium on Symbolic and algebraic computation (ISSAC '06). Association for Computing Machinery, New York, NY, USA, 326–331. https://doi.org/10.1145/1145768.1145821
+    @LABEL("[2]","id" => "ref2")@ Akira Suzuki and Yosuke Sato. 2006. A simple algorithm to compute comprehensive Gröbner bases using Gröbner bases. In Proceedings of the 2006 international symposium on Symbolic and algebraic computation (ISSAC '06). Association for Computing Machinery, New York, NY, USA, 326–331. https://doi.org/10.1145/1145768.1145821
+    @LABEL("[1]","id" => "ref1")@ Deepak Kapur, Yao Sun, and Dingkang Wang. 2013. An efficient algorithm for computing a comprehensive Gr\"obner system of a parametric polynomial system. In Journal of Symbolic Computation, 49, 27-44.
 ///
 
 
