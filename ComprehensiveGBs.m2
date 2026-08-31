@@ -164,7 +164,7 @@ CGBMain (List, List) := o -> (F, S) -> (
   RFlat := K[X, U, MonomialOrder => ringOrder(R, 0) | ringOrder(KU, numgens R)];
   RExt' := KU[l, X, MonomialOrder => {Lex => 1} | ringOrder(R, 1)];
   RFlatl := RFlat[l];
-  RtoRExt := map(RExt, R, (gens RExt)_{1..numgens R});
+  RtoRExt := map(RExt, R, drop(gens RExt, 1));
   RExttoRFlatl:= map(RFlatl,RExt, gens RFlatl | gens coefficientRing RFlatl);
   RExttoRExt':= map(RExt',RExt, gens RExt'| gens coefficientRing RExt');
   RExttoR:= map(R, RExt, {1} | gens R | gens coefficientRing R);
