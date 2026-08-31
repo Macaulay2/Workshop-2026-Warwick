@@ -769,7 +769,10 @@ doc ///
     how to compute the radical in @TO "ReduceStrata"@
   Description
     Text
-      Strategy is an option that depends on @TO "ReduceStrata"@, and has two valid inputs, being "radical" and "Rabinowitsch" - other inputs will return an error. The former reduces strata by directly computing radicals of ideals, and the latter utilises the Rabinowitsch trick. The latter is, in general, considerably faster.
+      Strategy is an option that depends on @TO "ReduceStrata"@. It is for cheking if a pair $(E,N) \subseteq k[U]$ is consistent, i.e., if $V(E)\backslash V(N)$ is not empty. In order to do that the radical of ideal(E) has to be computed, see Section 5 of @HREF("ref1","1")@ for details.
+      Strategy has two valid inputs, being "radical" and "Rabinowitsch" - other inputs will return an error. The former reduces strata by directly computing radicals of ideals, and the latter utilises the Rabinowitsch trick. The latter is, in general, considerably faster.
+  References
+    @LABEL("[1]","id" => "ref1")@ Deepak Kapur, Yao Sun, and Dingkang Wang. 2013. An efficient algorithm for computing a comprehensive Gr\"obner system of a parametric polynomial system. In Journal of Symbolic Computation, 49, 27-44.
   SeeAlso
     CGBMain
     ReduceStrata
