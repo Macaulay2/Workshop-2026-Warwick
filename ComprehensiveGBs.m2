@@ -46,7 +46,19 @@ protect triple            --Probably needs to be changed b/c
 
 ringOrder = method(); -- returns the monomial order of a polynomial ring
 ringOrder PolynomialRing := List => R -> (
-    select(toList (options R).MonomialOrder, orderEntry -> not member(first orderEntry, {MonomialSize, Position}))
+    order := select(toList (options R).MonomialOrder, orderEntry -> not member(first orderEntry, {MonomialSize, Position}));
+    n := numgens R; 
+    apply(order, orderEntry -> (
+        if first orderEntry === Weights then (
+            -- For U = QQ[a]; R = U[x,y,z, MonomialOrder => {Lex => 1, GLex}];
+            -- {Lex => 1, GLex} unexpectedly expands to {Lex => 1, Weights => {1,1,1}, Lex => 2}. Is that a bug?
+            -- Anyway, we ignore the unused weights as a hacky fix.
+            Weights => take(last orderEntry, min(n, #last orderEntry))
+        ) else (
+            n = n - if instance(last orderEntry, ZZ) then last orderEntry else #last orderEntry;
+            orderEntry
+        )
+    ))
 );
 
 CGBFromTriple = method(); --Constructor for a CGBTriple starting from
