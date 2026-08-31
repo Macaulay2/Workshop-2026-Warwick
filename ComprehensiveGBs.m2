@@ -638,7 +638,7 @@ doc ///
   Key
     ComprehensiveGBs
   Headline
-    A package for computing Comprehensive Groebner Bases (CGBs).
+    a package for computing Comprehensive Groebner Bases (CGBs).
   Description
     Text
     This package provides the implementations of two differnt algorithms for computing a comprehensive Gr\"obner system and a comprehensive Gr\"obner basis of a parametric ideal. 
@@ -683,7 +683,7 @@ doc ///
     (CGBMain, List, List)
     (CGBMain, List)
   Headline
-    A method that computes a Comprehensive Groebner System
+    a method that computes a Comprehensive Groebner System
   Usage
     CGBMain(F,S)
     CGBMain(F)
@@ -700,17 +700,18 @@ doc ///
       of Sequences of the form (E,N,G), where G is a Groebner basis on the set $V(E)\setminus V(N)$
   Description
     Text
-      Implementation of the Algorithm proposed by Suzuki and Sato. Given a tower polynomial ring $R = k[U][X]$ for $U$ a set of parameters and $X$ a set of variables, $F\subset R$ an ideal of variables and parameters, and $S\subset k[U]$ an ideal satisfying $V(S)\subseteq V(\langle F\rangle\cap k[U]), CGBMain takes $F$ and $S$ as inputs and returns a comprehensive Groebner system.
+      Implementation of the Algorithm proposed by Suzuki and Sato. Given a tower polynomial ring $R = k[U][X]$ for $U$ a set of parameters and $X$ a set of variables, $F\subset R$ an ideal of variables and parameters, and $S\subset k[U]$ an ideal satisfying $V(S)\subseteq V(\langle F\rangle\cap k[U])$, CGBMain takes $F$ and $S$ as inputs and returns a comprehensive Groebner system.
       The function itself passes $F$ and $S$ to CGBMainRec after initialising various objects.
       As above, the ring must be initialised as a tower ring:
     Example
       R1 = QQ[a,b][x,y]
     Text
-      Here $X = \{x,y\}$ and $U = \{a,b\}$. If we wanted to find a comprehensive Groebner system over $QQ^2$ for $F = \langle ax+by\rangle$, we input the following:
+      Here $X = \{x,y\}$ and $U = \{a,b\}$. If we wanted to find a comprehensive Groebner system over $\mathb{Q}^2$ for $F = \langle ax+by\rangle$, we input the following:
     Example
       F1 = {a*x+b*y};
       S1 = {};
       CGBMain(F1,S1)
+-*
     Text
       CGBMain has several options: ReduceStrata, Strategy, and Verbose. ReduceStrata is an option to ignore computations on strata which have already been considered. This value is set to false by default. For smaller examples, changing this to true can reduce computation times, as for the following example. It will also give more easily parseable results.
     Example
@@ -728,12 +729,78 @@ doc ///
       Setting Verbose to True will print whatever $F$ and $S$ that CGBMainRec is currently working on:
     Example
       CGBMain(F1,S1,Verbose=>true)
+*-
     Text
       CGBMain can take in one or two lists as inputs - when $S$ is not specified, the function will assume S = {}.
   SeeAlso
     CGB
+    ReduceStrata
+    Strategy
+    Verbose
+    Depth
   ///
 
+doc ///
+  Key
+    ReduceStrata
+  Headline
+    ignore computations on strata which have already been considered
+  Description
+    Text
+      ReduceStrata is an option to ignore computations on strata which have already been considered. This value is set to false by default. For smaller examples, changing this to true can reduce computation times, as for the following example. It will also give more easily parseable results.
+    Example
+      R2 = QQ[a,b][x,y,z];
+      F2 = {x^2-a,y^3-b,x+y-z};
+      S2 = {};
+    Text
+      The value is false by default as this is not true in general - for the example below (which will not be computed to save time, though the reader may verify if they desire) the option being false has an execution time of less than a minute. Setting ReduceStrata to true increases this execution time significantly (a rough estimate for time has not been found, as the computation takes so long).
+    Example
+      R3 = QQ[a,b][x,y,z,s, MonomialOrder => Lex];
+      f=(x-a)^2+b*y^2+b;
+      F3 = {f-z,x^2+y^2+z^2-s,x+z*diff(x, f),y+z*diff(y, f)}
+  SeeAlso
+    CGBMain
+///
+
+doc ///
+  Key
+    Strategy
+  Headline
+    how to compute the radical in @TO "ReduceStrata"@
+  Description
+    Text
+      Strategy is an option that depends on @TO "ReduceStrata"@, and has two valid inputs, being "radical" and "Rabinowitsch" - other inputs will return an error. The former reduces strata by directly computing radicals of ideals, and the latter utilises the Rabinowitsch trick. The latter is, in general, considerably faster.
+  SeeAlso
+    CGBMain
+    ReduceStrata
+///
+
+doc ///
+  Key
+    Verbose
+  Headline
+    a record of CGBMain iterations 
+  Description
+    Text
+      Setting Verbose to True will print whatever $F$ and $S$ that CGBMainRec is currently working on:
+    Example
+      CGBMain(F1,S1,Verbose=>true)
+  SeeAlso
+    CGBMain
+///
+
+
+doc ///
+  Key
+    Depth
+  Headline
+    not sure of what it is 
+  Description
+   
+  SeeAlso
+    CGBMain    
+///
+  
 doc ///
   Key
     cgbOnGraph
