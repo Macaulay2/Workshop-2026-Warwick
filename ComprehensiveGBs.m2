@@ -646,7 +646,7 @@ doc ///
 
       The function @TO "CBGMain"@ is the implementation of Algorithm CGBMain of @HREF("#ref2","[2]")@.
 
-      Instead the function @TO "PGBMain"@ corresponds to the Algorithm PGBMain of @HREF("ref1","[2]")@.
+      Instead the function @TO "PGBMain"@ corresponds to the Algorithm PGBMain of @HREF("#ref1","[2]")@.
       
   References
     @LABEL("[2]","id" => "ref2")@ Akira Suzuki and Yosuke Sato. 2006. A simple algorithm to compute comprehensive Gröbner bases using Gröbner bases. In Proceedings of the 2006 international symposium on Symbolic and algebraic computation (ISSAC '06). Association for Computing Machinery, New York, NY, USA, 326–331. https://doi.org/10.1145/1145768.1145821
@@ -689,9 +689,9 @@ doc ///
     CGBMain(F)
   Inputs
     F :List
-      of polynomials of a ring $R = k[U][X]$
+       a list of polynomials in a ring $R = k[U][X]$
     S :List
-      of polynomials of a ring $RU = k[U]$
+       a list of polynomials in a ring $RU = k[U]$
     ReduceStrata=>Boolean
     Strategy=>String
     Verbose=>Boolean
@@ -840,6 +840,31 @@ doc ///
   SeeAlso
     ComprehensiveGBs
 
+///
+
+
+doc ///
+  Key
+   MDBasis
+  Headline
+    a method for computing a minimal Disckson Basis
+  Usage
+    MDBais(F)
+  Inputs
+    F: List
+      a list of polynomials in a ring $R = k[U][X]$
+  Outputs
+    G: List
+      the minimal Dickson basis of F
+  Description
+    Text
+      Following the Definition 4.1 of @HREF("#ref1","[1]")@, given a sequence F of polynomials in $k[U][X]$, MDBasis(F) returns the minimal Dickson basis of F.
+      -- do we want to make the defition explicit? 
+  References
+    @LABEL("[1]","id" => "ref1")@ Deepak Kapur, Yao Sun, and Dingkang Wang. 2013. An efficient algorithm for computing a comprehensive Gr\"obner system of a parametric polynomial system. In Journal of Symbolic Computation, 49, 27-44.
+  SeeAlso
+    ComprehensiveGBs
+    PGBMain
 ///
 
 
