@@ -641,12 +641,12 @@ doc ///
     a package for computing Comprehensive Groebner Bases (CGBs).
   Description
     Text
-    This package provides the implementations of two differnt algorithms for computing a comprehensive Gr\"obner system and a comprehensive Gr\"obner basis of a parametric ideal. 
-    For a definition see Definition 2 of @HREF("#ref2","[2]")@ and Definition 2.1 of @HREF("ref2","[2]")@
+      This package provides the implementations of two differnt algorithms for computing a comprehensive Gr\"obner system and a comprehensive Gr\"obner basis of a parametric ideal. 
+      For a definition see Definition 2 of @HREF("#ref2","[2]")@ and Definition 2.1 of @HREF("ref2","[2]")@
 
-    The function @TO "CBGMain"@ is the implementation of Algorithm CGBMain of @HREF("#ref2","[2]")@.
+      The function @TO "CBGMain"@ is the implementation of Algorithm CGBMain of @HREF("#ref2","[2]")@.
 
-    Instead the function @TO "PGBMain"@ corresponds to the Algorithm PGBMain of @HREF("ref1","[2]")@.
+      Instead the function @TO "PGBMain"@ corresponds to the Algorithm PGBMain of @HREF("ref1","[2]")@.
       
   References
     @LABEL("[2]","id" => "ref2")@ Akira Suzuki and Yosuke Sato. 2006. A simple algorithm to compute comprehensive Gröbner bases using Gröbner bases. In Proceedings of the 2006 international symposium on Symbolic and algebraic computation (ISSAC '06). Association for Computing Machinery, New York, NY, USA, 326–331. https://doi.org/10.1145/1145768.1145821
@@ -711,7 +711,6 @@ doc ///
       F1 = {a*x+b*y};
       S1 = {};
       CGBMain(F1,S1)
--*
     Text
       CGBMain has several options: ReduceStrata, Strategy, and Verbose. ReduceStrata is an option to ignore computations on strata which have already been considered. This value is set to false by default. For smaller examples, changing this to true can reduce computation times, as for the following example. It will also give more easily parseable results.
     Example
@@ -729,7 +728,6 @@ doc ///
       Setting Verbose to True will print whatever $F$ and $S$ that CGBMainRec is currently working on:
     Example
       CGBMain(F1,S1,Verbose=>true)
-*-
     Text
       CGBMain can take in one or two lists as inputs - when $S$ is not specified, the function will assume S = {}.
   SeeAlso
