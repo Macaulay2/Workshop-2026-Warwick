@@ -724,7 +724,113 @@ wellformedBundleFiltrations (ToricVectorBundleKlyachko) := tvb -> (
                symbol cache => new CacheTable}
 )
 
+
+---------------------------------------------------------------------------
+-- Converting all methods to use TVBNew
+---------------------------------------------------------------------------
+
+flags = method()
+flags (ToricVectorBundleNew) := (cacheValue symbol filtrationFlags) ( E -> (
+    hashTable for rho in rays E list (
+        filtSteps := unique flatten (filtrationJumps E)#rho;
+        rayFlag := for i in unique filtSteps list (
+            ((filtrationMatrices E)#rho)_(positions(filtSteps, j->j>=i))
+        );
+        rayFlag = reverse sort(rayFlag, mat -> numgens source mat);
+        rho => rayFlag
+    )
+))
+
+-- is there a better way?
+cartesianProduct2 = (L1,L2) -> flatten apply(L1, l1 -> apply(L2, l2 -> {l1,l2}))
+cartesianProductNested = L -> fold(L, cartesianProduct2)
+inductiveFlatten = (L,i) -> if i<=0 then L else ( {L#0} | inductiveFlatten (L#1,i-1))
+cartesianProduct = L -> (
+ if #L==1 then return apply(L#0, l-> {l}); -- border case
+ n := #L-2;
+ apply( cartesianProductNested L, l -> inductiveFlatten(l,n))
+)
+
+poset = method()
+poset (ToricVectorBundleNew) := (cacheValue symbol posetTvb)  (E -> (
+    -- do all possible intersections (over QQ)
+    intersections := apply( cartesianProduct values flags E, L -> intersect( apply(L, l -> image promote(l,QQ) ) ) );
+    -- remove 0-dimensional spaces and duplicates 
+    intersections = toList set select( intersections, V -> rank V > 0 );
+    intersections
+))
+
+
+-- MAIN METHOD: groundSet ----------------------------------------
+
+-- PURPOSE : Given a toric vector bundle in Klyachko's description,
+--           compute the ground set of the associated matroid
+--           IMPORTANT: Due to the implementation, elements might appear several times
+--   INPUT : 'E', a ToricVectorBundleKlyachko
+--  OUTPUT : ground set (list of nx1-matrices)
+groundSet = method( Options => true )
+groundSet (ToricVectorBundleNew) :=  {Verbosity => 0, preferredGenerators => {}} >> opts -> (cacheValue groundSet)  (E -> (
+    intersections := poset E;
+    G := toList set select( intersections, V -> rank V == 1 );
+    for k in 2..rank E do (
+        Vs := select( intersections, V -> rank V == k );
+        for V in Vs do (
+            GinV := select(G, g -> isSubset(g, V) );
+            sumGinV := sum append(GinV, image map(QQ^(rank E),QQ^1,0)); -- works also if GinV empty
+            if rank sumGinV < rank V then (
+                newGs := {};
+                generatorsToChoose := {};
+                if #(opts#preferredGenerators) > 0 then (
+                    generatorsToChoose = select( apply(opts#preferredGenerators, g -> image promote(g,QQ)), g -> isSubset(g, V));
+                    )
+                else (
+                    generatorsToChoose = toList getColumns V;
+                    );
+                generatorsToChoose = select( generatorsToChoose, v -> not isSubset(v, sumGinV));
+                while rank(sumGinV + sum append(newGs, image map(QQ^(rank E),QQ^1,0))) < rank V do (
+                    if rank(sumGinV+sum append(newGs, image map(QQ^(rank E),QQ^1,0))+generatorsToChoose#0) > rank(sumGinV+sum append(newGs, image map(QQ^(rank E),QQ^1,0))) then (
+                        newGs = append(newGs, generatorsToChoose#0);
+                    );
+                    generatorsToChoose = drop(generatorsToChoose,1);
+                );
+                G = G | newGs;
+            )
+            else (
+                -- catch some error here
+            )
+        )
+    );
+-- return to ZZ
+    apply(toList set G, g -> primitive gens g)
+))
+
+polytopeTVB = method( Options => true )
+polytopeTVB (ToricVectorBundleNew, Matrix) := {Verbosity => 0} >> opts -> ( (E,l) -> (
+    filtSteps := hashTable for rho in rays tvb list (
+        rho => unique flatten (filtrationJumps E)#rho
+    );
+    M := transpose matrix { apply( rays E, rho -> (filtSteps#rho)#(last position((flags E)#rho, f -> isSubset(image promote(l,QQ), image promote(f,QQ))))) };
+    rhoMat := transpose fold( rays E, (i,j) -> i|j);
+    M = promote(M,QQ);
+    rhoMat = promote(rhoMat,QQ);
+    pol := polyhedronFromHData(-rhoMat,-M);
+    pol
+))
+
+parliament = method( Options => true )
+parliament(ToricVectorBundleNew) := {Verbosity => 0} >> opts -> (cacheValue parliament)( E -> (
+    gs := groundSet(E, Verbosity=>(opts#Verbosity-1));
+    hashTable for l in gs list ( l => polytopeTVB(E,l, Verbosity=>opts#Verbosity) )
+))
  
+restrictToAffine = method( Options => true )
+restrictToAffine (ToricVectorBundleNew, Matrix) := {Verbosity => 0} >> opts -> ( (tvb,cone) -> (
+    X = ToricVariety(fan coneFromVData cone);
+    fJ = toList apply(rays X, rho -> (filtrationJumps tvb)#rho);
+    fM = toList apply(rays X, rho -> (filtrationMatrices tvb)#rho);
+    E = toricVectorBundleNew(X,fJ,fM)
+))
+
 ---------------------------------------------------------------------------
 -- DOCUMENTATION
 ---------------------------------------------------------------------------
