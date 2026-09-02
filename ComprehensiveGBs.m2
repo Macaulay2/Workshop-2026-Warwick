@@ -606,6 +606,7 @@ CCheck (List, RingElement) := (E, f) -> (
     -- and hopefully the GB computation is just as fast
 
     fAlpha := phi(f);
+<<<<<<< HEAD
     -- fAlpha = sub(fAlpha, newR); -- shouldn't need this
     GspE := flatten entries gens spE;
 
@@ -613,6 +614,8 @@ CCheck (List, RingElement) := (E, f) -> (
         return true; -- certifies consistency
     );
     return false -- unknown consistency (i.e., it could still be consistent)
+=======
+>>>>>>> ccdc3fd (no change)
   
 );
 
