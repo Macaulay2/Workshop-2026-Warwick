@@ -1259,6 +1259,12 @@ ToricVectorBundleNew == ToricVectorBundleNew := (T1,T2) -> (areIsomorphic(T1,T2)
 
 areIsomorphic = method(TypicalValue => Boolean)
 
+
+-- TODO:
+-- to construct the isomorphism we need to be more clever. We need to attempt
+-- to construct the iso by looking at filtered pieces, recreating a basis for
+-- the full vector space
+
 -- new areIsomorphic for ToricVectorBundleNew
 -- this is just trivial for now to make sure that the == has been implemented appropriately
 areIsomorphic (ToricVectorBundleNew,ToricVectorBundleNew) := Boolean => (T1,T2) -> (
@@ -2625,7 +2631,7 @@ cokernel (ToricVectorBundleMap) := f ->(
     newMatrices:= apply(L, i -> matrix i_0 );
     newJumps := apply( L , l -> jumpsAux(l, minj ) );
     newData := transpose {newMatrices, newJumps};
-    -- Refine it it needed
+    -- Refine it if needed
     newData = transpose apply( newData, a -> adaptedBasis(a) );
     newMatrices = newData_0;
     newJumps= newData_1;
@@ -6125,7 +6131,13 @@ D5=toricDivisor({2,4,-6},PP2);
 --check incomparable
 assert((D5?D1) === symbol incomparable)
 
---in progress
+
+--gcd
+D6=toricDivisor({2,4,-7},PP2);
+assert(gcd(D1,D5) == D6)
+--lcm
+D7=toricDivisor({2,5,-6},PP2);
+assert(lcm(D1,D5) == D7)
 
 ///
 end
