@@ -2847,6 +2847,10 @@ rank WeilDecoration := ZZ => WD -> WD.rank
 strata = method()
 strata WeilDecoration := List => WD -> WD.strata
 
+
+-- Input: a toric vector bundle
+-- Output: the Weil Decoration associated to this.
+-- NOTE: The trivial strata is excluded for convenience in coding.
 weilDecoration = method()
 weilDecoration ToricVectorBundleNew := WeilDecoration => V -> (
     X := variety V;
@@ -2878,9 +2882,7 @@ weilDecoration ToricVectorBundleNew := WeilDecoration => V -> (
 	t -> (ks#(last t), strataIntersections#(ks#(last t))));
     new WeilDecoration from {
 	symbol variety => X,
-	symbol strata  => prepend(
-	    (image filteredPiece(V, A#0, max L+1), infinity),
-	    apply(S, (W, inds) -> (W, toricDivisor(inds, X)))),
+	symbol strata  => apply(S, (W, inds) -> (W, toricDivisor(inds, X))),
 	symbol rank    => rank V,
 	symbol cache   => new CacheTable})
 
@@ -2889,42 +2891,42 @@ weilToKlyachko WeilDecoration := ToricVectorBundleNew => WD ->
     weilToKlyachko(variety WD, WD)
 
 weilToKlyachko(NormalToricVariety, WeilDecoration) := ToricVectorBundleNew => (X, WD) ->
-    weilToKlyachko(X, apply(drop(strata WD, 1), (W, D) -> (W, entries vector D)))
+    weilToKlyachko(X, apply(strata WD, (W, D) -> (W, entries vector D)))
 
 weilToKlyachko(NormalToricVariety, List) := (X, WD) ->(
-    -- The input is a list of pairs (stratum closure, list of divisor
-    -- coefficients).  If it still carries the leading (0, infinity) entry
-    -- produced by weilDecoration, drop it.
-    WDnew := if (WD#0)#1 === infinity then drop(WD, 1) else WD;
+    -- The input is a list of pairs (stratum closure, list of divisor coefficients).
     -- create a matrix with jumps for each ray that will later be refined
-    Maux := matrix transpose flatten apply(WDnew, (V, inds) -> entries \ V_*);
-    Jaux := apply(#rays X, j -> { Maux, flatten apply(WDnew, (V, inds) -> toList(numgens V : inds_j)) });
+    Maux := matrix transpose flatten apply(WD, (V, inds) -> entries \ V_*);
+    Jaux := apply(#rays X, j -> { Maux, flatten apply(WD, (V, inds) -> toList(numgens V : inds_j)) });
     -- Simplify the data to get square matrices
     data := transpose apply(Jaux, adaptedBasis);
     toricVectorBundle(X, data_0, data_1))
 
+-*
 weilToKlyachko(NormalToricVariety, List, List) := (X, E, D) -> (
     L := flatten D;
     amin := min L;
     amax := max L;
-    -*
     H := new MutableHashTable;
     (M, J) := to sequence transpose for i from 0 to #(rays X)-1 do (
 	);
-    *-
     )
+*-
 
-posetChains := (D,n) -> (
+-- Input: weilDecoration for a ToricVectorBundle
+-- Output: the (not necessarily saturated!) chains in the poset of strata
+posetChains := (WD,n) -> (
+    sWD := strata WD;
     if n < 0 then return error("need nonnegative n");
-    if n == 0 then return apply(D,l -> {{numcols l_0, l_1}});
-    divs := flatten posetChains(D,0);
-    prevChains := posetChains(D,n-1);
+    if n == 0 then return apply(sWD, l -> {{numgens l_0, l_1}});
+    divs := flatten posetChains(WD,0);
+    prevChains := posetChains(WD,n-1);
     flatten for c in prevChains list (
         currdiv := first c;
         for newdiv in divs list (
             if currdiv_0 >= newdiv_0 then continue
             else
-            if any(transpose {currdiv_1, newdiv_1}, p -> p_0 < p_1) then continue
+            if currdiv_1 < newdiv_1 then continue
             else {newdiv} | c
             )
         )
