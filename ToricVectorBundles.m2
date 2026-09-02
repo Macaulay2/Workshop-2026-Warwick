@@ -29,7 +29,7 @@ newPackage("ToricVectorBundles",
          Email => "todo"},
         {Name => "Marco Fava",
          HomePage => "todo",
-         Email => "todo"},
+         Email => "marco.fava@warwick.ac.uk"},
         {Name => "Labix Liu",
          HomePage => "https://labix-liu.github.io/",
          Email => "sin.liu@qmul.ac.uk"},
@@ -246,6 +246,7 @@ trivialBundle (NormalToricVariety, ZZ) := (tv,r) -> (
 
 lineBundle = method()
 lineBundle(NormalToricVariety , List ):= (X, L) ->(
+    if # L != # rays X then( error("The list should have an entry for each ray in the fan"););
 	jumps := for e in L list {e};
     mats := for p in rays X list matrix {{1_(coefficientRing ring X)}};
 	toricVectorBundle(X, mats, jumps)
@@ -994,8 +995,10 @@ dual ToricVectorBundle := {} >> opts -> tvb -> (
 exteriorPower (ToricVectorBundleNew, ZZ) := opts -> (TVB, l) -> (
 	if l < 0 then (
 		error("The power has to be non-negative.");
-	) else if (l == 0 or l > rank TVB) then (
-		trivialBundle(variety TVB, 0)
+	) else if l == 0 then (
+	        trivialBundle(variety TVB, 1)
+        ) else if l > rank TVB then (
+                trivialBundle(variety TVB, 0)
 	) else (
 		R := rays variety TVB;
 		fM := filtrationMatrices TVB;
@@ -1005,7 +1008,7 @@ exteriorPower (ToricVectorBundleNew, ZZ) := opts -> (TVB, l) -> (
     	indtable := hashTable apply(#ind, i -> ind#i => i);
 
 		newfM := apply(#R, t -> (
-			M := mutableMatrix(ring variety TVB,#ind,#ind);
+			M := mutableMatrix(ring TVB,#ind,#ind);
 			for i in ind do (
 				for j in ind do (
 					M_(indtable#i,indtable#j) = det((fM_t)^i_j);
@@ -1089,6 +1092,12 @@ ToricVectorBundleNew == ToricVectorBundleNew := (T1,T2) -> (areIsomorphic(T1,T2)
 
 areIsomorphic = method(TypicalValue => Boolean)
 
+
+-- TODO:
+-- to construct the isomorphism we need to be more clever. We need to attempt
+-- to construct the iso by looking at filtered pieces, recreating a basis for
+-- the full vector space
+
 -- new areIsomorphic for ToricVectorBundleNew
 -- this is just trivial for now to make sure that the == has been implemented appropriately
 areIsomorphic (ToricVectorBundleNew,ToricVectorBundleNew) := Boolean => (T1,T2) -> (
@@ -1109,13 +1118,18 @@ areIsomorphic (ToricVectorBundleNew,ToricVectorBundleNew) := Boolean => (T1,T2) 
     if not T1.cache.iso#?T2 then (
         --Checking if isomorphic!
         --defining the potential isomorphism as the identity from T1 to T2
-        isoMapT1T2 := map(T2,T1,id_((ring T1)^(rank T1)));
+        r := rank T1;
+        A := submatrix'(sort  ( (filtrationMatrices( T1))_0 ||matrix( ring T1, {(filtrationJumps (T1))_0} )),{r}, );
+        B := submatrix'(sort (  ( filtrationMatrices T2)_0||matrix(ring T2, { (filtrationJumps T2)_0})),{r}, );
+        isoMatrix := B * (A^-1);
+        isoMapT1T2 := map(T2,T1,isoMatrix);
+        --isoMapT1T2 := map(T2,T1,id_((ring T1)^(rank T1)));
         --checking if this map is injective and surjective. if it is, this will tell us that
         --these bundles are equivariantly isomorphic
         areTVBsIso := ((isInjective isoMapT1T2) and (isSurjective isoMapT1T2));
         if areTVBsIso then (
             T1.cache.iso#T2 = isoMapT1T2;
-            isoMapT2T1 := map(T1,T2,id_((ring T2)^(rank T2)));
+            isoMapT2T1 := map(T1,T2, isoMatrix^-1);
             T2.cache.iso#T1 = isoMapT2T1;
             );
          );
@@ -2016,7 +2030,7 @@ isSurjective (ToricVectorBundleMap) := f -> (
 	
 	if not isSurjective (map f) then (
 		if debugLevel > 0 then (
-			<< "-- the map is not injective" << endl);
+			<< "-- the map is not surjective" << endl);
 		return false
 	);
 	
@@ -2177,7 +2191,7 @@ cokernel (ToricVectorBundleMap) := f ->(
     newMatrices:= apply(L, i -> matrix i_0 );
     newJumps := apply( L , l -> jumpsAux(l, minj ) );
     newData := transpose {newMatrices, newJumps};
-    -- Refine it it needed
+    -- Refine it if needed
     newData = transpose apply( newData, a -> adaptedBasis(a) );
     newMatrices = newData_0;
     newJumps= newData_1;
@@ -2425,7 +2439,7 @@ weilDecoration ToricVectorBundleNew := WeilDecoration => V -> (
     new WeilDecoration from {
 	symbol variety => X,
 	symbol strata  => prepend(
-	    (image filteredPiece(V, A#0, infinity), infinity),
+	    (image filteredPiece(V, A#0, max L+1), infinity),
 	    apply(S, (W, inds) -> (W, toricDivisor(inds, X)))),
 	symbol rank    => rank V,
 	symbol cache   => new CacheTable})
@@ -2533,43 +2547,91 @@ weilDecorationDivisors List := weilDecorationList -> (
 
 -- The code that follows take a module, assuming that it defines a toric vector bundle and returns its Klyachko description. 
 
--- TODO this function should take a module and turn it into a fine graded module
-auxFine = (M) -> (
-    n := # gens ring M;
-    fineDeg := entries( id_(ZZ^n));
-    zer := toList(n:0);
-    S := newRing(ring M, Degrees => fineDeg);
-    Mnew := sub(M, S);
-    l := numgens source Mnew;
-    D :=splice{l:zer};
-    aux :=apply(entries Mnew, m -> select(m, i -> i != 0 ));
-    sh := apply(aux, m -> if m != {} then degree m_0 else zer);
-    -- TODO check that it makes sense to assume that the source has no twists
-    map(S^sh, S^D, Mnew)
-);
+
 
 moduleToKlyachko = method()
--- M: presentation of the module we are sheafifying
+-- A: presentation of the module we are sheafifying that is fine-graded
 moduleToKlyachko (NormalToricVariety, Matrix):= (X,A) -> (
-    -- Obtain the ToricVectorBundleMap associated to the presentation
-    -- The source and target are direct sums of line bundles and the associated sheaf is the cokernel of said map
-    coxX := ring A;
-    if coxX =!= ring X then (error("The module is not defined over the Cox ring of the toric variety"););
+    
+  if not isHomogeneous A then(error("The map is not homogeneous with respect to the fine-grading" ););
+    S := ring A;
+    coxX := ring X;
+    n:= numgens S;
+    if n != numgens coxX or not isPolynomialRing S then(error("The ring of the matrix is not compatible with the toric variety"););
+    if degrees S != entries(id_(ZZ^n)) then (error("The module is not fine graded"););
     if  all( flatten entries A , p -> # terms p <= 1) != true then( error("The presentation matrix is not equivariant"););
-    n := # gens ring A;
-    Anew := auxFine(A);
-    degSour := degrees source Anew;
-    degTarg := degrees target Anew;
-    s0:= trivialBundle( X,0) ;
-    sour := fold(directSum,s0,  apply(degSour, l -> (if l != splice{n:0} then( lineBundle(X, -l ))else(trivialBundle (X,1)) )) );
+    s0:= trivialBundle(X,0) ;
+    sdegs:= degrees source A;
+    tdegs := degrees target A;
+    sour := fold(directSum,s0,  apply(sdegs, l -> (if l != splice{n:0} then( lineBundle(X, -l ))else(trivialBundle (X,1)) )) );
     t0:= trivialBundle( X,0);
-    targ := fold(directSum,s0,  apply(degTarg, l -> (if l != splice{n:0} then( lineBundle(X, -l ))else(trivialBundle (X,1)) )) );
+    targ := fold(directSum,s0,  apply(tdegs, l -> (if l != splice{n:0} then( lineBundle(X, -l ))else(trivialBundle (X,1)) )) );
     -- TODO check that this is in fact the map that we want
     -- The map evaluates the variables to be 1 which should give the map at the fiber over the identity point
-    phi := map( coefficientRing coxX, coxX, toList(# gens coxX:1));
+    phi := map( coefficientRing S, S, toList(n:1));
     f:= map( targ, sour, phi**A);
     coker f
 )
+
+moduleToKlyachko (NormalToricVariety, Module):= (X,M) -> (
+    -- Obtain the ToricVectorBundleMap associated to the presentation
+  A := presentation M;
+  S := ring M;
+  n := numgens S;
+  if S =!= ring X then (error("The module is not defined over the Cox ring of the toric variety"););
+  if  all( flatten entries A , p -> # terms p <= 1) != true then( error("The presentation matrix is not equivariant"););
+
+  -- Source degrees
+  p := numColumns (A);
+  MS := new MutableHashTable from apply(p , j -> {j,{}});
+  -- target degrees
+  q := numRows (A);
+  NS := new MutableHashTable from apply(q , i -> {i,{}});
+  aux := apply(entries A, i -> apply( i, j -> exponents j));
+  jnew := 0;
+  inew := 0; 
+  MS#0 = toList(n:0);
+-- Track lists of degrees instead of cloning the MutableHashTables
+  oldMS := apply(p, j -> MS#j);
+  oldNS := apply(q, i -> NS#i);
+  currentMS :={};
+  currentNS :={};
+
+  while isMember({}, values MS) or isMember({}, values NS) do(
+      if oldMS == currentMS and oldNS == currentNS then(
+          jnew = min apply(p, j -> if MS#j == {} then( j)else( infinity) );
+          if jnew != infinity then( MS#jnew= toList(n:0); )else(
+          inew = min apply(q, i -> if NS#i == {} then( i)else( infinity) );
+          if inew != infinity then( NS#inew= toList(n:0); );
+          );
+          
+      );
+
+      oldMS = apply(p, j -> MS#j);
+      oldNS = apply(q, i -> NS#i);
+
+      for j from 0 to p-1 do(
+          for i from 0 to q-1 do(
+              if (aux_i)_j != {} then(
+                  if NS#i !={} and MS#j == {}  then(MS#j = flatten (aux_i)_j + NS#i );
+                  if MS#j !={} and NS#i == {} then(NS#i = - flatten (aux_i)_j + MS#j);
+              );
+          );
+      );
+      
+      currentMS = apply(p, j -> MS#j);
+      currentNS = apply(q, i -> NS#i);
+
+  ); 
+  sdegs := - apply(p , j -> MS#j );
+  tdegs := - apply(q , i -> NS#i );
+  R := newRing( S, Degrees => entries id_(ZZ^(n)));
+  AM := map(R^tdegs,R^sdegs,sub(A, R) );
+  if not isHomogeneous AM then(error("The module is not homogeneous with respect to the fine-grading" ););
+    moduleToKlyachko(X, AM)
+)
+
+
 
 -- The code that follows take a toric vector bundle with Klyachko description and returns a module over the Cox ring of the toric variety, M, such that the sheafification of M is the starting vector bundle.
 -- Note that different modules can have the same associated sheaf. 
@@ -6070,6 +6132,15 @@ T = toricVectorBundle(PP3,{basisMat0,basisMat1,basisMat2,basisMat3},filtrationJu
 assert areIsomorphic(TT3,T)
 assert areIsomorphic(T,TT3)
 
+X = toricProjectiveSpace 3;
+L1 = lineBundle(X, {1,2,3,4} );
+L2 = lineBundle(X ,{0,1,0,2});
+T1 = L1++L2;
+T2 = L2++L1;
+
+assert areIsomorphic( T1, T2)
+assert (map isomorphism( T1, T2) == matrix( ring T1,{{0, 1}, {1, 0}} ))
+
 ///
 
 --Test 36
@@ -6122,6 +6193,8 @@ assert( variety(T)=== variety(T2) )
 assert(filtrationJumps(T)=={{0, 0, 1, 0}, {0, 0, 1, 0}, {0, 0, 1, 0}} )
 assert(filtrationMatrices(T) == {matrix(QQ, {{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, -1, -1}, {0, 0, -1, 0}}), matrix(QQ, {{1, 0, 0, 0},{0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}}), matrix(QQ, {{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 0, 1},{0, 0, 1, 0}} )} )
 ///
+
+
 
 --Test 39
 --Test tensor product
@@ -6246,7 +6319,60 @@ CKg = coker g;
 assert(CKg== trivialBundle(X,0) )
 ///
 
+-- Test 45
+TEST ///
+X =  toricProjectiveSpace 3;
+S = ring X;
+M = cokernel(map(S^{2:{-5}, {-4}},S^{2:{-7}},{{0, x_1^2}, {0, 0}, {x_1^2*x_3, 7*x_0*x_1*x_3}}));
+H = moduleToKlyachko (X,M);
+assert(filtrationJumps (H) == {{0}, {0}, {0}, {0}} )
+assert( filtrationMatrices (H) ==  {map(QQ^1,QQ^1,{{1}}),map(QQ^1,QQ^1,{{1}}),map(QQ^1,QQ^1,{{1}}),map(QQ^1,QQ^1,{{1}})})
+assert( rank H == 1)
+///
+
+
+--Test 46
+--Test for toricDivisor ? toricDivisor, gcd and lcm
+TEST ///
+--toricDivisor ? toricDivisor
+PP2=toricProjectiveSpace 2;
+D1=toricDivisor({2,5,-7},PP2);
+D2=toricDivisor({2,5,-7},PP2);
+--check ==
+assert((D2?D1) === symbol ==)
+D3=toricDivisor({2,4,-7},PP2);
+--check <
+assert((D3?D1) === symbol <)
+D4=toricDivisor({2,5,-6},PP2);
+--check >
+assert((D4?D1) === symbol >)
+D5=toricDivisor({2,4,-6},PP2);
+--check incomparable
+assert((D5?D1) === symbol incomparable)
+
+
+--gcd
+D6=toricDivisor({2,4,-7},PP2);
+assert(gcd(D1,D5) == D6)
+--lcm
+D7=toricDivisor({2,5,-6},PP2);
+assert(lcm(D1,D5) == D7)
+
+///
 end
+
+
+--Test 47
+--Checking exteriorPower
+TEST ///
+X = hirzebruchSurface 2;
+E = tangentBundle X;
+assert(exteriorPower(E,1) == E)
+assert(rank exteriorPower(E++E,2) == 6)
+D = toricDivisor({1,2,4,5},X)
+L = lineBundle(D)
+assert(areIsomorphic(exteriorPower(E++L, 2),(exteriorPower(E,0)**exteriorPower(L,2))++(exteriorPower(E,1)**exteriorPower(L,1))++(exteriorPower(E,2)**exteriorPower(L,0))))
+///
 
 
 ---------------------------------------
