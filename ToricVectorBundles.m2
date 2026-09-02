@@ -1280,8 +1280,8 @@ areIsomorphic (ToricVectorBundleNew,ToricVectorBundleNew) := Boolean => (T1,T2) 
         --Checking if isomorphic!
         --defining the potential isomorphism as the identity from T1 to T2
         r := rank T1;
-        A := submatrix'(sort  ( (filtrationMatrices( T1))_1 ||matrix( ring T1, {(filtrationJumps (T1))_1} )),{r}, );
-        B := submatrix'(sort (  ( filtrationMatrices T2)_1||matrix(ring T2, { (filtrationJumps T2)_1})),{r}, );
+        A := submatrix'(sort  ( (filtrationMatrices( T1))_0 ||matrix( ring T1, {(filtrationJumps (T1))_0} )),{r}, );
+        B := submatrix'(sort (  ( filtrationMatrices T2)_0||matrix(ring T2, { (filtrationJumps T2)_0})),{r}, );
         isoMatrix := B * (A^-1);
         isoMapT1T2 := map(T2,T1,isoMatrix);
         --isoMapT1T2 := map(T2,T1,id_((ring T1)^(rank T1)));
