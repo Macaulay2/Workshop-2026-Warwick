@@ -91,6 +91,7 @@ export {
     "lineBundle",
     "toricVectorBundle",
     "trivialBundle",
+    "toricVectorBundleKaneyama",
     -- others
     "displayFiltrations",
     "addBase", 
@@ -149,8 +150,9 @@ protect iso
 -- Defining the new type ToricVectorBundle, the parent type to the two types of TVB
 ToricVectorBundle = new Type of HashTable
 
+
 -- Defining the new type ToricVectorBundleKaneyama
-ToricVectorBundleKaneyama = new Type of ToricVectorBundle
+ToricVectorBundleKaneyama = new Type of HashTable -- keep this here for now, will move to bottom soon
 ToricVectorBundleKaneyama.synonym = "vector bundle on a toric variety (Kaneyama's description)"
 globalAssignment ToricVectorBundleKaneyama
 
@@ -275,16 +277,16 @@ tangentBundle NormalToricVariety := X -> (
 
 
 --TODO: once the overhaul is complete, we should remove these constructors.
-
+-*
 -- PURPOSE : Building a Vector Bundle of rank 'k' on the Toric Variety given by the Fan 'F'
 --toricVectorBundle = method(Options => true)
 
 --   INPUT : '(k,F)',  a strictly positive integer 'k' and a pure and full dimensional Fan 'F'
---  OUTPUT : A ToricVectorBundleKaneyama or ToricVectorBundleKlyachko
--- COMMENT : If no option is given the function will return a ToricVectorBundleKlyachko, if "Type" => "Kaneyama" is given it returns a ToricVectorBundleKaneyama
+--  OUTPUT : A ToricVectorBundleKlyachko
+-- COMMENT : If no option is given the function will return a ToricVectorBundleKlyachko
 
 toricVectorBundle (ZZ,Fan) := {"Type"=>"Klyachko"} >> opts -> (k,F) -> (
-     if opts#"Type" == "Kaneyama" then makeVBKaneyama(k,F) else if opts#"Type" == "Klyachko" then makeVBKlyachko(k,F) else error("Expected Type to be Klyachko or Kaneyama."))
+     if opts#"Type" == "Klyachko" then makeVBKlyachko(k,F) else error("Expected Type to be Klyachko."))
 
 
 --   INPUT : '(k,F,L1,L2)',  a strictly positive integer 'k',a pure and full dimensional Fan 'F', and two lists 'L1' and 'L2'
@@ -295,70 +297,9 @@ toricVectorBundle (ZZ,Fan) := {"Type"=>"Klyachko"} >> opts -> (k,F) -> (
 --     	     transition matrices are given in the second list.
 toricVectorBundle (ZZ,Fan,List,List) := {"Type"=>"Klyachko"} >> opts -> (k,F,L1,L2) -> (
      if opts#"Type" == "Kaneyama" then makeVBKaneyama(k,F,L1,L2) else if opts#"Type" == "Klyachko" then makeVBKlyachko(k,F,L1,L2) else error("Expected Type to be Klyachko or Kaneyama."))
+*-
 
- -- PURPOSE : Building a Vector Bundle of rank 'k' on the Toric Variety given by the Fan 'F'
---           with 0 degrees and identity transition matrices
---   INPUT : '(k,F)',  a strictly positive integer 'k' and a pure and full dimensional
---                     Fan 'F' 
---  OUTPUT : The ToricVectorBundleKaneyama 'VB'
-makeVBKaneyama = method(TypicalValue => ToricVectorBundleKaneyama)
-makeVBKaneyama (ZZ,Fan) := (k,F) -> (
-     -- Checking for input errors
-     if k < 0 then error("The vector bundle must have a positive rank.");
-     if not isComplete F then error("The fan has to be complete.");
-     if not isPointed F then error("The fan has to be pointed.");
-     -- Writing the table of Cones of maximal dimension
-     n := dim F;
-     Frays := rays F;
-     Flineality := linealitySpace F;
-     topConeTable := customConeSort apply(maxCones F, c-> (Frays_c, Flineality));
-     topConeTable = apply(#topConeTable, i -> topConeTable#i => i);
-     topConeTable = hashTable topConeTable;
-     
-     -- Saving the index pairs of top dimensional Cones that intersect in a codim 1 Cone
-     Ltable := hashTable {};
-     scan(pairs topConeTable, (C,a) -> Ltable = merge(Ltable,hashTable apply(facesAsCones(1,posHull C), e -> (rays e, linealitySpace e) => a),(b,c) -> if b < c then (b,c) else (c,b)));
-     Ltable = hashTable flatten apply(pairs Ltable, p -> if instance(p#1,Sequence) then p#1 => p#0 else {});
-     -- Removing Cones on the "border" of F, which have only 1 index
-     pairlist := sort keys Ltable;
-     -- Saving the identity into the Table of transition matrices
-     baseChangeTable := hashTable apply(pairlist, p -> p => map(QQ^k,QQ^k,1));
-     -- Saving 0 degrees into the degree table
-     degreeTable := hashTable apply(keys topConeTable, C -> C => map(ZZ^n,ZZ^k,0));
-     -- Making the vector bundle
-     new ToricVectorBundleKaneyama from {
-	  "degreeTable" => degreeTable,
-	  "baseChangeTable" => baseChangeTable,
-	  "codim1Table" => Ltable,
-	  "ToricVariety" => F,
-	  "number of affine charts" => #topConeTable,
-	  "dimension of the variety" => n,
-	  "rank of the vector bundle" => k,
-	  "topConeTable" => topConeTable,
-	  symbol cache => new CacheTable})
-
---TODO: I think the Kaneyama presentation is still useful, but needs some massaging to be palatable.
-
---   INPUT : '(k,F,degreeList,matrixList)',  a strictly positive integer 'k', a pure and full dimensional
---                     Fan 'F' of dimension n, a list 'degreeList' of k by n matrices over ZZ, one for each 
---     	    	       top dimensional Cone in 'F' where the columns give the degrees of the generators in the 
---     	    	       corresponding affine chart to this Cone, and a list 'matrixList' of  k by k matrices 
---     	    	       over QQ, one for each pair of top dimensional Cones intersecting in a common codim 1 face. 
---  OUTPUT : The ToricVectorBundleKaneyama 'tvb' 
--- COMMENT : Note that the top dimensional cones are numbered starting with 0 and the codim 1 intersections are 
---           labelled by pairs (i,j) denoting the two top dim cones involved, with i<j and they are ordered
---     	     in lexicographic order. So the matrices in 'matrixList' will be assigned to the pairs (i,j) in that 
---     	     order, where the matrix A assigned to (i,j) denotes the transition
---     	    	 (e_i^1,...,e_i^k) = (e_j^1,...,e_j^k)* A
---     	     The matrices in 'degreeList' will be assigned to the cones in the order in which they are numbered.
-makeVBKaneyama (ZZ,Fan,List,List) := (k,F,degreelist,matrixlist) -> (
-     -- Generating the trivial vector bundle of rank k
-     tvb := makeVBKaneyama(k,F);
-     -- Adding the given degrees and transition matrices
-     tvb = addDegrees(tvb,degreelist);
-     tvb = addBaseChange(tvb,matrixlist);
-     tvb)
-
+--Deleted the makeVBKaneyama that was here
 
 -- PURPOSE : Building a Vector Bundle in the Klyachko description of rank 'k' on the Toric Variety given by the Fan 'F'
 --           with trivial Filtration for every ray
@@ -367,6 +308,43 @@ makeVBKaneyama (ZZ,Fan,List,List) := (k,F,degreelist,matrixlist) -> (
 makeVBKlyachko = method(TypicalValue => ToricVectorBundleKlyachko)
 makeVBKlyachko (ZZ,Fan) := (k,F) -> (
      -- Checking for input errors
+     if k < 0 then error("The vector bundle must have a positive rank.");
+     if not isPointed F then error("The Fan has to be pointed");
+     -- Writing the table of rays
+     rT := raySortOfFan F;
+     rT = hashTable apply(#rT, i -> rT#i => i);
+     -- Writing the table of identity matrices for the vector bundle bases
+     bT := hashTable apply(keys rT, i -> i => map(QQ^k,QQ^k,1));
+     -- Writing the table of matrices for the filtration maps
+     fMT := hashTable apply(keys rT, i -> i =>  matrix {toList(k:0)});
+     -- Computing the list of changes in the filtrations
+     fT := hashTable apply(pairs fMT, p -> (
+	       L := flatten entries p#1;
+	       L1 := sort unique L;
+	       p#0 => hashTable ({min L1 - 1 => {}} | apply(L1, l -> l => positions(L,e -> e == l)))));
+     -- Generating the vector bundle
+     tvb := new ToricVectorBundleKlyachko from {
+	  "ring" => QQ,
+	  "rayTable" => rT,
+	  "baseTable" => bT,
+	  "filtrationMatricesTable" => fMT,
+	  "filtrationTable" => fT,
+	  "ToricVariety" => F,
+	  "number of affine charts" => #((maxCones F)),
+	  "dimension of the variety" => dim F,
+	  "rank of the vector bundle" => k,
+	  "number of rays" => #rT,
+	  symbol cache => new CacheTable};
+     tvb.cache.isVB = true;
+     --breakpoint
+     tvb)
+
+-- I want to get rid of the original constructor that took options, so making this toricVectorBundleKlyachko
+-- DO WE STILL NEED/USE THESE?
+
+toricVectorBundleKlyachko = method(TypicalValue => ToricVectorBundleKlyachko)
+toricVectorBundleKlyachko (ZZ,Fan) := (k,F) -> (
+    -- Checking for input errors
      if k < 0 then error("The vector bundle must have a positive rank.");
      if not isPointed F then error("The Fan has to be pointed");
      -- Writing the table of rays
@@ -411,15 +389,21 @@ makeVBKlyachko (ZZ,Fan,List,List) := (k,F,Bm,Fm) -> (
      tvb = addBase(tvb,Bm);
      addFiltration(tvb,Fm))
 
+toricVectorBundleKlyachko (ZZ,Fan,List,List) := (k,F,Bm,Fm) -> (
+    tvb := toricVectorBundleKlyachko(k,F);
+    tvb = addBase(tvb,Bm);
+    addFiltration(tvb,Fm))
 
+-*
 -- Modifying the standard output for a ToricVectorBundleKaneyama to give an overview of its characteristica
-net ToricVectorBundleKaneyama := tvb -> ( horizontalJoin flatten ( 
+net ToricVectorBundleKaneyama := tvb -> ( horizontalJoin flatten ( --MOVED
 	  "{", 
 	  -- prints the parts vertically
 	  stack (horizontalJoin \ sort apply({"dimension of the variety",
 			                      "rank of the vector bundle",
 					      "number of affine charts"}, key -> (net key, " => ", net tvb#key))),
 	  "}" ))
+*-
 
 -- Modifying the standard output for a ToricVectorBundleKlyachko to give an overview of its characteristica
 net ToricVectorBundleKlyachko := tvb -> ( horizontalJoin flatten ( 
@@ -434,11 +418,9 @@ net ToricVectorBundleKlyachko := tvb -> ( horizontalJoin flatten (
 --------------------------------------------------------------
 -- GETTER FUNCTIONS FOR TORICVECTORBUNDLESNEW 
 --------------------------------------------------------------
-variety( ToricVectorBundleNew) := E -> (E.variety)
+variety(ToricVectorBundleNew) := E -> (E.variety)
 
 rank(ToricVectorBundleNew):= E ->(E.rank)
-
-rank ToricVectorBundleKaneyama := T -> T#"rank of the vector bundle"
 
 rank ToricVectorBundleKlyachko := T -> T#"rank of the vector bundle"
 
@@ -463,21 +445,15 @@ filtrationMatrices ToricVectorBundleNew := E -> (E.filtrationMatrices)
 
 rays(ToricVectorBundleNew) := {} >> o -> E ->( rays(variety (E) ))
 
-
-rays ToricVectorBundleKaneyama := {} >> o -> tvb -> raySortOfFan tvb#"ToricVariety"
-
 rays ToricVectorBundleKlyachko := {} >> o -> tvb -> raySortOfFan tvb#"ToricVariety"
 
 
 -- PURPOSE : Presenting some details of the given ToricVectorBundle
---   INPUT : 'tvb',  a ToricVectorBundleKaneyama
+--   INPUT : 'tvb',  a ToricVectorBundle
 --  OUTPUT : '(A,C)',	 where 'A' is a hashTable giving the enumeration of the maximal cones with their rays and degree matrix, 
 --     	    	      	 and 'B' gives the transition matrices for the codim 1 pairs
 -- COMMENT : This function gives the possibility to have a quick overview on the main properties of a ToricVectorBundleKaneyama
 details = method()
-
-details ToricVectorBundleKaneyama := tvb -> (
-     hashTable apply(pairs(tvb#"topConeTable"), p -> ( p#1 => (rays posHull p#0,tvb#"degreeTable"#(p#0)))),tvb#"baseChangeTable")
 
 details ToricVectorBundleKlyachko := tvb -> (
       hashTable apply(rays tvb, r -> r => (tvb#"baseTable"#r,tvb#"filtrationMatricesTable"#r)))
@@ -605,83 +581,6 @@ addBase (ToricVectorBundleKlyachko,List) := (tvb,L) -> (
 	  symbol cache => new CacheTable})
 
 
--- PURPOSE : Changing the transition matrices of a given ToricVectorBundle to those given in the List 
---   INPUT : '(tvb,L)',  a ToricVectorBundle 'tvb' and a list 'L'of k by k matrices over QQ, one for each 
---     	    	      	   	  pair of top dimensional Cones intersecting in a common codim 1 face. 
---  OUTPUT : The ToricVectorBundle 'tvb' 
--- COMMENT : Note that the ToricVectorBundle already has a list of pairs (i,j) denoting the codim 1 intersections 
---     	     of two top dim cones, with i<j and they are ordered in lexicographic order. So the matrices in 'L'
---     	     will be assigned to the pairs (i,j) in that order, where the matrix A assigned to (i,j) denotes the 
---     	     transition
---     	    	 (e_i^1,...,e_i^k) = (e_j^1,...,e_j^k)* A
-
-addBaseChange = method(TypicalValue => ToricVectorBundleKaneyama)
-addBaseChange (ToricVectorBundleKaneyama,List) := (tvb,L) -> (
-     -- Extracting data out of tvb
-     pairlist := sort keys tvb#"baseChangeTable";
-     k := tvb#"rank of the vector bundle";
-     -- Checking for input errors
-     if #pairlist != #L then error("Expected the number of matrices to match the number of codim 1 Cones.");
-     baseChangeTable := hashTable apply(#pairlist, i -> ( 
-	       M := L#i;
-	       -- Checking for more input errors
-	       if not instance(M,Matrix) then error("Expected the transition matrices to be given as rank times rank matrices.");
-	       if numColumns M != k or numRows M != k then error("Expected the base change matrices to be k by k matrices.");
-	       if det M == 0 then error("The base change matrices must be invertible.");
-	       R := ring source M;
-	       M = if R === ZZ or R === QQ then promote(M,QQ) else error("Expected base change over ZZ or QQ");
-	       -- Inserting the matrix at the i-th position
-	       pairlist#i => M));
-     -- Writing the new transition matrices into the bundle
-     new ToricVectorBundleKaneyama from {
-	  "degreeTable" => tvb#"degreeTable",
-	  "baseChangeTable" => baseChangeTable,
-	  "ToricVariety" => tvb#"ToricVariety",
-	  "number of affine charts" => tvb#"number of affine charts",
-	  "dimension of the variety" => tvb#"dimension of the variety",
-	  "rank of the vector bundle" => k,
-	  "codim1Table" => tvb#"codim1Table",
-	  "topConeTable" => tvb#"topConeTable",
-	  symbol cache => new CacheTable})
-
-
-
--- PURPOSE : Changing the degrees of the local generators of a given ToricVectorBundleKaneyama to those given in the List 
---   INPUT : '(tvb,L)',  a ToricVectorBundleKaneyama 'tvb' and a list 'L'of n by k matrices over ZZ, one for each 
---     	    	      	 top dimensional Cone. 
---  OUTPUT : The ToricVectorBundleKaneyama 'tvb' 
--- COMMENT : Note that in the ToricVectorBundleKaneyama the top dimensional Cones are already numbered and that the degree
---     	     matrices will be assigned to the Cones in that order. 
-addDegrees = method(TypicalValue => ToricVectorBundleKaneyama)
-addDegrees (ToricVectorBundleKaneyama,List) := (tvb,L) -> (
-     -- Extracting data out of tvb
-     tCT := customConeSort keys tvb#"degreeTable";
-     k := tvb#"rank of the vector bundle";
-     n := tvb#"dimension of the variety";
-     -- Checking for input errors
-     if #tCT != #L then error("Number of degree matrices must match the number of top dim cones.");
-     degreeTable := hashTable apply(#tCT, i -> ( 
-	       M := L#i;
-	       -- Checking for more input errors
-	       if not instance(M,Matrix) then error("The degrees must be given as dimension times rank matrices.");
-	       if ring M =!= ZZ then error("Expected the degrees to be in the ZZ lattice.");
-	       if numColumns M != k then error("The number of degrees must match the vector bundle rank.");
-	       if numRows M != n then error("The degrees must have the dimension of the underlying toric variety.");
-	       -- Inserting the degree matrix
-	       tCT#i => M));
-     -- Writing the new degree table into the bundle
-     new ToricVectorBundleKaneyama from {
-	  "degreeTable" => degreeTable,
-	  "baseChangeTable" => tvb#"baseChangeTable",
-	  "ToricVariety" => tvb#"ToricVariety",
-	  "number of affine charts" => tvb#"number of affine charts",
-	  "dimension of the variety" => n,
-	  "rank of the vector bundle" => k,
-	  "codim1Table" => tvb#"codim1Table",
-	  "topConeTable" => tvb#"topConeTable",
-	  symbol cache => new CacheTable})
-
-
 --   INPUT : '(tvb,L)',  a ToricVectorBundleKlyachko 'tvb' and a list 'L'of 1 by k matrices over ZZ, one for each 
 --     	    	      	   	  ray of the fan
 --  OUTPUT : The ToricVectorBundleKlyachko 'tvb' 
@@ -718,75 +617,6 @@ addFiltration (ToricVectorBundleKlyachko,List) := (tvb,L) -> (
 	  "number of rays" => tvb#"number of rays",
 	  symbol cache => new CacheTable})
 
-
-
---TODO: this is just isWellDefined for Kaneyama.	      
-
--- PURPOSE : Checking if the ToricVectorBundleKaneyama is well-defined. Combining previous cocycleCheck and regCheck
---	    First checks if tvb fulfills the cocycle condition
---	    Then checks that tvb satisfies the regularity conditions of the degrees
---   INPUT : 'tvb', a ToricVectorBundleKaneyama
---  OUTPUT : 'true' or 'false'
--- COMMENT : ToricVectorBundles generated by tangentBundle should fulfill the conditions of
---           the regularity check automatically
-
-isWellDefined ToricVectorBundleKaneyama := Boolean => ( tvb -> (
-	  -- ORIGINALLY coCycleCheck
-	  -- Extracting data out of tvb
-     	  n := tvb#"dimension of the variety";
-     	  k := tvb#"rank of the vector bundle";
-     	  bCT := tvb#"baseChangeTable";
-     	  topCones := customConeSort keys tvb#"topConeTable";
-     	  L := hashTable {};
-     	  -- For each codim 2 Cone computing the list of topCones which have this Cone as a face
-     	  -- and save the list of indices of these topCones as an element in L
-     	  for i from 0 to #topCones - 1  do L = merge(hashTable apply(facesAsCones(2,posHull topCones#i), C -> (rays C, linealitySpace C) => {i}),L,(a,b) -> sort join(a,b));
-     	  -- Finding the cyclic order of every list of topCones in L and write this cyclic order as a 
-     	  -- list of consecutive pairs
-     	  L = for l in values L list (
-	       pairings := {};
-	       start := l#0;
-	       a := start;
-	       l = drop(l,1);
-	       i := position(l, e -> dim intersection(posHull topCones#a, posHull topCones#e) == n-1);
-	       while i =!= null do (
-		    pairings = pairings | {(a,l#i)};
-		    a = l#i;
-		    l = drop(l,{i,i});
-		    i = position(l, e -> dim intersection(posHull topCones#a, posHull topCones#e) == n-1));
-	       if dim intersection(posHull topCones#a, posHull topCones#start) == n-1 then pairings | {(a,start)} else continue);
-     	  -- Check for every cyclic order of topCones if the product of the corresponding transition
-     	  -- matrices is the identity
-		  if not (all(L, l -> product apply(reverse l, e -> if e#0 > e#1 then inverse bCT#(e#1,e#0) else bCT#e) == map(QQ^k,QQ^k,1))) then (
-		      if debugLevel > 0 then
-			  << "--toric vector bundle does not fulfill cocycle condition" << endl;
-			return false
-		  	);
-
-	  -- ORIGINALLY regcheck
-     	  -- Extracting the necessary data
-     	  tCT := customConeSort keys tvb#"topConeTable";
-     	  c1T := tvb#"codim1Table";
-     	  dT := tvb#"degreeTable";
-     	  if not (all(keys bCT, p -> (
-	       	    -- Taking a pair corresponding to a codim 1 cone, the corresponding transition matrix and its inverse
-	       	    A := bCT#p;
-	       	    B := inverse A;
-	       	    -- Computing the dual of the codim 1 cone
-	       	    C := dualCone posHull c1T#p;
-	       	    -- Check for all pairs of degree vectors of the two top Cones the reg condition
-	       	    all(k, i -> (
-			      ri := (dT#(tCT#(p#1)))_{i};
-			      all(k, j -> (
-				   	rj := (dT#(tCT#(p#0)))_{j};
-				   	(if A^{i}_{j} != 0 then contains(C,rj-ri) else true) and (if A^{j}_{i} != 0 then contains(C,ri-rj) else true)))))))) then (
-                                             if debugLevel > 0 then
-					     << "--toric vector bundle does not satisfy regularity conditions of the degrees" << endl;
-		                            return false
-					);
-		  return true
-))
-
 maxCones ToricVectorBundle := T -> (
       TV := T#"ToricVariety";
       TR := rays TV;
@@ -796,7 +626,7 @@ maxCones ToricVectorBundle := T -> (
     -- sort maxCones T#"ToricVariety"
    )
 
--- TODO: fintish for ToricVectorBundleNew
+-- TODO: finish for ToricVectorBundleNew
 isWellDefined ToricVectorBundleNew := TVB -> (
 	mC := maxCones variety TVB
 
@@ -1051,13 +881,14 @@ ToricVectorBundle ++ ToricVectorBundle := (tvb1,tvb2) -> (
         toricVectorBundle(X, Lnew, Jnew)
 
     ) 
-    else(
+    else if instance(tvb1,ToricVectorBundleKlyachko) and instance(tvb2,ToricVectorBundleKlyachko) then (
 	  -- Checking for input errors
 	  if tvb1#"ToricVariety" != tvb2#"ToricVariety" then error("Expected the bundles to be over the same toric variety.");
 	  -- Extracting data out of tvb1 and tvb2
 	  k1 := tvb1#"rank of the vector bundle";
 	  k2 := tvb2#"rank of the vector bundle";
-	  if instance(tvb1,ToricVectorBundleKaneyama) and instance(tvb2,ToricVectorBundleKaneyama) then (
+          -*
+	  if instance(tvb1,ToricVectorBundleKaneyama) and instance(tvb2,ToricVectorBundleKaneyama) then ( --MOVED
 	       -- Generating the trivial bundle of dimension k1+k2
 	       E := makeVBKaneyama(k1 + k2,tvb1#"ToricVariety");
 	       -- Computing the new degree table and transition matrices and writing the degrees and transition matrices into the bundle
@@ -1076,7 +907,7 @@ ToricVectorBundle ++ ToricVectorBundle := (tvb1,tvb2) -> (
 	       	    E.cache.regCheck = true;
 	       	    E.cache.cocycle = true);
 	       E)
-	  else if instance(tvb1,ToricVectorBundleKlyachko) and instance(tvb2,ToricVectorBundleKlyachko) then (
+           *-
 	       k := k1 + k2;
      	       F := tvb1#"ToricVariety";
      	       R := tvb1#"ring";
@@ -1091,7 +922,7 @@ ToricVectorBundle ++ ToricVectorBundle := (tvb1,tvb2) -> (
      	       tvb = addBase(tvb,baseTable);
      	       if tvb1.cache.?isVB and tvb2.cache.?isVB and tvb1.cache.isVB and tvb2.cache.isVB then tvb.cache.isVB = true;
      	       tvb)
-	  else error("The two bundles have to be in the same description."))
+      else error("The two bundles have to be in the same description.")
       )
 
 
@@ -1106,8 +937,9 @@ dual ToricVectorBundle := {} >> opts -> tvb -> (
         -- the jumps in the filtration get reverse and negated.
         filtJumps := apply(filtrationJumps tvb, J -> -reverse J);
         return toricVectorBundle(variety tvb, filtMats, filtJumps)
-        );
-    if instance(tvb,ToricVectorBundleKaneyama) then (
+        )
+    -*
+    if instance(tvb,ToricVectorBundleKaneyama) then ( -- MOVED
         -- Inverting the degrees and the transition matrices
         degreeTable := hashTable apply(pairs tvb#"degreeTable", p -> p#0 => -(p#1));
         baseChangeTable := hashTable apply(pairs tvb#"baseChangeTable", p -> p#0 => transpose inverse p#1);
@@ -1126,6 +958,7 @@ dual ToricVectorBundle := {} >> opts -> tvb -> (
             E.cache.regCheck = true;
             E.cache.cocycle = true);
         E)
+    *-
     else (
         -- Inverting the filtration. If the filtration has d steps then the new n-th boundary is -(d-n+1th boundary)-1 and the n-th step is the 
         -- d-n+2 th step
@@ -1358,24 +1191,16 @@ eulerChi (Matrix,ToricVectorBundle) := (u,T) -> (
      if not T.cache.eulerChi#?u then (
 	  n := T#"dimension of the variety";
 	  -- Compute the Cech complex and compute the alternating sum of the dimensions
-	  if instance(T,ToricVectorBundleKlyachko) then T.cache.eulerChi#u = sum apply(n+1, i -> (-1)^i * sum values (cechComplex(i,T,u))#1)
-	  else T.cache.eulerChi#u = sum apply(n+2, i -> (-1)^i * numColumns (cechComplex(i,T,u))#1));
-     T.cache.eulerChi#u)
+	  T.cache.eulerChi#u = sum apply(n+1, i -> (-1)^i * sum values (cechComplex(i,T,u))#1);
+     T.cache.eulerChi#u))
 
 --   INPUT : 'T',  a ToricVectorBundle
 --  OUTPUT : The Euler characteristic of the bundle
-eulerChi ToricVectorBundle := T -> (
+eulerChi ToricVectorBundle := T -> ( --MOVED KANEYAMA VERSION
      -- Compute the set of degrees with possible cohomology
      L := latticePoints deltaE T;
      -- Sum up their characteristics
      sum apply(L, l -> eulerChi(l,T)))
-
-
--- PURPOSE : Returning the table of codimension 1 cones of the underlying fan
---   INPUT : 'T',  a ToricVectorBundleKaneyama
---  OUTPUT : a HashTable
-codim1Table = method(TypicalValue => HashTable)
-codim1Table ToricVectorBundleKaneyama := T -> T#"codim1Table"     
 
 
 -- PURPOSE : Computing the cohomology group of a given ToricVectorBundle
@@ -1413,7 +1238,7 @@ hh(ZZ,Sequence) := (i,S) -> (
      if not instance(S#1,Matrix) then error("The second argument has to be a weight vector given by a matrix.");
      if not instance(S#0,ToricVectorBundleKaneyama) and not instance(S#0,ToricVectorBundleKlyachko) then error("The first argument has to be a toric vector bundle.");
      (T,u) := S;
-     rank cohomology(i,T,u))
+     rank cohomology(i,T,u)) --not going to make this separate for Kaneyama
 
 
 -- PURPOSE : Computing the rank of the cohomology group of a given ToricVectorBundle
@@ -1433,37 +1258,6 @@ deltaE = method()
 deltaE ToricVectorBundle := (cacheValue symbol deltaE)( tvb -> (
      	  if not isComplete tvb#"ToricVariety" then error("The toric variety needs to be complete.");
      	  n := tvb#"dimension of the variety";
-          if instance(tvb,ToricVectorBundleKaneyama) then (
-	  -- Extracting necessary data
-          raylist := rays tvb;
-          rl := #raylist;
-          k := tvb#"rank of the vector bundle";
-          tCT := keys tvb#"topConeTable";
-          dT := tvb#"degreeTable";
-          -- Creating an index table, for each ray the first top cone containing it
-          raytCTindex := hashTable apply(#raylist, r -> r => position(tCT, C -> contains(posHull C_0,raylist#r)));
-          raylist = transpose matrix {raylist};
-          -- Get the subsets of 'n' elements in 'rl'
-          sset := subsets(rl,n);
-          jList := {{}};
-          -- Get all different combinations of choices of variety dimension many degree vectors
-          for i from 0 to n-1 do jList = flatten apply(jList, l -> apply(k, j -> l|{j}));
-          M := map(QQ^1,QQ^n,0);
-          v := map(QQ^1,QQ^1,0);
-          -- For every 'n' in 'l' subset and any combination in jList get the intersection of the dual cones
-          -- of the corresponding rays. If this is a non-empty compact polytope then add the vertices to the
-          -- list L
-     	       L := unique flatten apply(sset, s -> (
-	       	    	 unique for j in jList list (
-		    	      N := matrix apply(n, i -> {raylist^{s#i},raylist^{s#i} * ((dT#(tCT#(raytCTindex#(s#i))))_{j#i})});
-		    	      w := N_{n};
-		    	      N = submatrix'(N,{n});
-		    	      P := polyhedronFromHData(M,v,N,w);
-		    	      if isCompact P and (not isEmpty P) then vertices P else continue)));
-     	       -- Make a matrix of all the vertices in L
-     	       M = matrix {L};
-     	       convexHull M)
-	else (
           -- Extracting necessary data
           rayTable := tvb#"rayTable";
           l := #rayTable;
@@ -1471,7 +1265,7 @@ deltaE ToricVectorBundle := (cacheValue symbol deltaE)( tvb -> (
 		      sset1 := select(subsets(rays tvb,n), s -> rank matrix {s} == n);
   		      convexHull matrix {apply(sset1, s -> (
 		 		     M := transpose matrix {apply(s, r -> (-r | r) || (fMT#r))};
-		 		     vertices polyhedronFromHData(M_{0..n-1},M_{n})))})))
+		 		     vertices polyhedronFromHData(M_{0..n-1},M_{n})))}))
 
 -- ToricVectorBundleKlyachko ++ ToricVectorBundleKlyachko := (tvb1,tvb2) -> (
 --     -- Extracting data out of tvb1 and tvb2
@@ -1495,7 +1289,7 @@ deltaE ToricVectorBundle := (cacheValue symbol deltaE)( tvb -> (
 
 
 -- PURPOSE : Returning the underlying fan of a toric vector bundle
---   INPUT : 'T',  a ToricVectorBundleKaneyama
+--   INPUT : 'T',  a ToricVectorBundle
 --  OUTPUT : a Fan
 fan ToricVectorBundle := T -> T#"ToricVariety"
 
@@ -1650,7 +1444,7 @@ tangentBundle Fan := F -> tangentBundleKlyachko F
 -- PURPOSE : Checking if two toric vector bundles are equal
 --   INPUT : '(tvb1,tvb2)',  two ToricVectorBundle
 --  OUTPUT : 'true' or 'false' 
-ToricVectorBundle == ToricVectorBundle := (tvb1,tvb2) -> tvb1 === tvb2
+ToricVectorBundle == ToricVectorBundle := (tvb1,tvb2) -> tvb1 === tvb2 
 
 
 -- PURPOSE : Computing the tensor product of two toric vector bundles over the same Fan
@@ -1658,67 +1452,43 @@ ToricVectorBundle == ToricVectorBundle := (tvb1,tvb2) -> tvb1 === tvb2
 --  OUTPUT : 'tvb',  a ToricVectorBundle which is the tensor product in the same description
 tensor(ToricVectorBundle, ToricVectorBundle) := ToricVectorBundle => {} >> opts -> (tvb1, tvb2) -> (
     if instance(tvb1, ToricVectorBundleNew ) and instance(tvb2, ToricVectorBundleNew) then(
-            --Errors check
-    if variety(tvb1) =!= variety(tvb2) then(error("Expected the bundles to be over the same toric variety.") );
-    X:=variety(tvb1 );
-    nrays := # rays (variety(tvb1 ));
-    L1:= filtrationMatrices( tvb1 ); 
-    L2:= filtrationMatrices (tvb2 );
-    Lnew:= apply(nrays, i -> L1_i**L2_i );
-    J1:= filtrationJumps( tvb1 ); 
-    J2:= filtrationJumps (tvb2 );
-    -- TODO chech that this is what we want
-    Jnew := apply(nrays, p -> flatten apply(J1_p, e1 -> flatten apply(J2_p, e2 -> e1 + e2)));
-    toricVectorBundle(X, Lnew, Jnew)
-
+        --Errors check
+        if variety(tvb1) =!= variety(tvb2) then(error("Expected the bundles to be over the same toric variety.") );
+        X:=variety(tvb1 );
+        nrays := # rays (variety(tvb1 ));
+        L1:= filtrationMatrices( tvb1 ); 
+        L2:= filtrationMatrices (tvb2 );
+        Lnew:= apply(nrays, i -> L1_i**L2_i );
+        J1:= filtrationJumps( tvb1 ); 
+        J2:= filtrationJumps (tvb2 );
+        -- TODO chech that this is what we want
+        Jnew := apply(nrays, p -> flatten apply(J1_p, e1 -> flatten apply(J2_p, e2 -> e1 + e2)));
+        toricVectorBundle(X, Lnew, Jnew)
     )
-    else(
-     -- Checking for input errors
-     if tvb1#"ToricVariety" != tvb2#"ToricVariety" then error("Expected bundles over the same toric variety.");
-     k1 := tvb1#"rank of the vector bundle";
-     k2 := tvb2#"rank of the vector bundle";
-     if instance(tvb1,ToricVectorBundleKaneyama) and instance(tvb2,ToricVectorBundleKaneyama) then (
-     	  -- Extracting data out of tvb1 and tvb2
-     	  -- Generating the trivial bundle of dimension k1+k2
-     	  E := makeVBKaneyama(k1 * k2,tvb1#"ToricVariety");
-     	  -- Computing the new degree table and transition matrices and writing the degrees and transition matrices into the bundle
-     	  E = new ToricVectorBundleKaneyama from {
-	       "degreeTable" => merge(tvb1#"degreeTable",tvb2#"degreeTable", (a,b) -> matrix {flatten apply(k2, j -> apply(k1, i -> a_{i}+b_{j}))}),
-	       "baseChangeTable" => merge(tvb1#"baseChangeTable",tvb2#"baseChangeTable", (a,b) -> (
-		    	 matrix flatten apply(k2, j -> apply(k1, i -> flatten apply(k2, j' -> apply(k1, i' -> a_(i,i') * b_(j,j'))))))),
-	       "ToricVariety" => E#"ToricVariety",
-	       "number of affine charts" => E#"number of affine charts",
-	       "dimension of the variety" => E#"dimension of the variety",
-	       "rank of the vector bundle" => k1 + k2,
-	       "codim1Table" => E#"codim1Table",
-	       "topConeTable" => E#"topConeTable",
-	       symbol cache => new CacheTable};
-     	  if (tvb1.cache.?regCheck and tvb2.cache.?regCheck and tvb1.cache.regCheck and tvb2.cache.regCheck and (
-	       	    tvb1.cache.?cocycle and tvb2.cache.?cocycle and tvb1.cache.cocycle and tvb2.cache.cocycle)) then (
-	       E.cache.regCheck = true;
-	       E.cache.cocycle = true);
-     	  E)
-     else if instance(tvb1,ToricVectorBundleKlyachko) and instance(tvb2,ToricVectorBundleKlyachko) then (
-	  -- Extracting data out of tvb1 and tvb2
-     	  F := tvb1#"ToricVariety";
-     	  bT1 := tvb1#"baseTable";
-     	  bT2 := tvb2#"baseTable";
-     	  fmT1 := tvb1#"filtrationMatricesTable";
-     	  fmT2 := tvb2#"filtrationMatricesTable";
-     	  -- Computing the bases and filtration matrices
-     	  k := k1 * k2;
-     	  tvb := makeVBKlyachko(k,F);
-     	  R := rays tvb;
-     	  baseTable := apply(R, r -> bT1#r ** bT2#r);
-     	  filtrationTable := apply(R, r -> matrix {flatten apply(flatten entries fmT1#r, e1 -> apply(flatten entries fmT2#r, e2 -> e1 + e2))});
-     	  -- Writing the new Tables into the bundle
-     	  tvb = addBase(tvb,baseTable);
-     	  tvb = addFiltration(tvb,filtrationTable);
-     	  if tvb1.cache.?isVB and tvb2.cache.?isVB and tvb1.cache.isVB and tvb2.cache.isVB then tvb.cache.isVB = true;
-     	  tvb)
+    else if instance(tvb1,ToricVectorBundleKlyachko) and instance(tvb2,ToricVectorBundleKlyachko) then(
+        -- Checking for input errors
+        if tvb1#"ToricVariety" != tvb2#"ToricVariety" then error("Expected bundles over the same toric variety.");
+        k1 := tvb1#"rank of the vector bundle";
+        k2 := tvb2#"rank of the vector bundle";
+        -- Extracting data out of tvb1 and tvb2
+        F := tvb1#"ToricVariety";
+        bT1 := tvb1#"baseTable";
+        bT2 := tvb2#"baseTable";
+        fmT1 := tvb1#"filtrationMatricesTable";
+        fmT2 := tvb2#"filtrationMatricesTable";
+        -- Computing the bases and filtration matrices
+        k := k1 * k2;
+        tvb := makeVBKlyachko(k,F);
+        R := rays tvb;
+        baseTable := apply(R, r -> bT1#r ** bT2#r);
+        filtrationTable := apply(R, r -> matrix {flatten apply(flatten entries fmT1#r, e1 -> apply(flatten entries fmT2#r, e2 -> e1 + e2))});
+        -- Writing the new Tables into the bundle
+        tvb = addBase(tvb,baseTable);
+        tvb = addFiltration(tvb,filtrationTable);
+        if tvb1.cache.?isVB and tvb2.cache.?isVB and tvb1.cache.isVB and tvb2.cache.isVB then tvb.cache.isVB = true;
+        tvb)
      else error("The two toric vector bundles have to be in the same description.")
      )
-)
 
 ToricVectorBundle ** ToricVectorBundle := (tvb1,tvb2) -> tensor(tvb1,tvb2)
 -- ToricVectorBundleKlyachko ** ToricVectorBundleKlyachko := tensor
@@ -1838,47 +1608,14 @@ weilToCartier (List,Fan) := opts -> (L,F) -> (
      -- Checking for input errors
      if #L != #rl then error("The number of weights has to equal the number of rays.");
      n := ambDim F;
-     if opts#"Type" == "Kaneyama" then (
-	  if not isPure F or ambDim F != dim F then error("Expected the Fan to be pure of maximal dimension.");
-     	  -- Creating 0 matrices to compute intersection of hyperplanes to compute the degrees
-	  Mfull := matrix {toList(n:0)};
-	  vfull := matrix {{0}};
-	  -- Checking for further errors and assigning the weights to the rays
-	  L = hashTable apply(#rl, i -> (if class L#i =!= ZZ then error("The weights have to be in ZZ."); rl#i => L#i));
-	  -- Keeping track of the lowest common multiple of denominators of the degrees,
-	  -- to check whether the divisor itself is Cartier or which multiple
-	  denom := 1;
-	  -- Computing the degree vector for every top dimensional cone
-	  tvb := makeVBKaneyama(1,F);
-	  gC := customConeSort keys tvb#"degreeTable";
-	  gC = apply(gC, C -> (
-		    rC := (rays posHull C);
-		    -- Taking the first n x n submatrix
-		    rC1 := rC_{0..n-1};
-		    -- Setting up the solution vector by composing the corresponding weights
-		    v := matrix apply(n, i -> (c := rC1_{i}; {-(L#c)}));
-		    -- Computing the degree vector
-		    w := vertices polyhedronFromHData(Mfull,vfull,transpose rC1,v);
-		    -- Checking if w also fulfils the equations given by the remaining rays
-		    if numColumns rC != n then (
-			 v = v || matrix apply(toList(n..(numColumns rC)-1), i -> {-(L#(rC_{i}))});
-			 if (transpose rC)*w - v != 0 then error("The weights do not define a Cartier divisor."));
-		    -- Check if w is QQ-Cartier
-		    scan(flatten entries w, e -> denom = lcm(denominator e ,denom));
-		    w));
-	  -- If the divisor is only QQ Cartier, then its replaced by its first Cartier multiple
-	  if denom != 1 then error("The divisor is only QQ-Cartier, but "|toString(denom)|" times the divisor is Cartier.");
-	  gC = apply(gC, e -> substitute(denom*e,ZZ));
-	  -- Construct the actual line bundle
-	  addDegrees(tvb,gC))
-     else if opts#"Type" == "Klyachko" then (
-	  if any(L, l -> not instance(l,ZZ)) then error("The weights have to be in ZZ.");
-	  ind := cartierIndex(L,F);
-	  if ind != 1 then error("The divisor is only QQ-Cartier, but "|toString(ind)|" times the divisor is Cartier.");
-	  T := makeVBKlyachko(1,F,apply(L, l -> matrix{{1_QQ}}),apply(L, l -> matrix{{-l}}));
-     	  T.cache.isVB = true;
-	  T)
-     else error("Expected Type to be Klyachko or Kaneyama."))
+     if any(L, l -> not instance(l,ZZ)) then error("The weights have to be in ZZ.");
+     ind := cartierIndex(L,F);
+     if ind != 1 then error("The divisor is only QQ-Cartier, but "|toString(ind)|" times the divisor is Cartier.");
+     T := makeVBKlyachko(1,F,apply(L, l -> matrix{{1_QQ}}),apply(L, l -> matrix{{-l}}));
+     T.cache.isVB = true;
+     T
+)
+ 
 
 
 -- PURPOSE : Constructing the fan of projective n-space
@@ -2031,136 +1768,6 @@ cechComplex (ZZ,ToricVectorBundleKlyachko,Matrix) := (k,T,u) -> (
 	       if not T.cache.cech#?(k+1,u) then T.cache.cech#(k+1,u) = F22);
 	  T.cache.cech#(k,u)))
 
---   INPUT : '(k,T,u)', where 'k' is an integer between -1 and the dimension of the bundle +1, 'T' a ToricVectorBundleKlyachko, and 'u' a
---     	    	        one column matrix giving a degree vector
---  OUTPUT : '(Fk,Fkcolumns,FktoFk+1)', where 'Fk' is a hashTable with the summands of the 'k'th chain, 'Fkcolumns' is a hashTable with the
---     	    	      	   	        dimensions of these summands, and 'FktoFk+1' is a hashTable with the components of the 'k'th 
---     	    	      	   	        boundary operator
-cechComplex (ZZ,ToricVectorBundleKaneyama,Matrix) := (k,tvb,u) -> ( 
-     -- Checking for input errors
-     if numRows u != tvb#"dimension of the variety" or numColumns u != 1 then error("Expected a matrix with 1 column and ", toString tvb#"dimension of the variety", " rows.");
-     if ring u =!= ZZ then error("The degree has to be an integer vector.");
-     if k < 0 or tvb#"dimension of the variety"+1 < k then error("k has to be between 0 and the variety dimension for the k-th cohomology.");
-     -- For a given space F1 at chain k in the filtration together with the degree vector 'u' and the information of the bundle this auxiliary 
-     -- function computes the boundary operator to the next chain (k+1) which is F1toF2, the dimensions of the summands of 'F1' in 'F1columns' 
-     -- and the next chain 'F2'
-     makeNewDiffAndTarget := (M1,rk,l,tCT,bCT,dT) -> (
-	  -- Recursive function that finds a path over codim 1 cones from one topdim cone ('i') to another ('j')
-     	  -- using the steps in 'pl'
-     	  findpath := (i,j,pl) -> (
-	       -- Recursive function finds a path from the actual cone 'i' to the Cone 'j' using the steps in 'pl'
-	       -- where 'cl' is the  sequence of steps taken so far from the original 'i' and 'minpath' is the 
-	       -- shortest path found so far
-	       findrecursive := (i,j,pl,cl,minpath) -> (
-	       	    -- If the last step from 'i' to 'j' is part of 'pl' then add '(i,j)' to 'cl'
-	       	    if member((i,j),pl) or member((j,i),pl) then (
-		    	 cl = append(cl,(i,j));
-		    	 -- Check if the new found path is shorter than shortest so far
-		    	 if #cl < #minpath or minpath == {} then minpath = cl)
-	       	    -- otherwise find a path with the remaining steps in 'pl'
-	       	    else (
-		    	 L1 := {};
-		    	 L2 := {};
-		    	 -- Sort the remaining possible steps into those containing 'i'in 'L1' and those who not in 'L2'
-		    	 for e in pl do if member(i,e) then L1 = append(L1,e) else L2 = append(L2,e);
-		    	 -- Call findrecursive for each step in 'L1', with new starting cone the other index in the pair and new 
-		    	 -- remaining pairs list 'L2' and add the step to 'cl'
-		    	 for e in L1 do ( 
-			      if e#0 == i then minpath = findrecursive(e#1,j,L2,append(cl,e),minpath)
-			      else minpath = findrecursive(e#0,j,L2,append(cl,(e#1,e#0)),minpath)));
-	       	    minpath);
-	       -- Start with an empty sequence of steps, no minimal path yet and all possible stepsd
-	       cl := {};
-	       minpath := {};
-	       findrecursive(i,j,pl,cl,minpath));
-	  M2 := {};
-	  for p in pairs M1 do (
-	       L := select(toList(0..rk-1), i -> not member(i,p#1#0));
-	       for i from last(p#0)+1 to l-1 do (
-		    cl := append(p#0,i);
-		    C := intersection(posHull p#1#1, posHull tCT#i);
-		    degs := dT#(tCT#(cl#0));
-		    M2 = append(M2,cl => (sort unique join(p#1#0,select(L, i -> contains(dualCone C,u- degs_{i}))),(rays C, linealitySpace C)))));
-	  M2 = hashTable M2;
-	  -- Constructing the zero map over QQ
-     	  d1 := map(QQ^0,QQ^0,0);
-     	  -- Constructing the matrix of the sequence for the cohomology
-	  scan(pairs M1, (a,b) -> (
-		    b = b#0;
-		    -- 'A' will be a column of the matrix d1 of the sequence
-		    A := map(QQ^0,QQ^(#b),0);
-		    -- One intersection in M1 is selected, by going through the intersections in M2 we get the first "column" of block matrices in A 
-		    -- by looking at the images in all intersections in M2
-		    scan(pairs M2, (c,d) -> (
-			      -- Only if the intersection is made by intersecting with one more cone, the resulting matrix has to be computed, 
-			      -- because otherwise it is automatically zero
-			      if isSubset(a,c) then (
-				   -- get the signum by looking at the position the new cone is inserted
-				   signum := (-1)^(#c - position(c, e -> not member(e,a)) - 1);
-				   i := a#0;
-				   j := c#0;
-				   -- if i == j then no base change between the two representations has to be made, so the submatrix of the 
-				   -- identity inserting the positions of the degrees 'b' into the degrees 'd' is added in this column
-				   if i == j then A = A || (signum * (map(QQ^rk,QQ^rk,1))_b)
-				   -- Otherwise we have to find the transition matrix from cone 'i' to Cone 'j'
-				   else (
-					-- find the transition matrix
-					mpath := findpath(i,j,keys bCT);
-					-- If the path has one element then we take the 'b'-'d' part of that matrix, otherwise the multiplication 
-					-- of the matrices corresponding to the steps in the path and add the path as a new step with corresponding matrix
-					if #mpath == 1 then (
-					     if i < j then A = A || (signum * (bCT#(i,j))_b)
-					     else A = A || (signum * (inverse (bCT#(j,i)))_b))
-					else (
-					     A1 := map(QQ^rk,QQ^rk,1);
-					     for p in mpath do (
-						  if p#0 < p#1 then A1 = bCT#p * A1
-						  else A1 = (inverse bCT#(p#1,p#0))*A1);
-					     if i < j then bCT = hashTable join(apply(pairs bCT, ps -> ps#0 => ps#1), {(i,j) => A1})
-					     else bCT = hashTable join(apply(pairs bCT, ps -> ps#0 => ps#1), {(j,i) => inverse A1});
-					     A = A || (signum * A1_b))))
-			      else (
-				   A = A || map(QQ^rk,QQ^(#b),0))));
-		    -- Adding the new column to d1
-		    if d1 == map(QQ^0,QQ^0,0) then d1 = A
-		    else d1 = d1 | A));
-	  (d1,M2));
-     if not tvb.cache.?cech then tvb.cache.cech = new MutableHashTable;
-     rk := tvb#"rank of the vector bundle";
-     l := tvb#"number of affine charts";
-     tCT := customConeSort keys tvb#"topConeTable";
-     bCT := tvb#"baseChangeTable";
-     dT := tvb#"degreeTable";
-     if not tvb.cache.cech#?(k,u) then (
-     	  if k == 0 then (
-	       M20 := hashTable apply(subsets(l,k+1), cl -> (
-		    	 C := intersection apply(cl, i -> posHull tCT#i);
-		    	 degs := dT#(tCT#(cl#0));
-		    	 L := select(toList(0..rk-1), i -> contains(dualCone C,u - degs_{i}));
-		    	 cl => (L,(rays C, linealitySpace C))));
-	       (d20,M30) := makeNewDiffAndTarget(M20,rk,l,tCT,bCT,dT);
-	       tvb.cache.cech#(k,u) = (M20,d20);
-	       tvb.cache.cech#(k+1,u) = M30)
-	  else (
-	       M1 := if not tvb.cache.cech#?(k-1,u) then (
-	       	    hashTable apply(subsets(l,k), cl -> (
-		    	      C := intersection apply(cl, i -> posHull tCT#i);
-		    	      degs := dT#(tCT#(cl#0));
-		    	      L := select(toList(0..rk-1), i -> contains(dualCone C,u - degs_{i}));
-		    	      cl => (L,(rays C, linealitySpace C))))) else tvb.cache.cech#(k-1,u);
-	       (d1,M2) := makeNewDiffAndTarget(M1,rk,l,tCT,bCT,dT);
-	       (d2,M3) := makeNewDiffAndTarget(M2,rk,l,tCT,bCT,dT);
-	       tvb.cache.cech#(k-1,u) = (M1,d1);
-	       tvb.cache.cech#(k,u) = (M2,d2);
-	       tvb.cache.cech#(k+1,u) = M3))
-     else if not instance(tvb.cache.cech#(k,u),Sequence) then (
-	  M21 := tvb.cache.cech#(k,u);
-	  (d21,M31) := makeNewDiffAndTarget(M21,rk,l,tCT,bCT,dT);
-	  tvb.cache.cech#(k,u) = (M21,d21);
-	  tvb.cache.cech#(k+1,u) = M31);
-     tvb.cache.cech#(k,u))
-
-
 -- PURPOSE : Checking for a matrix if it is over ZZ or QQ and returning an error if not
 --   INPUT : '(M,msg)',  where 'M' is a matrix and 'msg' is the name of the object 'M' describes
 --  OUTPUT : The matrix promoted to QQ if it was over ZZ or QQ, otherwise an error
@@ -2170,22 +1777,8 @@ chkZZQQ = (M,msg) -> (
      promote(M,QQ));
 
 
--- PURPOSE : Computing the cohomology of a given ToricVectorBundle
+-- PURPOSE : Computing the cohomology of a given ToricVectorBundleKlyachko
 cohom = method()
---   INPUT : '(k,tvb,u)',  'k' for the 'k'th cohomology group, 'tvb' a ToricVectorBundleKaneyama, and 'u' the degree
---  OUTPUT : 'ZZ',	     the dimension of the degree 'u' part of the 'k'th cohomology group of 'tvb'
-cohom (ZZ,ToricVectorBundleKaneyama,Matrix) := (k,T,u) -> (
-     if not T.cache.?HH then T.cache.HH = new MutableHashTable;
-     if not T.cache.HH#?(k,u) then (
-	  -- Get the k-1 th and k th differential
-	  d := if k == 0 then rank ker (cechComplex(k,T,u))#1 else (
-	       -- Generate the two boundary operators
-	       d1 := (cechComplex(k-1,T,u))#1;
-	       d2 := (cechComplex(k,T,u))#1;
-	       (rank ker d2) - (rank image d1));
-	  T.cache.HH#(k,u) = (ring T)^(toList(d:flatten entries(-u))));
-     T.cache.HH#(k,u))
-
 --   INPUT : '(k,tvb,u)',  'k' for the 'k'th cohomology group, 'tvb' a ToricVectorBundleKlyachko, and 'u' the degree
 --  OUTPUT : 'ZZ',	     the dimension of the degree 'u' part of the 'k'th cohomology group of 'tvb'
 cohom (ZZ,ToricVectorBundleKlyachko,Matrix) := (k,T,u) -> (
@@ -2204,40 +1797,7 @@ cohom (ZZ,ToricVectorBundleKlyachko,Matrix) := (k,T,u) -> (
      	  d := (rank ker MapF2toF3)-(rank image MapF1toF2);
      	  T.cache.HH#(k,u) = (ring T)^(toList(d:flatten entries(-u))));
      T.cache.HH#(k,u))
-
-
--- PURPOSE : Computing the cotangent bundle on a smooth, pure, and full dimensional Toric Variety 
---   INPUT : 'F',  a smooth, pure, and full dimensional Fan
---  OUTPUT : 'tvb',  a ToricVectorBundleKaneyama 
-cotangentBundleKaneyama = F -> (
-     -- Checking for input errors
-     if not isSmooth F then error("The Toric Variety has to be smooth.");
-     if not isComplete F then error("The Toric Variety has to be complete.");
-     if not isPointed F then error("The Fan has to be pointed.");
-     -- Generating the trivial bundle of dimension n
-     n := dim F;
-     tvb := makeVBKaneyama(n,F);
-     tCT := customConeSort keys tvb#"topConeTable";
-     pairlist := keys tvb#"baseChangeTable";
-     -- Computing the degrees and transition matrices of the cotangent bundle
-     degreeTable := hashTable apply(tCT, p -> p => substitute(rays dualCone posHull p,ZZ));
-     baseChangeTable := hashTable apply(pairlist, p -> ( p => substitute(inverse(degreeTable#(tCT#(p#1)))*(degreeTable#(tCT#(p#0))),QQ)));
-     -- Writing the data into the bundle
-     E := new ToricVectorBundleKaneyama from {
-	  "degreeTable" => degreeTable,
-	  "baseChangeTable" => baseChangeTable,
-	  "ToricVariety" => tvb#"ToricVariety",
-	  "number of affine charts" => tvb#"number of affine charts",
-	  "dimension of the variety" => n,
-	  "rank of the vector bundle" => n,
-	  "codim1Table" => tvb#"codim1Table",
-	  "topConeTable" => tvb#"topConeTable",
-	  symbol cache => new CacheTable};
-     E.cache.regCheck = true;
-     E.cache.cocyle = true;
-     E)
-
-
+ 
 -- PURPOSE : Constructing the fan of projective n-space
 generateRandomMatrix = method(TypicalValue => Matrix)
 
@@ -3020,6 +2580,665 @@ klyachkoToModule ToricVectorBundleNew := E ->(
     S := ring variety E;
 
 )
+ 
+---------------------------------------
+-- KANEYAMA
+---------------------------------------
+
+--contructor for a ToricVectorBundleKaneyama
+--
+-- contructors for a ToricVectorBundleKaneyama
+
+--    INPUT : '(k,F)', a strictly positive integer 'k' and a pure and full dimensional fan 'F'
+--   OUTPUT : A ToricVectorBundleKaneyama
+toricVectorBundleKaneyama  = method(TypicalValue => ToricVectorBundleKaneyama)
+toricVectorBundleKaneyama (ZZ,Fan) := (k,F) -> (
+    --Checking for input errors
+    if k < 0 then error("The vector bundle must have positive rank.");
+    if not isComplete F then error("The fan has to be complete.");
+    if not isPointed F then error("The fan has to be pointed.");
+    -- Writing the table of Cones of maximal dimension
+    n := dim F;
+    Frays := rays F;
+    Flineality := linealitySpace F;
+    topConeTable := customConeSort apply(maxCones F, c-> (Frays_c, Flineality));
+    topConeTable = apply(#topConeTable, i -> topConeTable#i => i);
+    topConeTable = hashTable topConeTable;
+
+    -- Saving the index pairs of top dimensional Cones that intersect in a codim 1 Cone
+     Ltable := hashTable {};
+     scan(pairs topConeTable, (C,a) -> Ltable = merge(Ltable,hashTable apply(facesAsCones(1,posHull C), e -> (rays e, linealitySpace e) => a),(b,c) -> if b < c then (b,c) else (c,b)));
+     Ltable = hashTable flatten apply(pairs Ltable, p -> if instance(p#1,Sequence) then p#1 => p#0 else {});
+     -- Removing Cones on the "border" of F, which have only 1 index
+     pairlist := sort keys Ltable;
+     -- Saving the identity into the Table of transition matrices
+     baseChangeTable := hashTable apply(pairlist, p -> p => map(QQ^k,QQ^k,1));
+     -- Saving 0 degrees into the degree table
+     degreeTable := hashTable apply(keys topConeTable, C -> C => map(ZZ^n,ZZ^k,0));
+     -- Making the vector bundle
+     new ToricVectorBundleKaneyama from {
+	  "degreeTable" => degreeTable,
+	  "baseChangeTable" => baseChangeTable,
+	  "codim1Table" => Ltable,
+	  "ToricVariety" => F,
+	  "number of affine charts" => #topConeTable,
+	  "dimension of the variety" => n,
+	  "rank of the vector bundle" => k,
+	  "topConeTable" => topConeTable,
+	  symbol cache => new CacheTable})
+
+--   INPUT : '(k,F,degreeList,matrixList)',  a strictly positive integer 'k', a pure and full dimensional
+--                     Fan 'F' of dimension n, a list 'degreeList' of k by n matrices over ZZ, one for each 
+--     	    	       top dimensional Cone in 'F' where the columns give the degrees of the generators in the 
+--     	    	       corresponding affine chart to this Cone, and a list 'matrixList' of  k by k matrices 
+--     	    	       over QQ, one for each pair of top dimensional Cones intersecting in a common codim 1 face. 
+--  OUTPUT : The ToricVectorBundleKaneyama 'tvb' 
+-- COMMENT : Note that the top dimensional cones are numbered starting with 0 and the codim 1 intersections are 
+--           labelled by pairs (i,j) denoting the two top dim cones involved, with i<j and they are ordered
+--     	     in lexicographic order. So the matrices in 'matrixList' will be assigned to the pairs (i,j) in that 
+--     	     order, where the matrix A assigned to (i,j) denotes the transition
+--     	    	 (e_i^1,...,e_i^k) = (e_j^1,...,e_j^k)* A
+--     	     The matrices in 'degreeList' will be assigned to the cones in the order in which they are numbered.
+toricVectorBundleKaneyama (ZZ,Fan,List,List) := (k,F,degreelist,matrixlist) -> (
+     -- Generating the trivial vector bundle of rank k
+     tvb := toricVectorBundleKaneyama(k,F);
+     -- Adding the given degrees and transition matrices
+     tvb = addDegrees(tvb,degreelist);
+     tvb = addBaseChange(tvb,matrixlist);
+     tvb)
+
+-- Modifying the standard output for a ToricVectorBundleKaneyama to give an overview of its characteristica
+net ToricVectorBundleKaneyama := tvb -> ( horizontalJoin flatten ( 
+	  "{", 
+	  -- prints the parts vertically
+	  stack (horizontalJoin \ sort apply({"dimension of the variety",
+			                      "rank of the vector bundle",
+					      "number of affine charts"}, key -> (net key, " => ", net tvb#key))),
+	  "}" ))
+ 
+------------------------------------------
+ -- GETTER FUNCTIONS KANEYAMA
+ ------------------------------------------
+
+rank ToricVectorBundleKaneyama := T -> T#"rank of the vector bundle"
+
+rays ToricVectorBundleKaneyama := {} >> o -> tvb -> raySortOfFan tvb#"ToricVariety"
+
+ --there was no getter for the ring, could add?
+
+ details ToricVectorBundleKaneyama := tvb -> (
+     hashTable apply(pairs(tvb#"topConeTable"), p -> ( p#1 => (rays posHull p#0,tvb#"degreeTable"#(p#0)))),tvb#"baseChangeTable")
+
+
+--------------------------------------------
+-- CONSTRUCT AND MODIFY KANEYAMA
+--------------------------------------------
+
+-- PURPOSE : Changing the transition matrices of a given ToricVectorBundle to those given in the List 
+--   INPUT : '(tvb,L)',  a ToricVectorBundle 'tvb' and a list 'L'of k by k matrices over QQ, one for each 
+--     	    	      	   	  pair of top dimensional Cones intersecting in a common codim 1 face. 
+--  OUTPUT : The ToricVectorBundle 'tvb' 
+-- COMMENT : Note that the ToricVectorBundle already has a list of pairs (i,j) denoting the codim 1 intersections 
+--     	     of two top dim cones, with i<j and they are ordered in lexicographic order. So the matrices in 'L'
+--     	     will be assigned to the pairs (i,j) in that order, where the matrix A assigned to (i,j) denotes the 
+--     	     transition
+--     	    	 (e_i^1,...,e_i^k) = (e_j^1,...,e_j^k)* A
+
+addBaseChange = method(TypicalValue => ToricVectorBundleKaneyama)
+addBaseChange (ToricVectorBundleKaneyama,List) := (tvb,L) -> (
+     -- Extracting data out of tvb
+     pairlist := sort keys tvb#"baseChangeTable";
+     k := tvb#"rank of the vector bundle";
+     -- Checking for input errors
+     if #pairlist != #L then error("Expected the number of matrices to match the number of codim 1 Cones.");
+     baseChangeTable := hashTable apply(#pairlist, i -> ( 
+	       M := L#i;
+	       -- Checking for more input errors
+	       if not instance(M,Matrix) then error("Expected the transition matrices to be given as rank times rank matrices.");
+	       if numColumns M != k or numRows M != k then error("Expected the base change matrices to be k by k matrices.");
+	       if det M == 0 then error("The base change matrices must be invertible.");
+	       R := ring source M;
+	       M = if R === ZZ or R === QQ then promote(M,QQ) else error("Expected base change over ZZ or QQ");
+	       -- Inserting the matrix at the i-th position
+	       pairlist#i => M));
+     -- Writing the new transition matrices into the bundle
+     new ToricVectorBundleKaneyama from {
+	  "degreeTable" => tvb#"degreeTable",
+	  "baseChangeTable" => baseChangeTable,
+	  "ToricVariety" => tvb#"ToricVariety",
+	  "number of affine charts" => tvb#"number of affine charts",
+	  "dimension of the variety" => tvb#"dimension of the variety",
+	  "rank of the vector bundle" => k,
+	  "codim1Table" => tvb#"codim1Table",
+	  "topConeTable" => tvb#"topConeTable",
+	  symbol cache => new CacheTable})
+
+-- PURPOSE : Changing the degrees of the local generators of a given ToricVectorBundleKaneyama to those given in the List 
+--   INPUT : '(tvb,L)',  a ToricVectorBundleKaneyama 'tvb' and a list 'L'of n by k matrices over ZZ, one for each 
+--     	    	      	 top dimensional Cone. 
+--  OUTPUT : The ToricVectorBundleKaneyama 'tvb' 
+-- COMMENT : Note that in the ToricVectorBundleKaneyama the top dimensional Cones are already numbered and that the degree
+--     	     matrices will be assigned to the Cones in that order. 
+addDegrees = method(TypicalValue => ToricVectorBundleKaneyama)
+addDegrees (ToricVectorBundleKaneyama,List) := (tvb,L) -> (
+     -- Extracting data out of tvb
+     tCT := customConeSort keys tvb#"degreeTable";
+     k := tvb#"rank of the vector bundle";
+     n := tvb#"dimension of the variety";
+     -- Checking for input errors
+     if #tCT != #L then error("Number of degree matrices must match the number of top dim cones.");
+     degreeTable := hashTable apply(#tCT, i -> ( 
+	       M := L#i;
+	       -- Checking for more input errors
+	       if not instance(M,Matrix) then error("The degrees must be given as dimension times rank matrices.");
+	       if ring M =!= ZZ then error("Expected the degrees to be in the ZZ lattice.");
+	       if numColumns M != k then error("The number of degrees must match the vector bundle rank.");
+	       if numRows M != n then error("The degrees must have the dimension of the underlying toric variety.");
+	       -- Inserting the degree matrix
+	       tCT#i => M));
+     -- Writing the new degree table into the bundle
+     new ToricVectorBundleKaneyama from {
+	  "degreeTable" => degreeTable,
+	  "baseChangeTable" => tvb#"baseChangeTable",
+	  "ToricVariety" => tvb#"ToricVariety",
+	  "number of affine charts" => tvb#"number of affine charts",
+	  "dimension of the variety" => n,
+	  "rank of the vector bundle" => k,
+	  "codim1Table" => tvb#"codim1Table",
+	  "topConeTable" => tvb#"topConeTable",
+	  symbol cache => new CacheTable})
+
+-- PURPOSE : Checking if the ToricVectorBundleKaneyama is well-defined. Combining previous cocycleCheck and regCheck
+--	    First checks if tvb fulfills the cocycle condition
+--	    Then checks that tvb satisfies the regularity conditions of the degrees
+--   INPUT : 'tvb', a ToricVectorBundleKaneyama
+--  OUTPUT : 'true' or 'false'
+-- COMMENT : ToricVectorBundles generated by tangentBundle should fulfill the conditions of
+--           the regularity check automatically
+
+isWellDefined ToricVectorBundleKaneyama := Boolean => ( tvb -> (
+	  -- ORIGINALLY coCycleCheck
+	  -- Extracting data out of tvb
+     	  n := tvb#"dimension of the variety";
+     	  k := tvb#"rank of the vector bundle";
+     	  bCT := tvb#"baseChangeTable";
+     	  topCones := customConeSort keys tvb#"topConeTable";
+     	  L := hashTable {};
+     	  -- For each codim 2 Cone computing the list of topCones which have this Cone as a face
+     	  -- and save the list of indices of these topCones as an element in L
+     	  for i from 0 to #topCones - 1  do L = merge(hashTable apply(facesAsCones(2,posHull topCones#i), C -> (rays C, linealitySpace C) => {i}),L,(a,b) -> sort join(a,b));
+     	  -- Finding the cyclic order of every list of topCones in L and write this cyclic order as a 
+     	  -- list of consecutive pairs
+     	  L = for l in values L list (
+	       pairings := {};
+	       start := l#0;
+	       a := start;
+	       l = drop(l,1);
+	       i := position(l, e -> dim intersection(posHull topCones#a, posHull topCones#e) == n-1);
+	       while i =!= null do (
+		    pairings = pairings | {(a,l#i)};
+		    a = l#i;
+		    l = drop(l,{i,i});
+		    i = position(l, e -> dim intersection(posHull topCones#a, posHull topCones#e) == n-1));
+	       if dim intersection(posHull topCones#a, posHull topCones#start) == n-1 then pairings | {(a,start)} else continue);
+     	  -- Check for every cyclic order of topCones if the product of the corresponding transition
+     	  -- matrices is the identity
+		  if not (all(L, l -> product apply(reverse l, e -> if e#0 > e#1 then inverse bCT#(e#1,e#0) else bCT#e) == map(QQ^k,QQ^k,1))) then (
+		      if debugLevel > 0 then
+			  << "--toric vector bundle does not fulfill cocycle condition" << endl;
+			return false
+		  	);
+
+	  -- ORIGINALLY regcheck
+     	  -- Extracting the necessary data
+     	  tCT := customConeSort keys tvb#"topConeTable";
+     	  c1T := tvb#"codim1Table";
+     	  dT := tvb#"degreeTable";
+     	  if not (all(keys bCT, p -> (
+	       	    -- Taking a pair corresponding to a codim 1 cone, the corresponding transition matrix and its inverse
+	       	    A := bCT#p;
+	       	    B := inverse A;
+	       	    -- Computing the dual of the codim 1 cone
+	       	    C := dualCone posHull c1T#p;
+	       	    -- Check for all pairs of degree vectors of the two top Cones the reg condition
+	       	    all(k, i -> (
+			      ri := (dT#(tCT#(p#1)))_{i};
+			      all(k, j -> (
+				   	rj := (dT#(tCT#(p#0)))_{j};
+				   	(if A^{i}_{j} != 0 then contains(C,rj-ri) else true) and (if A^{j}_{i} != 0 then contains(C,ri-rj) else true)))))))) then (
+                                             if debugLevel > 0 then
+					     << "--toric vector bundle does not satisfy regularity conditions of the degrees" << endl;
+		                            return false
+					);
+		  return true
+))
+
+maxCones ToricVectorBundleKaneyama := T -> (
+      TV := T#"ToricVariety";
+      TR := rays TV;
+      TL := linealitySpace TV;
+      mC := maxCones TV;
+      sort apply(mC, c -> posHull(TR_c, TL))
+    -- sort maxCones T#"ToricVariety"
+   )
+
+----------------------------------------------------------------------------
+-- OPERATIONS ON TORIC VECTOR BUNDLES KANEYAMA
+----------------------------------------------------------------------------
+
+ToricVectorBundleKaneyama.directSum = args -> (
+     args = toList args;
+     T := args#0;
+     scan(drop(args,1), E -> T = T ++ E);
+     T)
+
+ToricVectorBundleKaneyama ++ ToricVectorBundleKaneyama := (tvb1,tvb2) -> (
+    -- Checking for input errors
+    if tvb1#"ToricVariety" != tvb2#"ToricVariety" then error("Expected the bundles to be over the same toric variety.");
+    -- Extracting data out of tvb1 and tvb2
+    k1 := tvb1#"rank of the vector bundle";
+    k2 := tvb2#"rank of the vector bundle";
+    
+    -- Generating the trivial bundle of dimension k1+k2
+    E := toricVectorBundleKaneyama(k1 + k2,tvb1#"ToricVariety");
+    -- Computing the new degree table and transition matrices and writing the degrees and transition matrices into the bundle
+    E = new ToricVectorBundleKaneyama from {
+        "degreeTable" => merge(tvb1#"degreeTable",tvb2#"degreeTable", (a,b) -> a|b),
+	"baseChangeTable" => merge(tvb1#"baseChangeTable",tvb2#"baseChangeTable", (a,b) -> a++b),
+	"ToricVariety" => E#"ToricVariety",
+	"number of affine charts" => E#"number of affine charts",
+	"dimension of the variety" => E#"dimension of the variety",
+	"rank of the vector bundle" => k1 + k2,
+	"codim1Table" => E#"codim1Table",
+	"topConeTable" => E#"topConeTable",
+	symbol cache => new CacheTable};
+
+    -- we combined regCheck and cocycleCheck into isWellDefined.....should we change these and remove them then?
+     if (tvb1.cache.?regCheck and tvb2.cache.?regCheck and tvb1.cache.regCheck and tvb2.cache.regCheck and (
+	       tvb1.cache.?cocycle and tvb2.cache.?cocycle and tvb1.cache.cocycle and tvb2.cache.cocycle)) then (
+	  E.cache.regCheck = true;
+	  E.cache.cocycle = true);
+     E   
+    )
+
+dual ToricVectorBundleKaneyama := {} >> opts -> tvb -> (
+    -- Inverting the degrees and the transition matrices
+    degreeTable := hashTable apply(pairs tvb#"degreeTable", p -> p#0 => -(p#1));
+    baseChangeTable := hashTable apply(pairs tvb#"baseChangeTable", p -> p#0 => transpose inverse p#1);
+    -- Writing the inverted tables into the bundle
+    E := new ToricVectorBundleKaneyama from {
+        "degreeTable" => degreeTable,
+        "baseChangeTable" => baseChangeTable,
+        "ToricVariety" => tvb#"ToricVariety",
+        "number of affine charts" => tvb#"number of affine charts",
+        "dimension of the variety" => tvb#"dimension of the variety",
+        "rank of the vector bundle" => tvb#"rank of the vector bundle",
+        "codim1Table" => tvb#"codim1Table",
+        "topConeTable" => tvb#"topConeTable",
+         symbol cache => new CacheTable};
+        if tvb.cache.?regCheck and tvb.cache.regCheck and tvb.cache.?cocycle and tvb.cache.cocycle then (
+            E.cache.regCheck = true;
+            E.cache.cocycle = true);
+        E)
+
+-- PURPOSE : Compute the Euler characteristic
+--   INPUT : '(u,T)',  where 'T' is a ToricVectorBundleKaneyama and 'u' is a one column matrix over ZZ giving a degree vector
+--  OUTPUT : The Euler characteristic of the Cech complex at degree 'u'
+eulerChi (Matrix,ToricVectorBundleKaneyama) := (u,T) -> (
+    if not T.cache.?eulerChi then T.cache.eulerChi = new MutableHashTable;
+    if not T.cache.eulerChi#?u then (
+	  n := T#"dimension of the variety";
+	  -- Compute the Cech complex and compute the alternating sum of the dimensions
+	  T.cache.eulerChi#u = sum apply(n+2, i -> (-1)^i * numColumns (cechComplex(i,T,u))#1));
+     T.cache.eulerChi#u)
+
+--   INPUT : 'T',  a ToricVectorBundleKaneyama
+--  OUTPUT : The Euler characteristic of the bundle
+eulerChi ToricVectorBundleKaneyama := T -> (
+     -- Compute the set of degrees with possible cohomology
+     L := latticePoints deltaE T;
+     -- Sum up their characteristics
+     sum apply(L, l -> eulerChi(l,T)))
+
+-- PURPOSE : Returning the table of codimension 1 cones of the underlying fan
+--   INPUT : 'T',  a ToricVectorBundleKaneyama
+--  OUTPUT : a HashTable
+codim1Table = method(TypicalValue => HashTable)
+codim1Table ToricVectorBundleKaneyama := T -> T#"codim1Table"
+
+--Q: Why do they send cohomology to a ''not public'' function cohom? Should I keep it like this or just use cohomology?
+--I'm going to just use cohomology for now.....
+
+-- PURPOSE : Computing the cohomology of a given ToricVectorBundleKaneyama
+--   INPUT : '(k,T,u)',  'k' for the 'k'th cohomology group, 'T' a ToricVectorBundleKaneyama, and 'u' the degree
+--  OUTPUT : 'ZZ',	     the dimension of the degree 'u' part of the 'k'th cohomology group of 'tvb'
+cohomology (ZZ,ToricVectorBundleKaneyama,Matrix) := opts -> (k,T,u) -> (
+     if not T.cache.?HH then T.cache.HH = new MutableHashTable;
+     if not T.cache.HH#?(k,u) then (
+	  -- Get the k-1 th and k th differential
+	  d := if k == 0 then rank ker (cechComplex(k,T,u))#1 else (
+	       -- Generate the two boundary operators
+	       d1 := (cechComplex(k-1,T,u))#1;
+	       d2 := (cechComplex(k,T,u))#1;
+	       (rank ker d2) - (rank image d1));
+	  T.cache.HH#(k,u) = (ring T)^(toList(d:flatten entries(-u))));
+     T.cache.HH#(k,u))
+
+--   INPUT : '(i,T,P)',  'i' for the 'i'th cohomology group, 'T' a ToricVectorBundleKaneyama, and 'P' a list of degrees
+--  OUTPUT : 'List',	     the list of the graded modules of the corresponding degree parts of the cohomology group which are non zero
+cohomology(ZZ,ToricVectorBundleKaneyama,List) := opts -> (i,T,P)-> (
+     if opts.Degree == 1 then print ("Number of degrees to calculate: "|(toString(#P)));
+     for j in P list (
+	  if opts.Degree == 1 then << "." << flush;
+	  j = cohomology(i,T,j);
+	  if j != 0 then j else continue))
+
+--   INPUT : '(i,T)',  'i' for the 'i'th cohomology group, 'T' a ToricVectorBundleKaneyama
+--  OUTPUT : the group as a graded module where the generators have the corresponding degree of the weight vector
+-- COMMENT : if the option "Degree" => 1 is given then it displays the number of degrees to calculate
+cohomology(ZZ,ToricVectorBundleKaneyama) := opts -> (i,T)-> (
+     L := cohomology(i,T,latticePoints deltaE T,Degree => opts.Degree);
+     if L == {} then (ring T)^0 else directSum L)
+
+-- PURPOSE : Computing the rank of the cohomology group of a given ToricVectorBundleKaneyama
+--   INPUT : '(i,T)',  'i' for the 'i'th cohomology group, 'T' a ToricVectorBundleKaneyama
+--  OUTPUT : 'ZZ',  the rank of the 'i'th cohomology group
+hh(ZZ,ToricVectorBundleKaneyama) := ZZ => (i,T) -> rank cohomology(i,T)
+
+-- PURPOSE : Computing the polytope deltaE in the degree space such that outside this polytope
+--     	     every cohomology is 0 
+--   INPUT : 'tvb',  a ToricVectorBundleKaneyama
+--  OUTPUT : a Polyhedron
+deltaE ToricVectorBundleKaneyama := (cacheValue symbol deltaE)( tvb -> (
+     	  if not isComplete tvb#"ToricVariety" then error("The toric variety needs to be complete.");
+     	  n := tvb#"dimension of the variety";
+      
+	  -- Extracting necessary data
+          raylist := rays tvb;
+          rl := #raylist;
+          k := tvb#"rank of the vector bundle";
+          tCT := keys tvb#"topConeTable";
+          dT := tvb#"degreeTable";
+          -- Creating an index table, for each ray the first top cone containing it
+          raytCTindex := hashTable apply(#raylist, r -> r => position(tCT, C -> contains(posHull C_0,raylist#r)));
+          raylist = transpose matrix {raylist};
+          -- Get the subsets of 'n' elements in 'rl'
+          sset := subsets(rl,n);
+          jList := {{}};
+          -- Get all different combinations of choices of variety dimension many degree vectors
+          for i from 0 to n-1 do jList = flatten apply(jList, l -> apply(k, j -> l|{j}));
+          M := map(QQ^1,QQ^n,0);
+          v := map(QQ^1,QQ^1,0);
+          -- For every 'n' in 'l' subset and any combination in jList get the intersection of the dual cones
+          -- of the corresponding rays. If this is a non-empty compact polytope then add the vertices to the
+          -- list L
+     	       L := unique flatten apply(sset, s -> (
+	       	    	 unique for j in jList list (
+		    	      N := matrix apply(n, i -> {raylist^{s#i},raylist^{s#i} * ((dT#(tCT#(raytCTindex#(s#i))))_{j#i})});
+		    	      w := N_{n};
+		    	      N = submatrix'(N,{n});
+		    	      P := polyhedronFromHData(M,v,N,w);
+		    	      if isCompact P and (not isEmpty P) then vertices P else continue)));
+     	       -- Make a matrix of all the vertices in L
+     	       M = matrix {L};
+     	       convexHull M))
+
+-- PURPOSE : Returning the underlying fan of a toric vector bundle
+--   INPUT : 'T',  a ToricVectorBundleKaneyama
+--  OUTPUT : a Fan
+fan ToricVectorBundleKaneyama := T -> T#"ToricVariety"
+
+-- PURPOSE : Checking if two toric vector bundles (Kaneyama) are equal
+--   INPUT : '(tvb1,tvb2)',  two ToricVectorBundleKaneyama
+--  OUTPUT : 'true' or 'false' 
+ToricVectorBundleKaneyama == ToricVectorBundleKaneyama := (tvb1,tvb2) -> tvb1 === tvb2
+
+-- PURPOSE : Computing the tensor product of two toric vector bundles (Kaneyama) over the same Fan
+--   INPUT : '(tvb1,tvb2)',  two ToricVectorBundle Kaneyama over the same Fan in the same description
+--  OUTPUT : 'tvb',  a ToricVectorBundleKaneyama which is the tensor product in the same description
+tensor(ToricVectorBundleKaneyama, ToricVectorBundleKaneyama) := ToricVectorBundleKaneyama => {} >> opts -> (tvb1, tvb2) -> (
+    -- Checking for input errors
+     if tvb1#"ToricVariety" != tvb2#"ToricVariety" then error("Expected bundles over the same toric variety.");
+     k1 := tvb1#"rank of the vector bundle";
+     k2 := tvb2#"rank of the vector bundle";
+
+     -- Extracting data out of tvb1 and tvb2
+     -- Generating the trivial bundle of dimension k1+k2
+     E := toricVectorBundleKaneyama(k1 * k2,tvb1#"ToricVariety");
+     -- Computing the new degree table and transition matrices and writing the degrees and transition matrices into the bundle
+     E = new ToricVectorBundleKaneyama from {
+         "degreeTable" => merge(tvb1#"degreeTable",tvb2#"degreeTable", (a,b) -> matrix {flatten apply(k2, j -> apply(k1, i -> a_{i}+b_{j}))}),
+         "baseChangeTable" => merge(tvb1#"baseChangeTable",tvb2#"baseChangeTable", (a,b) -> (
+                 matrix flatten apply(k2, j -> apply(k1, i -> flatten apply(k2, j' -> apply(k1, i' -> a_(i,i') * b_(j,j'))))))),
+         "ToricVariety" => E#"ToricVariety",
+         "number of affine charts" => E#"number of affine charts",
+         "dimension of the variety" => E#"dimension of the variety",
+         "rank of the vector bundle" => k1 + k2,
+         "codim1Table" => E#"codim1Table",
+         "topConeTable" => E#"topConeTable",
+         symbol cache => new CacheTable};
+     if (tvb1.cache.?regCheck and tvb2.cache.?regCheck and tvb1.cache.regCheck and tvb2.cache.regCheck and (
+             tvb1.cache.?cocycle and tvb2.cache.?cocycle and tvb1.cache.cocycle and tvb2.cache.cocycle)) then (
+         E.cache.regCheck = true;
+         E.cache.cocycle = true);
+     E
+
+)
+
+ToricVectorBundleKaneyama ** ToricVectorBundleKaneyama := (tvb1,tvb2) -> tensor(tvb1,tvb2)
+
+-- PURPOSE : Generating the Vector Bundle given by a divisor
+
+weilToCartierKaneyama = method();
+
+--   INPUT : '(L,F)',  a list 'L' of weight vectors, one for each ray of the Fan 'F'
+--  OUTPUT : 'tvb',  a ToricVectorBundleKaneyama
+weilToCartierKaneyama (List,Fan) := opts -> (L,F) -> (
+    rl := raySortOfFan F;
+    -- Checking for input errors
+    if #L != #rl then error("The number of weights has to equal the number of rays.");
+    n := ambDim F;
+
+    if not isPure F or ambDim F != dim F then error("Expected the Fan to be pure of maximal dimension.");
+    -- Creating 0 matrices to compute intersection of hyperplanes to compute the degrees
+    Mfull := matrix {toList(n:0)};
+    vfull := matrix {{0}};
+    -- Checking for further errors and assigning the weights to the rays
+    L = hashTable apply(#rl, i -> (if class L#i =!= ZZ then error("The weights have to be in ZZ."); rl#i => L#i));
+    -- Keeping track of the lowest common multiple of denominators of the degrees,
+    -- to check whether the divisor itself is Cartier or which multiple
+    denom := 1;
+    -- Computing the degree vector for every top dimensional cone
+    tvb := toricVectorBundleKaneyama(1,F);
+    gC := customConeSort keys tvb#"degreeTable";
+    gC = apply(gC, C -> (
+            rC := (rays posHull C);
+            -- Taking the first n x n submatrix
+            rC1 := rC_{0..n-1};
+            -- Setting up the solution vector by composing the corresponding weights
+            v := matrix apply(n, i -> (c := rC1_{i}; {-(L#c)}));
+            -- Computing the degree vector
+            w := vertices polyhedronFromHData(Mfull,vfull,transpose rC1,v);
+            -- Checking if w also fulfils the equations given by the remaining rays
+            if numColumns rC != n then (
+                v = v || matrix apply(toList(n..(numColumns rC)-1), i -> {-(L#(rC_{i}))});
+                if (transpose rC)*w - v != 0 then error("The weights do not define a Cartier divisor."));
+            -- Check if w is QQ-Cartier
+            scan(flatten entries w, e -> denom = lcm(denominator e ,denom));
+            w));
+    -- If the divisor is only QQ Cartier, then its replaced by its first Cartier multiple
+    if denom != 1 then error("The divisor is only QQ-Cartier, but "|toString(denom)|" times the divisor is Cartier.");
+    gC = apply(gC, e -> substitute(denom*e,ZZ));
+    -- Construct the actual line bundle
+    addDegrees(tvb,gC))
+
+
+---------------------------------------
+-- AUXILIARY FUNCTIONS, not public
+---------------------------------------
+
+-- PURPOSE : Computing the cotangent bundle on a smooth, pure, and full dimensional Toric Variety 
+--   INPUT : 'F',  a smooth, pure, and full dimensional Fan
+--  OUTPUT : 'tvb',  a ToricVectorBundleKaneyama 
+cotangentBundleKaneyama = F -> (
+     -- Checking for input errors
+     if not isSmooth F then error("The Toric Variety has to be smooth.");
+     if not isComplete F then error("The Toric Variety has to be complete.");
+     if not isPointed F then error("The Fan has to be pointed.");
+     -- Generating the trivial bundle of dimension n
+     n := dim F;
+     tvb := toricVectorBundleKaneyama(n,F);
+     tCT := customConeSort keys tvb#"topConeTable";
+     pairlist := keys tvb#"baseChangeTable";
+     -- Computing the degrees and transition matrices of the cotangent bundle
+     degreeTable := hashTable apply(tCT, p -> p => substitute(rays dualCone posHull p,ZZ));
+     baseChangeTable := hashTable apply(pairlist, p -> ( p => substitute(inverse(degreeTable#(tCT#(p#1)))*(degreeTable#(tCT#(p#0))),QQ)));
+     -- Writing the data into the bundle
+     E := new ToricVectorBundleKaneyama from {
+	  "degreeTable" => degreeTable,
+	  "baseChangeTable" => baseChangeTable,
+	  "ToricVariety" => tvb#"ToricVariety",
+	  "number of affine charts" => tvb#"number of affine charts",
+	  "dimension of the variety" => n,
+	  "rank of the vector bundle" => n,
+	  "codim1Table" => tvb#"codim1Table",
+	  "topConeTable" => tvb#"topConeTable",
+	  symbol cache => new CacheTable};
+     E.cache.regCheck = true;
+     E.cache.cocyle = true;
+     E)
+ 
+-- PURPOSE : Computing the Cech complex of a vector bundle (Kaneyama)
+--   INPUT : '(k,T,u)', where 'k' is an integer between -1 and the dimension of the bundle +1, 'T' a ToricVectorBundleKaneyama, and 'u' a
+--     	    	        one column matrix giving a degree vector
+--  OUTPUT : '(Fk,Fkcolumns,FktoFk+1)', where 'Fk' is a hashTable with the summands of the 'k'th chain, 'Fkcolumns' is a hashTable with the
+--     	    	      	   	        dimensions of these summands, and 'FktoFk+1' is a hashTable with the components of the 'k'th 
+--     	    	      	   	        boundary operator
+cechComplex (ZZ,ToricVectorBundleKaneyama,Matrix) := (k,tvb,u) -> ( 
+     -- Checking for input errors
+     if numRows u != tvb#"dimension of the variety" or numColumns u != 1 then error("Expected a matrix with 1 column and ", toString tvb#"dimension of the variety", " rows.");
+     if ring u =!= ZZ then error("The degree has to be an integer vector.");
+     if k < 0 or tvb#"dimension of the variety"+1 < k then error("k has to be between 0 and the variety dimension for the k-th cohomology.");
+     -- For a given space F1 at chain k in the filtration together with the degree vector 'u' and the information of the bundle this auxiliary 
+     -- function computes the boundary operator to the next chain (k+1) which is F1toF2, the dimensions of the summands of 'F1' in 'F1columns' 
+     -- and the next chain 'F2'
+     makeNewDiffAndTarget := (M1,rk,l,tCT,bCT,dT) -> (
+	  -- Recursive function that finds a path over codim 1 cones from one topdim cone ('i') to another ('j')
+     	  -- using the steps in 'pl'
+     	  findpath := (i,j,pl) -> (
+	       -- Recursive function finds a path from the actual cone 'i' to the Cone 'j' using the steps in 'pl'
+	       -- where 'cl' is the  sequence of steps taken so far from the original 'i' and 'minpath' is the 
+	       -- shortest path found so far
+	       findrecursive := (i,j,pl,cl,minpath) -> (
+	       	    -- If the last step from 'i' to 'j' is part of 'pl' then add '(i,j)' to 'cl'
+	       	    if member((i,j),pl) or member((j,i),pl) then (
+		    	 cl = append(cl,(i,j));
+		    	 -- Check if the new found path is shorter than shortest so far
+		    	 if #cl < #minpath or minpath == {} then minpath = cl)
+	       	    -- otherwise find a path with the remaining steps in 'pl'
+	       	    else (
+		    	 L1 := {};
+		    	 L2 := {};
+		    	 -- Sort the remaining possible steps into those containing 'i'in 'L1' and those who not in 'L2'
+		    	 for e in pl do if member(i,e) then L1 = append(L1,e) else L2 = append(L2,e);
+		    	 -- Call findrecursive for each step in 'L1', with new starting cone the other index in the pair and new 
+		    	 -- remaining pairs list 'L2' and add the step to 'cl'
+		    	 for e in L1 do ( 
+			      if e#0 == i then minpath = findrecursive(e#1,j,L2,append(cl,e),minpath)
+			      else minpath = findrecursive(e#0,j,L2,append(cl,(e#1,e#0)),minpath)));
+	       	    minpath);
+	       -- Start with an empty sequence of steps, no minimal path yet and all possible stepsd
+	       cl := {};
+	       minpath := {};
+	       findrecursive(i,j,pl,cl,minpath));
+	  M2 := {};
+	  for p in pairs M1 do (
+	       L := select(toList(0..rk-1), i -> not member(i,p#1#0));
+	       for i from last(p#0)+1 to l-1 do (
+		    cl := append(p#0,i);
+		    C := intersection(posHull p#1#1, posHull tCT#i);
+		    degs := dT#(tCT#(cl#0));
+		    M2 = append(M2,cl => (sort unique join(p#1#0,select(L, i -> contains(dualCone C,u- degs_{i}))),(rays C, linealitySpace C)))));
+	  M2 = hashTable M2;
+	  -- Constructing the zero map over QQ
+     	  d1 := map(QQ^0,QQ^0,0);
+     	  -- Constructing the matrix of the sequence for the cohomology
+	  scan(pairs M1, (a,b) -> (
+		    b = b#0;
+		    -- 'A' will be a column of the matrix d1 of the sequence
+		    A := map(QQ^0,QQ^(#b),0);
+		    -- One intersection in M1 is selected, by going through the intersections in M2 we get the first "column" of block matrices in A 
+		    -- by looking at the images in all intersections in M2
+		    scan(pairs M2, (c,d) -> (
+			      -- Only if the intersection is made by intersecting with one more cone, the resulting matrix has to be computed, 
+			      -- because otherwise it is automatically zero
+			      if isSubset(a,c) then (
+				   -- get the signum by looking at the position the new cone is inserted
+				   signum := (-1)^(#c - position(c, e -> not member(e,a)) - 1);
+				   i := a#0;
+				   j := c#0;
+				   -- if i == j then no base change between the two representations has to be made, so the submatrix of the 
+				   -- identity inserting the positions of the degrees 'b' into the degrees 'd' is added in this column
+				   if i == j then A = A || (signum * (map(QQ^rk,QQ^rk,1))_b)
+				   -- Otherwise we have to find the transition matrix from cone 'i' to Cone 'j'
+				   else (
+					-- find the transition matrix
+					mpath := findpath(i,j,keys bCT);
+					-- If the path has one element then we take the 'b'-'d' part of that matrix, otherwise the multiplication 
+					-- of the matrices corresponding to the steps in the path and add the path as a new step with corresponding matrix
+					if #mpath == 1 then (
+					     if i < j then A = A || (signum * (bCT#(i,j))_b)
+					     else A = A || (signum * (inverse (bCT#(j,i)))_b))
+					else (
+					     A1 := map(QQ^rk,QQ^rk,1);
+					     for p in mpath do (
+						  if p#0 < p#1 then A1 = bCT#p * A1
+						  else A1 = (inverse bCT#(p#1,p#0))*A1);
+					     if i < j then bCT = hashTable join(apply(pairs bCT, ps -> ps#0 => ps#1), {(i,j) => A1})
+					     else bCT = hashTable join(apply(pairs bCT, ps -> ps#0 => ps#1), {(j,i) => inverse A1});
+					     A = A || (signum * A1_b))))
+			      else (
+				   A = A || map(QQ^rk,QQ^(#b),0))));
+		    -- Adding the new column to d1
+		    if d1 == map(QQ^0,QQ^0,0) then d1 = A
+		    else d1 = d1 | A));
+	  (d1,M2));
+     if not tvb.cache.?cech then tvb.cache.cech = new MutableHashTable;
+     rk := tvb#"rank of the vector bundle";
+     l := tvb#"number of affine charts";
+     tCT := customConeSort keys tvb#"topConeTable";
+     bCT := tvb#"baseChangeTable";
+     dT := tvb#"degreeTable";
+     if not tvb.cache.cech#?(k,u) then (
+     	  if k == 0 then (
+	       M20 := hashTable apply(subsets(l,k+1), cl -> (
+		    	 C := intersection apply(cl, i -> posHull tCT#i);
+		    	 degs := dT#(tCT#(cl#0));
+		    	 L := select(toList(0..rk-1), i -> contains(dualCone C,u - degs_{i}));
+		    	 cl => (L,(rays C, linealitySpace C))));
+	       (d20,M30) := makeNewDiffAndTarget(M20,rk,l,tCT,bCT,dT);
+	       tvb.cache.cech#(k,u) = (M20,d20);
+	       tvb.cache.cech#(k+1,u) = M30)
+	  else (
+	       M1 := if not tvb.cache.cech#?(k-1,u) then (
+	       	    hashTable apply(subsets(l,k), cl -> (
+		    	      C := intersection apply(cl, i -> posHull tCT#i);
+		    	      degs := dT#(tCT#(cl#0));
+		    	      L := select(toList(0..rk-1), i -> contains(dualCone C,u - degs_{i}));
+		    	      cl => (L,(rays C, linealitySpace C))))) else tvb.cache.cech#(k-1,u);
+	       (d1,M2) := makeNewDiffAndTarget(M1,rk,l,tCT,bCT,dT);
+	       (d2,M3) := makeNewDiffAndTarget(M2,rk,l,tCT,bCT,dT);
+	       tvb.cache.cech#(k-1,u) = (M1,d1);
+	       tvb.cache.cech#(k,u) = (M2,d2);
+	       tvb.cache.cech#(k+1,u) = M3))
+     else if not instance(tvb.cache.cech#(k,u),Sequence) then (
+	  M21 := tvb.cache.cech#(k,u);
+	  (d21,M31) := makeNewDiffAndTarget(M21,rk,l,tCT,bCT,dT);
+	  tvb.cache.cech#(k,u) = (M21,d21);
+	  tvb.cache.cech#(k+1,u) = M31);
+     tvb.cache.cech#(k,u))
+
+
 
 ---------------------------------------
 -- DOCUMENTATION
@@ -5249,14 +5468,14 @@ doc ///
 -- Test 0
 -- Checking toricVectorBundle for Kaneyama type
 TEST ///
-T = toricVectorBundle(2,pp1ProductFan 2,"Type" => "Kaneyama")
+T = toricVectorBundleKaneyama(2,pp1ProductFan 2)
 assert(T#"baseChangeTable" === hashTable {(0,1) => map(QQ^2,QQ^2,1),(0,2) => map(QQ^2,QQ^2,1),(1,3) => map(QQ^2,QQ^2,1),(2,3) => map(QQ^2,QQ^2,1)})
 assert(T#"degreeTable" === hashTable apply(facesAsCones(0,pp1ProductFan 2), C -> (rays C, linealitySpace C) => map(ZZ^2,ZZ^2,0)))
 assert(rank T == 2)
 assert(T#"dimension of the variety" == 2)
 L1 = {matrix {{1,0},{0,1}},matrix{{0,1},{1,0}},matrix{{-1,0},{-1,1}}}
 L2 = {matrix {{-1,0},{0,-1}},matrix{{0,1},{1,0}},matrix{{0,-1},{-1,0}}}
-T = toricVectorBundle(2,projectiveSpaceFan 2,L1,L2,"Type" => "Kaneyama")
+T = toricVectorBundleKaneyama(2,projectiveSpaceFan 2,L1,L2)
 assert(T#"baseChangeTable" === hashTable {(0,1) => matrix {{-1/1,0},{0,-1}},(0,2) => matrix{{0/1,1},{1,0}},(1,2) => matrix{{0/1,-1},{-1,0}}})
 assert(T#"degreeTable" === hashTable {(matrix {{1,-1},{0,-1}}, map(ZZ^2,0,0)) => matrix{{-1,0},{-1,1}}, (matrix {{1,0},{0,1}}, map(ZZ^2,0,0)) => matrix{{0,1},{1,0}}, (matrix {{-1,0},{-1,1}}, map(ZZ^2,0,0)) => matrix{{1,0},{0,1}}})
 assert(rank T == 2)
@@ -5264,7 +5483,7 @@ assert(T#"dimension of the variety" == 2)
 ///
 
 -- Test 1
--- Checking toricVectorBundle for Klyachko type
+-- Checking toricVectorBundle for Klyachko type -- maybe need to get rid of/modify this becuase it uses the old definition
 TEST ///
 T = toricVectorBundle(2,pp1ProductFan 2);
 assert(T#"ring" === QQ)
@@ -5282,11 +5501,11 @@ assert(rank T == 2)
 assert(T#"dimension of the variety" == 2)
 ///
 
-
+-- TODO: fix these tests, we no longer have cocycleCheck and regCheck - combined to give isWellDefined
 -- Test 2
 -- Checking addBaseChange and cocycleCheck
 TEST ///
-T = toricVectorBundle(2,pp1ProductFan 2,"Type" => "Kaneyama")
+T = toricVectorBundleKaneyama(2,pp1ProductFan 2)
 T1 = addBaseChange(T,{matrix{{1,2},{0,1}},matrix{{1,0},{3,1}},matrix{{1,-2},{0,1}},matrix{{1,0},{-3,1}}})
 assert cocycleCheck T1
 T1 = addBaseChange(T,{matrix{{1,2},{0,1}},matrix{{1,0},{3,1}},matrix{{1,-2},{0,1}},matrix{{1,0},{-2,1}}})
@@ -5296,7 +5515,7 @@ assert not cocycleCheck T1
 -- Test 3
 -- Checking regCheck
 TEST ///
-T = toricVectorBundle(2,pp1ProductFan 2,"Type" => "Kaneyama")
+T = toricVectorBundleKaneyama(2,pp1ProductFan 2)
 assert regCheck T
 T1 = addDegrees(T,{matrix{{1,2},{3,1}},matrix{{-1,0},{3,1}},matrix{{1,2},{-3,-1}},matrix{{-1,0},{-3,-1}}})
 assert not regCheck T1
@@ -5305,7 +5524,7 @@ assert regCheck T1
 ///
 
 -- Test 4
--- Checking tangentBundle for Kaneyama
+-- Checking tangentBundle for Kaneyama -- I don't think this exists anymore? Where did it go?
 TEST ///
 T = tangentBundle(pp1ProductFan 2,"Type" => "Kaneyama")
 assert(T#"baseChangeTable" === hashTable {(0,1) => map(QQ^2,QQ^2,{{1, 0}, {0, -1}}), (0,2) => map(QQ^2,QQ^2,{{-1, 0}, {0, 1}}), (1,3) => map(QQ^2,QQ^2,{{-1, 0}, {0, 1}}), (2,3) => map(QQ^2,QQ^2,{{1, 0}, {0, -1}})})
@@ -5351,7 +5570,7 @@ assert(T#"dimension of the variety" == 3)
 ///
 
 -- Test 7
--- Checking cotangentBundle for Klyachko
+-- Checking cotangentBundle for Klyachko -- fails, because of modified cotangentBundle definition?
 TEST ///
 T = cotangentBundle hirzebruchFan 2
 assert(T#"ring" === QQ)
@@ -5600,7 +5819,7 @@ assert(T#"dimension of the variety" == 3)
 ///
 
 -- Test 22
--- Checking exteriorPower for Kaneyama
+-- Checking exteriorPower for Kaneyama -- did we get rid of this?
 TEST ///
 T = cotangentBundle(hirzebruch 3,"Type" => "Kaneyama")
 T = exteriorPower(2,T)
@@ -5735,7 +5954,7 @@ assert(cartierIndex({3,3,3},F) == 1)
 
 -- ADDING NEW TESTS JUNE/JULY 2026
 -- Test 31
--- Checking isWellDefined (Kaneyama) (combining the tests for cocycleCheck and regCheck)
+-- Checking isWellDefined (Kaneyama) (combining the tests for cocycleCheck and regCheck)--TODO: FIX THIS
 TEST ///
 T = toricVectorBundle(2,pp1ProductFan 2,"Type" => "Kaneyama")
 assert isWellDefined T
