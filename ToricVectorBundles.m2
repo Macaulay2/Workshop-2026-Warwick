@@ -1094,7 +1094,7 @@ ToricVectorBundleNew == ToricVectorBundleNew := (T1,T2) -> (areIsomorphic(T1,T2)
 
 areIsomorphic = method(TypicalValue => Boolean)
 
-
+-- The next two are auxiliary functions for areIsomorphic
 
 linearMapFromMatrices = (A1, A2) -> (
     auxMat := A ->(
@@ -1141,13 +1141,6 @@ auxAreIsomorphic = (T1,T2, jumps) ->(
     return linearMapFromMatrices(M1,M2);
 )
 
--- TODO:
--- to construct the isomorphism we need to be more clever. We need to attempt
--- to construct the iso by looking at filtered pieces, recreating a basis for
--- the full vector space
-
--- new areIsomorphic for ToricVectorBundleNew
--- this is just trivial for now to make sure that the == has been implemented appropriately
 areIsomorphic (ToricVectorBundleNew,ToricVectorBundleNew) := Boolean => (T1,T2) -> (
     --First check that the bundles have same rank, defined over same ring and have same base variety before
     --anything else
