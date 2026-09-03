@@ -126,7 +126,9 @@ export {
     "customConeSort",
     -- getters
     "filtrationMatrices",
-    "filtrationJumps"
+    "filtrationJumps",
+    -- auxiliary
+    "linearMapFromMatrices"
     }
 
 
@@ -1260,6 +1262,52 @@ ToricVectorBundleNew == ToricVectorBundleNew := (T1,T2) -> (areIsomorphic(T1,T2)
 areIsomorphic = method(TypicalValue => Boolean)
 
 
+
+linearMapFromMatrices = (A1, A2) -> (
+    auxMat := A ->(
+        basisIndices := {0};
+        currentRank := 1;
+        candidateIndices :={};
+        candidate := {};
+        newRank := 0;
+        for i from 1 to numColumns A - 1 do (
+            candidateIndices = append(basisIndices, i);
+            candidate = A_basisIndices; -- columns selected so far
+            candidate = candidate | matrix A_i;
+
+            newRank = rank candidate;
+
+            if newRank > currentRank then (
+                basisIndices = candidateIndices;
+                currentRank = newRank;
+            );
+        );
+      A_basisIndices
+    );
+    M1 := auxMat(A1);
+    M2 := auxMat(A2);
+
+    -- Define the unique linear map on the basis
+    B := M1 * inverse M2;
+    -- Check all prescribed images
+    if B * M2 != M1 then return {};
+    return B;
+    )
+
+
+auxAreIsomorphic = (T1,T2, jumps) ->(
+    -- When doing the fold the zero columns are authomatically removed
+    n:= rank T1;
+    aux1:= flatten apply( jumps, j -> apply(rays T1, rho -> filteredPiece(T1, rho, j) ) );
+    aux1 = flatten apply(toList(1..n), i -> select(aux1, M -> numcols M == i ) );
+    aux2 := flatten apply( jumps, j -> apply(rays T2, rho ->filteredPiece(T2, rho, j) ) );
+    aux2 = flatten apply(toList(1..n), i -> select(aux2, M -> numcols M == i ) );
+    
+    M1:= fold((i,j)->i|j,aux1 );
+    M2 := fold((i,j)->i|j, aux2); 
+    return linearMapFromMatrices(M1,M2);
+)
+
 -- TODO:
 -- to construct the isomorphism we need to be more clever. We need to attempt
 -- to construct the iso by looking at filtered pieces, recreating a basis for
@@ -1270,7 +1318,8 @@ areIsomorphic = method(TypicalValue => Boolean)
 areIsomorphic (ToricVectorBundleNew,ToricVectorBundleNew) := Boolean => (T1,T2) -> (
     --First check that the bundles have same rank, defined over same ring and have same base variety before
     --anything else
-    if not ((rank T1 == rank T2) and (variety T1 === variety T2) and (ring T1 === ring T2)) then return false;
+    jumps := rsort unique flatten filtrationJumps T1;
+    if not ((rank T1 == rank T2) and (variety T1 === variety T2) and (ring T1 === ring T2) and (jumps == rsort unique flatten filtrationJumps T2) ) then return false;
     --Checking if T1 and T2 have already been deemed isomorphic. If not, create entries in a cache
     if not T1.cache.?iso then (
         T1.cache.iso = new MutableHashTable;
@@ -1283,17 +1332,35 @@ areIsomorphic (ToricVectorBundleNew,ToricVectorBundleNew) := Boolean => (T1,T2) 
     if T1.cache.iso#?T2 then return true;
     
     if not T1.cache.iso#?T2 then (
-        --Checking if isomorphic!
-        --defining the potential isomorphism as the identity from T1 to T2
+        -- The strategy is first trying if the identity map is the map,
+        -- then trying the naive base change and if it fails apply the 
+        -- algorithm to find the map 
         r := rank T1;
-        A := submatrix'(sort  ( (filtrationMatrices( T1))_0 ||matrix( ring T1, {(filtrationJumps (T1))_0} )),{r}, );
-        B := submatrix'(sort (  ( filtrationMatrices T2)_0||matrix(ring T2, { (filtrationJumps T2)_0})),{r}, );
-        isoMatrix := B * (A^-1);
+        -- 1st check: identity matrix:
+        isoMatrix := id_((ring T1)^(r));
         isoMapT1T2 := map(T2,T1,isoMatrix);
-        --isoMapT1T2 := map(T2,T1,id_((ring T1)^(rank T1)));
         --checking if this map is injective and surjective. if it is, this will tell us that
         --these bundles are equivariantly isomorphic
-        areTVBsIso := ((isInjective isoMapT1T2) and (isSurjective isoMapT1T2));
+        areTVBsIso := ((isWellDefined isoMapT1T2) and (isInjective isoMapT1T2) and (isSurjective isoMapT1T2));
+        
+        if not areTVBsIso then(
+        -- 2nd check: naive base change
+        A := submatrix'(sort  ( (filtrationMatrices( T1))_0 ||matrix( ring T1, {(filtrationJumps (T1))_0} )),{r}, );
+        B := submatrix'(sort (  ( filtrationMatrices T2)_0||matrix(ring T2, { (filtrationJumps T2)_0})),{r}, );
+        isoMatrix = B * (A^-1);
+        isoMapT1T2 = map(T2,T1,isoMatrix);
+        areTVBsIso = ((isWellDefined isoMapT1T2) and (isInjective isoMapT1T2) and (isSurjective isoMapT1T2));
+            if not areTVBsIso then(
+            -- 3rd check: find the base change
+            isoMatrix = auxAreIsomorphic(T2,T1, jumps);
+            if isoMatrix === {} then(return false);
+            isoMapT1T2 = map(T2,T1,isoMatrix);
+            
+            areTVBsIso = ((isWellDefined isoMapT1T2) and (isInjective isoMapT1T2) and (isSurjective isoMapT1T2));
+
+            );   
+        );    
+
         if areTVBsIso then (
             T1.cache.iso#T2 = isoMapT1T2;
             isoMapT2T1 := map(T1,T2, isoMatrix^-1);
@@ -5921,6 +5988,23 @@ T2 = L2++L1;
 
 assert areIsomorphic( T1, T2)
 assert (map isomorphism( T1, T2) == matrix( ring T1,{{0, 1}, {1, 0}} ))
+
+
+-- Checks that the 2nd method works
+T1 = (tangentBundle X ** lineBundle(X, {2,-3,4,3})) ++ lineBundle(X_2 + X_3)
+displayFiltrations T1
+
+T2 =  lineBundle(X_2 + X_3)++ (lineBundle(X, {2,-3,4,3})** tangentBundle X ) 
+displayFiltrations T2
+
+assert areIsomorphic (T1,T2)
+
+
+-- Checks that the 3rd method works
+T1 = tangentBundle X;
+T2 = toricVectorBundle( X, filtrationMatrices T1, {{1,0,0},{0,1,0},{0,0,1},{0,1,0}})
+
+asser areIsomorphic (T1,T2)
 
 ///
 
