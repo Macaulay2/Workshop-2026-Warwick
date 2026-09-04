@@ -66,17 +66,46 @@ CGBFromTriple = method(); --Constructor for a CGBTriple starting from
                           --parametric strata and G is the set of 
                           --polynomial to be studied on it.
 
-CGBFromTriple List := CGB => (L) -> (
+CGBFromTriple List := CGBTriple => (L) -> (
     if(length L == 3 and length L_0 > 0 and length L_2 > 0) then (
         R := ring L_2_0;
-        coeff := coefficientRing R;
-        scalarRing := coefficientRing coeff;
         return new CGBTriple from {
-            triple => L,
-            coefficientsRing => coeff,
-            totalRing => R ,
-            flattenedRing => scalarRing(monoid[gens R, gens coeff, MonomialOrder => ringOrder R | ringOrder coeff])};
+            "triple" => L,
+            "cgbData" => CGBDataFromRings(R)};
         );
+);
+
+CGBDataFromRings = method();
+
+CGBDataFromRings Ring := CGBData => (R) -> (
+  X := gens R;
+  KU := coefficientRing R;
+  U := gens KU;
+  K := coefficientRing KU;
+  RExt := K[getSymbol "l", X, U, MonomialOrder => {Lex => 1} | ringOrder R | ringOrder KU];
+  l := first gens RExt;
+  RFlat := K[X, U, MonomialOrder => ringOrder R | ringOrder KU];
+  RExt' := KU[l, X, MonomialOrder => {Lex => 1} | ringOrder R];
+  RFlatl := RFlat[l];
+  RtoRExt := map(RExt, R, drop(gens RExt, 1));
+  RExttoRFlatl:= map(RFlatl,RExt, gens RFlatl | gens coefficientRing RFlatl);
+  RExttoRExt':= map(RExt',RExt, gens RExt'| gens coefficientRing RExt');
+  RExttoR:= map(R, RExt, {1} | gens R | gens coefficientRing R);
+  RingsandThings := {R,X,RExt,RFlat,RExt',KU,RFlatl,RtoRExt,RExttoRFlatl,RExttoRExt',RExttoR};
+
+  new CGBData from {
+    "R"             => R,
+    "X"             => X,
+    "RExt"          => RExt,
+    "RFlat"         => RFlat,
+    "RExt'"         => RExt',
+    "KU"            => KU,
+    "RFlatl"        => RFlatl,
+    "RtoRExt"       => RtoRExt,
+    "RExttoRFlatl"  => RExttoRFlatl,
+    "RExttoRExt'"   => RExttoRExt',
+    "RExttoR"       => RExttoR
+    }
 );
 
 
@@ -458,21 +487,30 @@ MDBasis (List) := (G) -> (
 --------------------------------------------------
 PGBMain = method();
 PGBMain (CGBTriple) := T -> (
-    {E, N, F} := T#triple;
+    {E, N, F} := T#"triple";
+    cgbData := T#"cgbData";
+    R:=cgbData#"R";
+    X:=cgbData#"X";
+    RExt:=cgbData#"RExt"; 
+    RFlat:=cgbData#"RFlat";
+    RExt':=cgbData#"RExt'";
+    KU:=cgbData#"KU";
+    RFlatl:=cgbData#"RFlatl";
+    RtoRExt:=cgbData#"RtoRExt";
+    RExttoRFlatl:=cgbData#"RExttoRFlatl";
+    RExttoRExt':=cgbData#"RExttoRExt'";
+    RExttoR:=cgbData#"RExttoR";
     --print(E, length N);
     if not(isConsistentRabinowitsch(E, N)) then (
         return {} --The domain is empty
     );
-    R := T#totalRing; --Ring with parameters and variables
-    RFlat := T#flattenedRing; --Ring where parameters are consdiered variables
-    CoeffRing := T#coefficientsRing; -- Ring with only parameters
     --Compute the GB of union(E, F), but viewing the parameters as variables
     G := first entries gens(gb (ideal(apply((E | F), e -> sub(e, RFlat)))));
     if member(sub(1, RFlat), G) then (
         return {{E, N, {promote(1, R)}}} --Trivial case where the vanishing set is empty
     );
     Gr := for g in G list ( --The polynomials in G that only contain the parameters
-        l := lift(sub(g, R), CoeffRing, Verify =>false);
+        l := lift(sub(g, R), KU, Verify =>false);
         --lift() with Verify=>false returns Null when the lift is not possible
         --i.e. when the polynomial contains something other than parametetrs
         if instance(l, Nothing) then (continue);
@@ -484,11 +522,11 @@ PGBMain (CGBTriple) := T -> (
     -- To keep track of the original rings down the line and in the output, 
     -- we never return an empty GB.
     if length Gr == 0 then (
-        Gr = {0_CoeffRing}; 
+        Gr = {0_KU}; 
     );
     productList := unique(totalListProduct(Gr, N)); --The list obtained by multiplying every element in Gr with every element in N
     if length(productList) == 0 then (
-        productList = {0_CoeffRing};
+        productList = {0_KU};
     );
     PGB := {};
     if isConsistentRabinowitsch(E, productList) then (
@@ -502,8 +540,8 @@ PGBMain (CGBTriple) := T -> (
     Gm := MDBasis(listDiff);
     H := unique(apply(Gm, g->squareFreePart(leadCoefficient(sub(g, R)))));
     h := squareFreePart(lcm(H));
-    if h == 1 then h = 1_CoeffRing;
-    productList = unique(apply(totalListProduct(N, {sub(h, CoeffRing)}), i -> squareFreePart(i)));
+    if h == 1 then h = 1_KU;
+    productList = unique(apply(totalListProduct(N, {sub(h, KU)}), i -> squareFreePart(i)));
     if isConsistentRabinowitsch(Gr, productList) then (
         PGB = unique(PGB | {{Gr, productList, Gm}});
     );
