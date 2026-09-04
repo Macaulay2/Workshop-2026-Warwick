@@ -71,7 +71,7 @@ RExt := K[getSymbol "l", X, U, MonomialOrder => Lex]; -- maybe construct the ord
 
 8. **Ollie ask Doug/Anton** [DONE - use lift] For mapping elements of a ring to say their coefficient ring, what is the correct way? sub? lift?
 
-9. Investigate the CGBMain algorithm, there seems to be a problem SS CGBMain. Here is an example,
+9. ** Lorenzo ** Investigate the CGBMain algorithm, there seems to be a problem SS CGBMain. Here is an example,
 which is also contained in the examples.m2 file:
 
 ```macaulay2
