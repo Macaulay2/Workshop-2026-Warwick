@@ -621,11 +621,28 @@ CCheck (List, RingElement) := (E, f) -> (
 ICheck = method(
     Options => {
         Loops => 5
-        }
-    )
-ICheck (List, RingElement) := (E, f) -> (
+    }
+);
 
-    )
+ICheck (List, RingElement) := o -> (E, f) -> (
+    p := f;
+    for i from 1 to o.Loops do (
+        s := 0;
+        for m in terms p do (
+            s = s + (p*m) % ideal E; --maybe here a grobner basis
+                                     --is being calculated twice
+                                     --E is already a gb
+                                     --(p*m)%E is also okay, only if
+                                     --E is a gb.
+        );
+        if s == 0 then (
+            return true; -- certifies inconsistency
+        );
+        p = s;
+    );
+
+    return false; -- unknown consistency
+);
 
 
 
