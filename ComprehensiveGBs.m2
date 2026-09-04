@@ -665,14 +665,15 @@ ICheck = method(
 
 ICheck (List, RingElement) := o -> (E, f) -> (
     p := f;
+    H:= gens gb ideal E;
     for i from 1 to o.Loops do (
         s := 0;
         for m in terms p do (
-            s = s + (p*m) % ideal E; --maybe here a grobner basis
+            s = s + (p*m) % H; --maybe here a grobner basis
                                      --is being calculated twice
                                      --E is already a gb
                                      --(p*m)%E is also okay, only if
-                                     --E is a gb.
+                                     --E is a gb. We used H to fix this.
         );
         if s == 0 then (
             return true; -- certifies inconsistency
