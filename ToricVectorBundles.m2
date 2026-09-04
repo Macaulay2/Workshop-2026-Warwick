@@ -161,7 +161,7 @@ ToricVectorBundleKlyachko = new Type of ToricVectorBundle
 ToricVectorBundleKlyachko.synonym = "vector bundle on a toric variety (Klyachko's description)"
 globalAssignment ToricVectorBundleKlyachko
 
-ToricVectorBundleNew = new Type of HashTable
+ToricVectorBundleNew = new Type of ToricVectorBundle
 ToricVectorBundleNew.synonym = "vector bundle on a toric variety using Klyachko's description"
 globalAssignment ToricVectorBundleNew
 
@@ -315,9 +315,21 @@ displayFiltrationsCompact ToricVectorBundleNew := E -> (
     mainStr
     )
 
+-- Shamelessly I have copied Greg's kludge from NormalToricVarieties
+-- to get printing to do good things for me. This expression
+-- is just used to make maps look good.
+hasAttribute = value Core#"private dictionary"#"hasAttribute";
+getAttribute = value Core#"private dictionary"#"getAttribute";
+ReverseDictionary = value Core#"private dictionary"#"ReverseDictionary";
+expression ToricVectorBundleNew := E -> (
+    if hasAttribute (E, ReverseDictionary) 
+    then expression getAttribute (E, ReverseDictionary)
+    else net E
+    )
 net ToricVectorBundleNew := E -> (
     "ToricVectorBundle of rank " | net rank E | " on " | net variety E
     )
+
 
 ---------------------------------------------------------------------------
 -- BASIC CONSTRUCTORS
@@ -1279,6 +1291,17 @@ areIsomorphic (ToricVectorBundleNew,ToricVectorBundleNew) := Boolean => (T1,T2) 
      areTVBsIso
     )
 
+-- Not sure what to do about this caching method, but we should include it. 
+areSheafIsomorphic (ToricVectorBundleNew, ToricVectorBundleNew) := (E1, E2) -> (
+    if variety E1 !== variety E2 then return false
+    X := variety E1;
+    -- For each ray, take the smallest filtered piece of E1 and place it in the position of the
+    -- smallest filtered piece of E2. Then check if the resulting bundle is isomorphic to E2.
+    (j1,j2) := ((filtrationJumps E1)/min, (filtrationJumps E2)/min);
+    D := toricDivisor(j2 - j1, X);
+    areIsomorphic(E1 ** lineBundle D, E2)
+    )
+
 areIsomorphic (ToricVectorBundleKlyachko,ToricVectorBundleKlyachko) := (T1,T2) -> (
      -- Creating the entries in the cacheTables of the two bundles if they are not yet present
      if not T1.cache.?isomorphic then (
@@ -2031,7 +2054,12 @@ target ToricVectorBundleMap := ToricVectorBundleNew => f -> f.target
 map ToricVectorBundleMap := Matrix => opts -> f -> f.map
 matrix ToricVectorBundleMap := Matrix => f -> f.map
 
--- TODO NET ToricVectorBundleMap
+net ToricVectorBundleMap := f -> (
+    arrow := " <--";
+    for i to width net map f do arrow = arrow | "-";
+    themap := (arrow | "-- ") || ("    " | net map f);
+    "ToricVectorBundleMap " || (net expression target f | themap | net expression source f)
+    )
 
 -- We allow defining a map that is not well defined
 map(ToricVectorBundleNew, ToricVectorBundleNew, Matrix):= ToricVectorBundleMap => opts -> (E2, E1, M) ->(
@@ -6301,7 +6329,7 @@ assert areIsomorphic (T1,T2)
 T1 = tangentBundle X;
 T2 = toricVectorBundle( X, filtrationMatrices T1, {{1,0,0},{0,1,0},{0,0,1},{0,1,0}})
 
-asser areIsomorphic (T1,T2)
+assert areIsomorphic (T1,T2)
 
 ///
 
@@ -6335,6 +6363,14 @@ E1 = toricVectorBundle(X,{matrix {{-1,-1},{-1,0}}, matrix {{1,0},{0,1}}, matrix 
 E2 = toricVectorBundle(X,{matrix {{-1,0},{-1,-1}}, matrix {{0,1},{1,0}}, matrix {{1,0},{0,1}}}, {{1,0},{1,0},{1,0}})
 assert(areIsomorphic(E1,E2) and areIsomorphic(E2,E1))
 assert(map isomorphism(E1,E2) == matrix(ring E1, {{0,1},{1,0}}))
+
+-- here's another random example
+Y = hirzebruchSurface 2;
+E1' = tangentBundle Y ++ tangentBundle Y;
+M = matrix(ring E1, {{1,1,0,2},{0,1,1,1},{0,1,0,-1},{0,0,0,1}});
+filtmats = apply(filtrationMatrices E1, m -> M * m)
+E2' = toricVectorBundle(Y,filtmats, filtrationJumps E1)
+assert(map isomorphism(E1',E2') == M)
 ///
 
 --Test 37
