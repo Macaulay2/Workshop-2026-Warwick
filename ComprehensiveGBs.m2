@@ -644,6 +644,48 @@ ICheck (List, RingElement) := o -> (E, f) -> (
     return false; -- unknown consistency
 );
 
+----------------------------------------
+--THE FOLLOWING PUTS TOGETHER ZERODIMCHECK
+--CCHECK AND ICHECK
+--1)check whether f is already in <E>
+--2)determine the dimension of <E>
+--3) zeroDimCheck or CCheck
+--4) if CCheck is not enough, do ICheck
+----------------------------------------
+
+consistencyCheckAllTogether = method(
+    Options => {
+        Loops => 5
+    }
+);
+
+consistencyCheckAllTogether (List, RingElement) := o -> (E, f) -> (
+    if (f % ideal E) == 0 then (
+        print "true: direct ideal membership check was used";
+        return true; -- inconsistent
+    );
+
+    d := dim ideal E;
+
+    if d == 0 then (
+        print "zeroDimCheck was used";
+        return zeroDimCheck(E,f);
+    );
+
+    if CCheck(E,f) then (
+        print "false: CCheck was used";
+        return false; -- consistent
+    );
+
+    if ICheck(E,f, Loops => o.Loops) then (
+        print "true: ICheck was used";
+        return true; -- inconsistent
+    );
+
+    print "General check was used";
+    return false; -- temporary
+);
+
 
 
 
