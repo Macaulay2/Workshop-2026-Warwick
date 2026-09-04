@@ -14,8 +14,9 @@ we do not recurse (so putting Depth => 0 would return just the generic stratum f
 2.1 **Everyone** In the KSW algorithm there are some optimisations for the consistency check in Section 5
   this involves three algorithms (1,2,3) that are checked in some order and if all fail then the standard
   consistency check is used.
-- [2 of 3 DONE] Add the algorithms - Next steps to check CCheck and implement ICheck
-- Write a consistency check method that combines them all
+- [3 of 3 DONE] Add the algorithms - Next steps to check CCheck and implement ICheck
+  - Write a check in CCheck removing the 0's from E and for bypassong the extraction on the leading term if E={0} 
+- [almost DONE] Write a consistency check method that combines them all - add a standard consistency check if CCheck and ICheck fail
 - [FUTURE] think about whether the consistency check method should use hooks
 - [FUTURE] understand the optimisations in Section 7 
 
