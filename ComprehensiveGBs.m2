@@ -603,7 +603,7 @@ CCheck = method();
 CCheck (List, RingElement) := (E, f) -> (
     R := ring f;
     U := gens R;
-
+    if f == 0 then return true;
     supports := apply(E, g -> (
         e := first exponents(leadMonomial g);
         select(0..(#e-1), i -> e_i != 0)
