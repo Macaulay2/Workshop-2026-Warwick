@@ -132,7 +132,6 @@ export {
     "linearMapFromMatrices"
     }
 
-
 protect allRaysTable
 protect isoMatrix
 protect gradedRing
@@ -152,10 +151,9 @@ protect iso
 -- Defining the new type ToricVectorBundle, the parent type to the two types of TVB
 ToricVectorBundle = new Type of HashTable
 
-
 -- Defining the new type ToricVectorBundleKaneyama
 ToricVectorBundleKaneyama = new Type of HashTable -- keep this here for now, will move to bottom soon
-ToricVectorBundleKaneyama.synonym = "vector bundle on a toric variety (Kaneyama's description)"
+ToricVectorBundleKaneyama.synonym = "vector bundle on a toric variety using Kaneyama's description"
 globalAssignment ToricVectorBundleKaneyama
 
 -- Defining the new type ToricVectorBundleKlyachko
@@ -164,7 +162,7 @@ ToricVectorBundleKlyachko.synonym = "vector bundle on a toric variety (Klyachko'
 globalAssignment ToricVectorBundleKlyachko
 
 ToricVectorBundleNew = new Type of ToricVectorBundle
-ToricVectorBundleNew.synonym = "vector bundle on a toric variety (Klyachko's description)"
+ToricVectorBundleNew.synonym = "vector bundle on a toric variety using Klyachko's description"
 globalAssignment ToricVectorBundleNew
 
 toricVectorBundle = method(Options => true)
@@ -200,29 +198,51 @@ displayFiltrations = method()
 displayFiltrations ToricVectorBundleNew := E -> (
     filtMats := filtrationMatrices E;
     filtJumps := filtrationJumps E;
+    -- here is the range of indices we want to print
     rng := {(min flatten filtJumps)-1, (max flatten filtJumps)+2};
+    -- put all of the matrices that appear there into a hash table indexed by rays.
     matTable := hashTable for p in rays E list p => (
         hashTable for i from rng_0 to rng_1 list i => filteredPiece(E,p,i)
         );
+    -- to align things properly, we need easy access to the heights of those matrices as strings.
     h' := hashTable for p in rays E list p => max(for M in values matTable#p list length net M);
-    w := max for p in rays E list floor(((width net p)-3)/2);
+    -- initialize the string we'll output, as well as a bunch of spacing strings.
     mainStr := "";
-    rayStr := horSpace(w) | "ray" | horSpace(w);
     colonStr := " ";
     subsetStr := " ";
     dotsStr := " ... ";
+    -- here's where the chaos begins. we're trying to make a grid of filtrations, where the row is
+    -- indexed by rays and the column is the index of the filtration. we're going to construct that grid
+    -- column by column.
+    -- 
+    -- this is the first column of that grid. it's just the list of rays, with vertical spacing
+    -- added based on the sizes of the matrices appearing in the filtration for that ray.
+    -- NOTE: one additional feature of this chunk is that it makes it so that subsetStr and
+    -- dotsStr are now fully column strings. by that i mean they are not just single characters,
+    -- they have height equal to the height of the whole net at the end, but their vertical
+    -- spacing is now perfectly calibrated. so whenever we need to put subsets for our
+    -- filtrations, we can just use this single string now.
+    w := max for p in rays E list floor(((width net p)-3)/2);
+    rayStr := horSpace(w) | "ray" | horSpace(w);
     for p in rays E do (
+        -- here's the adjusted vertical spacing depending on the matrices.
         h := floor((h'#p)/2);
+        -- for small numbers, this is a very slight adjustment parameter to make things look nicer.
         c := if even h'#p and h'#p != 2 then 1 else 0;
         rayStr = rayStr || vertSpace(h-c+1) || net p || vertSpace(h);
         colonStr = colonStr || vertSpace(h-c+1) || " : " || vertSpace(h);
-        subsetStr = subsetStr || vertSpace(h-c+1) || " ⊃ " || vertSpace(h);
         dotsStr = dotsStr || vertSpace(h-c+1) || " ... " || vertSpace(h);
+        subsetStr = subsetStr || vertSpace(h-c+1) || " ⊃ " || vertSpace(h);
         );
     mainStr = rayStr | colonStr | dotsStr | subsetStr;
+    -- this is the main meat of the display. we construct the grid column by column in the same way.
     for i from rng_0 to rng_1 do (
+        -- some of the matrices might be smaller than others because of negative signs or numbers, so this
+        -- acts as an adjustment parameter to center the matrices.
         w = max({0} | (for p in rays E list ceiling(((width net (matTable#p)#i)-(width net i))/2)));
+        -- put the index of the filtration at the top, and then...
         matStr := if max values h' == 1 then horSpace(w) | net i else (horSpace(w) | net i) || vertSpace(1);
+        -- start populating the grid entries of the column with the matrices.
         for p in rays E do (
             w' := max({0} | (for q in rays E list floor(((width net (matTable#q)#i)-(width net (matTable#p)#i))/2)));
             h := floor((h'#p)/2);
@@ -233,13 +253,88 @@ displayFiltrations ToricVectorBundleNew := E -> (
             );
         mainStr = mainStr | matStr | subsetStr
         );
+    -- at the very end, all of the filtrations tail off, so we'll add the dots string again.
+    mainStr = mainStr | dotsStr;
+    mainStr
+    )
+displayFiltrationsCompact = method()
+displayFiltrationsCompact ToricVectorBundleNew := E -> (
+    filtMats := filtrationMatrices E;
+    filtJumps := filtrationJumps E;
+    rng := {(min flatten filtJumps)-1, (max flatten filtJumps)+2};
+    -- instead of matrices, write < e_1 + e_2 > or whatever. this does that.
+    matTable := hashTable for p in rays E list p => (
+        hashTable for i from rng_0 to rng_1 list i => (
+            fP := filteredPiece(E,p,i);
+            tempStr := "";
+            if numcols fP == rank E then tempStr = "E";
+            if numcols fP == 0 then tempStr = "0";
+            if numcols fP > 0 and numcols fP < rank E then (
+                tempStr = "< ";
+                for j to numcols fP - 1 do (
+                    evenMoreTempStr := "";
+                    for k from 0 to rank E - 1 do (
+                        if fP_j_k == 0 then continue else (
+                            ell := "";
+                            if fP_j_k != 1 then ell = toString fP_j_k;
+                            if fP_j_k == -1 then ell = "-";
+                            if evenMoreTempStr == "" then evenMoreTempStr = ell | "e_" | net k else evenMoreTempStr = evenMoreTempStr | " + " | ell | "e_" | net k;
+                            )
+                        );
+                    tempStr = tempStr | evenMoreTempStr;
+                    if j != numcols fP - 1 then tempStr = tempStr | ", ";
+                    );
+                tempStr = tempStr | " >";
+                );
+            tempStr
+            )
+        );
+    mainStr := "";
+    colonStr := " ";
+    subsetStr := " ";
+    dotsStr := " ... ";
+    w := max for p in rays E list floor(((width net p)-3)/2);
+    rayStr := horSpace(w) | "ray" | horSpace(w);
+    for p in rays E do (
+        rayStr = rayStr || vertSpace(1)|| net p;
+        colonStr = colonStr || vertSpace(1) || " : ";
+        dotsStr = dotsStr || vertSpace(1) || " ... ";
+        subsetStr = subsetStr || vertSpace(1) || " ⊃ ";
+        );
+    mainStr = rayStr | colonStr | dotsStr | subsetStr;
+    for i from rng_0 to rng_1 do (
+        w = max({0} | (for p in rays E list ceiling(((width (matTable#p)#i)-(width net i))/2)));
+        matStr := (horSpace(w) | net i);
+        for p in rays E do (
+            w' := max({0} | (for q in rays E list floor(((width (matTable#q)#i)-(width (matTable#p)#i))/2)));
+            matStr = matStr || (vertSpace(1) || (horSpace(w') | (matTable#p)#i));
+            );
+        mainStr = mainStr | matStr | subsetStr
+        );
     mainStr = mainStr | dotsStr;
     mainStr
     )
 
--- PURPOSE : Create the trivial bundle of rank p
---   INPUT : "p", the rank of the bundle, and "tv", the base variety
---  OUTPUT : the trivial bundle of rank p
+-- Shamelessly I have copied Greg's kludge from NormalToricVarieties
+-- to get printing to do good things for me. This expression
+-- is just used to make maps look good.
+hasAttribute = value Core#"private dictionary"#"hasAttribute";
+getAttribute = value Core#"private dictionary"#"getAttribute";
+ReverseDictionary = value Core#"private dictionary"#"ReverseDictionary";
+expression ToricVectorBundleNew := E -> (
+    if hasAttribute (E, ReverseDictionary) 
+    then expression getAttribute (E, ReverseDictionary)
+    else net E
+    )
+net ToricVectorBundleNew := E -> (
+    "ToricVectorBundle of rank " | net rank E | " on " | net variety E
+    )
+
+
+---------------------------------------------------------------------------
+-- BASIC CONSTRUCTORS
+---------------------------------------------------------------------------
+
 trivialBundle = method()
 trivialBundle (NormalToricVariety, ZZ) := (tv,r) -> (
 	p := #(rays tv);
@@ -419,7 +514,7 @@ net ToricVectorBundleKlyachko := tvb -> ( horizontalJoin flatten (
 	  "}" ))
 
 --------------------------------------------------------------
--- GETTER FUNCTIONS FOR TORICVECTORBUNDLESNEW 
+-- GETTER FUNCTIONS FOR TORIC VECTOR BUNDLES
 --------------------------------------------------------------
 variety(ToricVectorBundleNew) := E -> (E.variety)
 
@@ -1209,6 +1304,17 @@ areIsomorphic (ToricVectorBundleNew,ToricVectorBundleNew) := Boolean => (T1,T2) 
      areTVBsIso
     )
 
+-- Not sure what to do about this caching method, but we should include it. 
+areSheafIsomorphic (ToricVectorBundleNew, ToricVectorBundleNew) := (E1, E2) -> (
+    if variety E1 !== variety E2 then return false
+    X := variety E1;
+    -- For each ray, take the smallest filtered piece of E1 and place it in the position of the
+    -- smallest filtered piece of E2. Then check if the resulting bundle is isomorphic to E2.
+    (j1,j2) := ((filtrationJumps E1)/min, (filtrationJumps E2)/min);
+    D := toricDivisor(j2 - j1, X);
+    areIsomorphic(E1 ** lineBundle D, E2)
+    )
+
 areIsomorphic (ToricVectorBundleKlyachko,ToricVectorBundleKlyachko) := (T1,T2) -> (
      -- Creating the entries in the cacheTables of the two bundles if they are not yet present
      if not T1.cache.?isomorphic then (
@@ -1960,7 +2066,12 @@ target ToricVectorBundleMap := ToricVectorBundleNew => f -> f.target
 map ToricVectorBundleMap := Matrix => opts -> f -> f.map
 matrix ToricVectorBundleMap := Matrix => f -> f.map
 
--- TODO NET ToricVectorBundleMap
+net ToricVectorBundleMap := f -> (
+    arrow := " <--";
+    for i to width net map f do arrow = arrow | "-";
+    themap := (arrow | "-- ") || ("    " | net map f);
+    "ToricVectorBundleMap " || (net expression target f | themap | net expression source f)
+    )
 
 -- We allow defining a map that is not well defined
 map(ToricVectorBundleNew, ToricVectorBundleNew, Matrix):= ToricVectorBundleMap => opts -> (E2, E1, M) ->(
@@ -6230,7 +6341,7 @@ assert areIsomorphic (T1,T2)
 T1 = tangentBundle X;
 T2 = toricVectorBundle( X, filtrationMatrices T1, {{1,0,0},{0,1,0},{0,0,1},{0,1,0}})
 
-asser areIsomorphic (T1,T2)
+assert areIsomorphic (T1,T2)
 
 ///
 
@@ -6257,6 +6368,21 @@ conjIsoT3T4 = map(T4,T3,id_((ring T3)^(rank T3)));
 assert (isomorphism(T3,T4) === conjIsoT3T4)
 conjIsoT4T3 = map(T3,T4,id_((ring T4)^(rank T4)));
 assert (isomorphism(T4,T3) === conjIsoT4T3)
+
+-- Mahrud's example
+X = toricProjectiveSpace 2;
+E1 = toricVectorBundle(X,{matrix {{-1,-1},{-1,0}}, matrix {{1,0},{0,1}}, matrix {{0,1},{1,0}}}, {{1,0},{1,0},{1,0}})
+E2 = toricVectorBundle(X,{matrix {{-1,0},{-1,-1}}, matrix {{0,1},{1,0}}, matrix {{1,0},{0,1}}}, {{1,0},{1,0},{1,0}})
+assert(areIsomorphic(E1,E2) and areIsomorphic(E2,E1))
+assert(map isomorphism(E1,E2) == matrix(ring E1, {{0,1},{1,0}}))
+
+-- here's another random example
+Y = hirzebruchSurface 2;
+E1' = tangentBundle Y ++ tangentBundle Y;
+M = matrix(ring E1, {{1,1,0,2},{0,1,1,1},{0,1,0,-1},{0,0,0,1}});
+filtmats = apply(filtrationMatrices E1, m -> M * m)
+E2' = toricVectorBundle(Y,filtmats, filtrationJumps E1)
+assert(map isomorphism(E1',E2') == M)
 ///
 
 --Test 37
@@ -6318,7 +6444,7 @@ assert(areIsomorphic(T, T1**L) )
 
 
 --Test 41
---Test for map for ToricVectorBundleNew
+--Test for ToricVectorBundleMap
 TEST///
 PP3 = toricProjectiveSpace 3;
 trivPP3 = trivialBundle(PP3,3);
@@ -6334,7 +6460,7 @@ assert(map tvbMap === M)
 ///
 
 --Test 42
---Test for isWellDefined for map of ToricVectorBundleNew
+--Test for isWellDefined for ToricVectorBundleMap
 TEST///
 X = toricProjectiveSpace 3;
 E = trivialBundle(X, 3);
@@ -6462,7 +6588,9 @@ assert(exteriorPower(E,1) == E)
 assert(rank exteriorPower(E++E,2) == 6)
 D = toricDivisor({1,2,4,5},X)
 L = lineBundle(D)
-assert(areIsomorphic(exteriorPower(E++L, 2),(exteriorPower(E,0)**exteriorPower(L,2))++(exteriorPower(E,1)**exteriorPower(L,1))++(exteriorPower(E,2)**exteriorPower(L,0))))
+E1 = exteriorPower(E++L, 2);
+E2 = (exteriorPower(E,0)**exteriorPower(L,2))++(exteriorPower(E,1)**exteriorPower(L,1))++(exteriorPower(E,2)**exteriorPower(L,0))
+assert(areIsomorphic(E1,E2))
 ///
 
 
