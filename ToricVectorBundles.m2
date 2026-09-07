@@ -272,7 +272,7 @@ displayFiltrationsCompact ToricVectorBundleNew := E -> (
             if numcols fP == rank E then tempStr = "E";
             if numcols fP == 0 then tempStr = "0";
             if numcols fP > 0 and numcols fP < rank E then (
-                tempStr = "< ";
+                tempStr = "⟨";
                 for j to numcols fP - 1 do (
                     evenMoreTempStr := "";
                     for k from 0 to rank E - 1 do (
@@ -286,7 +286,7 @@ displayFiltrationsCompact ToricVectorBundleNew := E -> (
                     tempStr = tempStr | evenMoreTempStr;
                     if j != numcols fP - 1 then tempStr = tempStr | ", ";
                     );
-                tempStr = tempStr | " >";
+                tempStr = tempStr | "⟩";
                 );
             tempStr
             )
@@ -1306,10 +1306,11 @@ areIsomorphic (ToricVectorBundleNew,ToricVectorBundleNew) := Boolean => (T1,T2) 
      areTVBsIso
     )
 
--- Not sure what to do about this caching method, but we should include it. 
-areSheafIsomorphic = method()
-areSheafIsomorphic (ToricVectorBundleNew, ToricVectorBundleNew) := (E1, E2) -> (
-    if variety E1 =!= variety E2 then return false;
+
+-- Not sure what to do about caching this method, but we should include it. 
+isTwistOf = method()
+isTwistOf (ToricVectorBundleNew, ToricVectorBundleNew) := (E1, E2) -> (
+    if (variety E1) != (variety E2) then return false;
     X := variety E1;
     -- For each ray, take the smallest filtered piece of E1 and place it in the position of the
     -- smallest filtered piece of E2. Then check if the resulting bundle is isomorphic to E2.
