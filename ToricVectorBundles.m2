@@ -144,6 +144,8 @@ protect weights
 protect isomorphic
 protect iso
 
+
+
 ---------------------------------------------------------------------------
 -- DEFINING NEW TYPES
 ---------------------------------------------------------------------------
@@ -375,7 +377,7 @@ tangentBundle NormalToricVariety := X -> (
 
 
 --TODO: once the overhaul is complete, we should remove these constructors.
--*
+
 -- PURPOSE : Building a Vector Bundle of rank 'k' on the Toric Variety given by the Fan 'F'
 --toricVectorBundle = method(Options => true)
 
@@ -394,8 +396,8 @@ toricVectorBundle (ZZ,Fan) := {"Type"=>"Klyachko"} >> opts -> (k,F) -> (
 --     	     if "Type" => "Kaneyama" is given it returns a ToricVectorBundleKaneyama where the degree matrices are given in the first list and the
 --     	     transition matrices are given in the second list.
 toricVectorBundle (ZZ,Fan,List,List) := {"Type"=>"Klyachko"} >> opts -> (k,F,L1,L2) -> (
-     if opts#"Type" == "Kaneyama" then makeVBKaneyama(k,F,L1,L2) else if opts#"Type" == "Klyachko" then makeVBKlyachko(k,F,L1,L2) else error("Expected Type to be Klyachko or Kaneyama."))
-*-
+     if opts#"Type" == "Klyachko" then makeVBKlyachko(k,F,L1,L2) else error("Expected Type to be Klyachko or Kaneyama."))
+
 
 --Deleted the makeVBKaneyama that was here
 
@@ -728,7 +730,7 @@ addFiltration (ToricVectorBundleKlyachko,List) := (tvb,L) -> (
 	  "number of rays" => tvb#"number of rays",
 	  symbol cache => new CacheTable})
 
-maxCones ToricVectorBundle := T -> (
+maxCones ToricVectorBundleKlyachko := T -> (
       TV := T#"ToricVariety";
       TR := rays TV;
       TL := linealitySpace TV;
@@ -740,14 +742,14 @@ maxCones ToricVectorBundle := T -> (
 
 
 
-
+-*
 isWellDefined ToricVectorBundleNew :=  tvb -> (
  if not isLocallyWeil tvb then return false;
- if not tvb.cache.?isTVB then   
+ if not tvb.cache.?isLS then   
   toricChernCharacter tvb;
- tvb.cache.isTVB
+ tvb.cache.isLS
 )
-
+*-
 
 
 
@@ -1305,8 +1307,9 @@ areIsomorphic (ToricVectorBundleNew,ToricVectorBundleNew) := Boolean => (T1,T2) 
     )
 
 -- Not sure what to do about this caching method, but we should include it. 
+areSheafIsomorphic = method()
 areSheafIsomorphic (ToricVectorBundleNew, ToricVectorBundleNew) := (E1, E2) -> (
-    if variety E1 !== variety E2 then return false
+    if variety E1 =!= variety E2 then return false;
     X := variety E1;
     -- For each ray, take the smallest filtered piece of E1 and place it in the position of the
     -- smallest filtered piece of E2. Then check if the resulting bundle is isomorphic to E2.
@@ -1565,12 +1568,12 @@ isGeneral ToricVectorBundleKlyachko := (cacheValue symbol isGeneral)( tvb -> (
 -- PURPOSE : Returning the maximal cones of the underlying fan
 --   INPUT : 'T',  a ToricVectorBundle
 --  OUTPUT : a List of Cones
-maxCones ToricVectorBundle := T -> (
-      TV := T#"ToricVariety";
+maxCones ToricVectorBundleNew := T -> (
+      TV := fan T;
       TR := rays TV;
       TL := linealitySpace TV;
       mC := maxCones TV;
-      sort apply(mC, c -> posHull(TR_c, TL))
+      apply(mC, c -> posHull(TR_c, TL))
     -- sort maxCones T#"ToricVariety"
    )
 
@@ -2916,6 +2919,14 @@ rays ToricVectorBundleKaneyama := {} >> o -> tvb -> raySortOfFan tvb#"ToricVarie
  details ToricVectorBundleKaneyama := tvb -> (
      hashTable apply(pairs(tvb#"topConeTable"), p -> ( p#1 => (rays posHull p#0,tvb#"degreeTable"#(p#0)))),tvb#"baseChangeTable")
 
+maxCones ToricVectorBundleKaneyama := T -> (
+      TV := T#"ToricVariety";
+      TR := rays TV;
+      TL := linealitySpace TV;
+      mC := maxCones TV;
+      sort apply(mC, c -> posHull(TR_c, TL))
+    -- sort maxCones T#"ToricVariety"
+   )
 
 --------------------------------------------
 -- CONSTRUCT AND MODIFY KANEYAMA
@@ -3060,14 +3071,7 @@ isWellDefined ToricVectorBundleKaneyama := Boolean => ( tvb -> (
 		  return true
 ))
 
-maxCones ToricVectorBundleKaneyama := T -> (
-      TV := T#"ToricVariety";
-      TR := rays TV;
-      TL := linealitySpace TV;
-      mC := maxCones TV;
-      sort apply(mC, c -> posHull(TR_c, TL))
-    -- sort maxCones T#"ToricVariety"
-   )
+
 
 ----------------------------------------------------------------------------
 -- OPERATIONS ON TORIC VECTOR BUNDLES KANEYAMA
