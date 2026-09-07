@@ -423,6 +423,8 @@ net ToricVectorBundleKlyachko := tvb -> ( horizontalJoin flatten (
 --------------------------------------------------------------
 variety(ToricVectorBundleNew) := E -> (E.variety)
 
+fan ToricVectorBundleNew := E -> fan E.variety
+
 rank(ToricVectorBundleNew):= E ->(E.rank)
 
 rank ToricVectorBundleKlyachko := T -> T#"rank of the vector bundle"
@@ -442,11 +444,22 @@ ring ToricVectorBundle := (cacheValue symbol gradedRing)( T -> (
 
 filtrationJumps = method()
 filtrationJumps ToricVectorBundleNew := E -> (E.filtrationJumps)
+filtrationJumps (ToricVectorBundleNew, List) := (E,L) -> (
+    j:= position( rays E, c -> c==L);
+    (E.filtrationJumps)_j
+
+)
 
 filtrationMatrices = method()
 filtrationMatrices ToricVectorBundleNew := E -> (E.filtrationMatrices)
+filtrationMatrices(ToricVectorBundleNew, List) := (E,L) -> (
+    j:= position( rays E, c -> c==L);
+    (E.filtrationMatrices)_j
 
-rays(ToricVectorBundleNew) := {} >> o -> E ->( rays(variety (E) ))
+)
+
+
+rays ToricVectorBundleNew := {} >> o -> E ->( rays(variety (E) ))
 
 rays ToricVectorBundleKlyachko := {} >> o -> tvb -> raySortOfFan tvb#"ToricVariety"
 
@@ -629,15 +642,15 @@ maxCones ToricVectorBundle := T -> (
     -- sort maxCones T#"ToricVariety"
    )
 
--- TODO: finish for ToricVectorBundleNew
-isWellDefined ToricVectorBundleNew := TVB -> (
-	mC := maxCones variety TVB
 
-	-- loop for each cone
-	--		find decomposition
-	-- 		loop for each ray
-	--			loop for each jump
-	--			check the condition. 
+
+
+
+isWellDefined ToricVectorBundleNew :=  tvb -> (
+ if not isLocallyWeil tvb then return false;
+ if not tvb.cache.?isTVB then   
+  toricChernCharacter tvb;
+ tvb.cache.isTVB
 )
 
 
@@ -1365,7 +1378,7 @@ deltaE ToricVectorBundle := (cacheValue symbol deltaE)( tvb -> (
 -- PURPOSE : Returning the underlying fan of a toric vector bundle
 --   INPUT : 'T',  a ToricVectorBundle
 --  OUTPUT : a Fan
-fan ToricVectorBundle := T -> T#"ToricVariety"
+fan ToricVectorBundleKlyachko := T -> T#"ToricVariety"
 
 
 
@@ -1600,8 +1613,7 @@ twist (ToricVectorBundleKlyachko,List) := (T,d) -> (
 --     	     an error is returned
 cartierIndex = method(TypicalValue => ZZ)
 
-cartierIndex (NormalToricVariety, List) := (X, L) ->(
-    -- TODO : add checks for the Cartier index to make sense    
+cartierIndex (NormalToricVariety, List) := (X, L) ->(  
     if any(L, l -> not instance(l,ZZ)) then error("The weights have to be in ZZ.");
     denom := 1; 
     raysX := rays X;
