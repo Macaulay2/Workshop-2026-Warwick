@@ -108,7 +108,6 @@ export {
     "existsDecomposition", 
     "filtration", 
     "findWeights", 
-    
     "moduleToKlyachko",
     "klyachkoToModule",
     "findWeightsNew",  
@@ -1313,7 +1312,7 @@ areIsomorphic (ToricVectorBundleNew,ToricVectorBundleNew) := Boolean => (T1,T2) 
 -- Not sure what to do about caching this method, but we should include it. 
 isTwistOf = method()
 isTwistOf (ToricVectorBundleNew, ToricVectorBundleNew) := (E1, E2) -> (
-    if (variety E1) != (variety E2) then return false;
+    if (variety E1) =!= (variety E2) then return false;
     X := variety E1;
     -- For each ray, take the smallest filtered piece of E1 and place it in the position of the
     -- smallest filtered piece of E2. Then check if the resulting bundle is isomorphic to E2.
@@ -2962,6 +2961,7 @@ moduleToKlyachko (NormalToricVariety, Module):= (X,M) -> (
   aux := apply(entries A, i -> apply( i, j -> exponents j));
   jnew := 0;
   inew := 0; 
+  -- It assumes that one of the shifts is zero
   MS#0 = toList(n:0);
 -- Track lists of degrees instead of cloning the MutableHashTables
   oldMS := apply(p, j -> MS#j);
@@ -3007,13 +3007,49 @@ moduleToKlyachko (NormalToricVariety, Module):= (X,M) -> (
 
 -- The code that follows take a toric vector bundle with Klyachko description and returns a module over the Cox ring of the toric variety, M, such that the sheafification of M is the starting vector bundle.
 -- Note that different modules can have the same associated sheaf. 
-
+-- isTwistOf( E, moduleToKlyachko(variety E, klyachkoToModule(E)) ) should return true
+-- F = moduleToKlyachko(variety E , klyachkoToModule E);
+-- then F == moduleToKlyachko(variety E, klyachkoToModule(F)) returns true 
 klyachkoToModule = method()
 -- TODO
-klyachkoToModule ToricVectorBundleNew := E ->(
-    S := ring variety E;
+klyachkoToModule ToricVectorBundleNew := E -> (
+    X := variety E;
+    -- Cox ring of the toric variety
+    S := ring X;
+    r := rank E;
+    FFF := ring E;
+    raysX := rays E;
+    n := #raysX;
+    picd := #( first degrees ring X);
+    if r == 0 then return S^0;
+    -- Twist E so every filtration jump is >= 0, since a jump becomes a monomial 
+    jumps := filtrationJumps E;
+    offsets := apply(jumps, js -> -(max js));
+    E' := if all(offsets, o -> o == 0) then E else twist(E, offsets);
+    filtMats := filtrationMatrices E';
+    filtJumps :=  filtrationJumps E';
 
+    mj := min flatten filtJumps;
+    Mj := max flatten filtJumps;
+    -- This is an overkill and porbably makes things slower
+    cands := apply( toList fold( (i,j) -> i**j, (n : set toList(mj..Mj))),i -> toList deepSplice i);
+    aux := apply(cands , L -> ( 
+        monL:= product( apply( n,  i -> (S_i)^(-L_i) ));
+       EL := toSequence apply(#L , i ->image (filteredPiece(E', raysX_i, L_i)*monL) );
+       gens intersect EL )
+    );
+    Mat := fold((i,j)-> i|j, aux );
+
+
+    A := map(S^r, , Mat);  -- source degrees inferred automatically
+    Mtwisted := image A;
+    -- Undo the twist at the module level: shift the grading back by the class of
+    -- the divisor sum(offsets_j * D_j) that the twist above added.
+    gradingRank := degreeLength S;
+    w := apply(gradingRank, g -> sum(n, j ->  offsets_j*(degree S_j)_g));
+    coker presentation (Mtwisted ** S^{w})
 )
+
  
 ---------------------------------------
 -- KANEYAMA
