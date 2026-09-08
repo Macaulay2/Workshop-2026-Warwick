@@ -93,6 +93,12 @@ Notice that in the generic stratum, there is an element `b*c^2-b` in the SS-CGB 
 does not appear in second column. Investigate the line that defines and modifies `pruneG` [line 191-2],
 there may be a mistake with the implementation or the write up on the line that defines $\{h_1, \dots, h_\ell\} := \dots$.
 
+Update (Weijia): The implementation of `pruneG` seems correct.
+
+Update (Weijia): Observe that when `CGBMain(F, eliminateVariables F)` is called, we do have
+  `E = {b*c^2-b, a*c^2-a, b^3*c-a^3, a^3*c-b^3, a^6-b^6}`.
+  So `CGB` works well; just don't call `CGBMain(F, {})` as in examples.m2!!!
+
 10. [DONE] Add other ways to call PGBMain (like CGBMain) where the user supplied just the list of polynomials etc.
 
 
