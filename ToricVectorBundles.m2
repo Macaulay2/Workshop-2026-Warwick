@@ -531,12 +531,15 @@ rank ToricVectorBundleKlyachko := T -> T#"rank of the vector bundle"
 -- PURPOSE : Generating the graded Ring for the cohomology groups
 --   INPUT : 'T',  a ToricVectorBundle
 --  OUTPUT : the ring of the bundle with degree space the lattice of the variety
-ring ToricVectorBundle := (cacheValue symbol gradedRing)( T -> (
+ring ToricVectorBundleNew := T -> coefficientRing ring variety T
 
-    if instance(T, ToricVectorBundleNew) then ( return coefficientRing ring variety T);    
-
+ring ToricVectorBundleKlyachko := (cacheValue symbol gradedRing)( T -> (
     if instance(T,ToricVectorBundleKlyachko) then (T#"ring")[DegreeRank => T#"dimension of the variety"]
     else QQ[DegreeRank => T#"dimension of the variety"]))
+
+-- This ring is needed for the cohomology computations
+grRing = method()
+grRing ToricVectorBundleNew := (cacheValue symbol gradedRing)(T ->  (ring T)[DegreeRank => dim variety T])
 
 
 filtrationJumps = method()
@@ -1377,13 +1380,293 @@ isomorphism (ToricVectorBundleKlyachko,ToricVectorBundleKlyachko) := o -> (T1,T2
      if not areIsomorphic(T1,T2) then error("The bundles are not isomorphic");
      T1.cache.isoMatrix#T2)				
 
+-------------------------------------------------------------------------------------
+-- COHOMOLOGICAL COMPUTATIONS
+-------------------------------------------------------------------------------------
+
+
+-- PURPOSE : Computing the Cech complex of a vector bundle
+cechComplex = method()
+
+--   INPUT : '(k,T,u)', where 'k' is an integer between -1 and the dimension of the bundle +1, 'T' a ToricVectorBundleKlyachko, and 'u' a
+--     	    	        one column matrix giving a degree vector
+--  OUTPUT : '(Fk,Fkcolumns,FktoFk+1)', where 'Fk' is a hashTable with the summands of the 'k'th chain, 'Fkcolumns' is a hashTable with the
+--     	    	      	   	        dimensions of these summands, and 'FktoFk+1' is a hashTable with the components of the 'k'th 
+--     	    	      	   	        boundary operator
+cechComplex (ZZ,ToricVectorBundleKlyachko,Matrix) := (k,T,u) -> (
+     -- Checking for input errors
+     if numRows u != T#"dimension of the variety" or numColumns u != 1 then error("Expected a matrix with 1 column and ", toString T#"dimension of the variety", " rows.");
+     if ring u =!= ZZ then error("The degree has to be an integer vector.");
+     if k < -1 or T#"dimension of the variety"+1 < k then error("k has to be between 0 and the variety dimension for the k-th cohomology");
+     -- For a given space F1 at chain k in the filtration together with the degree vector 'u' and the information of the bundle this auxiliary 
+     -- function computes the boundary operator to the next chain (k+1) which is F1toF2, the dimensions of the summands of 'F1' in 'F1columns' 
+     -- and the next chain 'F2'
+     makeNewDiffAndTarget := (F1,u,fMT,rT,bT,tvbR,tvbrank,k,n) -> (
+	  F2 := {};
+	  F1toF2 := {};
+	  counter := 0;
+	  F1columns := {};
+	  -- if k==n then the next chain is 0 as well as the boundary operator
+	  if k == n then (
+	       F2 = {(0,{},map(tvbR^tvbrank,tvbR^0,0))};
+	       F1toF2 = {};
+	       F1columns = {0 => tvbrank})
+	  -- k==n-1 then the next chain is "complete bundle" and the boundary operator is the map of all summands of Fn-2
+	  else if k == n-1 then (
+	       F2 = {(0,{},map(tvbR^tvbrank,tvbR^tvbrank,1))};
+	       F1toF2 = apply(pairs F1, (j,dat) -> (
+			 F1columns = append(F1columns,j => numColumns(dat#1));
+			 (j,0,dat#1))))
+	  else (
+	       -- for each cone in F1 compute the cones of one dimension less and their bundle
+	       scan(pairs(F1), (num,dat) -> (
+			 R := dat#0;
+			 Er := dat#1;
+			 -- go through the rays of the cone and remove each of them at a time
+			 scan(#R, i -> (
+				   Ri := drop(R,{i,i});
+				   pos := position(F2, f -> f#1 === Ri);
+				   -- Check if the resulting cone already exists in the new chain F2, if so just add Er to the boundary operator
+				   if pos =!= null then F1toF2 = append(F1toF2,(num,pos,((-1)^i)*Er)) else (
+					-- if not compute E for new cone and append it to F2
+					Esum := apply(Ri, r -> (rT#r,((transpose u)*r)_(0,0),r));
+					Esum = apply(Esum, e -> (e#0,positions(flatten entries(fMT#(e#2)), j -> (j <= e#1)),e#2));
+					if any(Esum, e -> e#1 == {}) then F2 = append(F2,(counter,Ri,map(tvbR^tvbrank,tvbR^0,0))) else (
+					     E := map(tvbR^tvbrank,tvbR^tvbrank,1);
+					     Esum = select(Esum, e -> sort(e#1) != toList(0..tvbrank-1));
+					     Esum = apply(Esum, e -> (bT#(e#2))_(e#1));
+					     scan(Esum, A -> E = intersectMatrices(E,A));
+					     F2 = append(F2,(counter,Ri,E)));
+					F1toF2 = append(F1toF2,(num,counter,((-1)^i)*Er));
+					counter = counter + 1)));
+			 -- Save the dimension of Er into F1columns
+			 F1columns = append(F1columns,num => numColumns Er))));
+	  (hashTable apply(F1toF2, f -> (f#0,f#1) => f#2),hashTable F1columns,hashTable apply(F2, f -> f#0 => (f#1,f#2))));
+     if not T.cache.?cech then T.cache.cech = new MutableHashTable;
+     fMT := T#"filtrationMatricesTable";
+     tvbR := T#"ring";
+     tvbrank := T#"rank of the vector bundle";
+     n := T#"dimension of the variety";
+     -- if k==n+1 the chain is 0 and there is no map
+     if k == n+1 then (hashTable {0 => ({},map(tvbR^tvbrank,tvbR^0,0))},hashTable {},hashTable {}) else (
+	  rT := T#"rayTable";
+	  bT := T#"baseTable";
+	  if not T.cache.cech#?(k,u) then (
+	       -- rT will be used to sort the rays
+	       
+	       -- if the previous chain has not been computed we have to compute the cones of the right dimension (n-k)
+	       if not T.cache.cech#?(k-1,u) or k == 0 then (
+		    -- if k==n then the chain is the "complete bundle" and the next chain is 0
+		    if k == n then (
+			 T.cache.cech#(k,u) = (hashTable {0 => ({},map(tvbR^tvbrank,tvbR^tvbrank,1))},hashTable {0 => tvbrank},hashTable {});
+			 T.cache.cech#(k+1,u) = hashTable {0 => ({},map(tvbR^tvbrank,tvbR^0,0))})
+		    -- if k==-1 the chain is 0
+		    else if k == -1 then T.cache.cech#(k,u) = (hashTable { 0 => ({},map(tvbR^tvbrank,tvbR^0,0))},hashTable {0 => 0},hashTable {})
+		    else (
+			 F1 := faces(k,T#"ToricVariety");
+          Frays := rays T#"ToricVariety";
+          Flineality := linealitySpace T#"ToricVariety";
+          F1 = apply(F1, f-> posHull(Frays_f, Flineality));
+			 -- for each n-k cone in the fan compute Er, the bundle over this cone for the degree u
+			 F1 = hashTable apply(#F1, Cnum -> (
+				   C := F1#Cnum;
+				   R := (rays C);
+				   R = apply(numColumns R, i -> (R_{i}));
+				   R = sort apply(R, r -> (rT#r,r));
+				   Esum := apply(R, r -> (r#0,((transpose u)*(r#1))_(0,0),r#1));
+				   R = apply(R, r -> (r#1));
+				   Esum = apply(Esum, e -> (e#0,positions(flatten entries fMT#(e#2), j -> (j <= e#1)),e#2));
+				   if any(Esum, e -> e#1 == {}) then Cnum => (R,map(tvbR^tvbrank,tvbR^0,0)) else (
+					E := map(tvbR^tvbrank,tvbR^tvbrank,1);
+					Esum = select(Esum, e -> sort(e#1) != toList(0..tvbrank-1));
+					Esum = apply(Esum, e -> (bT#(e#2))_(e#1));
+					scan(Esum, A -> E = intersectMatrices(E,A));
+					Cnum => (R,E))));
+			 -- Compute the boundary operator with the auxiliary function
+			 (F1toF2,F1columns,F2) := makeNewDiffAndTarget(F1,u,fMT,rT,bT,tvbR,tvbrank,k,n);
+			 T.cache.cech#(k,u) = (F1,F1columns,F1toF2);
+			 -- Save the next chain to the cache
+			 if not T.cache.cech#?(k+1,u) then T.cache.cech#(k+1,u) = F2))
+	       else (
+		    -- if the previous chain exists use this to compute the chain in question
+		    F10 := T.cache.cech#(k-1,u);
+		    (F10toF11,F10columns,F11) := makeNewDiffAndTarget(F10,u,fMT,rT,bT,tvbR,tvbrank,k-1,n);
+		    (F11toF12,F11columns,F12) := makeNewDiffAndTarget(F11,u,fMT,rT,bT,tvbR,tvbrank,k,n);
+		    T.cache.cech#(k-1,u) = (F10,F10columns,F10toF11);
+		    T.cache.cech#(k,u) = (F11,F11columns,F11toF12);
+		    -- save the next chain to the cache as well
+		    if not T.cache.cech#?(k+1,u) then T.cache.cech#(k+1,u) = F12))
+	  -- if the cache only consists of the chain but not of the boundary operator compute this
+	  else if not instance(T.cache.cech#(k,u),Sequence) then (
+	       F21 := T.cache.cech#(k,u);
+	       (F21toF22,F21columns,F22) := makeNewDiffAndTarget(F21,u,fMT,rT,bT,tvbR,tvbrank,k,n);
+	       T.cache.cech#(k,u) = (F21,F21columns,F21toF22);
+	       if not T.cache.cech#?(k+1,u) then T.cache.cech#(k+1,u) = F22);
+	  T.cache.cech#(k,u)))
+
+
+
+cechComplex (ZZ,ToricVectorBundleNew,Matrix) := (k,T,u) -> (
+     -- Checking for input errors
+     dimvar := dim variety T;
+     if numRows u != dimvar or numColumns u != 1 then error("Expected a matrix with 1 column and ", toString dimvar, " rows.");
+     if ring u =!= ZZ then error("The degree has to be an integer vector.");
+     if k < -1 or dimvar+1 < k then error("k has to be between 0 and the variety dimension for the k-th cohomology");
+     -- For a given space F1 at chain k in the filtration together with the degree vector 'u' and the information of the bundle this auxiliary 
+     -- function computes the boundary operator to the next chain (k+1) which is F1toF2, the dimensions of the summands of 'F1' in 'F1columns' 
+     -- and the next chain 'F2'
+     makeNewDiffAndTarget := (F1,u,fMT,rT,bT,tvbR,tvbrank,k,n) -> (
+	  F2 := {};
+	  F1toF2 := {};
+	  counter := 0;
+	  F1columns := {};
+	  -- if k==n then the next chain is 0 as well as the boundary operator
+	  if k == n then (
+	       F2 = {(0,{},map(tvbR^tvbrank,tvbR^0,0))};
+	       F1toF2 = {};
+	       F1columns = {0 => tvbrank})
+	  -- k==n-1 then the next chain is "complete bundle" and the boundary operator is the map of all summands of Fn-2
+	  else if k == n-1 then (
+	       F2 = {(0,{},map(tvbR^tvbrank,tvbR^tvbrank,1))};
+	       F1toF2 = apply(pairs F1, (j,dat) -> (
+			 F1columns = append(F1columns,j => numColumns(dat#1));
+			 (j,0,dat#1))))
+	  else (
+	       -- for each cone in F1 compute the cones of one dimension less and their bundle
+	       scan(pairs(F1), (num,dat) -> (
+			 R := dat#0;
+			 Er := dat#1;
+			 -- go through the rays of the cone and remove each of them at a time
+			 scan(#R, i -> (
+				   Ri := drop(R,{i,i});
+				   pos := position(F2, f -> f#1 === Ri);
+				   -- Check if the resulting cone already exists in the new chain F2, if so just add Er to the boundary operator
+				   if pos =!= null then F1toF2 = append(F1toF2,(num,pos,((-1)^i)*Er)) else (
+					-- if not compute E for new cone and append it to F2
+					Esum := apply(Ri, r -> (rT#r,((transpose u)*r)_(0,0),r));
+					Esum = apply(Esum, e -> (e#0,positions(flatten entries(fMT#(e#2)), j -> (j <= e#1)),e#2));
+					if any(Esum, e -> e#1 == {}) then F2 = append(F2,(counter,Ri,map(tvbR^tvbrank,tvbR^0,0))) else (
+					     E := map(tvbR^tvbrank,tvbR^tvbrank,1);
+					     Esum = select(Esum, e -> sort(e#1) != toList(0..tvbrank-1));
+					     Esum = apply(Esum, e -> (bT#(e#2))_(e#1));
+					     scan(Esum, A -> E = intersectMatrices(E,A));
+					     F2 = append(F2,(counter,Ri,E)));
+					F1toF2 = append(F1toF2,(num,counter,((-1)^i)*Er));
+					counter = counter + 1)));
+			 -- Save the dimension of Er into F1columns
+			 F1columns = append(F1columns,num => numColumns Er))));
+	  (hashTable apply(F1toF2, f -> (f#0,f#1) => f#2),hashTable F1columns,hashTable apply(F2, f -> f#0 => (f#1,f#2))));
+     if not T.cache.?cech then T.cache.cech = new MutableHashTable;
+     raysT := rays T;
+     fMT := hashTable apply(raysT, rho -> transpose matrix {rho} => matrix {-1*filtrationJumps( T , rho)} );
+     tvbR := ring T;
+     tvbrank := rank T;
+     n := dimvar;
+     -- if k==n+1 the chain is 0 and there is no map
+     if k == n+1 then (hashTable {0 => ({},map(tvbR^tvbrank,tvbR^0,0))},hashTable {},hashTable {}) else (
+	  rT :=  hashTable apply(#raysT, i -> transpose matrix {raysT_i} => i );
+	  bT :=  hashTable apply(raysT, rho -> transpose matrix {rho} => filtrationMatrices( T , rho) );
+	  if not T.cache.cech#?(k,u) then (
+	       -- rT will be used to sort the rays
+	       
+	       -- if the previous chain has not been computed we have to compute the cones of the right dimension (n-k)
+	       if not T.cache.cech#?(k-1,u) or k == 0 then (
+		    -- if k==n then the chain is the "complete bundle" and the next chain is 0
+		    if k == n then (
+			 T.cache.cech#(k,u) = (hashTable {0 => ({},map(tvbR^tvbrank,tvbR^tvbrank,1))},hashTable {0 => tvbrank},hashTable {});
+			 T.cache.cech#(k+1,u) = hashTable {0 => ({},map(tvbR^tvbrank,tvbR^0,0))})
+		    -- if k==-1 the chain is 0
+		    else if k == -1 then T.cache.cech#(k,u) = (hashTable { 0 => ({},map(tvbR^tvbrank,tvbR^0,0))},hashTable {0 => 0},hashTable {})
+		    else (
+			 F1 := faces(k,fan T);
+          Frays := rays fan T;
+          Flineality := linealitySpace fan T;
+          F1 = apply(F1, f-> posHull(Frays_f, Flineality));
+			 -- for each n-k cone in the fan compute Er, the bundle over this cone for the degree u
+			 F1 = hashTable apply(#F1, Cnum -> (
+				   C := F1#Cnum;
+				   R := (rays C);
+				   R = apply(numColumns R, i -> (R_{i}));
+				   R = sort apply(R, r -> (rT#r,r));
+				   Esum := apply(R, r -> (r#0,((transpose u)*(r#1))_(0,0),r#1));
+				   R = apply(R, r -> (r#1));
+				   Esum = apply(Esum, e -> (e#0,positions(flatten entries fMT#(e#2), j -> (j <= e#1)),e#2));
+				   if any(Esum, e -> e#1 == {}) then Cnum => (R,map(tvbR^tvbrank,tvbR^0,0)) else (
+					E := map(tvbR^tvbrank,tvbR^tvbrank,1);
+					Esum = select(Esum, e -> sort(e#1) != toList(0..tvbrank-1));
+					Esum = apply(Esum, e -> (bT#(e#2))_(e#1));
+					scan(Esum, A -> E = intersectMatrices(E,A));
+					Cnum => (R,E))));
+			 -- Compute the boundary operator with the auxiliary function
+			 (F1toF2,F1columns,F2) := makeNewDiffAndTarget(F1,u,fMT,rT,bT,tvbR,tvbrank,k,n);
+			 T.cache.cech#(k,u) = (F1,F1columns,F1toF2);
+			 -- Save the next chain to the cache
+			 if not T.cache.cech#?(k+1,u) then T.cache.cech#(k+1,u) = F2))
+	       else (
+		    -- if the previous chain exists use this to compute the chain in question
+		    F10 := T.cache.cech#(k-1,u);
+		    (F10toF11,F10columns,F11) := makeNewDiffAndTarget(F10,u,fMT,rT,bT,tvbR,tvbrank,k-1,n);
+		    (F11toF12,F11columns,F12) := makeNewDiffAndTarget(F11,u,fMT,rT,bT,tvbR,tvbrank,k,n);
+		    T.cache.cech#(k-1,u) = (F10,F10columns,F10toF11);
+		    T.cache.cech#(k,u) = (F11,F11columns,F11toF12);
+		    -- save the next chain to the cache as well
+		    if not T.cache.cech#?(k+1,u) then T.cache.cech#(k+1,u) = F12))
+	  -- if the cache only consists of the chain but not of the boundary operator compute this
+	  else if not instance(T.cache.cech#(k,u),Sequence) then (
+	       F21 := T.cache.cech#(k,u);
+	       (F21toF22,F21columns,F22) := makeNewDiffAndTarget(F21,u,fMT,rT,bT,tvbR,tvbrank,k,n);
+	       T.cache.cech#(k,u) = (F21,F21columns,F21toF22);
+	       if not T.cache.cech#?(k+1,u) then T.cache.cech#(k+1,u) = F22);
+	  T.cache.cech#(k,u)))
+
+
+
+
+
+-- PURPOSE : Computing the cohomology of a given ToricVectorBundleKlyachko
+cohom = method()
+--   INPUT : '(k,tvb,u)',  'k' for the 'k'th cohomology group, 'tvb' a ToricVectorBundleKlyachko, and 'u' the degree
+--  OUTPUT : 'ZZ',	     the dimension of the degree 'u' part of the 'k'th cohomology group of 'tvb'
+cohom (ZZ,ToricVectorBundleKlyachko,Matrix) := (k,T,u) -> (
+     if not T.cache.?HH then T.cache.HH = new MutableHashTable;
+     if not T.cache.HH#?(k,u) then (
+	  -- Get the k-1 th, k th and k+1 th chain in the Cech complex
+     	  (F1,F1columns,F1toF2) := cechComplex(k-1,T,u);
+     	  (F2,F2columns,F2toF3) := cechComplex(k,T,u);
+     	  F3 := (cechComplex(k+1,T,u))#0;
+     	  tvbR := T#"ring";
+     	  tvbrank := T#"rank of the vector bundle";
+     	  -- Generate the two boundary operators
+     	  MapF1toF2 := matrix apply(#F2, j -> apply(#F1, i -> if F1toF2#?(i,j) then F1toF2#(i,j) else map(tvbR^tvbrank,tvbR^(F1columns#i),0)));
+     	  MapF2toF3 := matrix apply(#F3, j -> apply(#F2, i -> if F2toF3#?(i,j) then F2toF3#(i,j) else map(tvbR^tvbrank,tvbR^(F2columns#i),0)));
+     	  -- Compute the cohomology
+     	  d := (rank ker MapF2toF3)-(rank image MapF1toF2);
+     	  T.cache.HH#(k,u) = (ring T)^(toList(d:flatten entries(-u))));
+     T.cache.HH#(k,u))
+
+cohom (ZZ,ToricVectorBundleNew,Matrix) := (k,T,u) -> (
+     if not T.cache.?HH then T.cache.HH = new MutableHashTable;
+     if not T.cache.HH#?(k,u) then (
+	  -- Get the k-1 th, k th and k+1 th chain in the Cech complex
+     	  (F1,F1columns,F1toF2) := cechComplex(k-1,T,u);
+     	  (F2,F2columns,F2toF3) := cechComplex(k,T,u);
+     	  F3 := (cechComplex(k+1,T,u))#0;
+     	  tvbR := ring T;
+     	  tvbrank := rank T;
+     	  -- Generate the two boundary operators
+     	  MapF1toF2 := matrix apply(#F2, j -> apply(#F1, i -> if F1toF2#?(i,j) then F1toF2#(i,j) else map(tvbR^tvbrank,tvbR^(F1columns#i),0)));
+     	  MapF2toF3 := matrix apply(#F3, j -> apply(#F2, i -> if F2toF3#?(i,j) then F2toF3#(i,j) else map(tvbR^tvbrank,tvbR^(F2columns#i),0)));
+     	  -- Compute the cohomology
+     	  d := (rank ker MapF2toF3)-(rank image MapF1toF2);
+     	  T.cache.HH#(k,u) = (grRing T)^(toList(d:flatten entries(-u))));
+     T.cache.HH#(k,u))
 
 -- PURPOSE : Compute the Euler characteristic
 eulerChi = method(TypicalValue => ZZ)
 
 --   INPUT : '(T,u)',  where 'T' is a ToricVectorBundle and 'u' is a one column matrix over ZZ giving a degree vector
 --  OUTPUT : The Euler characteristic of the Cech complex at degree 'u'
-eulerChi (Matrix,ToricVectorBundle) := (u,T) -> (
+eulerChi (Matrix,ToricVectorBundleKlyachko) := (u,T) -> (
      if not T.cache.?eulerChi then T.cache.eulerChi = new MutableHashTable;
      if not T.cache.eulerChi#?u then (
 	  n := T#"dimension of the variety";
@@ -1391,40 +1674,61 @@ eulerChi (Matrix,ToricVectorBundle) := (u,T) -> (
 	  T.cache.eulerChi#u = sum apply(n+1, i -> (-1)^i * sum values (cechComplex(i,T,u))#1);
      T.cache.eulerChi#u))
 
+eulerChi (Matrix,ToricVectorBundleNew) := (u,T) -> (
+     if not T.cache.?eulerChi then T.cache.eulerChi = new MutableHashTable;
+     if not T.cache.eulerChi#?u then (
+	  n := dim variety T;
+	  -- Compute the Cech complex and compute the alternating sum of the dimensions
+	  T.cache.eulerChi#u = sum apply(n+1, i -> (-1)^i * sum values (cechComplex(i,T,u))#1);
+     T.cache.eulerChi#u))
+
 --   INPUT : 'T',  a ToricVectorBundle
 --  OUTPUT : The Euler characteristic of the bundle
-eulerChi ToricVectorBundle := T -> ( --MOVED KANEYAMA VERSION
+eulerChi ToricVectorBundleKlyachko := T -> ( --MOVED KANEYAMA VERSION
+     -- Compute the set of degrees with possible cohomology
+     L := latticePoints deltaE T;
+     -- Sum up their characteristics
+     sum apply(L, l -> eulerChi(l,T)))
+eulerChi ToricVectorBundleNew := T -> ( 
      -- Compute the set of degrees with possible cohomology
      L := latticePoints deltaE T;
      -- Sum up their characteristics
      sum apply(L, l -> eulerChi(l,T)))
 
-
 -- PURPOSE : Computing the cohomology group of a given ToricVectorBundle
 --   INPUT : '(i,T,weight)',  'i' for the 'i'th cohomology group, 'T' a ToricVectorBundle, and 'weight' the degree
 --  OUTPUT : 'ZZ',	     the graded module of the degree 'weight' part of the 'i'th cohomology group of 'T'
-cohomology(ZZ,ToricVectorBundle,Matrix) := opts -> (i,T,weight) -> cohom(i,T,weight)
+cohomology(ZZ,ToricVectorBundleKlyachko,Matrix) := opts -> (i,T,weight) -> cohom(i,T,weight)
 
+cohomology(ZZ,ToricVectorBundleNew,Matrix) := opts -> (i,T,weight) -> cohom(i,T,weight)
 
 -- PURPOSE : Computing the cohomology group of a given ToricVectorBundle
 --   INPUT : '(i,T,P)',  'i' for the 'i'th cohomology group, 'T' a ToricVectorBundle, and 'P' a list of degrees
 --  OUTPUT : 'List',	     the list of the graded modules of the corresponding degree parts of the cohomology group which are non zero
-cohomology(ZZ,ToricVectorBundle,List) := opts -> (i,T,P)-> (
+cohomology(ZZ,ToricVectorBundleKlyachko,List) := opts -> (i,T,P)-> (
      if opts.Degree == 1 then print ("Number of degrees to calculate: "|(toString(#P)));
      for j in P list (
 	  if opts.Degree == 1 then << "." << flush;
 	  j = cohomology(i,T,j);
 	  if j != 0 then j else continue))
 
+cohomology(ZZ,ToricVectorBundleNew,List) := opts -> (i,T,P)-> (
+     if opts.Degree == 1 then print ("Number of degrees to calculate: "|(toString(#P)));
+     for j in P list (
+	  if opts.Degree == 1 then << "." << flush;
+	  j = cohomology(i,T,j);
+	  if j != 0 then j else continue))
    
 -- PURPOSE : Computing the cohomology group of a given ToricVectorBundle
 --   INPUT : '(i,T)',  'i' for the 'i'th cohomology group, 'T' a ToricVectorBundle
 --  OUTPUT : the group as a graded module where the generators have the corresponding degree of the weight vector
 -- COMMENT : if the option "Degree" => 1 is given then it displays the number of degrees to calculate
-cohomology(ZZ,ToricVectorBundle) := opts -> (i,T)-> (
+cohomology(ZZ,ToricVectorBundleKlyachko) := opts -> (i,T)-> (
      L := cohomology(i,T,latticePoints deltaE T,Degree => opts.Degree);
      if L == {} then (ring T)^0 else directSum L)
-
+cohomology(ZZ,ToricVectorBundleNew) := opts -> (i,T)-> (
+     L := cohomology(i,T,latticePoints deltaE T,Degree => opts.Degree);
+     if L == {} then (grRing T)^0 else directSum L)
 
 -- PURPOSE : Computing the rank of the cohomology group of a given ToricVectorBundle
 --   INPUT : '(i,S)',  'i' for the 'i'th cohomology group, 'S' a Sequence of ToricVectorBundle and a weight vector
@@ -1433,7 +1737,8 @@ hh(ZZ,Sequence) := (i,S) -> (
      -- Checking for input errors
      if #S != 2 then error("The Sequence has to contain a toric vector bundle and a weight vector.");
      if not instance(S#1,Matrix) then error("The second argument has to be a weight vector given by a matrix.");
-     if not instance(S#0,ToricVectorBundleKaneyama) and not instance(S#0,ToricVectorBundleKlyachko) then error("The first argument has to be a toric vector bundle.");
+     
+     if not instance(S#0,ToricVectorBundleKaneyama) and not instance(S#0,ToricVectorBundleKlyachko) and not instance(S#0,ToricVectorBundleNew) then error("The first argument has to be a toric vector bundle.");
      (T,u) := S;
      rank cohomology(i,T,u)) --not going to make this separate for Kaneyama
 
@@ -1441,7 +1746,9 @@ hh(ZZ,Sequence) := (i,S) -> (
 -- PURPOSE : Computing the rank of the cohomology group of a given ToricVectorBundle
 --   INPUT : '(i,T)',  'i' for the 'i'th cohomology group, 'T' a ToricVectorBundle
 --  OUTPUT : 'ZZ',  the rank of the 'i'th cohomology group
-hh(ZZ,ToricVectorBundle) := ZZ => (i,T) -> rank cohomology(i,T)
+hh(ZZ,ToricVectorBundleKlyachko) := ZZ => (i,T) -> rank cohomology(i,T)
+
+hh(ZZ,ToricVectorBundleNew) := ZZ => (i,T) -> rank cohomology(i,T)
 	       
 -- PURPOSE : Computing the cotangent bundle on a smooth, pure, and full dimensional Toric Variety 
 -- cotangentBundle = method(Options => {"Type" => "Klyachko"})
@@ -1452,7 +1759,7 @@ deltaE = method()
 
 --   INPUT : 'tvb',  a ToricVectorBundle
 --  OUTPUT : a Polyhedron
-deltaE ToricVectorBundle := (cacheValue symbol deltaE)( tvb -> (
+deltaE ToricVectorBundleKlyachko := (cacheValue symbol deltaE)( tvb -> (
      	  if not isComplete tvb#"ToricVariety" then error("The toric variety needs to be complete.");
      	  n := tvb#"dimension of the variety";
           -- Extracting necessary data
@@ -1463,6 +1770,23 @@ deltaE ToricVectorBundle := (cacheValue symbol deltaE)( tvb -> (
   		      convexHull matrix {apply(sset1, s -> (
 		 		     M := transpose matrix {apply(s, r -> (-r | r) || (fMT#r))};
 		 		     vertices polyhedronFromHData(M_{0..n-1},M_{n})))}))
+
+
+
+deltaE ToricVectorBundleNew := (cacheValue symbol deltaE)( tvb -> (
+     	  if not isComplete variety tvb then error("The toric variety needs to be complete.");
+     	  n := dim variety tvb;
+          -- Extracting necessary data with rays as column matrices to use old code
+          rayTable := apply( rays tvb, s -> transpose matrix {s});
+          l := #rayTable;
+          -- The sign change is to use the previous code
+          j:={};
+          fMT := hashTable apply(rayTable, i -> (j = -1* filtrationJumps(tvb, flatten entries i ); i => matrix{{-(min j),max j}}));
+		      sset1 := select(subsets(rayTable,n), s -> rank matrix {s} == n);
+  		      convexHull matrix {apply(sset1, s -> (
+		 		     M := transpose matrix {apply(s, r -> (-r | r) || (fMT#r))};
+		 		     vertices polyhedronFromHData(M_{0..n-1},M_{n})))}))
+
 
 -- ToricVectorBundleKlyachko ++ ToricVectorBundleKlyachko := (tvb1,tvb2) -> (
 --     -- Extracting data out of tvb1 and tvb2
@@ -1580,7 +1904,7 @@ maxCones ToricVectorBundleNew := T -> (
 
 
 -- PURPOSE : Compute a random deformation of a ToricVectorBundleKlyachko
-randomDeformation = method(TypicalValue => ToricVectorBundleKlyachko)
+randomDeformation = method()
 
 --   INPUT : '(tvb,l,h)',  where 'tvb' is a ToricVectorBundleKlyachko, 'l' and 'h' are integers
 --  OUTPUT : a ToricVectorBundleKlyachko, a random deformation
@@ -1844,126 +2168,6 @@ hirzebruchFan ZZ := n -> hirzebruch n
 -- AUXILIARY FUNCTIONS, not public
 ---------------------------------------
 
-
--- PURPOSE : Computing the Cech complex of a vector bundle
-cechComplex = method()
-
---   INPUT : '(k,T,u)', where 'k' is an integer between -1 and the dimension of the bundle +1, 'T' a ToricVectorBundleKlyachko, and 'u' a
---     	    	        one column matrix giving a degree vector
---  OUTPUT : '(Fk,Fkcolumns,FktoFk+1)', where 'Fk' is a hashTable with the summands of the 'k'th chain, 'Fkcolumns' is a hashTable with the
---     	    	      	   	        dimensions of these summands, and 'FktoFk+1' is a hashTable with the components of the 'k'th 
---     	    	      	   	        boundary operator
-cechComplex (ZZ,ToricVectorBundleKlyachko,Matrix) := (k,T,u) -> (
-     -- Checking for input errors
-     if numRows u != T#"dimension of the variety" or numColumns u != 1 then error("Expected a matrix with 1 column and ", toString T#"dimension of the variety", " rows.");
-     if ring u =!= ZZ then error("The degree has to be an integer vector.");
-     if k < -1 or T#"dimension of the variety"+1 < k then error("k has to be between 0 and the variety dimension for the k-th cohomology");
-     -- For a given space F1 at chain k in the filtration together with the degree vector 'u' and the information of the bundle this auxiliary 
-     -- function computes the boundary operator to the next chain (k+1) which is F1toF2, the dimensions of the summands of 'F1' in 'F1columns' 
-     -- and the next chain 'F2'
-     makeNewDiffAndTarget := (F1,u,fMT,rT,bT,tvbR,tvbrank,k,n) -> (
-	  F2 := {};
-	  F1toF2 := {};
-	  counter := 0;
-	  F1columns := {};
-	  -- if k==n then the next chain is 0 as well as the boundary operator
-	  if k == n then (
-	       F2 = {(0,{},map(tvbR^tvbrank,tvbR^0,0))};
-	       F1toF2 = {};
-	       F1columns = {0 => tvbrank})
-	  -- k==n-1 then the next chain is "complete bundle" and the boundary operator is the map of all summands of Fn-2
-	  else if k == n-1 then (
-	       F2 = {(0,{},map(tvbR^tvbrank,tvbR^tvbrank,1))};
-	       F1toF2 = apply(pairs F1, (j,dat) -> (
-			 F1columns = append(F1columns,j => numColumns(dat#1));
-			 (j,0,dat#1))))
-	  else (
-	       -- for each cone in F1 compute the cones of one dimension less and their bundle
-	       scan(pairs(F1), (num,dat) -> (
-			 R := dat#0;
-			 Er := dat#1;
-			 -- go through the rays of the cone and remove each of them at a time
-			 scan(#R, i -> (
-				   Ri := drop(R,{i,i});
-				   pos := position(F2, f -> f#1 === Ri);
-				   -- Check if the resulting cone already exists in the new chain F2, if so just add Er to the boundary operator
-				   if pos =!= null then F1toF2 = append(F1toF2,(num,pos,((-1)^i)*Er)) else (
-					-- if not compute E for new cone and append it to F2
-					Esum := apply(Ri, r -> (rT#r,((transpose u)*r)_(0,0),r));
-					Esum = apply(Esum, e -> (e#0,positions(flatten entries(fMT#(e#2)), j -> (j <= e#1)),e#2));
-					if any(Esum, e -> e#1 == {}) then F2 = append(F2,(counter,Ri,map(tvbR^tvbrank,tvbR^0,0))) else (
-					     E := map(tvbR^tvbrank,tvbR^tvbrank,1);
-					     Esum = select(Esum, e -> sort(e#1) != toList(0..tvbrank-1));
-					     Esum = apply(Esum, e -> (bT#(e#2))_(e#1));
-					     scan(Esum, A -> E = intersectMatrices(E,A));
-					     F2 = append(F2,(counter,Ri,E)));
-					F1toF2 = append(F1toF2,(num,counter,((-1)^i)*Er));
-					counter = counter + 1)));
-			 -- Save the dimension of Er into F1columns
-			 F1columns = append(F1columns,num => numColumns Er))));
-	  (hashTable apply(F1toF2, f -> (f#0,f#1) => f#2),hashTable F1columns,hashTable apply(F2, f -> f#0 => (f#1,f#2))));
-     if not T.cache.?cech then T.cache.cech = new MutableHashTable;
-     fMT := T#"filtrationMatricesTable";
-     tvbR := T#"ring";
-     tvbrank := T#"rank of the vector bundle";
-     n := T#"dimension of the variety";
-     -- if k==n+1 the chain is 0 and there is no map
-     if k == n+1 then (hashTable {0 => ({},map(tvbR^tvbrank,tvbR^0,0))},hashTable {},hashTable {}) else (
-	  rT := T#"rayTable";
-	  bT := T#"baseTable";
-	  if not T.cache.cech#?(k,u) then (
-	       -- rT will be used to sort the rays
-	       
-	       -- if the previous chain has not been computed we have to compute the cones of the right dimension (n-k)
-	       if not T.cache.cech#?(k-1,u) or k == 0 then (
-		    -- if k==n then the chain is the "complete bundle" and the next chain is 0
-		    if k == n then (
-			 T.cache.cech#(k,u) = (hashTable {0 => ({},map(tvbR^tvbrank,tvbR^tvbrank,1))},hashTable {0 => tvbrank},hashTable {});
-			 T.cache.cech#(k+1,u) = hashTable {0 => ({},map(tvbR^tvbrank,tvbR^0,0))})
-		    -- if k==-1 the chain is 0
-		    else if k == -1 then T.cache.cech#(k,u) = (hashTable { 0 => ({},map(tvbR^tvbrank,tvbR^0,0))},hashTable {0 => 0},hashTable {})
-		    else (
-			 F1 := faces(k,T#"ToricVariety");
-          Frays := rays T#"ToricVariety";
-          Flineality := linealitySpace T#"ToricVariety";
-          F1 = apply(F1, f-> posHull(Frays_f, Flineality));
-			 -- for each n-k cone in the fan compute Er, the bundle over this cone for the degree u
-			 F1 = hashTable apply(#F1, Cnum -> (
-				   C := F1#Cnum;
-				   R := (rays C);
-				   R = apply(numColumns R, i -> (R_{i}));
-				   R = sort apply(R, r -> (rT#r,r));
-				   Esum := apply(R, r -> (r#0,((transpose u)*(r#1))_(0,0),r#1));
-				   R = apply(R, r -> (r#1));
-				   Esum = apply(Esum, e -> (e#0,positions(flatten entries fMT#(e#2), j -> (j <= e#1)),e#2));
-				   if any(Esum, e -> e#1 == {}) then Cnum => (R,map(tvbR^tvbrank,tvbR^0,0)) else (
-					E := map(tvbR^tvbrank,tvbR^tvbrank,1);
-					Esum = select(Esum, e -> sort(e#1) != toList(0..tvbrank-1));
-					Esum = apply(Esum, e -> (bT#(e#2))_(e#1));
-					scan(Esum, A -> E = intersectMatrices(E,A));
-					Cnum => (R,E))));
-			 -- Compute the boundary operator with the auxiliary function
-			 (F1toF2,F1columns,F2) := makeNewDiffAndTarget(F1,u,fMT,rT,bT,tvbR,tvbrank,k,n);
-			 T.cache.cech#(k,u) = (F1,F1columns,F1toF2);
-			 -- Save the next chain to the cache
-			 if not T.cache.cech#?(k+1,u) then T.cache.cech#(k+1,u) = F2))
-	       else (
-		    -- if the previous chain exists use this to compute the chain in question
-		    F10 := T.cache.cech#(k-1,u);
-		    (F10toF11,F10columns,F11) := makeNewDiffAndTarget(F10,u,fMT,rT,bT,tvbR,tvbrank,k-1,n);
-		    (F11toF12,F11columns,F12) := makeNewDiffAndTarget(F11,u,fMT,rT,bT,tvbR,tvbrank,k,n);
-		    T.cache.cech#(k-1,u) = (F10,F10columns,F10toF11);
-		    T.cache.cech#(k,u) = (F11,F11columns,F11toF12);
-		    -- save the next chain to the cache as well
-		    if not T.cache.cech#?(k+1,u) then T.cache.cech#(k+1,u) = F12))
-	  -- if the cache only consists of the chain but not of the boundary operator compute this
-	  else if not instance(T.cache.cech#(k,u),Sequence) then (
-	       F21 := T.cache.cech#(k,u);
-	       (F21toF22,F21columns,F22) := makeNewDiffAndTarget(F21,u,fMT,rT,bT,tvbR,tvbrank,k,n);
-	       T.cache.cech#(k,u) = (F21,F21columns,F21toF22);
-	       if not T.cache.cech#?(k+1,u) then T.cache.cech#(k+1,u) = F22);
-	  T.cache.cech#(k,u)))
-
 -- PURPOSE : Checking for a matrix if it is over ZZ or QQ and returning an error if not
 --   INPUT : '(M,msg)',  where 'M' is a matrix and 'msg' is the name of the object 'M' describes
 --  OUTPUT : The matrix promoted to QQ if it was over ZZ or QQ, otherwise an error
@@ -1973,27 +2177,6 @@ chkZZQQ = (M,msg) -> (
      promote(M,QQ));
 
 
--- PURPOSE : Computing the cohomology of a given ToricVectorBundleKlyachko
-cohom = method()
---   INPUT : '(k,tvb,u)',  'k' for the 'k'th cohomology group, 'tvb' a ToricVectorBundleKlyachko, and 'u' the degree
---  OUTPUT : 'ZZ',	     the dimension of the degree 'u' part of the 'k'th cohomology group of 'tvb'
-cohom (ZZ,ToricVectorBundleKlyachko,Matrix) := (k,T,u) -> (
-     if not T.cache.?HH then T.cache.HH = new MutableHashTable;
-     if not T.cache.HH#?(k,u) then (
-	  -- Get the k-1 th, k th and k+1 th chain in the Cech complex
-     	  (F1,F1columns,F1toF2) := cechComplex(k-1,T,u);
-     	  (F2,F2columns,F2toF3) := cechComplex(k,T,u);
-     	  F3 := (cechComplex(k+1,T,u))#0;
-     	  tvbR := T#"ring";
-     	  tvbrank := T#"rank of the vector bundle";
-     	  -- Generate the two boundary operators
-     	  MapF1toF2 := matrix apply(#F2, j -> apply(#F1, i -> if F1toF2#?(i,j) then F1toF2#(i,j) else map(tvbR^tvbrank,tvbR^(F1columns#i),0)));
-     	  MapF2toF3 := matrix apply(#F3, j -> apply(#F2, i -> if F2toF3#?(i,j) then F2toF3#(i,j) else map(tvbR^tvbrank,tvbR^(F2columns#i),0)));
-     	  -- Compute the cohomology
-     	  d := (rank ker MapF2toF3)-(rank image MapF1toF2);
-     	  T.cache.HH#(k,u) = (ring T)^(toList(d:flatten entries(-u))));
-     T.cache.HH#(k,u))
- 
 -- PURPOSE : Constructing the fan of projective n-space
 generateRandomMatrix = method(TypicalValue => Matrix)
 
