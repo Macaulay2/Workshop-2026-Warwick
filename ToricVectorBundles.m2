@@ -783,7 +783,7 @@ isWellDefined ToricVectorBundleMap := Boolean => f ->(
         m2 := max j;
         for i from m1 to m2 do (
             amb := module (ring E2) ^ (rank E2);
-            f1 := map(amb, , sub(M * filteredPiece(E1,p,i), RX));
+            f1 := map(amb, , sub( M* filteredPiece(E1,p,i), RX));
             f2 := map(amb, , sub(filteredPiece(E2,p,i),RX));
             if not isSubset(image f1, image f2) then (
                 if debugLevel > 0 then (
@@ -912,10 +912,20 @@ image (ToricVectorBundleMap) := f ->(
     -- Map that will make the image of te filtrations square by "projecting them"
     pr:= (prune image (M)).cache.pruningMap;
     -- Get the image of the pieces
-    L:= apply(Xrays,  p ->
+    L:={};
+    if numcols M > numrows M then(
+    L= apply(Xrays,  p ->
+        apply(steps, i ->(
+        M*filteredPiece(E1,p,i)
+        ))
+    );)
+    else(
+        L= apply(Xrays,  p ->
         apply(steps, i ->(
         pr*filteredPiece(E1,p,i)
         ))
+    );
+
     );
     -- Define the new data
     -- The command matrix is there so that the map is simplify to be betweent free modules
@@ -1181,10 +1191,10 @@ moduleToKlyachko (NormalToricVariety, Matrix):= (X,A) -> (
     f:= map( targ, sour, phi**A);
     f
 )
-
+-- M = image matrix...
 moduleToKlyachko (NormalToricVariety, Module):= (X,M) -> (
     -- Obtain the ToricVectorBundleMap associated to the presentation
-  A := presentation M;
+  A := gens M;
   S := ring M;
   n := numgens S;
   if S =!= ring X then (error("The module is not defined over the Cox ring of the toric variety"););
@@ -1238,7 +1248,7 @@ moduleToKlyachko (NormalToricVariety, Module):= (X,M) -> (
   R := newRing( S, Degrees => entries id_(ZZ^(n)));
   AM := map(R^tdegs,R^sdegs,sub(A, R) );
   if not isHomogeneous AM then(error("The module is not homogeneous with respect to the fine-grading" ););
-  coker moduleToKlyachko(X, AM)
+  image moduleToKlyachko(X, AM)
 )
 
 --- Alternative method that is applied for matrices directly and returns the map between the bundles
@@ -1333,7 +1343,7 @@ klyachkoToModule ToricVectorBundle := E -> (
     FFF := ring E;
     raysX := rays E;
     n := #raysX;
-    picd := #( first degrees ring X);
+    picd := degreeLength S;
     if r == 0 then return S^0;
     -- Twist E so every filtration jump is >= 0, since a jump becomes a monomial 
     jumps := filtrationJumps E;
@@ -1355,13 +1365,12 @@ klyachkoToModule ToricVectorBundle := E -> (
 
 
     A := map(S^r, , Mat);  -- source degrees inferred automatically
-    Mtwisted := trim image A;
+    Mtwisted := image A;
     -- Undo the twist at the module level: shift the grading back by the class of
     -- the divisor sum(offsets_j * D_j) that the twist above added.
-    gradingRank := degreeLength S;
-    w := apply(gradingRank, g -> sum(n, j ->  offsets_j*(degree S_j)_g));
-    coker presentation (Mtwisted**S^{w});
-    (image A)**S^{w}
+    w := apply(picd, g -> sum(n, j ->  offsets_j*(degree S_j)_g));
+    Mtwisted**S^{w}
+    
 )
 
  
@@ -4641,7 +4650,7 @@ assert(sort degrees cohomology(0,T3) == sort degrees (grRing T3)^{{0, 0, 1}, {1,
 assert(sort degrees cohomology(1,T3) == sort degrees (grRing T3)^{{2, 1, 0}, {1, 1, 0}})
 assert(sort degrees cohomology(2,T3) == sort degrees (grRing T3)^0)
 assert(sort degrees cohomology(3,T3) == sort degrees (grRing T3)^0)
-*-
+
 
 -- Test 13
 -- Checking weilToCartier
