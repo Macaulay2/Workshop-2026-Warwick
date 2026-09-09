@@ -109,9 +109,11 @@ export {
     "filtration", 
     "findWeights", 
     "moduleToKlyachko",
+    "moduleToKlyachko'",
     "klyachkoToModule",
     "findWeightsNew",  
     "isGeneral","filteredPiece",
+    "isTwistOf",
     --"isomorphism", 
     "weilDecoration",
     "weilToKlyachko",
@@ -2940,8 +2942,10 @@ moduleToKlyachko (NormalToricVariety, Matrix):= (X,A) -> (
     -- TODO check that this is in fact the map that we want
     -- The map evaluates the variables to be 1 which should give the map at the fiber over the identity point
     phi := map( coefficientRing S, S, toList(n:1));
+    -- Avoids problems with the image of the map being a module for instance
+    A = matrix A; 
     f:= map( targ, sour, phi**A);
-    coker f
+    f
 )
 
 moduleToKlyachko (NormalToricVariety, Module):= (X,M) -> (
@@ -3000,9 +3004,84 @@ moduleToKlyachko (NormalToricVariety, Module):= (X,M) -> (
   R := newRing( S, Degrees => entries id_(ZZ^(n)));
   AM := map(R^tdegs,R^sdegs,sub(A, R) );
   if not isHomogeneous AM then(error("The module is not homogeneous with respect to the fine-grading" ););
-    moduleToKlyachko(X, AM)
+  coker moduleToKlyachko(X, AM)
 )
 
+--- Alternative method that is applied for matrices directly and returns the map between the bundles
+
+moduleToKlyachko' = method()
+moduleToKlyachko' (NormalToricVariety, Matrix):= (X,A) -> (
+    -- Obtain the ToricVectorBundleMap associated to the presentation
+  S := ring A;
+  n := numgens S;
+  if S =!= ring X then (error("The module is not defined over the Cox ring of the toric variety"););
+  if  all( flatten entries A , p -> # terms p <= 1) != true then( error("The presentation matrix is not equivariant"););
+
+  -- Source degrees
+  p := numColumns (A);
+  MS := new MutableHashTable from apply(p , j -> {j,{}});
+  -- target degrees
+  q := numRows (A);
+  NS := new MutableHashTable from apply(q , i -> {i,{}});
+  aux := apply(entries A, i -> apply( i, j -> exponents j));
+  jnew := 0;
+  inew := 0; 
+  -- It assumes that one of the shifts is zero
+  MS#0 = toList(n:0);
+-- Track lists of degrees instead of cloning the MutableHashTables
+  oldMS := apply(p, j -> MS#j);
+  oldNS := apply(q, i -> NS#i);
+  currentMS :={};
+  currentNS :={};
+
+  while isMember({}, values MS) or isMember({}, values NS) do(
+      if oldMS == currentMS and oldNS == currentNS then(
+          jnew = min apply(p, j -> if MS#j == {} then( j)else( infinity) );
+          if jnew != infinity then( MS#jnew= toList(n:0); )else(
+          inew = min apply(q, i -> if NS#i == {} then( i)else( infinity) );
+          if inew != infinity then( NS#inew= toList(n:0); );
+          );
+          
+      );
+
+      oldMS = apply(p, j -> MS#j);
+      oldNS = apply(q, i -> NS#i);
+
+      for j from 0 to p-1 do(
+          for i from 0 to q-1 do(
+              if (aux_i)_j != {} then(
+                  if NS#i !={} and MS#j == {}  then(MS#j = flatten (aux_i)_j + NS#i );
+                  if MS#j !={} and NS#i == {} then(NS#i = - flatten (aux_i)_j + MS#j);
+              );
+          );
+      );
+      
+      currentMS = apply(p, j -> MS#j);
+      currentNS = apply(q, i -> NS#i);
+
+  ); 
+  sdegs := - apply(p , j -> MS#j );
+  tdegs := - apply(q , i -> NS#i );
+  R := newRing( S, Degrees => entries id_(ZZ^(n)));
+  A = map(R^tdegs,R^sdegs,sub(A, R) );
+  if not isHomogeneous A then(error("The module is not homogeneous with respect to the fine-grading" ););
+  coxX := ring X;
+    if n != numgens coxX or not isPolynomialRing S then(error("The ring of the matrix is not compatible with the toric variety"););
+    if  all( flatten entries A , p -> # terms p <= 1) != true then( error("The presentation matrix is not equivariant"););
+    s0:= trivialBundle(X,0) ;
+    sdegs2:= degrees source A;
+    tdegs2 := degrees target A;
+    sour2 := fold(directSum,s0,  apply(sdegs2, l -> (if l != splice{n:0} then( lineBundle(X, -l ))else(trivialBundle (X,1)) )) );
+    t0:= trivialBundle( X,0);
+    targ2 := fold(directSum,s0,  apply(tdegs2, l -> (if l != splice{n:0} then( lineBundle(X, -l ))else(trivialBundle (X,1)) )) );
+    -- TODO check that this is in fact the map that we want
+    -- The map evaluates the variables to be 1 which should give the map at the fiber over the identity point
+    phi := map( coefficientRing R, R, toList(n:1));
+    -- Avoids problems with the image of the map being a module for instance
+    A =   matrix entries A; 
+    f:= map( targ2, sour2, phi**A);
+    f
+)
 
 
 -- The code that follows take a toric vector bundle with Klyachko description and returns a module over the Cox ring of the toric variety, M, such that the sheafification of M is the starting vector bundle.
@@ -3024,7 +3103,7 @@ klyachkoToModule ToricVectorBundleNew := E -> (
     if r == 0 then return S^0;
     -- Twist E so every filtration jump is >= 0, since a jump becomes a monomial 
     jumps := filtrationJumps E;
-    offsets := apply(jumps, js -> -(max js));
+    offsets := apply(jumps, js -> -(max js)-1);
     E' := if all(offsets, o -> o == 0) then E else twist(E, offsets);
     filtMats := filtrationMatrices E';
     filtJumps :=  filtrationJumps E';
@@ -3042,12 +3121,13 @@ klyachkoToModule ToricVectorBundleNew := E -> (
 
 
     A := map(S^r, , Mat);  -- source degrees inferred automatically
-    Mtwisted := image A;
+    Mtwisted := trim image A;
     -- Undo the twist at the module level: shift the grading back by the class of
     -- the divisor sum(offsets_j * D_j) that the twist above added.
     gradingRank := degreeLength S;
     w := apply(gradingRank, g -> sum(n, j ->  offsets_j*(degree S_j)_g));
-    coker presentation (Mtwisted ** S^{w})
+    coker presentation (Mtwisted**S^{w});
+    (image A)**S^{w}
 )
 
  
