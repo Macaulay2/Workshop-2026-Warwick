@@ -97,7 +97,7 @@ protect preferredGenerators
 -- AUXILIARY METHODS FOR groundSet:
 -- flags, getColumns, primitive, 
 ------------------------------------------------------------------------------
-
+-*
 flags = method()
 flags (ToricVectorBundleKlyachko) := (cacheValue symbol filtrationFlags) ( tvb -> (
   hashTable for rho in rays tvb list (
@@ -109,7 +109,7 @@ flags (ToricVectorBundleKlyachko) := (cacheValue symbol filtrationFlags) ( tvb -
    rho => rayFlag
  )
 ))
-
+*-
 getColumns = method ()
 getColumns (Matrix) := mat -> toList apply( 0..<numgens source mat, i->mat_i )
 getColumns (Module) := M -> apply( getColumns gens M, c -> image matrix c)
@@ -135,7 +135,7 @@ cartesianProduct (List ) := L -> (
  n := #L-2;
  apply( cartesianProductNested L, l -> inductiveFlatten(l,n))
 )
-
+-*
 poset = method()
 poset (ToricVectorBundleKlyachko) := (cacheValue symbol posetTvb)  (tvb -> (
  -- do all possible intersections (over QQ)
@@ -494,7 +494,7 @@ isVeryAmple (ToricVectorBundleKlyachko) := {Verbosity => 0} >> opts -> tvb -> se
 -- AUXILIARY METHODS FOR isNef, isAmple:
 -- restrictToCurve
 ------------------------------------------------------------------------------
-
+*-
 -- PURPOSE : Given a toric vector bundle in Klyachko's description,
 --           a cone corresponding to a curve of the toric variety and
 --           its toric Chern character,
@@ -534,7 +534,7 @@ restrictToCurve (Matrix,HashTable) := {Verbosity => 0} >> opts -> (tau,torChern)
   a
  )
 )
-
+-*
 -- MAIN METHODS: restrictToInvCurves, isNef, isAmple -----------------------------
 
 restrictToInvCurves = method ( Options => true)
@@ -576,7 +576,7 @@ isAmple (ToricVectorBundleKlyachko) := {Verbosity => 0} >> opts -> tvb -> (
 -- AUXILIARY METHODS FOR drawParliament2Dtikz:
 -- sortByAngle, circularOrder
 ------------------------------------------------------------------------------
-
+*-
 -- PURPOSE : Given a list of points in the plane, 
 --           and a list of the angles (interpret points as complex numbers),
 --           sort the points by angle
@@ -598,7 +598,7 @@ circularOrder (List) := p -> (
  angles := apply(pmoved, pt -> atan2(pt_1,pt_0));
  sortByAngle(p,angles)
 )
-
+-*
 -- MAIN METHOD: drawParliament2Dtikz -----------------------------------------
 
 -- PURPOSE: Draw a two-dimensional parliament of polytopes using tikz
@@ -726,14 +726,14 @@ wellformedBundleFiltrations (ToricVectorBundleKlyachko) := tvb -> (
                "number of rays" => tvb#"number of rays",
                symbol cache => new CacheTable}
 )
-
+*-
 
 ---------------------------------------------------------------------------
 -- Converting all methods to use TVBNew
 ---------------------------------------------------------------------------
 
-
-flags (ToricVectorBundleNew) := (cacheValue symbol filtrationFlags) ( E -> (
+flags = method()
+flags (ToricVectorBundle) := (cacheValue symbol filtrationFlags) ( E -> (
     fJs := unique flatten filtrationJumps( E);
     hashTable for rho in rays E list (
         rayFlag := unique for i in fJs list ((filteredPiece( E, rho, i)));
@@ -755,8 +755,8 @@ cartesianProduct = L -> (
 )
 *-
 
-
-poset (ToricVectorBundleNew) := (cacheValue symbol posetTvb)  (E -> (
+poset = method()
+poset (ToricVectorBundle) := (cacheValue symbol posetTvb)  (E -> (
     -- do all possible intersections (over QQ)
     -- Mayo: I am changing QQ to the ring of defintion of E
     intersections := apply( cartesianProduct values flags E, L -> intersect( apply(L, l -> image promote(l,ring E) ) ) );
@@ -773,8 +773,8 @@ poset (ToricVectorBundleNew) := (cacheValue symbol posetTvb)  (E -> (
 --           IMPORTANT: Due to the implementation, elements might appear several times
 --   INPUT : 'E', a ToricVectorBundleKlyachko
 --  OUTPUT : ground set (list of nx1-matrices)
-
-groundSet (ToricVectorBundleNew) :=  {Verbosity => 0, preferredGenerators => {}} >> opts -> (cacheValue groundSet)  (E -> (
+groundSet = method(Options => true)
+groundSet (ToricVectorBundle) :=  {Verbosity => 0, preferredGenerators => {}} >> opts -> (cacheValue groundSet)  (E -> (
     intersections := poset E;
     R := ring E;
     G := toList set select( intersections, V -> rank V == 1 );
@@ -810,8 +810,8 @@ groundSet (ToricVectorBundleNew) :=  {Verbosity => 0, preferredGenerators => {}}
     apply(toList set G, g -> primitive gens g)
 ))
 
-
-polytopeTVB (ToricVectorBundleNew, Matrix) := {Verbosity => 0} >> opts -> ( (E,l) -> (
+polytopeTVB = method(Options => true)
+polytopeTVB (ToricVectorBundle, Matrix) := {Verbosity => 0} >> opts -> ( (E,l) -> (
     rayE := rays E;
     filtSteps := hashTable for rho in rayE list (
         rho => sort unique flatten (-filtrationJumps (E, rho))
@@ -826,14 +826,14 @@ polytopeTVB (ToricVectorBundleNew, Matrix) := {Verbosity => 0} >> opts -> ( (E,l
     pol
     
 ))
-
-parliament(ToricVectorBundleNew) := {Verbosity => 0} >> opts -> (cacheValue parliament)( E -> (
+parliament = method()
+parliament(ToricVectorBundle) := {Verbosity => 0} >> opts -> (cacheValue parliament)( E -> (
     gs := groundSet(E, Verbosity=>(opts#Verbosity-1));
     hashTable for l in gs list ( l => polytopeTVB(E,l, Verbosity=>opts#Verbosity) )
 ))
  
-
-restrictToAffine (ToricVectorBundleNew, Cone) := {Verbosity => 0} >> opts -> ( (tvb,cone) -> (
+restrictToAffine = method(Options => true)
+restrictToAffine (ToricVectorBundle, Cone) := {Verbosity => 0} >> opts -> ( (tvb,cone) -> (
     TV := normalToricVariety(fan cone, CoefficientRing => ring tvb );
     rayC := rays TV;
     toricVectorBundle(TV, apply( rayC, rho -> filtrationMatrices(tvb, rho)), apply(rayC, rho -> filtrationJumps(tvb, rho)) )
@@ -845,26 +845,26 @@ restrictToAffine (ToricVectorBundleNew, Cone) := {Verbosity => 0} >> opts -> ( (
     *-
 ))
 
-
-compatibleBases (ToricVectorBundleNew, Cone) := {Verbosity => 0} >> opts -> (E,C) -> (
+compatibleBases = method(Options => true)
+compatibleBases (ToricVectorBundle, Cone) := {Verbosity => 0} >> opts -> (E,C) -> (
     F:= restrictToAffine(E, C);
     fold(groundSet (F, preferredGenerators=> groundSet E), (i,j) -> i|j)
     
 )
-compatibleBases (ToricVectorBundleNew):= {Verbosity => 0} >> opts -> E -> (
+compatibleBases (ToricVectorBundle):= {Verbosity => 0} >> opts -> E -> (
     maxcones :=  maxCones E;
     hashTable for sigma in maxcones list (rays sigma => compatibleBases (E , sigma))
 )
 
-isLocallyWeil (ToricVectorBundleNew) := {Verbosity => 0} >> opts -> (cacheValue isLW) (tvb -> (
+isLocallyWeil = method(Options => true)
+isLocallyWeil (ToricVectorBundle) := {Verbosity => 0} >> opts -> (cacheValue isLW) (tvb -> (
  cbs := compatibleBases (tvb);
  isVB := applyValues(cbs, b -> numgens source b == rank tvb);
  all(values isVB, i->i)
 ))
 
---- TO DO: rewrite toricChernCharacter
-
-toricChernCharacter (ToricVectorBundleNew) := {Verbosity => 0} >> opts -> (cacheValue toricChernCharacter) ( tvb -> (
+toricChernCharacter = method(Options => true)
+toricChernCharacter (ToricVectorBundle) := {Verbosity => 0} >> opts -> (cacheValue toricChernCharacter) ( tvb -> (
  R := ring tvb;
  compBases := compatibleBases(tvb); 
  filtSteps := hashTable for rho in rays tvb list (
@@ -899,16 +899,14 @@ cb_0 => for b in base list (
  result
 ))
  
-
-isLocallyFree ToricVectorBundleNew :=  tvb -> (
+isLocallyFree ToricVectorBundle :=  tvb -> (
  if not isLocallyWeil tvb then (return false;);
  if not tvb.cache.?isLF then (toricChernCharacter tvb);
  tvb.cache.isLF
 )
 
-
-
-cartierInd (ToricVectorBundleNew) := tvb -> (
+cartierInd = method()
+cartierInd (ToricVectorBundle) := tvb -> (
  if not tvb.cache.?cartierInd then
   toricChernCharacter tvb;
  tvb.cache.cartierInd
@@ -919,8 +917,8 @@ cartierInd (ToricVectorBundleNew) := tvb -> (
 --           connect components in adjacent maximal cones by lines
 --   INPUT : 'tvb', toric vector bundle
 --  OUTPUT : hash table: cone of codim 1 (curve) => list of pairs
-
-graphToricChernCharacter (ToricVectorBundleNew) := {Verbosity => 0} >> opts -> (cacheValue graphToricChernCharacter) ( tvb -> (
+graphToricChernCharacter = method(Options => true)
+graphToricChernCharacter (ToricVectorBundle) := {Verbosity => 0} >> opts -> (cacheValue graphToricChernCharacter) ( tvb -> (
  torChern := toricChernCharacter(tvb);
  F := fan tvb;
  n := dim F;
@@ -948,8 +946,8 @@ graphToricChernCharacter (ToricVectorBundleNew) := {Verbosity => 0} >> opts -> (
 
 -- METHOD: separateJets
 
-
-separatesJetsLocally (ToricVectorBundleNew,Cone) := {Verbosity => 0} >> opts -> (tvb,sigma) -> (
+separatesJetsLocally = method(Options => true)
+separatesJetsLocally (ToricVectorBundle,Cone) := {Verbosity => 0} >> opts -> (tvb,sigma) -> (
  sigmaMat := rays sigma;
  R := ring tvb;
  uSigma := apply((toricChernCharacter tvb)#sigmaMat, c -> promote(c,R));
@@ -996,8 +994,8 @@ separatesJetsLocally (ToricVectorBundleNew,Cone) := {Verbosity => 0} >> opts -> 
 --           compute the maximal l such that the bundle separates l-jets
 --   INPUT : 'tvb', toric vector bundle
 --  OUTPUT :  Integer, -infinity if not separates any l-jets, otherwise l
-
-separatesJets (ToricVectorBundleNew) := {Verbosity => 0} >> opts -> (cacheValue separatesJets) ( tvb -> (
+separatesJets = method(Options => true)
+separatesJets (ToricVectorBundle) := {Verbosity => 0} >> opts -> (cacheValue separatesJets) ( tvb -> (
  if opts#Verbosity>0 then << "METHOD: separatesJets" << endl;
  min( apply( maxCones tvb, sigma -> separatesJetsLocally(tvb,sigma, Verbosity=>opts#Verbosity) ) )
 ))
@@ -1008,8 +1006,8 @@ separatesJets (ToricVectorBundleNew) := {Verbosity => 0} >> opts -> (cacheValue 
 --           check if the vector bundle is globally generated, using [RJS, Thm. 1.2]
 --   INPUT : 'tvb', toric vector bundle
 --  OUTPUT :  'true' if globally generated, otherwise 'false'
-
-isGloballyGenerated (ToricVectorBundleNew) := {Verbosity => 0} >> opts -> (tvb) -> 
+isGloballyGenerated = method(Options => true)
+isGloballyGenerated (ToricVectorBundle) := {Verbosity => 0} >> opts -> (tvb) -> 
 if separatesJets(tvb) >= 0 then true else false;
 
 -- PURPOSE : Given a toric vector bundle in Klyachko's description,
@@ -1018,7 +1016,7 @@ if separatesJets(tvb) >= 0 then true else false;
 --   INPUT : 'tvb', toric vector bundle
 --  OUTPUT :  'true' if very ample, otherwise 'false'
 --isVeryAmple = method( Options => true ) -- already defined in Polyhedra
-isVeryAmple (ToricVectorBundleNew) := {Verbosity => 0} >> opts -> tvb -> separatesJets(tvb, opts) >= 1
+isVeryAmple (ToricVectorBundle) := {Verbosity => 0} >> opts -> tvb -> separatesJets(tvb, opts) >= 1
   
 
 -- AUXILIARY METHODS FOR isNef, isAmple:
@@ -1026,8 +1024,8 @@ isVeryAmple (ToricVectorBundleNew) := {Verbosity => 0} >> opts -> tvb -> separat
 ------------------------------------------------------------------------------
 
 -- MAIN METHODS: restrictToInvCurves, isNef, isAmple -----------------------------
-
-restrictToInvCurves (ToricVectorBundleNew) := {Verbosity => 0} >> opts -> (cacheValue symbol restrictionsToInvCurves) ( tvb -> (
+restrictToInvCurves = method(Options => true)
+restrictToInvCurves (ToricVectorBundle) := {Verbosity => 0} >> opts -> (cacheValue symbol restrictionsToInvCurves) ( tvb -> (
  torChern := toricChernCharacter( tvb);
  F := fan tvb;
  n := dim fan tvb;
@@ -1045,13 +1043,13 @@ restrictToInvCurves (ToricVectorBundleNew) := {Verbosity => 0} >> opts -> (cache
 --   INPUT : 'tvb', toric vector bundle
 --  OUTPUT : hash table
 --isNef = method( Options => true)
-isNef (ToricVectorBundleNew) := {Verbosity => 0} >> opts -> tvb -> (
+isNef (ToricVectorBundle) := {Verbosity => 0} >> opts -> tvb -> (
  restrictions := restrictToInvCurves(tvb);
  all(values restrictions, r -> all(r, x -> x >=0))
 )
 
 --isAmple = method( Options => true)
-isAmple (ToricVectorBundleNew) := {Verbosity => 0} >> opts -> tvb -> (
+isAmple (ToricVectorBundle) := {Verbosity => 0} >> opts -> tvb -> (
  restrictions := restrictToInvCurves(tvb);
  all(values restrictions, r -> all(r, x -> x >0))
 )
@@ -1069,8 +1067,8 @@ isAmple (ToricVectorBundleNew) := {Verbosity => 0} >> opts -> tvb -> (
 
 -- TODO renew the cohomology methods in the original package before updating
 
-
-drawParliament2Dtikz (ToricVectorBundleNew,String) := {DrawCohomology => true, DrawChernCharacter => true } >> opts -> (tvb,file) -> (
+drawParliament2Dtikz = method(Options => true)
+drawParliament2Dtikz (ToricVectorBundle,String) := {DrawCohomology => true, DrawChernCharacter => true } >> opts -> (tvb,file) -> (
 -- check for dimension 2
 if dim fan tvb != 2 then (
  error "Error: only works for 2-dim parliaments.";
@@ -1158,6 +1156,15 @@ f << ///\end{tikzpicture}/// << endl;
 f << close;
 )
 
+maxCones ToricVectorBundle := T -> (
+      TV := fan T;
+      TR := rays TV;
+      TL := linealitySpace TV;
+      mC := maxCones TV;
+      apply(mC, c -> posHull(TR_c, TL))
+    -- sort maxCones T#"ToricVariety"
+   )
+
 -*
 
 --- METHOD: wellformedBundleFiltrations -----------------------------------
@@ -1166,7 +1173,7 @@ f << close;
 --   INPUT: 'tvb', toric vector bundle
 --  OUTPUT: a toric vector bundle, whose filtration matrices have ascending entries
 
-wellformedBundleFiltrations (ToricVectorBundleNew) := tvb -> (
+wellformedBundleFiltrations (ToricVectorBundle) := tvb -> (
  fMTlist := hashTable apply( rays tvb, rho -> rho => -1*filtrationJumps(tvb, rho));
  fMT := applyValues(fMTlist, f -> matrix {f});
  fMTunique := applyValues(fMTlist, unique);
@@ -1693,6 +1700,27 @@ assert(
         set {{0,2},{-1,0},{1,1}} } );
 ///
 
+-*
+debug needsPackage "PositivityToricBundles"
+Vbasis = { 
+ matrix{{1,1,0},{1,0,0},{0,0,1}}, -- for (1,0)
+ matrix{{0,0,1},{1,0,0},{0,1,0}},   -- for (0,1)
+ matrix{{1,1,0},{0,0,1},{1,0,0}},   -- for (-1,0)
+ matrix{{0,0,1},{1,0,0},{0,1,0}}}   -- for (0,-1)
+}
+Vfiltration = {
+ matrix{{-1,0,1}}, -- for (1,0)
+ matrix{{-2,-1,0}},  -- for (0,1)
+ matrix{{-1,0,1}},   -- for (-1,0)
+ matrix{{-2,-1,0}}  -- for (0,-1)
+}
+Vfiltration = -flatten (Vfiltration/entries)
+V = toricVectorBundle(X = hirzebruchSurface 0, Vbasis, Vfiltration)
+
+p = parliament V
+
+*-
+
 -- Test 1
 TEST ///
 -- This is [RJS, Example 3.8] for d=2
@@ -1720,6 +1748,11 @@ assert(isVeryAmple V);
 assert(isNef V);
 assert(isAmple V);
 ///
+
+-*
+debug needsPackage "PositivityToricBundles"
+V = tangentBundle(X = toricProjectiveSpace 2)
+*-
 
 -- Test 2
 TEST ///
@@ -1797,6 +1830,23 @@ assert(isNef V);
 assert(isAmple V);
 ///
 
+-*
+X = toricProjectiveSpace 2
+Vbasis = { 
+ matrix{{1,0,0},{-1,1,0},{0,-1,1}},  -- for (-1,-1)
+ matrix{{1,0,0},{0,1,0},{0,0,1}},  -- for (1,0)
+ matrix{{0,0,1},{0,1,0},{1,0,0}}    -- for (0,1)
+ }
+
+Vfiltration = {
+ matrix{{-3,-2,1}},  -- for (-1,-1)
+ matrix{{-4,0,1}}, -- for (1,0)
+ matrix{{-3,0,2}}   -- for (0,1)
+}
+Vfiltration = -flatten (Vfiltration/entries)
+V = toricVectorBundle(X, Vbasis, Vfiltration)
+*-
+
 -- Test 4
 TEST ///
 -- This is [RJS, Example 4.4] 
@@ -1842,6 +1892,25 @@ assert(isNef V);
 assert(isAmple V);
 ///
 
+-*
+X = hirzebruchSurface 1
+Vbasis = { 
+ matrix{{1,0},{0,1}},  -- for (1,0)
+ matrix{{1,0},{0,1}},   -- for (0,1)
+ matrix{{0,1},{1,0}},   -- for (-1,1)
+ matrix{{1,1},{1,0}}   -- for (0,-1)
+}
+
+Vfiltration = {
+ matrix{{-4,2}},  -- for (1,0)
+ matrix{{-3,-2}},  -- for (0,1)
+ matrix{{-5,0}},   -- for (-1,1)
+ matrix{{-3,1}}   -- for (0,-1)
+}
+Vfiltration = -flatten (Vfiltration/entries)
+V = toricVectorBundle(X, Vbasis, Vfiltration)
+*-
+
 -- Test 5
 TEST ///
 -- This is [RJS, Example 6.4] 
@@ -1886,6 +1955,25 @@ assert(not isVeryAmple V);
 assert(isNef V);
 assert(isAmple V);
 ///
+
+-*
+X = hirzebruchSurface 1
+Vbasis = { 
+ matrix{{1,0},{0,1}},  -- for (1,0)
+ matrix{{1,0},{0,1}},   -- for (0,1)
+ matrix{{0,1},{1,0}},   -- for (-1,1)
+ matrix{{1,1},{1,0}}   -- for (0,-1)
+}
+
+Vfiltration = {
+ matrix{{-4,2}},  -- for (1,0)
+ matrix{{-3,-2}},  -- for (0,1)
+ matrix{{-5,0}},   -- for (-1,1)
+ matrix{{-3,1}}   -- for (0,-1)
+}
+Vfiltration = -flatten (Vfiltration/entries)
+V = toricVectorBundle(X, Vbasis, Vfiltration)
+*-
 
 -- Test 6
 TEST ///
@@ -1947,6 +2035,19 @@ foundList = for i in 0 ..< #cList list (
 
 assert(all(foundList, i->i>=0))
 ///
+
+-*
+restart
+debug needsPackage "PositivityToricBundles"
+
+r = 2 + random 4
+F = toricProjectiveSpace 1 ** hirzebruchSurface r
+E = randomDeformation tangentBundle F
+while not isLocallyWeil E do (
+ E = randomDeformation(tangentBundle F,4)
+)
+
+*-
 
 -- Test 7
 TEST ///

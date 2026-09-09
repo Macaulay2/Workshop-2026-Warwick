@@ -1,34 +1,25 @@
-
 --*- coding: utf-8 -*-
-
---TODO: update these blurbs to reflect the overhaul project at M2 workshop
---TODO: comments about methods
-
 ---------------------------------------------------------------------------
--- PURPOSE: Computations with vector bundles on toric varieties 
--- PROGRAMMER : René Birkner 
--- UPDATE HISTORY : November 2008, November 2009, April 2010, May 2024, April 2025
+-- UPDATE HISTORY : November 2008, November 2009, April 2010, May 2024, April 2025, September 2026
 ---------------------------------------------------------------------------
 newPackage("ToricVectorBundles",
     Headline => "vector bundles on toric varieties",
     Version => "2.0",
-    Date => "todo",
+    Date => "September, 2026",
     Authors => {
         {Name => "René Birkner"},
         {Name => "Adrian Cook",
-         HomePage => "todo",
          Email => "a.cook@ed.ac.uk"},
         {Name => "Mayo Mayo Garcia",
-         HomePage => "todo",
+         HomePage => "https://warwick.ac.uk/fac/sci/maths/people/staff/garcia/",
          Email => "mayo.mayo-garcia@warwick.ac.uk"},
         {Name => "Nathan Ilten",
          HomePage => "https://www.sfu.ca/~nilten/",
          Email => "nilten@sfu.ca"},
         {Name => "Julia McLellan",
-         HomePage => "todo",
-         Email => "todo"},
+         Email => "julia.mcclellan@queensu.ca"},
         {Name => "Marco Fava",
-         HomePage => "todo",
+         HomePage => "https://sites.google.com/view/marco-fava/home-page",
          Email => "marco.fava@warwick.ac.uk"},
         {Name => "Labix Liu",
          HomePage => "https://labix-liu.github.io/",
@@ -54,15 +45,12 @@ newPackage("ToricVectorBundles",
         },
     Configuration => {},
     PackageImports => {"Varieties"},
-    PackageExports => {"Isomorphism", "Polyhedra","NormalToricVarieties"},
+    PackageExports => {"Isomorphism", "Polyhedra", "NormalToricVarieties"},
     DebuggingMode => true
     )
 
 ---------------------------------------------------------------------------
 -- COPYRIGHT NOTICE:
---
--- Copyright 2010 René Birkner, Nathan Owen Ilten, and Lars Petersen
---
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -79,294 +67,130 @@ newPackage("ToricVectorBundles",
 --
 ---------------------------------------------------------------------------
 
-
 export {
     -- Types
     "ToricVectorBundle",
-    "ToricVectorBundleKaneyama", 
-    "ToricVectorBundleKlyachko",
-    "ToricVectorBundleNew",
+    "ToricVectorBundleKaneyama",
     "ToricVectorBundleMap",
     -- Constructors
     "lineBundle",
     "toricVectorBundle",
     "trivialBundle",
     "toricVectorBundleKaneyama",
-    -- others
-    "displayFiltrations",
-    "addBase", 
-    "addBaseChange", 
-    "addDegrees", 
-    "addFiltration",
+    "tangentBundleKaneyama",
+    "cotangentBundleKaneyama",
+    -- Getters
+    "filtrationMatrices",
+    "filtrationJumps",
+    "strata",
+    -- Operations
     "areIsomorphic",
-    "cartierIndex",
-    "charts",
-    "cocycleCheck", 
     "deltaE",
-    "details",  
-    "eulerChi", 
-    "existsDecomposition", 
-    "filtration", 
-    "findWeights", 
+    "details",
+    "filtrations" => "details",
+    "eulerChi",
+    "filteredPiece",
     "moduleToKlyachko",
     "moduleToKlyachko'",
     "klyachkoToModule",
-    "findWeightsNew",  
-    "isGeneral","filteredPiece",
-    "isTwistOf",
-    --"isomorphism", 
+    "isGeneral",
     "weilDecoration",
     "weilToKlyachko",
     "randomDeformation",
-    "regCheck", 
-    "twist", 
+    "twist",
+    "isTwistOf",
+    "firstChernClass",
+    -- Misc
+    "displayFiltrations",
+    -- Kaneyama (old code)
+    "addBase", 
+    "addBaseChange", 
+    "addDegrees",
+    "cartierIndex",
+    "charts",
+    "cocycleCheck",
+    "regCheck",
     "weilToCartier", 
     "hirzebruchFan",
     "pp1ProductFan", 
     "projectiveSpaceFan",
     "raySortOfFan",
-    "customConeSort",
-    -- getters
-    "filtrationMatrices",
-    "filtrationJumps",
-    -- auxiliary
-    "linearMapFromMatrices"
+    "customConeSort"
     }
 
-protect allRaysTable
-protect isoMatrix
-protect gradedRing
+-- These are cached keywords as part of:
+-- cechComplex
 protect cech
-protect isVB
-protect cocyle
-protect degreesList
+-- cocycleCheck
 protect cocycle
-protect weights
-protect isomorphic
+-- areIsomorphic
 protect iso
-
-
+-- cohomology
+protect gradedCoeffRing
 
 ---------------------------------------------------------------------------
--- DEFINING NEW TYPES
+-- MAIN TYPE
 ---------------------------------------------------------------------------
 
--- Defining the new type ToricVectorBundle, the parent type to the two types of TVB
 ToricVectorBundle = new Type of HashTable
-
--- Defining the new type ToricVectorBundleKaneyama
-ToricVectorBundleKaneyama = new Type of HashTable -- keep this here for now, will move to bottom soon
-ToricVectorBundleKaneyama.synonym = "vector bundle on a toric variety using Kaneyama's description"
-globalAssignment ToricVectorBundleKaneyama
-
--- Defining the new type ToricVectorBundleKlyachko
-ToricVectorBundleKlyachko = new Type of ToricVectorBundle
-ToricVectorBundleKlyachko.synonym = "vector bundle on a toric variety (Klyachko's description)"
-globalAssignment ToricVectorBundleKlyachko
-
-ToricVectorBundleNew = new Type of ToricVectorBundle
-ToricVectorBundleNew.synonym = "vector bundle on a toric variety using Klyachko's description"
-globalAssignment ToricVectorBundleNew
+ToricVectorBundle.synonym = "vector bundle on a toric variety using Klyachko's description"
+globalAssignment ToricVectorBundle
 
 toricVectorBundle = method(Options => true)
 toricVectorBundle (NormalToricVariety, List, List) := {} >> o -> (baseVariety, matrixList, indexesList) -> (
     -- error checking
-    if #matrixList != #(rays baseVariety) then error("There must be as many filtrations as rays of the base");
-    if #indexesList != #(rays baseVariety) then error("There must be as many filtrations as rays of the base");
+    if #matrixList != #(rays baseVariety) then error("there must be as many filtrations as rays of the base");
+    if #indexesList != #(rays baseVariety) then error("there must be as many filtrations as rays of the base");
     L := apply(matrixList, m -> {numColumns m, numRows m});
-    if not same L then error("The sizes of the filtration matrices must be the same");
+    if not same L then error("the sizes of the filtration matrices must be the same");
     rankE := (unique flatten L)_0;
-    --rankE := rank matrixList_0;
-    if any(indexesList, l -> #l != rankE) then error("The filtration data must be same length as rank");
-    new ToricVectorBundleNew from {
+    if any(indexesList, l -> #l != rankE) then error("the filtration data must be same length as rank");
+    -- technically the filtration matrices need to be over the coefficient ring of E
+    modifiedMatList := apply(matrixList, M -> sub(M, coefficientRing ring baseVariety));
+    new ToricVectorBundle from {
 	symbol variety => baseVariety,
-	symbol filtrationMatrices => matrixList,
+	symbol filtrationMatrices => modifiedMatList,
 	symbol filtrationJumps => indexesList,
 	symbol rank => rankE,
 	symbol cache => new CacheTable}
     )
-
--- printing behavior
--- This is just some adhoc editing, sorry to anybody trying to decipher this!
--- But the basics are: "string | string" will adjoin things horizontally, and
--- "string || string" will adjoin things vertically. Everything done here is
--- gluing strings together with whitespace depending on the width/heights of
--- the matrices here.
--- For those trying to understand, worth pointing out that the HEIGHT of a string
--- is obtained via "length" and NOT "height".
-vertSpace = n -> (s := ""; if n == 1 then return "" else for i to n-2 do s = s || ""; s)
-horSpace = n -> (s := " "; if n == 0 then return "" else if n == 1 then return s else for i to n-2 do s = s | " "; s)
-
-displayFiltrations = method()
-displayFiltrations ToricVectorBundleNew := E -> (
-    filtMats := filtrationMatrices E;
-    filtJumps := filtrationJumps E;
-    -- here is the range of indices we want to print
-    rng := {(min flatten filtJumps)-1, (max flatten filtJumps)+2};
-    -- put all of the matrices that appear there into a hash table indexed by rays.
-    matTable := hashTable for p in rays E list p => (
-        hashTable for i from rng_0 to rng_1 list i => filteredPiece(E,p,i)
-        );
-    -- to align things properly, we need easy access to the heights of those matrices as strings.
-    h' := hashTable for p in rays E list p => max(for M in values matTable#p list length net M);
-    -- initialize the string we'll output, as well as a bunch of spacing strings.
-    mainStr := "";
-    colonStr := " ";
-    subsetStr := " ";
-    dotsStr := " ... ";
-    -- here's where the chaos begins. we're trying to make a grid of filtrations, where the row is
-    -- indexed by rays and the column is the index of the filtration. we're going to construct that grid
-    -- column by column.
-    -- 
-    -- this is the first column of that grid. it's just the list of rays, with vertical spacing
-    -- added based on the sizes of the matrices appearing in the filtration for that ray.
-    -- NOTE: one additional feature of this chunk is that it makes it so that subsetStr and
-    -- dotsStr are now fully column strings. by that i mean they are not just single characters,
-    -- they have height equal to the height of the whole net at the end, but their vertical
-    -- spacing is now perfectly calibrated. so whenever we need to put subsets for our
-    -- filtrations, we can just use this single string now.
-    w := max for p in rays E list floor(((width net p)-3)/2);
-    rayStr := horSpace(w) | "ray" | horSpace(w);
-    for p in rays E do (
-        -- here's the adjusted vertical spacing depending on the matrices.
-        h := floor((h'#p)/2);
-        -- for small numbers, this is a very slight adjustment parameter to make things look nicer.
-        c := if even h'#p and h'#p != 2 then 1 else 0;
-        rayStr = rayStr || vertSpace(h-c+1) || net p || vertSpace(h);
-        colonStr = colonStr || vertSpace(h-c+1) || " : " || vertSpace(h);
-        dotsStr = dotsStr || vertSpace(h-c+1) || " ... " || vertSpace(h);
-        subsetStr = subsetStr || vertSpace(h-c+1) || " ⊃ " || vertSpace(h);
-        );
-    mainStr = rayStr | colonStr | dotsStr | subsetStr;
-    -- this is the main meat of the display. we construct the grid column by column in the same way.
-    for i from rng_0 to rng_1 do (
-        -- some of the matrices might be smaller than others because of negative signs or numbers, so this
-        -- acts as an adjustment parameter to center the matrices.
-        w = max({0} | (for p in rays E list ceiling(((width net (matTable#p)#i)-(width net i))/2)));
-        -- put the index of the filtration at the top, and then...
-        matStr := if max values h' == 1 then horSpace(w) | net i else (horSpace(w) | net i) || vertSpace(1);
-        -- start populating the grid entries of the column with the matrices.
-        for p in rays E do (
-            w' := max({0} | (for q in rays E list floor(((width net (matTable#q)#i)-(width net (matTable#p)#i))/2)));
-            h := floor((h'#p)/2);
-            c := if even h'#p and h'#p != 2 then 1 else 0;
-            if length net (matTable#p)#i == 1 then matStr = matStr || (vertSpace(h-c) || (horSpace(w') | net (matTable#p)#i) || vertSpace(h+1));
-            if length net (matTable#p)#i == 2 then matStr = matStr || ((horSpace(w') | net (matTable#p)#i) || vertSpace(2));
-            if length net (matTable#p)#i > 2 then matStr = matStr || (((horSpace(w') | net (matTable#p)#i)) || vertSpace(1));
-            );
-        mainStr = mainStr | matStr | subsetStr
-        );
-    -- at the very end, all of the filtrations tail off, so we'll add the dots string again.
-    mainStr = mainStr | dotsStr;
-    mainStr
+-- Alternative input
+toricVectorBundle (NormalToricVariety, HashTable) := {} >> o -> (baseVariety, filtrationTable) -> (
+    if set rays baseVariety != set keys filtrationTable then error("expected values of the hashtable to be the rays of the base");
+    (mats, jumps) := toSequence transpose for p in rays baseVariety list toList filtrationTable#p;
+    toricVectorBundle(baseVariety, mats, jumps)
     )
-displayFiltrationsCompact = method()
-displayFiltrationsCompact ToricVectorBundleNew := E -> (
-    filtMats := filtrationMatrices E;
-    filtJumps := filtrationJumps E;
-    rng := {(min flatten filtJumps)-1, (max flatten filtJumps)+2};
-    -- instead of matrices, write < e_1 + e_2 > or whatever. this does that.
-    matTable := hashTable for p in rays E list p => (
-        hashTable for i from rng_0 to rng_1 list i => (
-            fP := filteredPiece(E,p,i);
-            tempStr := "";
-            if numcols fP == rank E then tempStr = "E";
-            if numcols fP == 0 then tempStr = "0";
-            if numcols fP > 0 and numcols fP < rank E then (
-                tempStr = "⟨";
-                for j to numcols fP - 1 do (
-                    evenMoreTempStr := "";
-                    for k from 0 to rank E - 1 do (
-                        if fP_j_k == 0 then continue else (
-                            ell := "";
-                            if fP_j_k != 1 then ell = toString fP_j_k;
-                            if fP_j_k == -1 then ell = "-";
-                            if evenMoreTempStr == "" then evenMoreTempStr = ell | "e_" | net k else evenMoreTempStr = evenMoreTempStr | " + " | ell | "e_" | net k;
-                            )
-                        );
-                    tempStr = tempStr | evenMoreTempStr;
-                    if j != numcols fP - 1 then tempStr = tempStr | ", ";
-                    );
-                tempStr = tempStr | "⟩";
-                );
-            tempStr
-            )
-        );
-    mainStr := "";
-    colonStr := " ";
-    subsetStr := " ";
-    dotsStr := " ... ";
-    w := max for p in rays E list floor(((width net p)-3)/2);
-    rayStr := horSpace(w) | "ray" | horSpace(w);
-    for p in rays E do (
-        rayStr = rayStr || vertSpace(1)|| net p;
-        colonStr = colonStr || vertSpace(1) || " : ";
-        dotsStr = dotsStr || vertSpace(1) || " ... ";
-        subsetStr = subsetStr || vertSpace(1) || " ⊃ ";
-        );
-    mainStr = rayStr | colonStr | dotsStr | subsetStr;
-    for i from rng_0 to rng_1 do (
-        w = max({0} | (for p in rays E list ceiling(((width (matTable#p)#i)-(width net i))/2)));
-        matStr := (horSpace(w) | net i);
-        for p in rays E do (
-            w' := max({0} | (for q in rays E list floor(((width (matTable#q)#i)-(width (matTable#p)#i))/2)));
-            matStr = matStr || (vertSpace(1) || (horSpace(w') | (matTable#p)#i));
-            );
-        mainStr = mainStr | matStr | subsetStr
-        );
-    mainStr = mainStr | dotsStr;
-    mainStr
-    )
-
--- Shamelessly I have copied Greg's kludge from NormalToricVarieties
--- to get printing to do good things for me. This expression
--- is just used to make maps look good.
-hasAttribute = value Core#"private dictionary"#"hasAttribute";
-getAttribute = value Core#"private dictionary"#"getAttribute";
-ReverseDictionary = value Core#"private dictionary"#"ReverseDictionary";
-expression ToricVectorBundleNew := E -> (
-    if hasAttribute (E, ReverseDictionary) 
-    then expression getAttribute (E, ReverseDictionary)
-    else net E
-    )
-net ToricVectorBundleNew := E -> (
-    "ToricVectorBundle of rank " | net rank E | " on " | net variety E
-    )
-
 
 ---------------------------------------------------------------------------
 -- BASIC CONSTRUCTORS
 ---------------------------------------------------------------------------
 
 trivialBundle = method()
-trivialBundle (NormalToricVariety, ZZ) := (tv,r) -> (
-	p := #(rays tv);
-	toricVectorBundle(tv, apply(p, i -> id_((coefficientRing ring tv)^r)), apply(p, i -> toList(r:0)))
+trivialBundle NormalToricVariety := X -> trivialBundle(X,1)
+trivialBundle(NormalToricVariety, ZZ) := (X,r) -> (
+    if r < 0 then error("expected nonnegative rank.");
+    H := hashTable for p in rays X list p => {id_((coefficientRing ring X)^r), toList(r:0)};    
+    toricVectorBundle(X, H)
 )
 
 lineBundle = method()
-lineBundle(NormalToricVariety , List ):= (X, L) ->(
-    if # L != # rays X then( error("The list should have an entry for each ray in the fan"););
-	jumps := for e in L list {e};
+lineBundle ToricDivisor := D -> lineBundle(variety D, entries D)
+lineBundle(NormalToricVariety, List):= (X, L) ->(
+    if #L != #rays X then( error("the list should index a divisor on the base"););
+    jumps := for e in L list {e};
     mats := for p in rays X list matrix {{1_(coefficientRing ring X)}};
-	toricVectorBundle(X, mats, jumps)
-)
-
-lineBundle ToricDivisor := D -> (
-    lineBundle( variety D , entries D)
-	--mats := for p in rays X list matrix {{1_(coefficientRing ring X)}};
-	--toricVectorBundle(X, mats, jumps)
+    toricVectorBundle(X, mats, jumps)
 )
 
 cotangentBundle NormalToricVariety := X -> dual tangentBundle X
 tangentBundle NormalToricVariety := X -> (
-    if not isSmooth X then error("the base toric variety must be smooth.");
+    if not isSmooth X then error("the base toric variety must be smooth");
     R:= coefficientRing ring X;
     raysX := rays X;
     chR := char R;
     -- TODO: decide if this is the way we want to implement it
     if chR != 0 then(
-    if isSubset({false}, apply(unique flatten raysX, p -> gcd(chR, p)==1 or p == 0)) then( error ("Some entry in the rays is divisible by the characteristic of the field. Please use other method to define the bundle ")););
+    if not all apply(unique flatten raysX, p -> gcd(chR, p)==1 or p == 0) then( error ("Some entry in the rays is divisible by the characteristic of the field. Please use other method to define the bundle")););
     raylist := apply(raysX, p -> promote(matrix vector p,R));
     -- The filtration matrix for ray rho has rho has the first column, and its
     -- orthogonal complement for the remaining columns.
@@ -376,840 +200,160 @@ tangentBundle NormalToricVariety := X -> (
     toricVectorBundle(X,filtMats,filtJumps)
     )
 
-
---TODO: once the overhaul is complete, we should remove these constructors.
-
--- PURPOSE : Building a Vector Bundle of rank 'k' on the Toric Variety given by the Fan 'F'
---toricVectorBundle = method(Options => true)
-
---   INPUT : '(k,F)',  a strictly positive integer 'k' and a pure and full dimensional Fan 'F'
---  OUTPUT : A ToricVectorBundleKlyachko
--- COMMENT : If no option is given the function will return a ToricVectorBundleKlyachko
-
-toricVectorBundle (ZZ,Fan) := {"Type"=>"Klyachko"} >> opts -> (k,F) -> (
-     if opts#"Type" == "Klyachko" then makeVBKlyachko(k,F) else error("Expected Type to be Klyachko."))
-
-
---   INPUT : '(k,F,L1,L2)',  a strictly positive integer 'k',a pure and full dimensional Fan 'F', and two lists 'L1' and 'L2'
---  OUTPUT : A ToricVectorBundleKaneyama or ToricVectorBundleKlyachko
--- COMMENT : If no option is given the function will return a ToricVectorBundleKlyachko where the base matrices are given in the first list and the 
---     	     filtration matrices are given in the second list, 
---     	     if "Type" => "Kaneyama" is given it returns a ToricVectorBundleKaneyama where the degree matrices are given in the first list and the
---     	     transition matrices are given in the second list.
-toricVectorBundle (ZZ,Fan,List,List) := {"Type"=>"Klyachko"} >> opts -> (k,F,L1,L2) -> (
-     if opts#"Type" == "Klyachko" then makeVBKlyachko(k,F,L1,L2) else error("Expected Type to be Klyachko or Kaneyama."))
-
-
---Deleted the makeVBKaneyama that was here
-
--- PURPOSE : Building a Vector Bundle in the Klyachko description of rank 'k' on the Toric Variety given by the Fan 'F'
---           with trivial Filtration for every ray
---   INPUT : '(k,F)',  a strictly positive integer 'k' and a pure and full dimensional Fan 'F' 
---  OUTPUT : The ToricVectorBundleKlyachko 'VB'
-makeVBKlyachko = method(TypicalValue => ToricVectorBundleKlyachko)
-makeVBKlyachko (ZZ,Fan) := (k,F) -> (
-     -- Checking for input errors
-     if k < 0 then error("The vector bundle must have a positive rank.");
-     if not isPointed F then error("The Fan has to be pointed");
-     -- Writing the table of rays
-     rT := raySortOfFan F;
-     rT = hashTable apply(#rT, i -> rT#i => i);
-     -- Writing the table of identity matrices for the vector bundle bases
-     bT := hashTable apply(keys rT, i -> i => map(QQ^k,QQ^k,1));
-     -- Writing the table of matrices for the filtration maps
-     fMT := hashTable apply(keys rT, i -> i =>  matrix {toList(k:0)});
-     -- Computing the list of changes in the filtrations
-     fT := hashTable apply(pairs fMT, p -> (
-	       L := flatten entries p#1;
-	       L1 := sort unique L;
-	       p#0 => hashTable ({min L1 - 1 => {}} | apply(L1, l -> l => positions(L,e -> e == l)))));
-     -- Generating the vector bundle
-     tvb := new ToricVectorBundleKlyachko from {
-	  "ring" => QQ,
-	  "rayTable" => rT,
-	  "baseTable" => bT,
-	  "filtrationMatricesTable" => fMT,
-	  "filtrationTable" => fT,
-	  "ToricVariety" => F,
-	  "number of affine charts" => #((maxCones F)),
-	  "dimension of the variety" => dim F,
-	  "rank of the vector bundle" => k,
-	  "number of rays" => #rT,
-	  symbol cache => new CacheTable};
-     tvb.cache.isVB = true;
-     --breakpoint
-     tvb)
-
--- I want to get rid of the original constructor that took options, so making this toricVectorBundleKlyachko
--- DO WE STILL NEED/USE THESE?
-
-toricVectorBundleKlyachko = method(TypicalValue => ToricVectorBundleKlyachko)
-toricVectorBundleKlyachko (ZZ,Fan) := (k,F) -> (
-    -- Checking for input errors
-     if k < 0 then error("The vector bundle must have a positive rank.");
-     if not isPointed F then error("The Fan has to be pointed");
-     -- Writing the table of rays
-     rT := raySortOfFan F;
-     rT = hashTable apply(#rT, i -> rT#i => i);
-     -- Writing the table of identity matrices for the vector bundle bases
-     bT := hashTable apply(keys rT, i -> i => map(QQ^k,QQ^k,1));
-     -- Writing the table of matrices for the filtration maps
-     fMT := hashTable apply(keys rT, i -> i =>  matrix {toList(k:0)});
-     -- Computing the list of changes in the filtrations
-     fT := hashTable apply(pairs fMT, p -> (
-	       L := flatten entries p#1;
-	       L1 := sort unique L;
-	       p#0 => hashTable ({min L1 - 1 => {}} | apply(L1, l -> l => positions(L,e -> e == l)))));
-     -- Generating the vector bundle
-     tvb := new ToricVectorBundleKlyachko from {
-	  "ring" => QQ,
-	  "rayTable" => rT,
-	  "baseTable" => bT,
-	  "filtrationMatricesTable" => fMT,
-	  "filtrationTable" => fT,
-	  "ToricVariety" => F,
-	  "number of affine charts" => #((maxCones F)),
-	  "dimension of the variety" => dim F,
-	  "rank of the vector bundle" => k,
-	  "number of rays" => #rT,
-	  symbol cache => new CacheTable};
-     tvb.cache.isVB = true;
-     --breakpoint
-     tvb)
-
---   INPUT : '(k,F,baseList,filtrationList)',  a strictly positive integer 'k', a pure and full dimensional
---                     Fan 'F' of dimension n, a list 'baseList' of k by k matrices over the same ring/field, one for each 
---     	    	       ray of 'F' where the columns give the basis of the vector bundle over the ray, and a list 
---     	    	       'filtrationList' of  1 by k matrices over ZZ, one for each ray such that the i-th column of 
---     	    	       the base matrix is at first in the part of the filtration indexed by the i-th entry in the filtration 
---     	    	       matrix.
---  OUTPUT : The ToricVectorBundleKlyachko 'tvb' 
--- COMMENT : Note that the bases and filtration matrices will be assigned to the rays in the order, they appear in rays F
-makeVBKlyachko (ZZ,Fan,List,List) := (k,F,Bm,Fm) -> (
-     tvb := makeVBKlyachko(k,F);
-     tvb = addBase(tvb,Bm);
-     addFiltration(tvb,Fm))
-
-toricVectorBundleKlyachko (ZZ,Fan,List,List) := (k,F,Bm,Fm) -> (
-    tvb := toricVectorBundleKlyachko(k,F);
-    tvb = addBase(tvb,Bm);
-    addFiltration(tvb,Fm))
-
--*
--- Modifying the standard output for a ToricVectorBundleKaneyama to give an overview of its characteristica
-net ToricVectorBundleKaneyama := tvb -> ( horizontalJoin flatten ( --MOVED
-	  "{", 
-	  -- prints the parts vertically
-	  stack (horizontalJoin \ sort apply({"dimension of the variety",
-			                      "rank of the vector bundle",
-					      "number of affine charts"}, key -> (net key, " => ", net tvb#key))),
-	  "}" ))
-*-
-
--- Modifying the standard output for a ToricVectorBundleKlyachko to give an overview of its characteristica
-net ToricVectorBundleKlyachko := tvb -> ( horizontalJoin flatten ( 
-	  "{", 
-	  -- prints the parts vertically
-	  stack (horizontalJoin \ sort apply({"dimension of the variety",
-					      "rank of the vector bundle",
-					      "number of affine charts",
-					      "number of rays"}, key -> (net key, " => ", net tvb#key))),
-	  "}" ))
-
 --------------------------------------------------------------
 -- GETTER FUNCTIONS FOR TORIC VECTOR BUNDLES
 --------------------------------------------------------------
-variety(ToricVectorBundleNew) := E -> (E.variety)
 
-fan ToricVectorBundleNew := E -> fan E.variety
-
-rank(ToricVectorBundleNew):= E ->(E.rank)
-
-rank ToricVectorBundleKlyachko := T -> T#"rank of the vector bundle"
-
---ring ToricVectorBundleNew := E -> coefficientRing ring (E.variety)
---TODO get rid of this below.
--- PURPOSE : Generating the graded Ring for the cohomology groups
---   INPUT : 'T',  a ToricVectorBundle
---  OUTPUT : the ring of the bundle with degree space the lattice of the variety
-ring ToricVectorBundleNew := T -> coefficientRing ring variety T
-
-ring ToricVectorBundleKlyachko := (cacheValue symbol gradedRing)( T -> (
-    if instance(T,ToricVectorBundleKlyachko) then (T#"ring")[DegreeRank => T#"dimension of the variety"]
-    else QQ[DegreeRank => T#"dimension of the variety"]))
+variety ToricVectorBundle := E -> E.variety
+fan ToricVectorBundle := E -> fan E.variety
+rank ToricVectorBundle := E ->(E.rank)
+ring ToricVectorBundle := E -> coefficientRing ring variety E
+rays ToricVectorBundle := {} >> o -> E -> rays variety E 
 
 -- This ring is needed for the cohomology computations
 grRing = method()
-grRing ToricVectorBundleNew := (cacheValue symbol gradedRing)(T ->  (ring T)[DegreeRank => dim variety T])
-
+grRing ToricVectorBundle := (cacheValue symbol gradedCoeffRing)(E ->  (ring E)[DegreeRank => dim variety E])
 
 filtrationJumps = method()
-filtrationJumps ToricVectorBundleNew := E -> (E.filtrationJumps)
-filtrationJumps (ToricVectorBundleNew, List) := (E,L) -> (
-    j:= position( rays E, c -> c==L);
+filtrationJumps ToricVectorBundle := E -> (E.filtrationJumps)
+-- This extracts a specific jump for a ray p. 
+filtrationJumps (ToricVectorBundle, List) := (E,p) -> (
+    j:= position(rays E, c -> c == p);
     (E.filtrationJumps)_j
-
 )
 
 filtrationMatrices = method()
-filtrationMatrices ToricVectorBundleNew := E -> (E.filtrationMatrices)
-filtrationMatrices(ToricVectorBundleNew, List) := (E,L) -> (
-    j:= position( rays E, c -> c==L);
+filtrationMatrices ToricVectorBundle := E -> (E.filtrationMatrices)
+-- This extracts a specific filtration matrix for a ray p.
+filtrationMatrices(ToricVectorBundle, List) := (E,p) -> (
+    j:= position(rays E, c -> c == p);
     (E.filtrationMatrices)_j
-
 )
 
-
-rays ToricVectorBundleNew := {} >> o -> E ->( rays(variety (E) ))
-
-rays ToricVectorBundleKlyachko := {} >> o -> tvb -> raySortOfFan tvb#"ToricVariety"
-
-
--- PURPOSE : Presenting some details of the given ToricVectorBundle
---   INPUT : 'tvb',  a ToricVectorBundle
---  OUTPUT : '(A,C)',	 where 'A' is a hashTable giving the enumeration of the maximal cones with their rays and degree matrix, 
---     	    	      	 and 'B' gives the transition matrices for the codim 1 pairs
--- COMMENT : This function gives the possibility to have a quick overview on the main properties of a ToricVectorBundleKaneyama
 details = method()
-
-details ToricVectorBundleKlyachko := tvb -> (
-      hashTable apply(rays tvb, r -> r => (tvb#"baseTable"#r,tvb#"filtrationMatricesTable"#r)))
-
-
-details ToricVectorBundleNew := tvb ->( 
-    raysX := rays(tvb );
-    filts := filtrationMatrices (tvb);
-    jumps := filtrationJumps( tvb); 
-     hashTable for i to #raysX -1 list(  raysX_i => {filts_i, jumps_i})
+details ToricVectorBundle := tvb ->( 
+    raysX := rays tvb;
+    filts := filtrationMatrices tvb;
+    jumps := filtrationJumps tvb; 
+    hashTable for i to #raysX -1 list(raysX_i => {filts_i, jumps_i})
 )
 
-
--- filteredPiece( TprocVectorBundleNew, ray, index ) outs matrix (span of the corresponding columns)
 filteredPiece = method()
--- Computes the vector space corresponding to the ray p at the index i
-filteredPiece (ToricVectorBundleNew, List, ZZ) := (E, p, i) ->(
+filteredPiece (ToricVectorBundle, List, ZZ) := (E, p, i) ->(
     dataE:= (details(E))#p;
     jumpE:= dataE_1;
-    inds:= select(toList(0..rank(E)-1), n -> (i<= jumpE_n));
+    inds:= select(toList(0..rank(E)-1), n -> (i <= jumpE_n));
     (dataE_0)_inds
-    
 )
 
-
-
----------------------------------------------------------------
--- Sorting rays
----------------------------------------------------------------
-
--- A ray is a matrix ZZ^n <-- ZZ^1, so rays can be sorted by assembling them
--- into a matrix and calling "sortColumns".  We sort the rays as in the package
--- Polyhedra, so that changes to the algorithm for computing the hash code of
--- matrices doesn't affect what we do.
-
-
--- For some reason it is important for ToricVectorBundles to be able to sort
--- cones. Since cones as keys in hashtables do not work anymore we move the old
--- code for sorting cones here from OldPolyhedra.m2 and implement a method for
--- sorting the new keys.
-Cone ? Cone := (C1,C2) -> (
-     if C1 == C2 then symbol == else (
-     if ambDim C1 != ambDim C2 then ambDim C1 ? ambDim C2 else (
-          if dim C1 != dim C2 then dim C1 ? dim C2 else (
-          R1 := sort rays C1;
-          R2 := sort rays C2;
-          if R1 != R2 then (
-          R1 = apply(numColumns R1, i -> R1_{i});
-          R2 = apply(numColumns R2, i -> R2_{i});
-          (a,b) := (set R1,set R2); 
-          r := (sort matrix {join(select(R1,i->not b#?i),select(R2,i->not a#?i))})_{0};
-          if a#?r then symbol > else symbol <)
-          else (
-          R1 = linSpace C1;
-          R2 = linSpace C2;
-          R1 = apply(numColumns R1, i -> R1_{i});
-          R2 = apply(numColumns R2, i -> R2_{i});
-          (c,d) := (set R1,set R2);
-          l := (sort matrix {join(select(R1,i->not d#?i),select(R2,i->not c#?i))})_{0};
-          if c#?l then symbol > else symbol <)))))
-
-customConeSort = method()
-customConeSort List := L -> (
-	L = apply(L, l -> posHull l);
-	L = sort L;
-	L = apply(L, l -> (rays l, linealitySpace l));
-	L
-)
-
-
-raySort = value Polyhedra#"private dictionary"#"raySort"
-raySortOfFan = (fan) -> (
-    r := rays fan;
-    raySort for i from 0 to numColumns r - 1 list r_{i}
-    )
----------------------------------------------------------------
--- FUNCTIONS TO CONSTRUCT VECTOR BUNDLES AND MODIFY THEM
----------------------------------------------------------------
-
---TODO: The "add" methods are just garbage? Remove
--- these methods are used in the TESTS..can we modify the tests?
-
--- PURPOSE : Changing the base matrices of a given ToricVectorBundleKlyachko to those given in the List 
---   INPUT : '(tvb,L)',  a ToricVectorBundle 'tvb' and a list 'L'of k by k matrices over a common ring/field, one for each
---     	    	      	   ray of the underlying fan
---  OUTPUT : The ToricVectorBundleKlyachko 'tvb' 
--- COMMENT : Note that the  matrices in 'L' will be assigned to the rays in the order they appear in rays tvb
-
-
-addBase = method(TypicalValue => ToricVectorBundleKlyachko)
-addBase (ToricVectorBundleKlyachko,List) := (tvb,L) -> (
-     -- Extracting data out of tvb
-     k := tvb#"rank of the vector bundle";
-     n := tvb#"number of rays";
-     R := raySortOfFan tvb#"ToricVariety";
-     -- Checking for input errors
-     if n != #L then error("Expected number of matrices to match number of rays of the fan.");
-     if any(L, l -> not instance(l,Matrix)) then error("Expected the bases to be given as matrices.");
-     P := unique apply(L,ring);
-     if #P != 1 then (
-	  if P === {QQ,ZZ} or P === {ZZ,QQ} then (
-	       L = apply(L, l -> promote(l,QQ));
-	       P = {QQ})
-	  else error("Expected all the bases to be over the same ring."));
-     -- Creating the table of bases for the rays
-     baseTable := hashTable apply(n, i -> ( 
-	       M := L#i;
-	       -- Checking for more input errors
-	       if numColumns M != k or numRows M != k then error("Expected the base change matrices to be rank times rank matrices.");
-	       if det M == 0 then error("Expected the bases to have full rank.");
-	       -- Inserting the matrix at the i-th position
-	       R#i => M));
-     -- Writing the bases into the bundle
-     new ToricVectorBundleKlyachko from {
-	  "ring" => first P,
-	  "rayTable" => tvb#"rayTable",
-	  "baseTable" => baseTable,
-	  "filtrationMatricesTable" => tvb#"filtrationMatricesTable",
-	  "filtrationTable" => tvb#"filtrationTable",
-	  "ToricVariety" => tvb#"ToricVariety",
-	  "number of affine charts" => tvb#"number of affine charts",
-	  "dimension of the variety" => tvb#"dimension of the variety",
-	  "rank of the vector bundle" => tvb#"rank of the vector bundle",
-	  "number of rays" => tvb#"number of rays",
-	  symbol cache => new CacheTable})
-
-
---   INPUT : '(tvb,L)',  a ToricVectorBundleKlyachko 'tvb' and a list 'L'of 1 by k matrices over ZZ, one for each 
---     	    	      	   	  ray of the fan
---  OUTPUT : The ToricVectorBundleKlyachko 'tvb' 
--- COMMENT : Note that the  matrices in 'L' will be assigned to the rays in the order they appear in rays tvb
-addFiltration = method(TypicalValue => ToricVectorBundleKlyachko)
-addFiltration (ToricVectorBundleKlyachko,List) := (tvb,L) -> (
-     -- Extracting data out of tvb
-     n := tvb#"number of rays";
-     k := tvb#"rank of the vector bundle";
-     R := rays tvb;
-     -- Checking for input errors
-     if n != #L then error("The number of matrices has to match the number of rays of the fan.");
-     if any(L, l -> not instance(l,Matrix)) then error("The filtrations have to be given as matrices.");
-     if any(L, l -> ring l =!= ZZ) then error("The filtrations have to be given as matrices over ZZ.");
-     if any(L, l -> numColumns l != k or numRows l != 1) then error("The filtrations have to be given as 1 times n matrices.");
-     -- Writing the new filtration matrices  into the table
-     filtrationMatricesTable := hashTable apply(n, i -> R#i => L#i);
-     -- Computing the list of changes in the filtrations
-     filtrationTable := hashTable apply(pairs filtrationMatricesTable, p -> (
-	       L := flatten entries p#1;
-	       L1 := sort unique L;
-	       p#0 => hashTable ({(min L1 - 1) => {}} |  apply(L1, l -> l => positions(L,e -> e == l)))));
-     -- Writing the new filtration maps and changes tables into the bundle
-     new ToricVectorBundleKlyachko from {
-	  "ring" => tvb#"ring",
-	  "rayTable" => tvb#"rayTable",
-	  "baseTable" => tvb#"baseTable",
-	  "filtrationMatricesTable" => filtrationMatricesTable,
-	  "filtrationTable" => filtrationTable,
-	  "ToricVariety" => tvb#"ToricVariety",
-	  "number of affine charts" => tvb#"number of affine charts",
-	  "dimension of the variety" => tvb#"dimension of the variety",
-	  "rank of the vector bundle" => tvb#"rank of the vector bundle",
-	  "number of rays" => tvb#"number of rays",
-	  symbol cache => new CacheTable})
-
-maxCones ToricVectorBundleKlyachko := T -> (
-      TV := T#"ToricVariety";
-      TR := rays TV;
-      TL := linealitySpace TV;
-      mC := maxCones TV;
-      sort apply(mC, c -> posHull(TR_c, TL))
-    -- sort maxCones T#"ToricVariety"
-   )
-
-
-
-
--*
-isWellDefined ToricVectorBundleNew :=  tvb -> (
- if not isLocallyWeil tvb then return false;
- if not tvb.cache.?isLS then   
-  toricChernCharacter tvb;
- tvb.cache.isLS
-)
-*-
-
-
-
-
--- PURPOSE : Checking if the data in T in fact defines a vectorbundle, i.e., satisfies the decomposition condition
---   INPUT : 'T',  a ToricVectorBundleKlyachko
---  OUTPUT : 'true' if 'T' is fact a bundle, 'false' otherwise
-isWellDefined ToricVectorBundleKlyachko := ( T -> (
-	       L := findWeights T;
-	       all(L, l -> l != {}) and existsDecomposition(T,L)))
-
-findWeightsNew = method()
-findWeightsNew ToricVectorBundleNew := E -> (
-    mC := apply(max variety E, C -> (rays E)_C);
-    n := dim variety E;
-    -- We work over the filtrations. This unpacks the data into a hashTable
-    -- p => (k, filteredPiece_k). We sort these in increasing order.
-    matTable := hashTable for j to #rays E-1 list (rays E)_j => (
-        apply(sort (filtrationJumps E)_j, k -> (k, filteredPiece(E,(rays E)_j,k)))
-        );
-    -- Two recursive functions for intersecting the filtrations of the rays.
-    -- I is the current subspace we are intersecting.
-    -- L is the list of filtered pieces we haven't visited yet.
-    -- R is the list of filtered pieces we skipped.
-    -- c is the column we are constructing.
-    -- The output will be a column of minimal indices such that the intersection
-    -- of the filtered pieces of those indices is nonzero.
-    recursiveColumnConstructor := (I,L,R,c) -> (
-        if L != {} then (
-            -- try intersecting with the current filtered piece and drop it.
-            l := L#0;
-            L = drop(L,1);
-            flatten for i in unique l list (
-                -- check the intersection of the subspaces
-                newInt := gens intersect(image I, image i#1);
-                if newInt != 0 then (
-                    -- if nonempty, move to the next ray.
-                    j := position(l, li -> li == i);
-                    -- add the index to the column, and add the list of filtered pieces
-                    -- that we skipped to R.
-                    recursiveColumnConstructor(newInt, L, R|{drop(l,{j,j})}, c|{i#0})
-                    )
-                else continue
-                )
-            )
-        else {(R,c)}
-        );
-    -- This function concatenates the columns that we construct, in a way
-    -- compatible with the recursion structure.
-    recursiveMatrixConstructor := (Ilist,L,M) -> (
-        Lnew := recursiveColumnConstructor(Ilist#0#1,L,{},{Ilist#0#0});
-        if #L#0 != 1 then (flatten apply(Lnew, (f,s) -> (
-                    recursiveMatrixConstructor(drop(Ilist,1),f,M|{s})
-                    )
-                )
-            )
-        else apply(Lnew, (f,s) -> M|{s})
-        );
-    for C in mC list (
-        L := apply(C, r -> matTable#r);
-        I := L#0;
-        -- Compute the possible combinations of filtration steps
-        Flist := recursiveMatrixConstructor(I, drop(L,1), {});
-        Flist = apply(Flist, m -> promote(transpose matrix m,QQ));
-        R := promote(transpose matrix C,QQ);
-        Rrank := rank R;
-        -- Check if this combination admits a weight vector matrix
-        -- In particular, we want to check if you can write the columns
-        -- of indices in terms of the ray generators of the maximal cone.
-        if Rrank != n then (
-            M := R^{0..Rrank-1};
-            for F in Flist list (
-                D := systemSolver(M,F^{0..Rrank-1});
-                if (try(lift(D,ZZ); true) else false) and R*D == F then lift(D,ZZ)
-                else continue))
-        else (
-            Rn := inverse R^{0..n-1};
-            for F in Flist list (
-                Dn := Rn * (F^{0..Rrank-1});
-                if (try(lift(Dn,ZZ); true) else false) and R*Dn == F then lift(Dn,ZZ)
-                else continue)
-            )
-        )
-    )
-
--- PURPOSE : Finding all possible sets of weight vectors for each maximal cone in the fan that admit the 
---           filtration steps on the rays
---   INPUT : 'T',  a ToricVectorBundleKlyachko
---  OUTPUT : a List,  where the i-th entry is the list of possible weight matrices for the i-th cone in maxCones T
-findWeights = method(TypicalValue => List)
-findWeights ToricVectorBundleKlyachko := (cacheValue symbol weights)( T -> (
-        -- Get the maximal cones and save their rays
-        mC := maxCones T;
-        mC = apply(mC, C -> (C = (rays C); apply(numColumns C, i -> C_{i})));
-        n := T#"dimension of the variety";
-        -- Sasha Notes:
-        -- For anyone trying to understand what this is doing... I struggled for a while!
-        --
-        -- Two recursive functions for intersecting filtrations. The idea is this:
-        -- For a maximal cone C, pick any ray and any filtered piece. Record the index of
-        -- this piece. Move to the next ray and intersect this piece with all of the filtered
-        -- pieces until it is nonzero, and record that index. Repeat for all rays in the cone.
-        -- If the cone is simplicial, we'll end up with a list of indices of length dim variety E.
-        -- At some indices, the intersection will be zero, so we'll skip that index. But on a later
-        -- recursion, we'll pick a larger subspace for the first ray, and the intersection will
-        -- catch the skipped index.
-        -- The reason why recursion is useful here is because we are navigating a tree of
-        -- intersections with a depth-first search.
-        -- E is the current subspace we are intersecting.
-        -- L is the list of filtered pieces we haven't visited yet.
-        -- R is the list of filtered pieces we skipped.
-        -- newColumn is the column we are constructing.
-        recursiveColumnsConstructer := (E,L,R,newColumn) -> (
-            if L != {} then (
-                l := L#0;
-                L = drop(L,1);
-                flatten for e in unique l list (
-                    -- Check if e admits an intersection of the filtrations
-                    if ker(E|e#1) != 0 then (
-                        -- if so call the function again for the next ray
-                        i := position(l, le -> le == e);
-                        recursiveColumnsConstructer(intersectMatrices(E,e#1),L,R|{drop(l,{i,i})},newColumn|{e#0})
-                        )
-                    else continue
-                    )
-                )
-            else {(R,newColumn)}
-            );
-        -- Recursive function that generates the columns (filtration combinations for a weight vector) by calling the columns constructor and then, if
-        -- this has created columns, call it self again with the list of remaining filtration steps
-        recursiveMatricesConstructer := (Elist,L,M) -> (
-            Lnew := recursiveColumnsConstructer(Elist#0#1,L,{},{Elist#0#0});
-            if #L#0 != 1 then (flatten apply(Lnew, (f,s) -> (
-                        recursiveMatricesConstructer(drop(Elist,1),f,M|{s})
-                        )
-                    )
-                )
-            else apply(Lnew, (f,s) -> M|{s})
-            );
-        fMT := T#"filtrationMatricesTable";
-        bT := T#"baseTable";
-        bundleRing := T#"ring";
-        allRaysTable := tableForAllRays T;
-        apply(mC, C -> (
-                -- For each maximal cone compute the possible weightvector matrices
-                L := apply(C, r -> allRaysTable#r);
-                E := L#0;
-                -- Compute the possible combinations of filtration steps
-                Flist := recursiveMatricesConstructer(E,drop(L,1),{});
-                Flist = apply(Flist, m -> promote(transpose matrix m,QQ));
-                R := promote(transpose matrix {C},QQ);
-                Rrank := rank R;
-                -- Check if this combination admits a weightvector matrix
-                if Rrank != n then (
-                    M := R^{0..Rrank-1};
-                    for F in Flist list (
-                        D := systemSolver(M,F^{0..Rrank-1});
-                        if (try(lift(D,ZZ); true) else false) and R*D == F then lift(D,ZZ)
-                        else continue))
-                else (
-                    Rn := inverse R^{0..n-1};
-                    for F in Flist list (
-                        Dn := Rn * (F^{0..Rrank-1});
-                        if (try(lift(Dn,ZZ); true) else false) and R*Dn == F then lift(Dn,ZZ)
-                        else continue)
-                    )
-                )
-            )
-        )
-    )
-
--- PURPOSE : Checking if a given List of possible degree vectors admits a Decomposition in torus eigenspaces that give the filtration
---   INPUT : '(T,L)',  where 'T' is a ToricVectorBundleKlyachko and 'L' is a List where the i-th entry is either a matrix or a List of 
---     	    	       matrices of possible degree vectors for the i-th cone in maxCones
---  OUTPUT : 'true' if a selection of degrees for each maximal cone admits a decomposition, 'false' otherwise
-existsDecomposition = method()
-existsDecomposition (ToricVectorBundleKlyachko,List) := (T,L) -> (
-     -- Checking if the list contains only matrices and lists and converting the former into a list with this matrix
-     L = apply(L, l -> if instance(l,List) then l else if instance(l,Matrix) then {l} else error("The elements of the list have to be either matrices or lists of them."));
-     if not T.cache.?degreesList then T.cache.degreesList = {};
-     mC := maxCones T;
-     mC = apply(mC, C -> (C = (rays C); apply(numColumns C, i -> C_{i})));
-     -- Checking for input errors
-     if #mC != #L then error("There has to be a degree matrix or list of degree matrices for each maximal cone of the fan.");
-     -- Check if any combination of matrices in L has already been checked and thus saved in the cache
-     if any(T.cache.degreesList, dl -> all(toList(0..#dl-1), i -> (set L#i)#?(dl#i))) then true 
-     -- otherwise for each maximal cone check the decomposition criterion
-     else (
-	  -- Add to each Cone the list of possible degrees
-     	  mC = apply(#mC, i -> (mC#i,L#i));
-     	  allRaysTable := tableForAllRays T;
-     	  n := T#"dimension of the variety";
-     	  k := rank T;
-     	  R := T#"ring";
-	  -- Recursive function that runs through all possible combinations of filtration steps for the rays of a cone
-     	  recursiveCheck := (fList,Es,D) -> (
-	       -- if there is still a list of filtration steps, call recursiveCheck again for each entry
-	       if fList != {} then (
-	       	    Lr := fList#0#1;
-	       	    r := fList#0#0;
-	       	    all(Lr, l -> recursiveCheck(drop(fList,1),intersectMatrices(Es,l#1),select(D, d -> (d * r)_(0,0) <= l#0))))
-	       -- otherwise we have a choice of filtration steps and check the condition
-	       else numColumns Es == #D);
-	  -- The check for the criterion begins with the complete bundle
-     	  E := map(R^k,R^k,1);
-	  -- For each cone check if there is one of the degree matrices that admits a decomposition
-     	  L = for C in mC list (
-	       fList := apply(C#0, r -> (r,allRaysTable#r));
-	       d := select(1,C#1, D -> (
-		    	 D = promote(D,QQ);
-		    	 D = apply(numColumns D, i -> transpose D_{i});
-		    	 recursiveCheck(fList,E,D)));
-	       -- If there is one that admits a decomposition return that, otherwise return the empty set for L
-	       if d == {} then break {} else d#0);
-	  -- If there is a combination then save it to the cache
-     	  if L != {} then (
-	       if not T.cache.?isVB then T.cache.isVB = true;
-	       T.cache.degreesList = T.cache.degreesList|{L});
-	  L != {}))
 ----------------------------------------------------------------------------
 -- OPERATIONS ON TORIC VECTOR BUNDLES
 ----------------------------------------------------------------------------
 
 ToricVectorBundle.directSum = args -> (
-     args = toList args;
-     T := args#0;
-     scan(drop(args,1), E -> T = T ++ E);
-     T)      
+    args = toList args;
+    T := args#0;
+    scan(drop(args,1), E -> T = T ++ E);
+    T)      
 ToricVectorBundle ++ ToricVectorBundle := (tvb1,tvb2) -> (
-    --NEW: for ToricVectorBundleNew
-    if instance(tvb1, ToricVectorBundleNew) and instance(tvb1, ToricVectorBundleNew) then(
-        --Errors check
-        if variety(tvb1) =!= variety(tvb2) then(error("Expected the bundles to be over the same toric variety.") );
-        X:=variety(tvb1 );
-        nrays := # rays (variety(tvb1 ));
-        L1:= filtrationMatrices( tvb1 ); 
-        L2:= filtrationMatrices (tvb2 );
-        Lnew:= apply(nrays, i -> L1_i++L2_i );
-        J1:= filtrationJumps( tvb1 ); 
-        J2:= filtrationJumps (tvb2 );
-        Jnew:= apply(nrays, i -> J1_i|J2_i );
-        toricVectorBundle(X, Lnew, Jnew)
-
+    --Errors check
+    if variety tvb1 =!= variety tvb2 then(error("expected the bundles to be over the same base toric variety") );
+    X := variety tvb1;
+    nrays := # rays variety tvb1;
+    L1:= filtrationMatrices tvb1; 
+    L2:= filtrationMatrices tvb2;
+    Lnew:= apply(nrays, i -> L1_i++L2_i);
+    J1:= filtrationJumps tvb1; 
+    J2:= filtrationJumps tvb2;
+    Jnew:= apply(nrays, i -> J1_i|J2_i);
+    toricVectorBundle(X, Lnew, Jnew)
     ) 
-    else if instance(tvb1,ToricVectorBundleKlyachko) and instance(tvb2,ToricVectorBundleKlyachko) then (
-	  -- Checking for input errors
-	  if tvb1#"ToricVariety" != tvb2#"ToricVariety" then error("Expected the bundles to be over the same toric variety.");
-	  -- Extracting data out of tvb1 and tvb2
-	  k1 := tvb1#"rank of the vector bundle";
-	  k2 := tvb2#"rank of the vector bundle";
-          -*
-	  if instance(tvb1,ToricVectorBundleKaneyama) and instance(tvb2,ToricVectorBundleKaneyama) then ( --MOVED
-	       -- Generating the trivial bundle of dimension k1+k2
-	       E := makeVBKaneyama(k1 + k2,tvb1#"ToricVariety");
-	       -- Computing the new degree table and transition matrices and writing the degrees and transition matrices into the bundle
-	       E = new ToricVectorBundleKaneyama from {
-	       	    "degreeTable" => merge(tvb1#"degreeTable",tvb2#"degreeTable", (a,b) -> a|b),
-	       	    "baseChangeTable" => merge(tvb1#"baseChangeTable",tvb2#"baseChangeTable", (a,b) -> a++b),
-	       	    "ToricVariety" => E#"ToricVariety",
-	       	    "number of affine charts" => E#"number of affine charts",
-	       	    "dimension of the variety" => E#"dimension of the variety",
-	       	    "rank of the vector bundle" => k1 + k2,
-	       	    "codim1Table" => E#"codim1Table",
-	       	    "topConeTable" => E#"topConeTable",
-	       	    symbol cache => new CacheTable};
-	       if (tvb1.cache.?regCheck and tvb2.cache.?regCheck and tvb1.cache.regCheck and tvb2.cache.regCheck and (
-		    	 tvb1.cache.?cocycle and tvb2.cache.?cocycle and tvb1.cache.cocycle and tvb2.cache.cocycle)) then (
-	       	    E.cache.regCheck = true;
-	       	    E.cache.cocycle = true);
-	       E)
-           *-
-	       k := k1 + k2;
-     	       F := tvb1#"ToricVariety";
-     	       R := tvb1#"ring";
-     	       tvb := makeVBKlyachko(k,F);
-     	       fT1 := tvb1#"filtrationMatricesTable";
-     	       fT2 := tvb2#"filtrationMatricesTable";
-     	       bT1 := tvb1#"baseTable";
-     	       bT2 := tvb2#"baseTable";
-     	       filtrationTable := apply(rays tvb, r -> fT1#r | fT2#r);
-     	       baseTable := apply(rays tvb, r -> bT1#r ++ bT2#r);
-     	       tvb = addFiltration(tvb,filtrationTable);
-     	       tvb = addBase(tvb,baseTable);
-     	       if tvb1.cache.?isVB and tvb2.cache.?isVB and tvb1.cache.isVB and tvb2.cache.isVB then tvb.cache.isVB = true;
-     	       tvb)
-      else error("The two bundles have to be in the same description.")
-      )
-
-
 
 -- PURPOSE : Computing the dual bundle to a given ToricVectorBundle
 --   INPUT : 'tvb',  a ToricVectorBundle
 --  OUTPUT : the dual ToricVectorBundle
-dual ToricVectorBundle := {} >> opts -> tvb -> (
-    if instance(tvb, ToricVectorBundleNew) then (
-        -- if a vector space has basis B, the dual has basis transpose inverse B
-        filtMats := apply(filtrationMatrices tvb, M -> transpose inverse M);
-        -- the jumps in the filtration get reverse and negated.
-        filtJumps := apply(filtrationJumps tvb, J -> -reverse J);
-        return toricVectorBundle(variety tvb, filtMats, filtJumps)
-        )
-    -*
-    if instance(tvb,ToricVectorBundleKaneyama) then ( -- MOVED
-        -- Inverting the degrees and the transition matrices
-        degreeTable := hashTable apply(pairs tvb#"degreeTable", p -> p#0 => -(p#1));
-        baseChangeTable := hashTable apply(pairs tvb#"baseChangeTable", p -> p#0 => transpose inverse p#1);
-        -- Writing the inverted tables into the bundle
-        E := new ToricVectorBundleKaneyama from {
-            "degreeTable" => degreeTable,
-            "baseChangeTable" => baseChangeTable,
-            "ToricVariety" => tvb#"ToricVariety",
-            "number of affine charts" => tvb#"number of affine charts",
-            "dimension of the variety" => tvb#"dimension of the variety",
-            "rank of the vector bundle" => tvb#"rank of the vector bundle",
-            "codim1Table" => tvb#"codim1Table",
-            "topConeTable" => tvb#"topConeTable",
-            symbol cache => new CacheTable};
-        if tvb.cache.?regCheck and tvb.cache.regCheck and tvb.cache.?cocycle and tvb.cache.cocycle then (
-            E.cache.regCheck = true;
-            E.cache.cocycle = true);
-        E)
-    *-
-    else (
-        -- Inverting the filtration. If the filtration has d steps then the new n-th boundary is -(d-n+1th boundary)-1 and the n-th step is the 
-        -- d-n+2 th step
-        fT := hashTable apply(pairs tvb#"filtrationTable", (r,e) -> r => (
-                newkeys := reverse drop(sort keys e, 1);
-                newvalues := {{}} | apply(newkeys, k -> e#k);
-                newkeys = {-first newkeys - 1} | -newkeys;
-                hashTable apply(#newkeys, i -> newkeys#i => newvalues#i)
-                )
-            );
-        fMT := hashTable apply(pairs fT, q -> q#0 => (q1new:= hashTable flatten apply(pairs q#1, p -> apply(p#1, i -> i => p#0)); matrix {apply(#q1new, j -> q1new#j)}));
-        -- The dual space is given by the transpose of the inverse matrix
-        bT := hashTable apply(pairs tvb#"baseTable", p -> p#0 => transpose inverse p#1);
-        T := new ToricVectorBundleKlyachko from {
-            "ring" => tvb#"ring",
-            "rayTable" => tvb#"rayTable",
-            "baseTable" => bT,
-            "filtrationMatricesTable" => fMT,
-            "filtrationTable" => fT,
-            "ToricVariety" => tvb#"ToricVariety",
-            "number of affine charts" => tvb#"number of affine charts",
-            "dimension of the variety" => tvb#"dimension of the variety",
-            "rank of the vector bundle" => tvb#"rank of the vector bundle",
-            "number of rays" => tvb#"number of rays",
-            symbol cache => new CacheTable};
-        if tvb.cache.?isVB and tvb.cache.isVB then T.cache.isVB = true;
-        T))
+dual ToricVectorBundle := {} >> opts -> tvb -> (    
+    -- if a vector space has basis B, the dual has basis transpose inverse B
+    filtMats := apply(filtrationMatrices tvb, M -> transpose inverse M);
+    -- the jumps in the filtration get reverse and negated.
+    filtJumps := apply(filtrationJumps tvb, J -> -reverse J);
+    return toricVectorBundle(variety tvb, filtMats, filtJumps)
+    )
 
 
 -- PURPOSE : Computing the 'l'-th exterior power of a ToricVectorBundle
 --   INPUT : '(TVB, l)',  where 'l' is a strictly positive integer and 'TVB'is a TorcVectorBundle
 --  OUTPUT : the 'l'-th exterior power of TVB
-exteriorPower (ToricVectorBundleNew, ZZ) := opts -> (TVB, l) -> (
-	if l < 0 then (
-		error("The power has to be non-negative.");
-	) else if l == 0 then (
-	        trivialBundle(variety TVB, 1)
-        ) else if l > rank TVB then (
-                trivialBundle(variety TVB, 0)
-	) else (
-		R := rays variety TVB;
-		fM := filtrationMatrices TVB;
-		fJ := filtrationJumps TVB;
-     	
-     	ind := subsets(rank TVB,l);
-    	indtable := hashTable apply(#ind, i -> ind#i => i);
-
-		newfM := apply(#R, t -> (
-			M := mutableMatrix(ring TVB,#ind,#ind);
-			for i in ind do (
-				for j in ind do (
-					M_(indtable#i,indtable#j) = det((fM_t)^i_j);
-				);
-			);
-			matrix M
-		));
-
-		newfJ := apply(#R, t -> (
-			apply(ind, j -> sum (fJ_t)_j)
-		));
-
-		toricVectorBundle(variety TVB, newfM, newfJ)
-	)
-)
-
+exteriorPower (ToricVectorBundle, ZZ) := opts -> (TVB, l) -> (
+    if l < 0 then (
+        error("expected nonnegative exponent");
+        )
+    else if l == 0 then (
+        trivialBundle(variety TVB, 1)
+        )
+    else if l > rank TVB then (
+        trivialBundle(variety TVB, 0)
+        )
+    else (
+        R := rays variety TVB;
+        fM := filtrationMatrices TVB;
+        fJ := filtrationJumps TVB;
+        ind := subsets(rank TVB,l);
+        indtable := hashTable apply(#ind, i -> ind#i => i);
+        newfM := apply(#R, t -> (
+                M := mutableMatrix(ring TVB,#ind,#ind);
+                for i in ind do (
+                    for j in ind do (
+                        M_(indtable#i,indtable#j) = det((fM_t)^i_j);
+                        );
+                    );
+                matrix M
+                )
+            );
+        newfJ := apply(#R, t -> (
+                apply(ind, j -> sum (fJ_t)_j)
+                )
+            );
+        toricVectorBundle(variety TVB, newfM, newfJ)
+        )
+    )
 
 -- PURPOSE : Constructs the symmetric power of a given bundle. 
 --   INPUT : '(TVB, l)', where "TVB" is a bundle and l is the rank, 
 --  OUTPUT : the lth symmetric power of TVB. 
-symmetricPower (ToricVectorBundleNew, ZZ) := (TVB, l) -> (
-	if l < 0 then (
-		error("The power has to be non-negative.");
-	) else if l == 0 then (
-		trivialBundle(variety TVB, 0)
-	) else (
-		R := rays variety TVB;
-		fM := filtrationMatrices TVB;
-		fJ := filtrationJumps TVB;
-     	
-		ind := sort apply(subsets(rank TVB + l - 1,l),s -> apply(#s, i -> s#i-i));
-     	allind := sort unique flatten apply(ind, permutations);
-     	indtable := hashTable apply(#ind, i -> ind#i => i);
+symmetricPower (ToricVectorBundle, ZZ) := (TVB, l) -> (
+    if l < 0 then (
+        error("expected nonnegative exponent");
+        )
+    else if l == 0 then (
+        trivialBundle(variety TVB, 0)
+        )
+    else (
+        R := rays variety TVB;
+        fM := filtrationMatrices TVB;
+        fJ := filtrationJumps TVB;
+        ind := sort apply(subsets(rank TVB + l - 1,l),s -> apply(#s, i -> s#i-i));
+        allind := sort unique flatten apply(ind, permutations);
+        indtable := hashTable apply(#ind, i -> ind#i => i);
+        newfM := apply(#R, t -> (
+                M := mutableMatrix(ring TVB,#ind,#ind);
+                for i in ind do (
+                    for j in allind do (
+                        M_(indtable#(sort j),indtable#i) = M_(indtable#(sort j),indtable#i) + product apply(#j, k -> ((fM_t)_i)_(j#k,k))
+                        );
+                    );
+                matrix M
+                )
+            );
+        newfJ := apply(#R, t -> (
+                apply(ind, j -> sum (fJ_t)_j)
+                )
+            );
+        toricVectorBundle(variety TVB, newfM, newfJ)
+        )
+    )
 
-		newfM := apply(#R, t -> (
-			M := mutableMatrix(ring TVB,#ind,#ind);
-			for i in ind do (
-				for j in allind do (
-					M_(indtable#(sort j),indtable#i) = M_(indtable#(sort j),indtable#i) + product apply(#j, k -> ((fM_t)_i)_(j#k,k))
-				);
-			);
-			matrix M
-		));
-
-		newfJ := apply(#R, t -> (
-			apply(ind, j -> sum (fJ_t)_j)
-		));
-
-		toricVectorBundle(variety TVB, newfM, newfJ)
-	)
-)
-
-
-
-
---TODO: Two extraction methods. should modify to match our new type.
-
--- PURPOSE : Returning the base representation of the bundle
---   INPUT : 'tvb',  a ToricVectorBundleKlyachko
---  OUTPUT : A HashTable which gives for each ray of the fan the matrix of the basis
---base = method(TypicalValue => HashTable)
-base ToricVectorBundleKlyachko := tvb -> tvb#"baseTable"
-
-
--- PURPOSE : Returning the filtration matrices of the bundle
---   INPUT : 'tvb',  a ToricVectorBundleKlyachko
---  OUTPUT : A HashTable which gives for each ray of the matrix of the filtration
-filtration = method(TypicalValue => HashTable)
-filtration ToricVectorBundleKlyachko := tvb -> tvb#"filtrationMatricesTable"
-
-
---TODO: A nice method, well-commented. we just need to modernize the extraction methods inside.
-
--- PURPOSE : Checking for the descriptions of two given vector bundles in Klyachko's description if they are isomorphic
---   INPUT : '(T1,T2)',  two ToricVectorBundleKlyachko
---  OUTPUT : 'true', if they are isomorphic, 'false' otherwise
--- COMMENT : If the check reveals that they are isomorphic, the isomorphism can be obtained with the function isomorphism
-
-ToricVectorBundleNew == ToricVectorBundleNew := (T1,T2) -> (areIsomorphic(T1,T2))
-
-
-areIsomorphic = method(TypicalValue => Boolean)
-
--- The next two are auxiliary functions for areIsomorphic
-
+-- Helper function for areIsomorphic
 linearMapFromMatrices = (A1, A2) -> (
     auxMat := A ->(
         basisIndices := {0};
@@ -1221,9 +365,7 @@ linearMapFromMatrices = (A1, A2) -> (
             candidateIndices = append(basisIndices, i);
             candidate = A_basisIndices; -- columns selected so far
             candidate = candidate | matrix A_i;
-
             newRank = rank candidate;
-
             if newRank > currentRank then (
                 basisIndices = candidateIndices;
                 currentRank = newRank;
@@ -1233,7 +375,6 @@ linearMapFromMatrices = (A1, A2) -> (
     );
     M1 := auxMat(A1);
     M2 := auxMat(A2);
-
     -- Define the unique linear map on the basis
     B := M1 * inverse M2;
     -- Check all prescribed images
@@ -1241,21 +382,9 @@ linearMapFromMatrices = (A1, A2) -> (
     return B;
     )
 
-
-auxAreIsomorphic = (T1,T2, jumps) ->(
-    -- When doing the fold the zero columns are authomatically removed
-    n:= rank T1;
-    aux1:= flatten apply( jumps, j -> apply(rays T1, rho -> filteredPiece(T1, rho, j) ) );
-    aux1 = flatten apply(toList(1..n), i -> select(aux1, M -> numcols M == i ) );
-    aux2 := flatten apply( jumps, j -> apply(rays T2, rho ->filteredPiece(T2, rho, j) ) );
-    aux2 = flatten apply(toList(1..n), i -> select(aux2, M -> numcols M == i ) );
-    
-    M1:= fold((i,j)->i|j,aux1 );
-    M2 := fold((i,j)->i|j, aux2); 
-    return linearMapFromMatrices(M1,M2);
-)
-
-areIsomorphic (ToricVectorBundleNew,ToricVectorBundleNew) := Boolean => (T1,T2) -> (
+ToricVectorBundle == ToricVectorBundle := (T1,T2) -> (areIsomorphic(T1,T2))
+areIsomorphic = method()
+areIsomorphic (ToricVectorBundle,ToricVectorBundle) := Boolean => (T1,T2) -> (
     --First check that the bundles have same rank, defined over same ring and have same base variety before
     --anything else
     jumps := rsort unique flatten filtrationJumps T1;
@@ -1269,51 +398,43 @@ areIsomorphic (ToricVectorBundleNew,ToricVectorBundleNew) := Boolean => (T1,T2) 
         );
     --If T1 does have an entry for iso in the cache, we check if any of the maps targets is T2
     --i.e. check if we've already deemed T1 iso T2
-    if T1.cache.iso#?T2 then return true;
-    
+    if T1.cache.iso#?T2 then return true;    
     if not T1.cache.iso#?T2 then (
-        -- The strategy is first trying if the identity map is the map,
-        -- then trying the naive base change and if it fails apply the 
-        -- algorithm to find the map 
-        r := rank T1;
-        -- 1st check: identity matrix:
-        isoMatrix := id_((ring T1)^(r));
-        isoMapT1T2 := map(T2,T1,isoMatrix);
-        --checking if this map is injective and surjective. if it is, this will tell us that
-        --these bundles are equivariantly isomorphic
-        areTVBsIso := ((isWellDefined isoMapT1T2) and (isInjective isoMapT1T2) and (isSurjective isoMapT1T2));
-        
-        if not areTVBsIso then(
-        -- 2nd check: naive base change
-        A := submatrix'(sort  ( (filtrationMatrices( T1))_0 ||matrix( ring T1, {(filtrationJumps (T1))_0} )),{r}, );
-        B := submatrix'(sort (  ( filtrationMatrices T2)_0||matrix(ring T2, { (filtrationJumps T2)_0})),{r}, );
-        isoMatrix = B * (A^-1);
-        isoMapT1T2 = map(T2,T1,isoMatrix);
-        areTVBsIso = ((isWellDefined isoMapT1T2) and (isInjective isoMapT1T2) and (isSurjective isoMapT1T2));
-            if not areTVBsIso then(
-            -- 3rd check: find the base change
-            isoMatrix = auxAreIsomorphic(T2,T1, jumps);
-            if isoMatrix === {} then(return false);
-            isoMapT1T2 = map(T2,T1,isoMatrix);
-            
-            areTVBsIso = ((isWellDefined isoMapT1T2) and (isInjective isoMapT1T2) and (isSurjective isoMapT1T2));
-
-            );   
-        );    
-
-        if areTVBsIso then (
-            T1.cache.iso#T2 = isoMapT1T2;
-            isoMapT2T1 := map(T1,T2, isoMatrix^-1);
-            T2.cache.iso#T1 = isoMapT2T1;
+        -- first try the identity map
+        f := map(T2,T1, matrix id_((ring T1)^(rank T1)));
+        areTVBsIso := ((isWellDefined f) and (isInjective f) and (isSurjective f));
+        if not areTVBsIso then (
+            -- attempt to find an isomorphism
+            n:= rank T1;
+            aux1 := flatten apply( jumps, j -> apply(rays T1, rho -> filteredPiece(T1, rho, j) ) );
+            aux1 =  flatten apply(toList(1..n), i -> select(aux1, M -> numcols M == i ) );
+            aux2 := flatten apply( jumps, j -> apply(rays T2, rho ->filteredPiece(T2, rho, j) ) );
+            aux2 =  flatten apply(toList(1..n), i -> select(aux2, M -> numcols M == i ) );
+            -- When doing the fold the zero columns are automatically removed    
+            M1 := fold((i,j) -> i|j, aux1);
+            M2 := fold((i,j) -> i|j, aux2);
+            isoMatrix := linearMapFromMatrices(M1,M2);
+            if isoMatrix === {} then return false;
+            f = map(T2,T1,isoMatrix^-1);
+            areTVBsIso = ((isWellDefined f) and (isInjective f) and (isSurjective f));
             );
-         );
-     areTVBsIso
+        if areTVBsIso then (
+            T1.cache.iso#T2 = f;
+            finv := map(T1,T2,(map f)^-1);
+            T2.cache.iso#T1 = finv;
+            );
+        areTVBsIso
+        )
     )
 
+isomorphism (ToricVectorBundle,ToricVectorBundle) := Boolean => o -> (T1,T2) -> (
+    if not areIsomorphic(T1,T2) then error("The bundles are not isomorphic");
+    T1.cache.iso#T2
+    )
 
 -- Not sure what to do about caching this method, but we should include it. 
 isTwistOf = method()
-isTwistOf (ToricVectorBundleNew, ToricVectorBundleNew) := (E1, E2) -> (
+isTwistOf (ToricVectorBundle, ToricVectorBundle) := (E1, E2) -> (
     if (variety E1) =!= (variety E2) then return false;
     X := variety E1;
     -- For each ray, take the smallest filtered piece of E1 and place it in the position of the
@@ -1323,514 +444,198 @@ isTwistOf (ToricVectorBundleNew, ToricVectorBundleNew) := (E1, E2) -> (
     areIsomorphic(E1 ** lineBundle D, E2)
     )
 
-areIsomorphic (ToricVectorBundleKlyachko,ToricVectorBundleKlyachko) := (T1,T2) -> (
-     -- Creating the entries in the cacheTables of the two bundles if they are not yet present
-     if not T1.cache.?isomorphic then (
-	  T1.cache.isomorphic = new MutableHashTable;
-	  if not T1.cache.?isoMatrix then T1.cache.isoMatrix = new MutableHashTable);
-     if not T2.cache.?isomorphic then (
-	  T2.cache.isomorphic = new MutableHashTable;
-	  if not T2.cache.?isoMatrix then T2.cache.isoMatrix = new MutableHashTable);
-     -- If this pairing has not been checked before, check it now
-     if not T1.cache.isomorphic#?T2 then (
-	  local isoMatrix;
-	  T1.cache.isomorphic#T2 = (
-	       -- To be isomorphic, the bundles must be over the same TV, over the same ring and must have the same rank
-	       T1#"ToricVariety" == T2#"ToricVariety" and T1#"ring" === T2#"ring" and T1#"rank of the vector bundle" == T2#"rank of the vector bundle" and (
-		    -- If this is the case, extract the filtrations
-		    fMT1 := T1#"filtrationMatricesTable";
-		    fMT2 := T2#"filtrationMatricesTable";
-		    bT1 := T1#"baseTable";
-		    bT2 := T2#"baseTable";
-		    bundleRing := T1#"ring";
-		    R := rays T1;
-		    r0 := R#0;
-		    R = drop(R,1);
-		    -- Check for the first ray, if they have the same filtration numbers and dimensions of the filtration steps
-		    sort fMT1#r0 == sort fMT2#r0 and (
-			 -- if this is the case, re-sort both base matrices according to the filtration and compute the possible isomorphism
-			 A := submatrix'(sort(promote(fMT1#r0,bundleRing) || bT1#r0),{0},);
-			 B := submatrix'(sort(promote(fMT2#r0,bundleRing) || bT2#r0),{0},);
-			 isoMatrix = B*(A^-1);
-			 -- check for the remaining rays if the filtrations are identical
-			 all(R, r -> (
-				   f1 := flatten entries fMT1#r;
-				   f2 := flatten entries fMT2#r;
-				   sort f1 == sort f2 and all(unique f1, e -> (
-					     E1 := (bT1#r)_(positions(f1, i -> i <= e));
-					     E2 := (bT2#r)_(positions(f2, i -> i <= e));
-					     image(isoMatrix*E1) == image E2)))))));
-	  -- If they are isomorphic then write the isomorphism into the cache of both bundles
-	  if T1.cache.isomorphic#T2 then (
-	       T1.cache.isoMatrix#T2 = isoMatrix;
-	       T2.cache.isomorphic#T1 = true;
-	       T2.cache.isoMatrix#T1 = isoMatrix^-1));
-     T1.cache.isomorphic#T2)
-
-
--- PURPOSE : Obtaining the isomorphism if two vector bundles are isomorphic
---   INPUT : '(T1,T2)',  two ToricVectorBundleKlyachko
---  OUTPUT : The isomorphism, if they are isomorphic, otherwise an error
---isomorphism = method(TypicalValue => Matrix)
-
-isomorphism (ToricVectorBundleNew,ToricVectorBundleNew) := Boolean => o -> (T1,T2) -> (
-    if not areIsomorphic(T1,T2) then error("The bundles are not isomorphic");
-    T1.cache.iso#T2
-    )
-isomorphism (ToricVectorBundleKlyachko,ToricVectorBundleKlyachko) := o -> (T1,T2) -> (
-     if not areIsomorphic(T1,T2) then error("The bundles are not isomorphic");
-     T1.cache.isoMatrix#T2)				
-
 -------------------------------------------------------------------------------------
 -- COHOMOLOGICAL COMPUTATIONS
 -------------------------------------------------------------------------------------
 
-
 -- PURPOSE : Computing the Cech complex of a vector bundle
 cechComplex = method()
-
---   INPUT : '(k,T,u)', where 'k' is an integer between -1 and the dimension of the bundle +1, 'T' a ToricVectorBundleKlyachko, and 'u' a
---     	    	        one column matrix giving a degree vector
---  OUTPUT : '(Fk,Fkcolumns,FktoFk+1)', where 'Fk' is a hashTable with the summands of the 'k'th chain, 'Fkcolumns' is a hashTable with the
---     	    	      	   	        dimensions of these summands, and 'FktoFk+1' is a hashTable with the components of the 'k'th 
---     	    	      	   	        boundary operator
-cechComplex (ZZ,ToricVectorBundleKlyachko,Matrix) := (k,T,u) -> (
-     -- Checking for input errors
-     if numRows u != T#"dimension of the variety" or numColumns u != 1 then error("Expected a matrix with 1 column and ", toString T#"dimension of the variety", " rows.");
-     if ring u =!= ZZ then error("The degree has to be an integer vector.");
-     if k < -1 or T#"dimension of the variety"+1 < k then error("k has to be between 0 and the variety dimension for the k-th cohomology");
-     -- For a given space F1 at chain k in the filtration together with the degree vector 'u' and the information of the bundle this auxiliary 
-     -- function computes the boundary operator to the next chain (k+1) which is F1toF2, the dimensions of the summands of 'F1' in 'F1columns' 
-     -- and the next chain 'F2'
-     makeNewDiffAndTarget := (F1,u,fMT,rT,bT,tvbR,tvbrank,k,n) -> (
-	  F2 := {};
-	  F1toF2 := {};
-	  counter := 0;
-	  F1columns := {};
-	  -- if k==n then the next chain is 0 as well as the boundary operator
-	  if k == n then (
-	       F2 = {(0,{},map(tvbR^tvbrank,tvbR^0,0))};
-	       F1toF2 = {};
-	       F1columns = {0 => tvbrank})
-	  -- k==n-1 then the next chain is "complete bundle" and the boundary operator is the map of all summands of Fn-2
-	  else if k == n-1 then (
-	       F2 = {(0,{},map(tvbR^tvbrank,tvbR^tvbrank,1))};
-	       F1toF2 = apply(pairs F1, (j,dat) -> (
-			 F1columns = append(F1columns,j => numColumns(dat#1));
-			 (j,0,dat#1))))
-	  else (
-	       -- for each cone in F1 compute the cones of one dimension less and their bundle
-	       scan(pairs(F1), (num,dat) -> (
-			 R := dat#0;
-			 Er := dat#1;
-			 -- go through the rays of the cone and remove each of them at a time
-			 scan(#R, i -> (
-				   Ri := drop(R,{i,i});
-				   pos := position(F2, f -> f#1 === Ri);
-				   -- Check if the resulting cone already exists in the new chain F2, if so just add Er to the boundary operator
-				   if pos =!= null then F1toF2 = append(F1toF2,(num,pos,((-1)^i)*Er)) else (
-					-- if not compute E for new cone and append it to F2
-					Esum := apply(Ri, r -> (rT#r,((transpose u)*r)_(0,0),r));
-					Esum = apply(Esum, e -> (e#0,positions(flatten entries(fMT#(e#2)), j -> (j <= e#1)),e#2));
-					if any(Esum, e -> e#1 == {}) then F2 = append(F2,(counter,Ri,map(tvbR^tvbrank,tvbR^0,0))) else (
-					     E := map(tvbR^tvbrank,tvbR^tvbrank,1);
-					     Esum = select(Esum, e -> sort(e#1) != toList(0..tvbrank-1));
-					     Esum = apply(Esum, e -> (bT#(e#2))_(e#1));
-					     scan(Esum, A -> E = intersectMatrices(E,A));
-					     F2 = append(F2,(counter,Ri,E)));
-					F1toF2 = append(F1toF2,(num,counter,((-1)^i)*Er));
-					counter = counter + 1)));
-			 -- Save the dimension of Er into F1columns
-			 F1columns = append(F1columns,num => numColumns Er))));
-	  (hashTable apply(F1toF2, f -> (f#0,f#1) => f#2),hashTable F1columns,hashTable apply(F2, f -> f#0 => (f#1,f#2))));
-     if not T.cache.?cech then T.cache.cech = new MutableHashTable;
-     fMT := T#"filtrationMatricesTable";
-     tvbR := T#"ring";
-     tvbrank := T#"rank of the vector bundle";
-     n := T#"dimension of the variety";
-     -- if k==n+1 the chain is 0 and there is no map
-     if k == n+1 then (hashTable {0 => ({},map(tvbR^tvbrank,tvbR^0,0))},hashTable {},hashTable {}) else (
-	  rT := T#"rayTable";
-	  bT := T#"baseTable";
-	  if not T.cache.cech#?(k,u) then (
-	       -- rT will be used to sort the rays
-	       
-	       -- if the previous chain has not been computed we have to compute the cones of the right dimension (n-k)
-	       if not T.cache.cech#?(k-1,u) or k == 0 then (
-		    -- if k==n then the chain is the "complete bundle" and the next chain is 0
-		    if k == n then (
-			 T.cache.cech#(k,u) = (hashTable {0 => ({},map(tvbR^tvbrank,tvbR^tvbrank,1))},hashTable {0 => tvbrank},hashTable {});
-			 T.cache.cech#(k+1,u) = hashTable {0 => ({},map(tvbR^tvbrank,tvbR^0,0))})
-		    -- if k==-1 the chain is 0
-		    else if k == -1 then T.cache.cech#(k,u) = (hashTable { 0 => ({},map(tvbR^tvbrank,tvbR^0,0))},hashTable {0 => 0},hashTable {})
-		    else (
-			 F1 := faces(k,T#"ToricVariety");
-          Frays := rays T#"ToricVariety";
-          Flineality := linealitySpace T#"ToricVariety";
-          F1 = apply(F1, f-> posHull(Frays_f, Flineality));
-			 -- for each n-k cone in the fan compute Er, the bundle over this cone for the degree u
-			 F1 = hashTable apply(#F1, Cnum -> (
-				   C := F1#Cnum;
-				   R := (rays C);
-				   R = apply(numColumns R, i -> (R_{i}));
-				   R = sort apply(R, r -> (rT#r,r));
-				   Esum := apply(R, r -> (r#0,((transpose u)*(r#1))_(0,0),r#1));
-				   R = apply(R, r -> (r#1));
-				   Esum = apply(Esum, e -> (e#0,positions(flatten entries fMT#(e#2), j -> (j <= e#1)),e#2));
-				   if any(Esum, e -> e#1 == {}) then Cnum => (R,map(tvbR^tvbrank,tvbR^0,0)) else (
-					E := map(tvbR^tvbrank,tvbR^tvbrank,1);
-					Esum = select(Esum, e -> sort(e#1) != toList(0..tvbrank-1));
-					Esum = apply(Esum, e -> (bT#(e#2))_(e#1));
-					scan(Esum, A -> E = intersectMatrices(E,A));
-					Cnum => (R,E))));
-			 -- Compute the boundary operator with the auxiliary function
-			 (F1toF2,F1columns,F2) := makeNewDiffAndTarget(F1,u,fMT,rT,bT,tvbR,tvbrank,k,n);
-			 T.cache.cech#(k,u) = (F1,F1columns,F1toF2);
-			 -- Save the next chain to the cache
-			 if not T.cache.cech#?(k+1,u) then T.cache.cech#(k+1,u) = F2))
-	       else (
-		    -- if the previous chain exists use this to compute the chain in question
-		    F10 := T.cache.cech#(k-1,u);
-		    (F10toF11,F10columns,F11) := makeNewDiffAndTarget(F10,u,fMT,rT,bT,tvbR,tvbrank,k-1,n);
-		    (F11toF12,F11columns,F12) := makeNewDiffAndTarget(F11,u,fMT,rT,bT,tvbR,tvbrank,k,n);
-		    T.cache.cech#(k-1,u) = (F10,F10columns,F10toF11);
-		    T.cache.cech#(k,u) = (F11,F11columns,F11toF12);
-		    -- save the next chain to the cache as well
-		    if not T.cache.cech#?(k+1,u) then T.cache.cech#(k+1,u) = F12))
-	  -- if the cache only consists of the chain but not of the boundary operator compute this
-	  else if not instance(T.cache.cech#(k,u),Sequence) then (
-	       F21 := T.cache.cech#(k,u);
-	       (F21toF22,F21columns,F22) := makeNewDiffAndTarget(F21,u,fMT,rT,bT,tvbR,tvbrank,k,n);
-	       T.cache.cech#(k,u) = (F21,F21columns,F21toF22);
-	       if not T.cache.cech#?(k+1,u) then T.cache.cech#(k+1,u) = F22);
-	  T.cache.cech#(k,u)))
-
-
-
-cechComplex (ZZ,ToricVectorBundleNew,Matrix) := (k,T,u) -> (
-     -- Checking for input errors
-     dimvar := dim variety T;
-     if numRows u != dimvar or numColumns u != 1 then error("Expected a matrix with 1 column and ", toString dimvar, " rows.");
-     if ring u =!= ZZ then error("The degree has to be an integer vector.");
-     if k < -1 or dimvar+1 < k then error("k has to be between 0 and the variety dimension for the k-th cohomology");
-     -- For a given space F1 at chain k in the filtration together with the degree vector 'u' and the information of the bundle this auxiliary 
-     -- function computes the boundary operator to the next chain (k+1) which is F1toF2, the dimensions of the summands of 'F1' in 'F1columns' 
-     -- and the next chain 'F2'
-     makeNewDiffAndTarget := (F1,u,fMT,rT,bT,tvbR,tvbrank,k,n) -> (
-	  F2 := {};
-	  F1toF2 := {};
-	  counter := 0;
-	  F1columns := {};
-	  -- if k==n then the next chain is 0 as well as the boundary operator
-	  if k == n then (
-	       F2 = {(0,{},map(tvbR^tvbrank,tvbR^0,0))};
-	       F1toF2 = {};
-	       F1columns = {0 => tvbrank})
-	  -- k==n-1 then the next chain is "complete bundle" and the boundary operator is the map of all summands of Fn-2
-	  else if k == n-1 then (
-	       F2 = {(0,{},map(tvbR^tvbrank,tvbR^tvbrank,1))};
-	       F1toF2 = apply(pairs F1, (j,dat) -> (
-			 F1columns = append(F1columns,j => numColumns(dat#1));
-			 (j,0,dat#1))))
-	  else (
-	       -- for each cone in F1 compute the cones of one dimension less and their bundle
-	       scan(pairs(F1), (num,dat) -> (
-			 R := dat#0;
-			 Er := dat#1;
-			 -- go through the rays of the cone and remove each of them at a time
-			 scan(#R, i -> (
-				   Ri := drop(R,{i,i});
-				   pos := position(F2, f -> f#1 === Ri);
-				   -- Check if the resulting cone already exists in the new chain F2, if so just add Er to the boundary operator
-				   if pos =!= null then F1toF2 = append(F1toF2,(num,pos,((-1)^i)*Er)) else (
-					-- if not compute E for new cone and append it to F2
-					Esum := apply(Ri, r -> (rT#r,((transpose u)*r)_(0,0),r));
-					Esum = apply(Esum, e -> (e#0,positions(flatten entries(fMT#(e#2)), j -> (j <= e#1)),e#2));
-					if any(Esum, e -> e#1 == {}) then F2 = append(F2,(counter,Ri,map(tvbR^tvbrank,tvbR^0,0))) else (
-					     E := map(tvbR^tvbrank,tvbR^tvbrank,1);
-					     Esum = select(Esum, e -> sort(e#1) != toList(0..tvbrank-1));
-					     Esum = apply(Esum, e -> (bT#(e#2))_(e#1));
-					     scan(Esum, A -> E = intersectMatrices(E,A));
-					     F2 = append(F2,(counter,Ri,E)));
-					F1toF2 = append(F1toF2,(num,counter,((-1)^i)*Er));
-					counter = counter + 1)));
-			 -- Save the dimension of Er into F1columns
-			 F1columns = append(F1columns,num => numColumns Er))));
-	  (hashTable apply(F1toF2, f -> (f#0,f#1) => f#2),hashTable F1columns,hashTable apply(F2, f -> f#0 => (f#1,f#2))));
-     if not T.cache.?cech then T.cache.cech = new MutableHashTable;
-     raysT := rays T;
-     fMT := hashTable apply(raysT, rho -> transpose matrix {rho} => matrix {-1*filtrationJumps( T , rho)} );
-     tvbR := ring T;
-     tvbrank := rank T;
-     n := dimvar;
-     -- if k==n+1 the chain is 0 and there is no map
-     if k == n+1 then (hashTable {0 => ({},map(tvbR^tvbrank,tvbR^0,0))},hashTable {},hashTable {}) else (
-	  rT :=  hashTable apply(#raysT, i -> transpose matrix {raysT_i} => i );
-	  bT :=  hashTable apply(raysT, rho -> transpose matrix {rho} => filtrationMatrices( T , rho) );
-	  if not T.cache.cech#?(k,u) then (
-	       -- rT will be used to sort the rays
-	       
-	       -- if the previous chain has not been computed we have to compute the cones of the right dimension (n-k)
-	       if not T.cache.cech#?(k-1,u) or k == 0 then (
-		    -- if k==n then the chain is the "complete bundle" and the next chain is 0
-		    if k == n then (
-			 T.cache.cech#(k,u) = (hashTable {0 => ({},map(tvbR^tvbrank,tvbR^tvbrank,1))},hashTable {0 => tvbrank},hashTable {});
-			 T.cache.cech#(k+1,u) = hashTable {0 => ({},map(tvbR^tvbrank,tvbR^0,0))})
-		    -- if k==-1 the chain is 0
-		    else if k == -1 then T.cache.cech#(k,u) = (hashTable { 0 => ({},map(tvbR^tvbrank,tvbR^0,0))},hashTable {0 => 0},hashTable {})
-		    else (
-			 F1 := faces(k,fan T);
-          Frays := rays fan T;
-          Flineality := linealitySpace fan T;
-          F1 = apply(F1, f-> posHull(Frays_f, Flineality));
-			 -- for each n-k cone in the fan compute Er, the bundle over this cone for the degree u
-			 F1 = hashTable apply(#F1, Cnum -> (
-				   C := F1#Cnum;
-				   R := (rays C);
-				   R = apply(numColumns R, i -> (R_{i}));
-				   R = sort apply(R, r -> (rT#r,r));
-				   Esum := apply(R, r -> (r#0,((transpose u)*(r#1))_(0,0),r#1));
-				   R = apply(R, r -> (r#1));
-				   Esum = apply(Esum, e -> (e#0,positions(flatten entries fMT#(e#2), j -> (j <= e#1)),e#2));
-				   if any(Esum, e -> e#1 == {}) then Cnum => (R,map(tvbR^tvbrank,tvbR^0,0)) else (
-					E := map(tvbR^tvbrank,tvbR^tvbrank,1);
-					Esum = select(Esum, e -> sort(e#1) != toList(0..tvbrank-1));
-					Esum = apply(Esum, e -> (bT#(e#2))_(e#1));
-					scan(Esum, A -> E = intersectMatrices(E,A));
-					Cnum => (R,E))));
-			 -- Compute the boundary operator with the auxiliary function
-			 (F1toF2,F1columns,F2) := makeNewDiffAndTarget(F1,u,fMT,rT,bT,tvbR,tvbrank,k,n);
-			 T.cache.cech#(k,u) = (F1,F1columns,F1toF2);
-			 -- Save the next chain to the cache
-			 if not T.cache.cech#?(k+1,u) then T.cache.cech#(k+1,u) = F2))
-	       else (
-		    -- if the previous chain exists use this to compute the chain in question
-		    F10 := T.cache.cech#(k-1,u);
-		    (F10toF11,F10columns,F11) := makeNewDiffAndTarget(F10,u,fMT,rT,bT,tvbR,tvbrank,k-1,n);
-		    (F11toF12,F11columns,F12) := makeNewDiffAndTarget(F11,u,fMT,rT,bT,tvbR,tvbrank,k,n);
-		    T.cache.cech#(k-1,u) = (F10,F10columns,F10toF11);
-		    T.cache.cech#(k,u) = (F11,F11columns,F11toF12);
-		    -- save the next chain to the cache as well
-		    if not T.cache.cech#?(k+1,u) then T.cache.cech#(k+1,u) = F12))
-	  -- if the cache only consists of the chain but not of the boundary operator compute this
-	  else if not instance(T.cache.cech#(k,u),Sequence) then (
-	       F21 := T.cache.cech#(k,u);
-	       (F21toF22,F21columns,F22) := makeNewDiffAndTarget(F21,u,fMT,rT,bT,tvbR,tvbrank,k,n);
-	       T.cache.cech#(k,u) = (F21,F21columns,F21toF22);
-	       if not T.cache.cech#?(k+1,u) then T.cache.cech#(k+1,u) = F22);
-	  T.cache.cech#(k,u)))
-
-
-
-
+cechComplex (ZZ,ToricVectorBundle,Matrix) := (k,T,u) -> (
+    -- Checking for input errors
+    dimvar := dim variety T;
+    if numRows u != dimvar or numColumns u != 1 then error("Expected a matrix with 1 column and ", toString dimvar, " rows.");
+    if ring u =!= ZZ then error("The degree has to be an integer vector.");
+    if k < -1 or dimvar+1 < k then error("k has to be between 0 and the variety dimension for the k-th cohomology");
+    -- For a given space F1 at chain k in the filtration together with the degree vector 'u' and the information of the bundle this auxiliary 
+    -- function computes the boundary operator to the next chain (k+1) which is F1toF2, the dimensions of the summands of 'F1' in 'F1columns' 
+    -- and the next chain 'F2'
+    makeNewDiffAndTarget := (F1,u,fMT,rT,bT,tvbR,tvbrank,k,n) -> (
+        F2 := {};
+        F1toF2 := {};
+        counter := 0;
+        F1columns := {};
+        -- if k==n then the next chain is 0 as well as the boundary operator
+        if k == n then (
+            F2 = {(0,{},map(tvbR^tvbrank,tvbR^0,0))};
+            F1toF2 = {};
+            F1columns = {0 => tvbrank})
+        -- k==n-1 then the next chain is "complete bundle" and the boundary operator is the map of all summands of Fn-2
+        else if k == n-1 then (
+            F2 = {(0,{},map(tvbR^tvbrank,tvbR^tvbrank,1))};
+            F1toF2 = apply(pairs F1, (j,dat) -> (
+                    F1columns = append(F1columns,j => numColumns(dat#1));
+                    (j,0,dat#1))))
+        else (
+            -- for each cone in F1 compute the cones of one dimension less and their bundle
+            scan(pairs(F1), (num,dat) -> (
+                    R := dat#0;
+                    Er := dat#1;
+                    -- go through the rays of the cone and remove each of them at a time
+                    scan(#R, i -> (
+                            Ri := drop(R,{i,i});
+                            pos := position(F2, f -> f#1 === Ri);
+                            -- Check if the resulting cone already exists in the new chain F2, if so just add Er to the boundary operator
+                            if pos =!= null then F1toF2 = append(F1toF2,(num,pos,((-1)^i)*Er)) else (
+                                -- if not compute E for new cone and append it to F2
+                                Esum := apply(Ri, r -> (rT#r,((transpose u)*r)_(0,0),r));
+                                Esum = apply(Esum, e -> (e#0,positions(flatten entries(fMT#(e#2)), j -> (j <= e#1)),e#2));
+                                if any(Esum, e -> e#1 == {}) then F2 = append(F2,(counter,Ri,map(tvbR^tvbrank,tvbR^0,0))) else (
+                                    E := map(tvbR^tvbrank,tvbR^tvbrank,1);
+                                    Esum = select(Esum, e -> sort(e#1) != toList(0..tvbrank-1));
+                                    Esum = apply(Esum, e -> (bT#(e#2))_(e#1));
+                                    scan(Esum, A -> E = intersectMatrices(E,A));
+                                    F2 = append(F2,(counter,Ri,E)));
+                                F1toF2 = append(F1toF2,(num,counter,((-1)^i)*Er));
+                                counter = counter + 1)));
+                    -- Save the dimension of Er into F1columns
+                    F1columns = append(F1columns,num => numColumns Er))));
+        (hashTable apply(F1toF2, f -> (f#0,f#1) => f#2),hashTable F1columns,hashTable apply(F2, f -> f#0 => (f#1,f#2))));
+    if not T.cache.?cech then T.cache.cech = new MutableHashTable;
+    raysT := rays T;
+    fMT := hashTable apply(raysT, rho -> transpose matrix {rho} => matrix {-(details T)#rho_1} );
+    tvbR := ring T;
+    tvbrank := rank T;
+    n := dimvar;
+    -- if k==n+1 the chain is 0 and there is no map
+    if k == n+1 then (hashTable {0 => ({},map(tvbR^tvbrank,tvbR^0,0))},hashTable {},hashTable {}) else (
+        rT :=  hashTable apply(#raysT, i -> transpose matrix {raysT_i} => i );
+        bT :=  hashTable apply(raysT, rho -> transpose matrix {rho} => (details T)#rho_0 );
+        if not T.cache.cech#?(k,u) then (
+            -- rT will be used to sort the rays
+    
+            -- if the previous chain has not been computed we have to compute the cones of the right dimension (n-k)
+            if not T.cache.cech#?(k-1,u) or k == 0 then (
+                -- if k==n then the chain is the "complete bundle" and the next chain is 0
+                if k == n then (
+                    T.cache.cech#(k,u) = (hashTable {0 => ({},map(tvbR^tvbrank,tvbR^tvbrank,1))},hashTable {0 => tvbrank},hashTable {});
+                    T.cache.cech#(k+1,u) = hashTable {0 => ({},map(tvbR^tvbrank,tvbR^0,0))})
+                -- if k==-1 the chain is 0
+                else if k == -1 then T.cache.cech#(k,u) = (hashTable { 0 => ({},map(tvbR^tvbrank,tvbR^0,0))},hashTable {0 => 0},hashTable {})
+                else (
+                    F1 := faces(k,fan T);
+                    Frays := rays fan T;
+                    Flineality := linealitySpace fan T;
+                    F1 = apply(F1, f-> posHull(Frays_f, Flineality));
+                    -- for each n-k cone in the fan compute Er, the bundle over this cone for the degree u
+                    F1 = hashTable apply(#F1, Cnum -> (
+                            C := F1#Cnum;
+                            R := (rays C);
+                            R = apply(numColumns R, i -> (R_{i}));
+                            R = sort apply(R, r -> (rT#r,r));
+                            Esum := apply(R, r -> (r#0,((transpose u)*(r#1))_(0,0),r#1));
+                            R = apply(R, r -> (r#1));
+                            Esum = apply(Esum, e -> (e#0,positions(flatten entries fMT#(e#2), j -> (j <= e#1)),e#2));
+                            if any(Esum, e -> e#1 == {}) then Cnum => (R,map(tvbR^tvbrank,tvbR^0,0)) else (
+                                E := map(tvbR^tvbrank,tvbR^tvbrank,1);
+                                Esum = select(Esum, e -> sort(e#1) != toList(0..tvbrank-1));
+                                Esum = apply(Esum, e -> (bT#(e#2))_(e#1));
+                                scan(Esum, A -> E = intersectMatrices(E,A));
+                                Cnum => (R,E))));
+                    -- Compute the boundary operator with the auxiliary function
+                    (F1toF2,F1columns,F2) := makeNewDiffAndTarget(F1,u,fMT,rT,bT,tvbR,tvbrank,k,n);
+                    T.cache.cech#(k,u) = (F1,F1columns,F1toF2);
+                    -- Save the next chain to the cache
+                    if not T.cache.cech#?(k+1,u) then T.cache.cech#(k+1,u) = F2))
+            else (
+                -- if the previous chain exists use this to compute the chain in question
+                F10 := T.cache.cech#(k-1,u);
+                (F10toF11,F10columns,F11) := makeNewDiffAndTarget(F10,u,fMT,rT,bT,tvbR,tvbrank,k-1,n);
+                (F11toF12,F11columns,F12) := makeNewDiffAndTarget(F11,u,fMT,rT,bT,tvbR,tvbrank,k,n);
+                T.cache.cech#(k-1,u) = (F10,F10columns,F10toF11);
+                T.cache.cech#(k,u) = (F11,F11columns,F11toF12);
+                -- save the next chain to the cache as well
+                if not T.cache.cech#?(k+1,u) then T.cache.cech#(k+1,u) = F12))
+        -- if the cache only consists of the chain but not of the boundary operator compute this
+        else if not instance(T.cache.cech#(k,u),Sequence) then (
+            F21 := T.cache.cech#(k,u);
+            (F21toF22,F21columns,F22) := makeNewDiffAndTarget(F21,u,fMT,rT,bT,tvbR,tvbrank,k,n);
+            T.cache.cech#(k,u) = (F21,F21columns,F21toF22);
+            if not T.cache.cech#?(k+1,u) then T.cache.cech#(k+1,u) = F22);
+        T.cache.cech#(k,u)))
 
 -- PURPOSE : Computing the cohomology of a given ToricVectorBundleKlyachko
 cohom = method()
---   INPUT : '(k,tvb,u)',  'k' for the 'k'th cohomology group, 'tvb' a ToricVectorBundleKlyachko, and 'u' the degree
---  OUTPUT : 'ZZ',	     the dimension of the degree 'u' part of the 'k'th cohomology group of 'tvb'
-cohom (ZZ,ToricVectorBundleKlyachko,Matrix) := (k,T,u) -> (
-     if not T.cache.?HH then T.cache.HH = new MutableHashTable;
-     if not T.cache.HH#?(k,u) then (
-	  -- Get the k-1 th, k th and k+1 th chain in the Cech complex
-     	  (F1,F1columns,F1toF2) := cechComplex(k-1,T,u);
-     	  (F2,F2columns,F2toF3) := cechComplex(k,T,u);
-     	  F3 := (cechComplex(k+1,T,u))#0;
-     	  tvbR := T#"ring";
-     	  tvbrank := T#"rank of the vector bundle";
-     	  -- Generate the two boundary operators
-     	  MapF1toF2 := matrix apply(#F2, j -> apply(#F1, i -> if F1toF2#?(i,j) then F1toF2#(i,j) else map(tvbR^tvbrank,tvbR^(F1columns#i),0)));
-     	  MapF2toF3 := matrix apply(#F3, j -> apply(#F2, i -> if F2toF3#?(i,j) then F2toF3#(i,j) else map(tvbR^tvbrank,tvbR^(F2columns#i),0)));
-     	  -- Compute the cohomology
-     	  d := (rank ker MapF2toF3)-(rank image MapF1toF2);
-     	  T.cache.HH#(k,u) = (ring T)^(toList(d:flatten entries(-u))));
-     T.cache.HH#(k,u))
+cohom (ZZ,ToricVectorBundle,Matrix) := (k,T,u) -> (
+    if not T.cache.?HH then T.cache.HH = new MutableHashTable;
+    if not T.cache.HH#?(k,u) then (
+        -- Get the k-1 th, k th and k+1 th chain in the Cech complex
+        (F1,F1columns,F1toF2) := cechComplex(k-1,T,u);
+        (F2,F2columns,F2toF3) := cechComplex(k,T,u);
+        F3 := (cechComplex(k+1,T,u))#0;
+        tvbR := ring T;
+        tvbrank := rank T;
+        -- Generate the two boundary operators
+        MapF1toF2 := matrix apply(#F2, j -> apply(#F1, i -> if F1toF2#?(i,j) then F1toF2#(i,j) else map(tvbR^tvbrank,tvbR^(F1columns#i),0)));
+        MapF2toF3 := matrix apply(#F3, j -> apply(#F2, i -> if F2toF3#?(i,j) then F2toF3#(i,j) else map(tvbR^tvbrank,tvbR^(F2columns#i),0)));
+        -- Compute the cohomology
+        d := (rank ker MapF2toF3)-(rank image MapF1toF2);
+        T.cache.HH#(k,u) = (grRing T)^(toList(d:flatten entries(-u))));
+    T.cache.HH#(k,u)
+    )
 
-cohom (ZZ,ToricVectorBundleNew,Matrix) := (k,T,u) -> (
-     if not T.cache.?HH then T.cache.HH = new MutableHashTable;
-     if not T.cache.HH#?(k,u) then (
-	  -- Get the k-1 th, k th and k+1 th chain in the Cech complex
-     	  (F1,F1columns,F1toF2) := cechComplex(k-1,T,u);
-     	  (F2,F2columns,F2toF3) := cechComplex(k,T,u);
-     	  F3 := (cechComplex(k+1,T,u))#0;
-     	  tvbR := ring T;
-     	  tvbrank := rank T;
-     	  -- Generate the two boundary operators
-     	  MapF1toF2 := matrix apply(#F2, j -> apply(#F1, i -> if F1toF2#?(i,j) then F1toF2#(i,j) else map(tvbR^tvbrank,tvbR^(F1columns#i),0)));
-     	  MapF2toF3 := matrix apply(#F3, j -> apply(#F2, i -> if F2toF3#?(i,j) then F2toF3#(i,j) else map(tvbR^tvbrank,tvbR^(F2columns#i),0)));
-     	  -- Compute the cohomology
-     	  d := (rank ker MapF2toF3)-(rank image MapF1toF2);
-     	  T.cache.HH#(k,u) = (grRing T)^(toList(d:flatten entries(-u))));
-     T.cache.HH#(k,u))
+eulerChi = method()
+eulerChi (Matrix,ToricVectorBundle) := (u,T) -> (
+    if not T.cache.?eulerChi then T.cache.eulerChi = new MutableHashTable;
+    if not T.cache.eulerChi#?u then (
+        n := dim variety T;
+        -- Compute the Cech complex and compute the alternating sum of the dimensions
+        T.cache.eulerChi#u = sum apply(n+1, i -> (-1)^i * sum values (cechComplex(i,T,u))#1);
+        T.cache.eulerChi#u)
+    )
 
--- PURPOSE : Compute the Euler characteristic
-eulerChi = method(TypicalValue => ZZ)
+eulerChi ToricVectorBundle := T -> ( 
+    -- Compute the set of degrees with possible cohomology
+    L := latticePoints deltaE T;
+    -- Sum up their characteristics
+    sum apply(L, l -> eulerChi(l,T))
+    )
 
---   INPUT : '(T,u)',  where 'T' is a ToricVectorBundle and 'u' is a one column matrix over ZZ giving a degree vector
---  OUTPUT : The Euler characteristic of the Cech complex at degree 'u'
-eulerChi (Matrix,ToricVectorBundleKlyachko) := (u,T) -> (
-     if not T.cache.?eulerChi then T.cache.eulerChi = new MutableHashTable;
-     if not T.cache.eulerChi#?u then (
-	  n := T#"dimension of the variety";
-	  -- Compute the Cech complex and compute the alternating sum of the dimensions
-	  T.cache.eulerChi#u = sum apply(n+1, i -> (-1)^i * sum values (cechComplex(i,T,u))#1);
-     T.cache.eulerChi#u))
+cohomology(ZZ,ToricVectorBundle,Matrix) := opts -> (i,T,weight) -> cohom(i,T,weight)
+cohomology(ZZ,ToricVectorBundle,List) := opts -> (i,T,P)-> (
+    if opts.Degree == 1 then print ("Number of degrees to calculate: "|(toString(#P)));
+    for j in P list (
+        if opts.Degree == 1 then << "." << flush;
+        j = cohomology(i,T,j);
+        if j != 0 then j else continue)
+    )
+cohomology(ZZ,ToricVectorBundle) := opts -> (i,T)-> (
+    L := cohomology(i,T,latticePoints deltaE T,Degree => opts.Degree);
+    if L == {} then (grRing T)^0 else directSum L
+    )
 
-eulerChi (Matrix,ToricVectorBundleNew) := (u,T) -> (
-     if not T.cache.?eulerChi then T.cache.eulerChi = new MutableHashTable;
-     if not T.cache.eulerChi#?u then (
-	  n := dim variety T;
-	  -- Compute the Cech complex and compute the alternating sum of the dimensions
-	  T.cache.eulerChi#u = sum apply(n+1, i -> (-1)^i * sum values (cechComplex(i,T,u))#1);
-     T.cache.eulerChi#u))
-
---   INPUT : 'T',  a ToricVectorBundle
---  OUTPUT : The Euler characteristic of the bundle
-eulerChi ToricVectorBundleKlyachko := T -> ( --MOVED KANEYAMA VERSION
-     -- Compute the set of degrees with possible cohomology
-     L := latticePoints deltaE T;
-     -- Sum up their characteristics
-     sum apply(L, l -> eulerChi(l,T)))
-eulerChi ToricVectorBundleNew := T -> ( 
-     -- Compute the set of degrees with possible cohomology
-     L := latticePoints deltaE T;
-     -- Sum up their characteristics
-     sum apply(L, l -> eulerChi(l,T)))
-
--- PURPOSE : Computing the cohomology group of a given ToricVectorBundle
---   INPUT : '(i,T,weight)',  'i' for the 'i'th cohomology group, 'T' a ToricVectorBundle, and 'weight' the degree
---  OUTPUT : 'ZZ',	     the graded module of the degree 'weight' part of the 'i'th cohomology group of 'T'
-cohomology(ZZ,ToricVectorBundleKlyachko,Matrix) := opts -> (i,T,weight) -> cohom(i,T,weight)
-
-cohomology(ZZ,ToricVectorBundleNew,Matrix) := opts -> (i,T,weight) -> cohom(i,T,weight)
-
--- PURPOSE : Computing the cohomology group of a given ToricVectorBundle
---   INPUT : '(i,T,P)',  'i' for the 'i'th cohomology group, 'T' a ToricVectorBundle, and 'P' a list of degrees
---  OUTPUT : 'List',	     the list of the graded modules of the corresponding degree parts of the cohomology group which are non zero
-cohomology(ZZ,ToricVectorBundleKlyachko,List) := opts -> (i,T,P)-> (
-     if opts.Degree == 1 then print ("Number of degrees to calculate: "|(toString(#P)));
-     for j in P list (
-	  if opts.Degree == 1 then << "." << flush;
-	  j = cohomology(i,T,j);
-	  if j != 0 then j else continue))
-
-cohomology(ZZ,ToricVectorBundleNew,List) := opts -> (i,T,P)-> (
-     if opts.Degree == 1 then print ("Number of degrees to calculate: "|(toString(#P)));
-     for j in P list (
-	  if opts.Degree == 1 then << "." << flush;
-	  j = cohomology(i,T,j);
-	  if j != 0 then j else continue))
-   
--- PURPOSE : Computing the cohomology group of a given ToricVectorBundle
---   INPUT : '(i,T)',  'i' for the 'i'th cohomology group, 'T' a ToricVectorBundle
---  OUTPUT : the group as a graded module where the generators have the corresponding degree of the weight vector
--- COMMENT : if the option "Degree" => 1 is given then it displays the number of degrees to calculate
-cohomology(ZZ,ToricVectorBundleKlyachko) := opts -> (i,T)-> (
-     L := cohomology(i,T,latticePoints deltaE T,Degree => opts.Degree);
-     if L == {} then (ring T)^0 else directSum L)
-cohomology(ZZ,ToricVectorBundleNew) := opts -> (i,T)-> (
-     L := cohomology(i,T,latticePoints deltaE T,Degree => opts.Degree);
-     if L == {} then (grRing T)^0 else directSum L)
-
--- PURPOSE : Computing the rank of the cohomology group of a given ToricVectorBundle
---   INPUT : '(i,S)',  'i' for the 'i'th cohomology group, 'S' a Sequence of ToricVectorBundle and a weight vector
---  OUTPUT : 'ZZ',	     the rank of the degree 'weight' part of the 'i'th cohomology group of the bundle
-hh(ZZ,Sequence) := (i,S) -> (
-     -- Checking for input errors
-     if #S != 2 then error("The Sequence has to contain a toric vector bundle and a weight vector.");
-     if not instance(S#1,Matrix) then error("The second argument has to be a weight vector given by a matrix.");
-     
-     if not instance(S#0,ToricVectorBundleKaneyama) and not instance(S#0,ToricVectorBundleKlyachko) and not instance(S#0,ToricVectorBundleNew) then error("The first argument has to be a toric vector bundle.");
-     (T,u) := S;
-     rank cohomology(i,T,u)) --not going to make this separate for Kaneyama
-
-
--- PURPOSE : Computing the rank of the cohomology group of a given ToricVectorBundle
---   INPUT : '(i,T)',  'i' for the 'i'th cohomology group, 'T' a ToricVectorBundle
---  OUTPUT : 'ZZ',  the rank of the 'i'th cohomology group
-hh(ZZ,ToricVectorBundleKlyachko) := ZZ => (i,T) -> rank cohomology(i,T)
-
-hh(ZZ,ToricVectorBundleNew) := ZZ => (i,T) -> rank cohomology(i,T)
-	       
--- PURPOSE : Computing the cotangent bundle on a smooth, pure, and full dimensional Toric Variety 
--- cotangentBundle = method(Options => {"Type" => "Klyachko"})
-
--- PURPOSE : Computing the polytope deltaE in the degree space such that outside this polytope
---     	     every cohomology is 0 
+hh(ZZ,ToricVectorBundle) := ZZ => (i,T) -> rank cohomology(i,T)
 deltaE = method()
+deltaE ToricVectorBundle := (cacheValue symbol deltaE)( tvb -> (
+        if not isComplete variety tvb then error("The toric variety needs to be complete.");
+        n := dim variety tvb;
+        -- Extracting necessary data with rays as column matrices to use old code
+        rayTable := apply( rays tvb, s -> transpose matrix {s});
+        l := #rayTable;
+        -- The sign change is to use the previous code
+        j:={};
+        fMT := hashTable apply(rayTable, i -> (j = -(details tvb)#(flatten entries i)_1; i => matrix{{-(min j),max j}}));
+        sset1 := select(subsets(rayTable,n), s -> rank matrix {s} == n);
+        convexHull matrix {apply(sset1, s -> (
+                    M := transpose matrix {apply(s, r -> (-r | r) || (fMT#r))};
+                    vertices polyhedronFromHData(M_{0..n-1},M_{n})))}
+        )
+    )
 
---   INPUT : 'tvb',  a ToricVectorBundle
---  OUTPUT : a Polyhedron
-deltaE ToricVectorBundleKlyachko := (cacheValue symbol deltaE)( tvb -> (
-     	  if not isComplete tvb#"ToricVariety" then error("The toric variety needs to be complete.");
-     	  n := tvb#"dimension of the variety";
-          -- Extracting necessary data
-          rayTable := tvb#"rayTable";
-          l := #rayTable;
-          fMT := hashTable apply(pairs tvb#"filtrationMatricesTable", (i,j) -> (j = flatten entries j; i => matrix{{-(min j),max j}}));
-		      sset1 := select(subsets(rays tvb,n), s -> rank matrix {s} == n);
-  		      convexHull matrix {apply(sset1, s -> (
-		 		     M := transpose matrix {apply(s, r -> (-r | r) || (fMT#r))};
-		 		     vertices polyhedronFromHData(M_{0..n-1},M_{n})))}))
-
-
-
-deltaE ToricVectorBundleNew := (cacheValue symbol deltaE)( tvb -> (
-     	  if not isComplete variety tvb then error("The toric variety needs to be complete.");
-     	  n := dim variety tvb;
-          -- Extracting necessary data with rays as column matrices to use old code
-          rayTable := apply( rays tvb, s -> transpose matrix {s});
-          l := #rayTable;
-          -- The sign change is to use the previous code
-          j:={};
-          fMT := hashTable apply(rayTable, i -> (j = -1* filtrationJumps(tvb, flatten entries i ); i => matrix{{-(min j),max j}}));
-		      sset1 := select(subsets(rayTable,n), s -> rank matrix {s} == n);
-  		      convexHull matrix {apply(sset1, s -> (
-		 		     M := transpose matrix {apply(s, r -> (-r | r) || (fMT#r))};
-		 		     vertices polyhedronFromHData(M_{0..n-1},M_{n})))}))
-
-
--- ToricVectorBundleKlyachko ++ ToricVectorBundleKlyachko := (tvb1,tvb2) -> (
---     -- Extracting data out of tvb1 and tvb2
---     k1 := (tvb1#"rank of the vector bundle");
---     k2 := (tvb2#"rank of the vector bundle");
---     k := k1 + k2;
---     F := tvb1#"ToricVariety";
---     R := tvb1#"ring";
---     tvb := makeVBKlyachko(k,F);
---     fT1 := tvb1#"filtrationMatricesTable";
---     fT2 := tvb2#"filtrationMatricesTable";
---     bT1 := tvb1#"baseTable";
---     bT2 := tvb2#"baseTable";
---     filtrationTable := apply(rays tvb, r -> fT1#r | fT2#r);
---     baseTable := apply(rays tvb, r -> bT1#r ++ bT2#r);
---     tvb = addFiltration(tvb,filtrationTable);
---     tvb = addBase(tvb,baseTable);
---     if tvb1.cache.?isVB and tvb2.cache.?isVB and tvb1.cache.isVB and tvb2.cache.isVB then tvb.cache.isVB = true;
---     tvb)
-	  
-
-
--- PURPOSE : Returning the underlying fan of a toric vector bundle
---   INPUT : 'T',  a ToricVectorBundle
---  OUTPUT : a Fan
-fan ToricVectorBundleKlyachko := T -> T#"ToricVariety"
-
-
-
--- PURPOSE : Check for a ToricVectorBundleKlyachko if it is general
---   INPUT : 'tvb',  a ToricVectorBundleKlyachko
---  OUTPUT : 'true' or 'false'
--- COMMENT : A toricVectorBundle is general if for every generating cone 'C' the following holds:
---     	     For every choice of filtration steps i_1,...,i_n for the rays r_1,..,r_n of C 
---     	     codim \bigcap E^r_j(i_j) = min {\sum codim E^r_j(i_j),rank E}
---     	     holds.
 isGeneral = method()
-
--- TODO: find and example of a non general bundle to test
-isGeneral ToricVectorBundleNew :=  E -> (
+isGeneral ToricVectorBundle :=  E -> (
     if E.cache.?isGeneral then( return E.cache.isGeneral);
     -- list the max cones
-    MCones:=  (variety(E)).max;
+    MCones:= max variety E;
     raysX := rays E;
     r := rank E;
     R := ring E;
@@ -1841,407 +646,53 @@ isGeneral ToricVectorBundleNew :=  E -> (
     -- For a maximal cone, we perform a recursive check: 
     -- the input is a list of as many list as rays the cone had of vector spaces that we have to compare
     recursiveCheck := (L,Es) ->(
-        if L =!= {} then (apply( L_0, vs -> recursiveCheck(drop(L,1), Es|{vs}) ))
+        if L =!= {} then (apply(L_0, vs -> recursiveCheck(drop(L,1), Es|{vs}) ))
         else(
             -- at this point we have L empty and Es the list of vector spaces to compare
             minCodim:= min(r, sum apply( Es, vs -> r - rank vs));
             E:= image id_(R^r);
             scan(Es, A -> E = intersect(E,A));
             dimInt:= r - rank E;
-            if minCodim != dimInt then( E.cache.isGeneral = false; return E.cache.isGeneral );
-
-            
+            if minCodim != dimInt then( E.cache.isGeneral = false; return E.cache.isGeneral );    
+            );
         );
-
-    );
     -- We apply the check to all the cones
     apply( MCones, sigm -> recursiveCheck(allPieces_sigm ,{}) );
     E.cache.isGeneral
+    )
 
-)
-
-isGeneral ToricVectorBundleKlyachko := (cacheValue symbol isGeneral)( tvb -> (
-	  fT := tvb#"filtrationMatricesTable";
-     	  fT = hashTable apply(pairs fT, p -> p#0 => flatten entries p#1);
-     	  bT := tvb#"baseTable";
-     	  L := hashTable apply(pairs fT, (j,q) -> j => apply(sort unique q, i -> (bT#j)_(positions(fT#j, e -> e <= i))));     
-     	  -- recursive function to check every combination of filtration steps
-     	  recursiveCheck := (L,Es) -> (
-	       -- if there is still a list of filtration steps, call recursiveCheck again for each entry
-	       if L != {} then all(L#0, l -> recursiveCheck(drop(L,1),Es|{l}))
-	       -- otherwise we have a choice of filtration steps and check the condition
-	       else (
-	       	    n := numRows Es#0;
-	       	    codimSum := sum apply(Es, A -> n - numColumns A);
-	       	    codimSum = min(codimSum,n);	       
-	       	    R := ring Es#0;
-	       	    E := map(R^n,R^n,1);
-	       	    Es = select(Es, e -> numColumns e != n);
-	       	    scan(Es, A -> E = intersectMatrices(E,A));
-	       	    n - numColumns E == codimSum));
-     	  F := maxCones tvb#"ToricVariety";
-        Frays := rays tvb#"ToricVariety";
-     	  all(F, C -> (
-	       	    C = Frays_C;
-	       	    C = apply(numColumns C, i -> C_{i});
-	       	    recursiveCheck(apply(C, r -> L#r),{})))))
-
-
-
-
-
-
--- PURPOSE : Returning the maximal cones of the underlying fan
---   INPUT : 'T',  a ToricVectorBundle
---  OUTPUT : a List of Cones
-maxCones ToricVectorBundleNew := T -> (
-      TV := fan T;
-      TR := rays TV;
-      TL := linealitySpace TV;
-      mC := maxCones TV;
-      apply(mC, c -> posHull(TR_c, TL))
-    -- sort maxCones T#"ToricVariety"
-   )
-
-
--- PURPOSE : Compute a random deformation of a ToricVectorBundleKlyachko
 randomDeformation = method()
-
---   INPUT : '(tvb,l,h)',  where 'tvb' is a ToricVectorBundleKlyachko, 'l' and 'h' are integers
---  OUTPUT : a ToricVectorBundleKlyachko, a random deformation
--- COMMENT : Simply replaces the base matrices by random matrices of full rank with entries between 
---     	     'l' and 'h'
-
-randomDeformation ( ToricVectorBundleNew ) :=(tvb) ->(
-     k := rank tvb;
-     R:= ring tvb;
-     -- Change the matrices in the filtration and preserve the jumps
-     newMatrices := apply(filtrationMatrices tvb, M ->(
+randomDeformation ( ToricVectorBundle ) :=(tvb) ->(
+    k := rank tvb;    
+    R:= ring tvb;
+    -- Change the matrices in the filtration and preserve the jumps
+    newMatrices := apply(filtrationMatrices tvb, M ->(
             -- TODO How do we want to get the random matrices?
-	       A := random(R^k, R^k );
-	       while det A == 0 do (A = random(R^k, R^k ));
-           A)
-	       );
-    toricVectorBundle( variety tvb, newMatrices , filtrationJumps tvb )
-)
+            A := random(R^k, R^k);
+            while det A == 0 do (A = random(R^k, R^k));
+            A)
+        );
+    toricVectorBundle(variety tvb, newMatrices, filtrationJumps tvb)
+    )
 
-
-randomDeformation (ToricVectorBundleKlyachko,ZZ,ZZ) := (tvb,l,h) -> (
-     -- Checking for input errors
-     if l > h then error("Expected the first integer to be less or equal than the second integer.");
-     k := tvb#"rank of the vector bundle";
-     -- For each ray generate a new k by k matrix of full rank with entries between 'l' and  'h'
-     bT := hashTable apply(pairs tvb#"baseTable", p -> (
-	       A := 0 * p#1;
-	       while det A == 0 do A = generateRandomMatrix(k,k,l,h);
-	       p#0 => promote(A,tvb#"ring")));
-     -- Keep the old filtration
-     new ToricVectorBundleKlyachko from {
-	  "ring" => tvb#"ring",
-	  "rayTable" => tvb#"rayTable",
-	  "baseTable" => bT,
-	  "filtrationMatricesTable" => tvb#"filtrationMatricesTable",
-	  "filtrationTable" => tvb#"filtrationTable",
-	  "ToricVariety" => tvb#"ToricVariety",
-	  "number of affine charts" => tvb#"number of affine charts",
-	  "dimension of the variety" => tvb#"dimension of the variety",
-	  "rank of the vector bundle" => tvb#"rank of the vector bundle",
-	  "number of rays" => tvb#"number of rays",
-	  symbol cache => new CacheTable})
-
---   INPUT : '(tvb,h)',  where 'tvb' is a ToricVectorBundleKlyachko and 'h' an integer
---  OUTPUT : a ToricVectorBundleKlyachko, a random deformation
--- COMMENT : Simply replaces the base matrices by random matrices of full rank with entries between 
---     	     0 and 'h'
-randomDeformation (ToricVectorBundleKlyachko,ZZ) := (tvb,h) -> randomDeformation(tvb,0,h)
-
--- PURPOSE : Computing the tangent bundle on a smooth, pure, and full dimensional Toric Variety 
---   INPUT : 'F',  a smooth, pure, and full dimensional Fan
---  OUTPUT : 'tvb',  a ToricVectorBundle
--- COMMENT : If no option is given the function will return a ToricVectorBundleKlyachko, if "Type" => "Kaneyama" is given it returns a ToricVectorBundleKaneyama
--- tangentBundle = method(Options => {"Type" => "Klyachko"})
-tangentBundle Fan := F -> tangentBundleKlyachko F
-
-
--- PURPOSE : Checking if two toric vector bundles are equal
---   INPUT : '(tvb1,tvb2)',  two ToricVectorBundle
---  OUTPUT : 'true' or 'false' 
-ToricVectorBundle == ToricVectorBundle := (tvb1,tvb2) -> tvb1 === tvb2 
-
-
--- PURPOSE : Computing the tensor product of two toric vector bundles over the same Fan
---   INPUT : '(tvb1,tvb2)',  two ToricVectorBundle over the same Fan in the same description
---  OUTPUT : 'tvb',  a ToricVectorBundle which is the tensor product in the same description
 tensor(ToricVectorBundle, ToricVectorBundle) := ToricVectorBundle => {} >> opts -> (tvb1, tvb2) -> (
-    if instance(tvb1, ToricVectorBundleNew ) and instance(tvb2, ToricVectorBundleNew) then(
-        --Errors check
-        if variety(tvb1) =!= variety(tvb2) then(error("Expected the bundles to be over the same toric variety.") );
-        X:=variety(tvb1 );
-        nrays := # rays (variety(tvb1 ));
-        L1:= filtrationMatrices( tvb1 ); 
-        L2:= filtrationMatrices (tvb2 );
-        Lnew:= apply(nrays, i -> L1_i**L2_i );
-        J1:= filtrationJumps( tvb1 ); 
-        J2:= filtrationJumps (tvb2 );
-        -- TODO chech that this is what we want
-        Jnew := apply(nrays, p -> flatten apply(J1_p, e1 -> flatten apply(J2_p, e2 -> e1 + e2)));
-        toricVectorBundle(X, Lnew, Jnew)
+    if variety(tvb1) =!= variety(tvb2) then(error("Expected the bundles to be over the same toric variety.") );
+    X:=variety(tvb1 );
+    nrays := # rays (variety(tvb1 ));
+    L1:= filtrationMatrices( tvb1 ); 
+    L2:= filtrationMatrices (tvb2 );
+    Lnew:= apply(nrays, i -> L1_i**L2_i );
+    J1:= filtrationJumps( tvb1 ); 
+    J2:= filtrationJumps (tvb2 );
+    -- TODO check that this is what we want
+    Jnew := apply(nrays, p -> flatten apply(J1_p, e1 -> flatten apply(J2_p, e2 -> e1 + e2)));
+    toricVectorBundle(X, Lnew, Jnew)
     )
-    else if instance(tvb1,ToricVectorBundleKlyachko) and instance(tvb2,ToricVectorBundleKlyachko) then(
-        -- Checking for input errors
-        if tvb1#"ToricVariety" != tvb2#"ToricVariety" then error("Expected bundles over the same toric variety.");
-        k1 := tvb1#"rank of the vector bundle";
-        k2 := tvb2#"rank of the vector bundle";
-        -- Extracting data out of tvb1 and tvb2
-        F := tvb1#"ToricVariety";
-        bT1 := tvb1#"baseTable";
-        bT2 := tvb2#"baseTable";
-        fmT1 := tvb1#"filtrationMatricesTable";
-        fmT2 := tvb2#"filtrationMatricesTable";
-        -- Computing the bases and filtration matrices
-        k := k1 * k2;
-        tvb := makeVBKlyachko(k,F);
-        R := rays tvb;
-        baseTable := apply(R, r -> bT1#r ** bT2#r);
-        filtrationTable := apply(R, r -> matrix {flatten apply(flatten entries fmT1#r, e1 -> apply(flatten entries fmT2#r, e2 -> e1 + e2))});
-        -- Writing the new Tables into the bundle
-        tvb = addBase(tvb,baseTable);
-        tvb = addFiltration(tvb,filtrationTable);
-        if tvb1.cache.?isVB and tvb2.cache.?isVB and tvb1.cache.isVB and tvb2.cache.isVB then tvb.cache.isVB = true;
-        tvb)
-     else error("The two toric vector bundles have to be in the same description.")
-     )
-
 ToricVectorBundle ** ToricVectorBundle := (tvb1,tvb2) -> tensor(tvb1,tvb2)
--- ToricVectorBundleKlyachko ** ToricVectorBundleKlyachko := tensor
 
-
--- PURPOSE : Computing the twist of a Toric Vector Bundle by a divisor line bundle
---   INPUT : '(T,d)',  where 'T' is a toricVectorBundleKlyachko and 'd' a list of integers one for each ray of the fan
---  OUTPUT : a ToricVectorBundleKlyachko
--- COMMENT : If d={d_1,..d_l} then this corresponds to the line bundle which is the d_i twist on the i-th ray
 twist = method()
-
-twist (ToricVectorBundleNew, List) := (E, s) ->(
-    if # rays( variety E) != #s then ("The number of twists has to match the number of rays of the fan.");
-    r:= rank(E);
-    Jlist:= filtrationJumps(E);
-    Jnew:= apply(#s, j -> Jlist_j + toList(r:s_j)  );
-    toricVectorBundle(variety(E), filtrationMatrices(E), Jnew)
-
-)
-
-
-twist (ToricVectorBundleKlyachko,List) := (T,d) -> (
-     k := T#"rank of the vector bundle";
-     fT := T#"filtrationMatricesTable";
-     -- Checking for input errors
-     if #d != #fT then error("The number of twists has to match the number of rays of the fan.");
-     R := rays T;
-     fT = apply(#R, i -> fT#(R#i) + matrix{toList(k:-(d#i))});
-     addFiltration(T,fT))
-
-
--- PURPOSE : Computing the Cartier index of a Weil divisor
---   INPUT : '(L,F)',  where 'F' is a Fan and 'L' is a list of integers defining a Weil divisor
---  OUTPUT : The smallest multiple of the divisor which is Cartier if the divisor is QQ-Cartier, if not 
---     	     an error is returned
-cartierIndex = method(TypicalValue => ZZ)
-
-cartierIndex (NormalToricVariety, List) := (X, L) ->(  
-    if any(L, l -> not instance(l,ZZ)) then error("The weights have to be in ZZ.");
-    denom := 1; 
-    raysX := rays X;
-    maxCs := X.max;
-    Frays := transpose  matrix raysX;
-    L = hashTable apply(#raysX, i -> Frays_i => L_i);
-    n:= ambDim ( fan X);
-    scan(maxCs, C -> (
-	       rC := Frays_C;
-	       -- Taking the first n x n submatrix
-	       rC1 := rC_{0..n-1};
-	       -- Setting up the solution vector by composing the corresponding weights
-	       v := matrix apply(n, i -> (c := entries rC1_{i}; {-(L#c)}));
-	       -- Computing the degree vector
-	       w := vertices polyhedronFromHData(matrix {toList(n:0)},matrix {{0}},transpose rC1,v);
-	       -- Checking if w also fulfils the equations given by the remaining rays
-	       if numColumns rC != n then (
-		    v = v || matrix apply(toList(n..(numColumns rC)-1), i -> {-(L#(entries rC_{i}))});
-	            if (transpose rC)*w - v != 0 then error("The weights do not define a Cartier divisor."));
-	       -- Check if w is QQ-Cartier
-	       scan(flatten entries w, e -> denom = lcm(denominator e ,denom))));
-     denom
-     )
-
-
-
-
-cartierIndex (List,Fan) := (L,F) -> (
-     rl := raySortOfFan F;
-     -- Checking for input errors
-     if #L != #rl then error("The number of weights has to equal the number of rays.");
-     n := ambDim F;
-     -- Checking for further errors and assigning the weights to the rays
-     L = hashTable apply(#rl, i -> (if class L#i =!= ZZ then error("The weights have to be in ZZ."); rl#i => L#i));
-     -- Keeping track of the lowest common multiple of denominators of the degrees,
-     -- to check whether the divisor itself is Cartier or which multiple
-     denom := 1;
-     -- Computing the degree vector for every top dimensional cone
-     Frays := rays F;
-     scan(sort maxCones F, C -> (
-	       rC := Frays_C;
-	       -- Taking the first n x n submatrix
-	       rC1 := rC_{0..n-1};
-	       -- Setting up the solution vector by composing the corresponding weights
-	       v := matrix apply(n, i -> (c := rC1_{i}; {-(L#c)}));
-	       -- Computing the degree vector
-	       w := vertices polyhedronFromHData(matrix {toList(n:0)},matrix {{0}},transpose rC1,v);
-	       -- Checking if w also fulfils the equations given by the remaining rays
-	       if numColumns rC != n then (
-		    v = v || matrix apply(toList(n..(numColumns rC)-1), i -> {-(L#(rC_{i}))});
-	            if (transpose rC)*w - v != 0 then error("The weights do not define a Cartier divisor."));
-	       -- Check if w is QQ-Cartier
-	       scan(flatten entries w, e -> denom = lcm(denominator e ,denom))));
-     denom)
-
--- PURPOSE : Generating the Vector Bundle given by a divisor
--- This is the NEW lineBundle in the case of ToricVectorBundleKlyachko 
-weilToCartier = method(Options => {"Type" => "Klyachko"})
-
-weilToCartier (NormalToricVariety, List ):= {} >> o ->(X,L ) -> (
-    -- The errors check is done in cartierIndex
-    ind := cartierIndex(X,L);
-    if ind != 1 then L = apply(L, p -> ind*p);
-    T := lineBundle( X, L);
-    --T.cache.isVectorBundle = true;
-    T.cache.isVB = true;
-    T
-    )
-
-weilToCartier ToricDivisor := {} >> o ->(D ) -> (weilToCartier(variety D , entries D) )
-
-
---   INPUT : '(L,F)',  a list 'L' of weight vectors, one for each ray of the Fan 'F'
---  OUTPUT : 'tvb',  a ToricVectorBundle
--- COMMENT : If no option is given the function will return a ToricVectorBundleKlyachko, if "Type" => "Kaneyama" is given it returns a ToricVectorBundleKaneyama
-weilToCartier (List,Fan) := opts -> (L,F) -> (
-     rl := raySortOfFan F;
-     -- Checking for input errors
-     if #L != #rl then error("The number of weights has to equal the number of rays.");
-     n := ambDim F;
-     if any(L, l -> not instance(l,ZZ)) then error("The weights have to be in ZZ.");
-     ind := cartierIndex(L,F);
-     if ind != 1 then error("The divisor is only QQ-Cartier, but "|toString(ind)|" times the divisor is Cartier.");
-     T := makeVBKlyachko(1,F,apply(L, l -> matrix{{1_QQ}}),apply(L, l -> matrix{{-l}}));
-     T.cache.isVB = true;
-     T
-)
- 
-
-
--- PURPOSE : Constructing the fan of projective n-space
---   INPUT : 'n',  a strictly positive integer
---  OUTPUT : The fan of projective n-space
-projectiveSpaceFan = method(TypicalValue => Fan)
-projectiveSpaceFan ZZ := n -> (
-     if n < 1 then error("The dimension has to be strictly positive.");
-     normalFan convexHull (map(ZZ^n,ZZ^n,1)|map(ZZ^n,ZZ^1,0)))
-
-
--- PURPOSE : Constructing the fan of the product of n projective 1-spaces
---   INPUT : 'n',  a strictly positive integer
---  OUTPUT : The fan of the product of n projective 1-spaces
-pp1ProductFan = method(TypicalValue => Fan)
-pp1ProductFan ZZ := n -> (
-     if n < 1 then error("The number of PP^1's has to be strictly positive.");
-     normalFan hypercube n)
-
-
--- PURPOSE : Constructing the fan of the Hirzebruch n-surface
---   INPUT : 'n',  a positive integer
---  OUTPUT : The fan of the Hirzebruch n-surface
-hirzebruchFan = method(TypicalValue => Fan)
-hirzebruchFan ZZ := n -> hirzebruch n
-
-
-
----------------------------------------
--- AUXILIARY FUNCTIONS, not public
----------------------------------------
-
--- PURPOSE : Checking for a matrix if it is over ZZ or QQ and returning an error if not
---   INPUT : '(M,msg)',  where 'M' is a matrix and 'msg' is the name of the object 'M' describes
---  OUTPUT : The matrix promoted to QQ if it was over ZZ or QQ, otherwise an error
-chkZZQQ = (M,msg) -> (
-     R := ring M;
-     if R =!= ZZ and R =!= QQ then error("expected matrix of ",msg," to be over ZZ or QQ");
-     promote(M,QQ));
-
-
--- PURPOSE : Constructing the fan of projective n-space
-generateRandomMatrix = method(TypicalValue => Matrix)
-
---   INPUT : '(m,n,h)',  where 'm' and 'n' are strictly positive integers and 'h' is an integer
---  OUTPUT : An 'm' by 'n' matrix with random entries between 0 and 'h'
-generateRandomMatrix (ZZ,ZZ,ZZ) := (m,n,h) -> matrix apply(m, i -> apply(n, j -> random h+1))
-
---   INPUT : '(m,n,l,h)',  where 'm' and 'n' are strictly positive integers and 'l' 'h' are integers 
---     	    	      	   of which 'l' is the smaller one
---  OUTPUT : An 'm' by 'n' matrix with random entries between 0 and 'h'
-generateRandomMatrix (ZZ,ZZ,ZZ,ZZ) := (m,n,l,h) -> matrix apply(m, i -> apply(n, j -> random(l,h)))
-
-
--- PURPOSE : Computing the intersection of the images of two matrices
---   INPUT : '(M,N)', two matrices with the same target
---  OUTPUT : a matrix with the minimal generators of the intersection
-intersectMatrices = (M,N) -> (
-     m := numColumns M;
-     N = gens ker(M | N);
-     N = N^{0..m-1};
-     gens trim image(M*N));
-
-  
--- PURPOSE : Solving the system R*X=F
---   INPUT : '(R,F)',  two matrices over ZZ
---  OUTPUT : a matrix of QQ solutions
-systemSolver = (R,F) -> (
-     (R1,Lmatrix,Rmatrix) := smithNormalForm lift(R,ZZ);
-     F1 := entries(Lmatrix * F);
-     Rmatrix * (matrix apply(numRows R1, i -> F1#i / R1_(i,i)) || map(QQ^(numColumns R1 - numRows R1),QQ^(#F1#0),0)))
-
-
--- PURPOSE : Generating the table of all rays together with their filtration 
---   INPUT : 'T',  a ToricVectorBundleKlyachko
---  OUTPUT : a hashTable,  with keys the rays of the variety and for each ray a list of pairs (the filtration step, the filtration)
-tableForAllRays = method(TypicalValue => HashTable)
-tableForAllRays ToricVectorBundleKlyachko := (cacheValue symbol allRaysTable)( T -> (
-	  fMT := T#"filtrationMatricesTable";
-     	  bT := T#"baseTable";
-	  hashTable apply(rays T, r -> (
-		    fT := flatten entries fMT#r;
-	       	    r => apply(fT, e -> (e,(bT#r)_(positions(fT, i -> i <= e))))))))
-
-
--- PURPOSE : Computing the tangent bundle (Klyachko) on a smooth, pure, and full dimensional Toric Variety 
---   INPUT : 'F',  a smooth, pure, and full dimensional Fan
---  OUTPUT : 'tvb',  a ToricVectorBundleKlyachko 
-tangentBundleKlyachko = F -> (
-     -- Checking for input errors
-     if not isSmooth F then error("The Toric Variety has to be smooth.");
-     -- Generating the trivial bundle of dimension n
-     n := dim F;
-     tvb := makeVBKlyachko(n,F);
-     -- Extracting the rayTable
-     rayTable := apply(rays tvb,r -> promote(r,QQ));
-     -- Adding the filtration matrix |-1,0,0,...,0| for each ray
-     filtrationTable := apply(rayTable, r -> matrix{flatten({-1,toList(n-1:0)})});
-     -- Adding the base which has as first vector the ray itself to each ray
-     baseTable := apply(rayTable, r -> r | complement r);
-     -- Adding bases filtration matrices to the bundle
-     tvb = addFiltration(tvb,filtrationTable);
-     tvb = addBase(tvb,baseTable);
-     tvb.cache.isVB = true;
-     tvb)
+twist(ToricVectorBundle, ToricDivisor) := (E, D) -> E ** lineBundle D
+twist(ToricVectorBundle, List) := (E, s) -> E ** lineBundle(variety E, s)
 
 --------------------------------------
 -- MAPS
@@ -2249,8 +700,8 @@ tangentBundleKlyachko = F -> (
 
 ToricVectorBundleMap = new Type of HashTable
 ToricVectorBundleMap.synonym = "map of toric vector bundles on a fixed toric variety"
-source ToricVectorBundleMap := ToricVectorBundleNew => f -> f.source
-target ToricVectorBundleMap := ToricVectorBundleNew => f -> f.target
+source ToricVectorBundleMap := ToricVectorBundle => f -> f.source
+target ToricVectorBundleMap := ToricVectorBundle => f -> f.target
 map ToricVectorBundleMap := Matrix => opts -> f -> f.map
 matrix ToricVectorBundleMap := Matrix => f -> f.map
 
@@ -2262,12 +713,10 @@ net ToricVectorBundleMap := f -> (
     )
 
 -- We allow defining a map that is not well defined
-map(ToricVectorBundleNew, ToricVectorBundleNew, Matrix):= ToricVectorBundleMap => opts -> (E2, E1, M) ->(
+map(ToricVectorBundle, ToricVectorBundle, Matrix):= ToricVectorBundleMap => opts -> (E2, E1, M) ->(
     if numRows M =!= rank E2 or numColumns M =!= rank E1 then error " The dimensions of the matrix don't match the ranks of the bundles";
     if ring M =!= ring E1 or ring M =!= ring E2 then error " The matrix needs to be defined over the same ring as the bundles";
     if variety E1 =!= variety E2 then error "The base varieties of the bundles have to coincide";
-
-
     new ToricVectorBundleMap from{
         symbol source => E1,
         symbol target => E2,
@@ -2275,7 +724,6 @@ map(ToricVectorBundleNew, ToricVectorBundleNew, Matrix):= ToricVectorBundleMap =
         symbol cache => new CacheTable
     }
 )
-
 
 ToricVectorBundleMap#id = E -> map(E,E, id_(ring E^(rank E) ))
 
@@ -2295,15 +743,15 @@ isWellDefined ToricVectorBundleMap := Boolean => f ->(
         return false
         );
     --Check types
-    if not instance(f.source, ToricVectorBundleNew) then (
+    if not instance(f.source, ToricVectorBundle) then (
         if debugLevel > 0 then (
-            << "-- expected the source to be a ToricVectorBundleNew" << endl
+            << "-- expected the source to be a ToricVectorBundle" << endl
             );
         return false
         );
-    if not instance(f.target, ToricVectorBundleNew) then (
+    if not instance(f.target, ToricVectorBundle) then (
         if debugLevel > 0 then (
-            << "-- expected the target to be a ToricVectorBundleNew" << endl
+            << "-- expected the target to be a ToricVectorBundle" << endl
             );
         return false
         );
@@ -2328,7 +776,7 @@ isWellDefined ToricVectorBundleMap := Boolean => f ->(
     r := rank E1;
     for p in Xrays do (
         j := flatten join(filtrationJumps source f, filtrationJumps target f);
-        -- The nex condition is only for the isomorphism bewteen trivial bundles of rank 0
+        -- The next condition is only for the isomorphism between trivial bundles of rank 0
         if j == {} then(f.cache.isWellDefined = true;
                 return f.cache.isWellDefined);
         m1 := min j;
@@ -2350,78 +798,64 @@ isWellDefined ToricVectorBundleMap := Boolean => f ->(
     return f.cache.isWellDefined
     )
 
--- PURPOSE : To check whether a given map of TVB is injective. 
---   INPUT : "T" where T is a ToricVectorBundle. 
---  OUTPUT : A boolean indicating whether T is injective or not. 
 isInjective (ToricVectorBundleMap) := f -> (
-
-	if not isWellDefined f then (
-		if debugLevel > 0 then (
-			<< "-- the map is not well defined" << endl
-		);
-		return false
-	);
-	
-	if not isInjective (map f) then (
-		if debugLevel > 0 then (
-			<< "-- the map is not injective" << endl);
-		return false
-	);
-	
-	X := variety(source f);
-	for p in rays X do (
-		r := flatten join(filtrationJumps source f, filtrationJumps target f);
+    if not isWellDefined f then (
+        if debugLevel > 0 then (
+            << "-- the map is not well defined" << endl
+            );
+        return false
+        );
+    if not isInjective (map f) then (
+        if debugLevel > 0 then (
+            << "-- the map is not injective" << endl);
+        return false
+        );
+    X := variety(source f);
+    for p in rays X do (
+        r := flatten join(filtrationJumps source f, filtrationJumps target f);
         if r == {} then(return true);
-		m1 := min r;
-		m2 := max r;
-		for i from m1 to m2 do (
-			if not (numColumns filteredPiece(source f, p, i) <= numColumns filteredPiece(target f, p, i)) then (
-				if debugLevel > 0 then (
-					<< "some error message" << endl
-					);
-				return false
-				);
-				
-			);
-		);
-		
-		true
-	)
+        m1 := min r;
+        m2 := max r;
+        for i from m1 to m2 do (
+            if not (numColumns filteredPiece(source f, p, i) <= numColumns filteredPiece(target f, p, i)) then (
+                if debugLevel > 0 then (
+                    << "some error message" << endl
+                    );
+                return false
+                );
+            );
+        );
+    true
+    )
 
--- PURPOSE : To check whether a given map of TVB is surjective. 
---   INPUT : "T" where T is a ToricVectorBundle. 
---  OUTPUT : A boolean indicating whether T is surjective or not. 
 isSurjective (ToricVectorBundleMap) := f -> (
-
-	if not isWellDefined f then (
-		if debugLevel > 0 then (
-			<< "-- the map is not well defined" << endl);
-		return false
-	);
-	
-	if not isSurjective (map f) then (
-		if debugLevel > 0 then (
-			<< "-- the map is not surjective" << endl);
-		return false
-	);
-	
-	X := variety(source f);
-	for p in rays X do (
-		r := flatten join(filtrationJumps source f, filtrationJumps target f);
+    if not isWellDefined f then (
+        if debugLevel > 0 then (
+            << "-- the map is not well defined" << endl);
+        return false
+        );
+    if not isSurjective (map f) then (
+        if debugLevel > 0 then (
+            << "-- the map is not surjective" << endl);
+        return false
+        );
+    X := variety(source f);
+    for p in rays X do (
+        r := flatten join(filtrationJumps source f, filtrationJumps target f);
         if r == {} then(return true);
-		m1 := min r;
-		m2 := max r;
-		for i from m1 to m2 do (
-			if not (numColumns filteredPiece(source f, p, i) >= numColumns filteredPiece(target f, p, i)) then (
-				if debugLevel > 0 then (
-					<< "some error message" << endl
-					);
-				return false
-				);
-			);
-		);
-		return true
-	)
+        m1 := min r;
+        m2 := max r;
+        for i from m1 to m2 do (
+            if not (numColumns filteredPiece(source f, p, i) >= numColumns filteredPiece(target f, p, i)) then (
+                if debugLevel > 0 then (
+                    << "some error message" << endl
+                    );
+                return false
+                );
+            );
+        );
+    return true
+    )
 
 
 -- Auxiliary fucntion for computing the jumps that happened in a list of matrices in a filtration
@@ -2437,7 +871,7 @@ jumpsAux = (L,mm) ->(
 -- Given a non square matrix of full rank and a list of jumps it returns a square matrix and a list of jumps
 -- such that the filtartion defined is the same as the one we started with. 
 -- This fucntion is used in weilToKyachko but also in coker, image and ker
--- TODO: check that it interacts correctly with isWellDefined ToricVectorBundleNew
+-- TODO: check that it interacts correctly with isWellDefined ToricVectorBundle
 -- The input is of the form ML={Matrix, List}
 adaptedBasis = (ML) -> (
     M:= ML_0;
@@ -2462,9 +896,6 @@ adaptedBasis = (ML) -> (
     );
     {M_cols, jumps}
 )
-
-
-
 
 -- TODO NEEDS TO BE FIXED
 
@@ -2549,14 +980,14 @@ cokernel (ToricVectorBundleMap) := f ->(
     ipr := map(source pr, target pr, inverse pr);
     L:= apply(Xrays,  p ->
         apply(steps, i ->(
-            -- TO DO: fix this
-            amb := module (ring E2) ^ (rank E2);
-            f1 := image map(amb, , sub(M * filteredPiece(E1,p,i),RX));
-            f2 := image map(amb, , sub(filteredPiece(E2,p,i),RX));
-            ipr*inducedMap(cokerM, f2/f1 ) 
+                -- TO DO: fix this
+                amb := module (ring E2) ^ (rank E2);
+                f1 := image map(amb, , sub(M * filteredPiece(E1,p,i),RX));
+                f2 := image map(amb, , sub(filteredPiece(E2,p,i),RX));
+                ipr*inducedMap(cokerM, f2/f1 ) 
 
-        ))
-    );
+                ))
+        );
     -- Define the new data
     -- The command matrix is there so that the map is simplify to be betweent free modules
     newMatrices:= apply(L, i -> matrix i_0 );
@@ -2567,176 +998,9 @@ cokernel (ToricVectorBundleMap) := f ->(
     newMatrices = newData_0;
     newJumps= newData_1;
     toricVectorBundle(X, newMatrices, newJumps)
-)
+    )
 
-
--- PURPOSE : Computing the image bundle of a toric vector bundle
---   INPUT : '(T,M)', where 'T' is a ToricVectorBundleKlyachko and 'M' a matrix with the bundle space as its source
---  OUTPUT : The bundle given by the images of the filtrations
-image (ToricVectorBundleKlyachko,Matrix) := (T,M) -> (
-     k := T#"rank of the vector bundle";
-     tRing := T#"ring";
-     -- Checking for input errors
-     if k != numColumns M then error("The source of the matrix has to be the vector bundle.");
-     if tRing =!= ring M then error("The matrix and the bundle have to be over the same ring."); 
-     -- Compute a basis of the image
-     Mgens := mingens image M;
-     ranknew := numColumns Mgens;
-     bT := T#"baseTable";
-     fT := T#"filtrationTable";
-     -- for each ray compute the image of the filtration
-     bT = hashTable apply(keys bT, j -> (
-	       fTj := drop(sort keys fT#j,1);
-	       cols := {};
-	       oldImage := map(tRing^ranknew,tRing^0,0);
-	       -- for each filtration step compute the image
-	       j => apply(fTj, i -> (
-			 cols = cols | fT#j#i;
-			 -- take the image of the i-th filtration
-			 A := M * (bT#j)_cols;
-			 -- Represent this in the basis chosen
-			 gkMA := (gens ker (Mgens | A))^{0..ranknew-1};
-			 -- Select the new basis vectors of the filtration
-			 gkMA = mingens (image(oldImage | gkMA) / image oldImage);
-			 -- and add them to the matrix
-			 oldImage = oldImage |gkMA;
-			 -- save the new matrix and filtration step
-			 (gkMA,matrix {toList(numColumns gkMA:i)})))));
-     -- Generate the new filtration matrices and tables
-     fMT := hashTable apply(pairs bT, p -> p#0 => matrix {apply(p#1,last)});
-     fT = hashTable apply(pairs fMT, p -> (
-	       L := flatten entries p#1;
-	       L1 := sort unique L;
-	       p#0 => hashTable ({(min L1-1) => {}} | apply(L1, l -> l => positions(L,e -> e == l)))));
-     bT = hashTable apply(pairs bT, p -> p#0 => matrix {apply(p#1,first)});
-     Tnew := new ToricVectorBundleKlyachko from {
-	  "ring" => T#"ring",
-	  "rayTable" => T#"rayTable",
-	  "baseTable" => bT,
-	  "filtrationMatricesTable" => fMT,
-	  "filtrationTable" => fT,
-	  "ToricVariety" => T#"ToricVariety",
-	  "number of affine charts" => T#"number of affine charts",
-	  "dimension of the variety" => T#"dimension of the variety",
-	  "rank of the vector bundle" => ranknew,
-	  "number of rays" => T#"number of rays",
-	  symbol cache => new CacheTable};
-     if T.cache.?isVB and T.cache.isVB then Tnew.cache.isVB = true;
-     Tnew)
-
-
--- PURPOSE : Computing the kernel bundle of a toric vector bundle
---   INPUT : '(T,M)', where 'T' is a ToricVectorBundleKlyachko and 'M' a matrix with the bundle space as source
---  OUTPUT : The bundle given by the kernels of the filtrations
-ker (ToricVectorBundleKlyachko,Matrix) := opts -> (T,M) -> (
-     k := T#"rank of the vector bundle";
-     tRing := T#"ring";
-     -- Checking for input errors
-     if k != numColumns M then error("The source of the matrix has to be the vector bundle.");
-     if tRing =!= ring M then error("Matrix and bundle have to be over the same ring.");
-     -- Compute a basis of the kernel
-     M = mingens ker M;
-     ranknew := numColumns M;
-     bT := T#"baseTable";
-     fT := T#"filtrationTable";
-     -- Compute the new filtration for each ray
-     bT = hashTable apply(keys bT, j -> (
-	       fTj := drop(sort keys fT#j,1);
-	       cols := {};
-	       oldKer := map(tRing^ranknew,tRing^0,0);
-	       -- compute each filtration step
-	       j => apply(fTj, i -> (
-			 cols = cols | fT#j#i;
-			 A := (bT#j)_cols;
-			 -- Represent the kernel intersected with the actual filtration step in the basis chosen
-			 gkMA := (gens ker (M | A))^{0..ranknew-1};
-			 -- Select the "new" vectors
-			 gkMA = mingens (image(oldKer | gkMA) / image oldKer);
-			 oldKer = oldKer |gkMA;
-			 -- Save the new vectors and the filtration step
-			 (gkMA,matrix {toList(numColumns gkMA:i)})))));
-     -- Compute the filtration matrices and tables
-     fMT := hashTable apply(pairs bT, p -> p#0 => matrix {apply(p#1,last)});
-     fT = hashTable apply(pairs fMT, p -> (
-	       L := flatten entries p#1;
-	       L1 := sort unique L;
-	       p#0 => hashTable ({min L1 - 1 => {}} | apply(L1, l -> l => positions(L,e -> e == l)))));
-     bT = hashTable apply(pairs bT, p -> p#0 => matrix {apply(p#1,first)});
-     Tnew := new ToricVectorBundleKlyachko from {
-	  "ring" => T#"ring",
-	  "rayTable" => T#"rayTable",
-	  "baseTable" => bT,
-	  "filtrationMatricesTable" => fMT,
-	  "filtrationTable" => fT,
-	  "ToricVariety" => T#"ToricVariety",
-	  "number of affine charts" => T#"number of affine charts",
-	  "dimension of the variety" => T#"dimension of the variety",
-	  "rank of the vector bundle" => ranknew,
-	  "number of rays" => T#"number of rays",
-	  symbol cache => new CacheTable};
-     if T.cache.?isVB and T.cache.isVB then Tnew.cache.isVB = true;
-     Tnew)
-     
-
-
-
--- PURPOSE : Computing the coker bundle of a toric vector bundle
---   INPUT : '(T,M)', where 'T' is a ToricVectorBundleKlyachko and 'M' a matrix with the bundle space as target
---  OUTPUT : The bundle given by the cokernels of the filtrations
-coker (ToricVectorBundleKlyachko,Matrix) := (T,M) -> (
-     k := T#"rank of the vector bundle";
-     tRing := T#"ring";
-     -- Checking for input errors
-     if k != numRows M then error("The source of the matrix has to be the vector bundle.");
-     if tRing =!= ring M then error("Matrix and bundle have to be over the same ring."); 
-     -- Computing the map from the bundle to the kernel
-     N := transpose mingens ker transpose M;
-     -- Computing a basis of the cokernel
-     coKerGens := mingens image N;
-     newRank := numColumns coKerGens;
-     bT := T#"baseTable";
-     fT := T#"filtrationTable";
-     -- Computing the new baseTable with filtrations
-     bT = hashTable apply(keys bT, j -> (
-	       fTj := drop(sort keys fT#j,1);
-	       cols := {};
-	       oldCoKer := map(tRing^newRank,tRing^0,0);
-	       -- Going through the filtration steps and computing the cokernel for each step
-	       j => apply(fTj, i -> (
-			 cols = cols | fT#j#i;
-			 -- Computing the cokernel
-			 A := N * (bT#j)_cols;
-			 -- Representing this in the basis chosen
-			 gkMA := (gens ker (coKerGens | A))^{0..newRank-1};
-			 -- Selecting the new basis elements that appear in this filtration step
-			 gkMA = mingens (image(oldCoKer | gkMA) / image oldCoKer);
-			 -- Appending these new vectors
-			 oldCoKer = oldCoKer |gkMA;
-			 -- appending the filtration step number
-			 (gkMA,matrix {toList(numColumns gkMA:i)})))));
-     -- Generating the new filtration matrices and tables
-     fMT := hashTable apply(pairs bT, p -> p#0 => matrix {apply(p#1,last)});
-     fT = hashTable apply(pairs fMT, p -> (
-	       L := flatten entries p#1;
-	       L1 := sort unique L;
-	       p#0 => hashTable ({min L1 - 1 => {}} | apply(L1, l -> l => positions(L,e -> e == l)))));
-     bT = hashTable apply(pairs bT, p -> p#0 => matrix {apply(p#1,first)});
-     Tnew := new ToricVectorBundleKlyachko from {
-	  "ring" => T#"ring",
-	  "rayTable" => T#"rayTable",
-	  "baseTable" => bT,
-	  "filtrationMatricesTable" => fMT,
-	  "filtrationTable" => fT,
-	  "ToricVariety" => T#"ToricVariety",
-	  "number of affine charts" => T#"number of affine charts",
-	  "dimension of the variety" => T#"dimension of the variety",
-	  "rank of the vector bundle" => newRank,
-	  "number of rays" => T#"number of rays",
-	  symbol cache => new CacheTable};
-     if T.cache.?isVB and T.cache.isVB then Tnew.cache.isVB = T.cache.isVB;
-     Tnew)     	       
-
----------------------------------------
+ ---------------------------------------
 -- WEIL DECORATIONS
 ---------------------------------------
 
@@ -2769,7 +1033,7 @@ globalAssignment WeilDecoration
 
 net WeilDecoration := WD -> (
     "Weil decoration of rank " | toString WD.rank |
-    " with " | toString(#WD.strata - 1) | " nonzero strata")
+    " with " | toString(#WD.strata) | " nonzero strata")
 
 variety WeilDecoration := WD -> WD.variety
 rank WeilDecoration := ZZ => WD -> WD.rank
@@ -2778,12 +1042,9 @@ rank WeilDecoration := ZZ => WD -> WD.rank
 strata = method()
 strata WeilDecoration := List => WD -> WD.strata
 
-
--- Input: a toric vector bundle
--- Output: the Weil Decoration associated to this.
 -- NOTE: The trivial strata is excluded for convenience in coding.
 weilDecoration = method()
-weilDecoration ToricVectorBundleNew := WeilDecoration => V -> (
+weilDecoration ToricVectorBundle := WeilDecoration => V -> (
     X := variety V;
     A := rays X;
     L := flatten filtrationJumps V;
@@ -2801,8 +1062,7 @@ weilDecoration ToricVectorBundleNew := WeilDecoration => V -> (
 	-- the filtered piece on each ray at the given index
 	pieces := apply(A, inds, (rho, j) -> image filteredPiece(V, rho, j));
 	W := intersect pieces;
-	-- a vanishing intersection is not a stratum: the zero vector is decorated
-	-- by infinity, handled separately below
+	-- a vanishing intersection is not a stratum for us.
 	if rank W > 0 then strataIntersections#W = toList inds);
     -- Sort the strata by dimension, breaking ties by the index vector.  Note that
     -- the Matroids package globally redefines sort(List, Function) with a
@@ -2818,10 +1078,10 @@ weilDecoration ToricVectorBundleNew := WeilDecoration => V -> (
 	symbol cache   => new CacheTable})
 
 weilToKlyachko = method()
-weilToKlyachko WeilDecoration := ToricVectorBundleNew => WD ->
+weilToKlyachko WeilDecoration := ToricVectorBundle => WD ->
     weilToKlyachko(variety WD, WD)
 
-weilToKlyachko(NormalToricVariety, WeilDecoration) := ToricVectorBundleNew => (X, WD) ->
+weilToKlyachko(NormalToricVariety, WeilDecoration) := ToricVectorBundle => (X, WD) ->
     weilToKlyachko(X, apply(strata WD, (W, D) -> (W, entries vector D)))
 
 weilToKlyachko(NormalToricVariety, List) := (X, WD) ->(
@@ -2832,17 +1092,6 @@ weilToKlyachko(NormalToricVariety, List) := (X, WD) ->(
     -- Simplify the data to get square matrices
     data := transpose apply(Jaux, adaptedBasis);
     toricVectorBundle(X, data_0, data_1))
-
--*
-weilToKlyachko(NormalToricVariety, List, List) := (X, E, D) -> (
-    L := flatten D;
-    amin := min L;
-    amax := max L;
-    H := new MutableHashTable;
-    (M, J) := to sequence transpose for i from 0 to #(rays X)-1 do (
-	);
-    )
-*-
 
 -- Input: weilDecoration for a ToricVectorBundle
 -- Output: the (not necessarily saturated!) chains in the poset of strata
@@ -2865,7 +1114,7 @@ posetChains := (WD,n) -> (
 posetChains = memoize posetChains
 
 firstChernClass = method()
-firstChernClass ToricVectorBundleNew := E -> (
+firstChernClass ToricVectorBundle := E -> (
     D := weilDecoration E;
     r := rank E;
     sum flatten for i to r-1 list (
@@ -2873,21 +1122,6 @@ firstChernClass ToricVectorBundleNew := E -> (
         for c in ichains list (-1)^i * (last c)_0 * (first c)_1
         )
     )
-
--*
-X = hirzebruchSurface 3
-E = tangentBundle X
-firstChernClass E
-
-X = toricProjectiveSpace 2
-mats = toList (3:id_(ZZ^6))
---todo these jumps is wrong
-jumps = {{0,-1,-2,0,-1,0},{1,1,1,0,0,1},{-1,0,1,0,1,1}}
-E = toricVectorBundle(X,mats,jumps)
-D = weilDecoration E
-#D
-firstChernClass E
-*-
 
 --------------------------------------------------------------
 -- GETTER FUNCTIONS FOR WEIL DECORATIONS
@@ -3091,7 +1325,7 @@ moduleToKlyachko' (NormalToricVariety, Matrix):= (X,A) -> (
 -- then F == moduleToKlyachko(variety E, klyachkoToModule(F)) returns true 
 klyachkoToModule = method()
 -- TODO
-klyachkoToModule ToricVectorBundleNew := E -> (
+klyachkoToModule ToricVectorBundle := E -> (
     X := variety E;
     -- Cox ring of the toric variety
     S := ring X;
@@ -3134,12 +1368,13 @@ klyachkoToModule ToricVectorBundleNew := E -> (
 ---------------------------------------
 -- KANEYAMA
 ---------------------------------------
+ToricVectorBundleKaneyama = new Type of HashTable
+ToricVectorBundleKaneyama.synonym = "vector bundle on a toric variety using Kaneyama's description"
+globalAssignment ToricVectorBundleKaneyama
 
---contructor for a ToricVectorBundleKaneyama
---
--- contructors for a ToricVectorBundleKaneyama
+-- contructors for a Kaneyama type toric vector bundles
 
---    INPUT : '(k,F)', a strictly positive integer 'k' and a pure and full dimensional fan 'F'
+--   INPUT  : '(k,F)', a strictly positive integer 'k' and a pure and full dimensional fan 'F'
 --   OUTPUT : A ToricVectorBundleKaneyama
 toricVectorBundleKaneyama  = method(TypicalValue => ToricVectorBundleKaneyama)
 toricVectorBundleKaneyama (ZZ,Fan) := (k,F) -> (
@@ -3553,7 +1788,7 @@ tensor(ToricVectorBundleKaneyama, ToricVectorBundleKaneyama) := ToricVectorBundl
      k1 := tvb1#"rank of the vector bundle";
      k2 := tvb2#"rank of the vector bundle";
 
-     -- Extracting data out of tvb1 and tvb2
+    -- Extracting data out of tvb1 and tvb2
      -- Generating the trivial bundle of dimension k1+k2
      E := toricVectorBundleKaneyama(k1 * k2,tvb1#"ToricVariety");
      -- Computing the new degree table and transition matrices and writing the degrees and transition matrices into the bundle
@@ -3623,15 +1858,13 @@ weilToCartierKaneyama (List,Fan) := opts -> (L,F) -> (
     -- Construct the actual line bundle
     addDegrees(tvb,gC))
 
-
----------------------------------------
--- AUXILIARY FUNCTIONS, not public
----------------------------------------
-
 -- PURPOSE : Computing the cotangent bundle on a smooth, pure, and full dimensional Toric Variety 
 --   INPUT : 'F',  a smooth, pure, and full dimensional Fan
---  OUTPUT : 'tvb',  a ToricVectorBundleKaneyama 
-cotangentBundleKaneyama = F -> (
+--  OUTPUT : 'tvb',  a ToricVectorBundleKaneyama
+tangentBundleKaneyama = method()
+tangentBundleKaneyama Fan := F -> dual cotangentBundleKaneyama F
+cotangentBundleKaneyama = method()
+cotangentBundleKaneyama Fan := F -> (
      -- Checking for input errors
      if not isSmooth F then error("The Toric Variety has to be smooth.");
      if not isComplete F then error("The Toric Variety has to be complete.");
@@ -3656,7 +1889,7 @@ cotangentBundleKaneyama = F -> (
 	  "topConeTable" => tvb#"topConeTable",
 	  symbol cache => new CacheTable};
      E.cache.regCheck = true;
-     E.cache.cocyle = true;
+     E.cache.cocycle = true;
      E)
  
 -- PURPOSE : Computing the Cech complex of a vector bundle (Kaneyama)
@@ -3788,13 +2021,214 @@ cechComplex (ZZ,ToricVectorBundleKaneyama,Matrix) := (k,tvb,u) -> (
 	  tvb.cache.cech#(k,u) = (M21,d21);
 	  tvb.cache.cech#(k+1,u) = M31);
      tvb.cache.cech#(k,u))
+---------------------------------------------------------------
+-- AUXILIARY FUNCTIONS FOR KANEYAMA
+---------------------------------------------------------------
+
+-- A ray is a matrix ZZ^n <-- ZZ^1, so rays can be sorted by assembling them
+-- into a matrix and calling "sortColumns".  We sort the rays as in the package
+-- Polyhedra, so that changes to the algorithm for computing the hash code of
+-- matrices doesn't affect what we do.
 
 
+-- For some reason it is important for ToricVectorBundles to be able to sort
+-- cones. Since cones as keys in hashtables do not work anymore we move the old
+-- code for sorting cones here from OldPolyhedra.m2 and implement a method for
+-- sorting the new keys.
+Cone ? Cone := (C1,C2) -> (
+     if C1 == C2 then symbol == else (
+     if ambDim C1 != ambDim C2 then ambDim C1 ? ambDim C2 else (
+          if dim C1 != dim C2 then dim C1 ? dim C2 else (
+          R1 := sort rays C1;
+          R2 := sort rays C2;
+          if R1 != R2 then (
+          R1 = apply(numColumns R1, i -> R1_{i});
+          R2 = apply(numColumns R2, i -> R2_{i});
+          (a,b) := (set R1,set R2); 
+          r := (sort matrix {join(select(R1,i->not b#?i),select(R2,i->not a#?i))})_{0};
+          if a#?r then symbol > else symbol <)
+          else (
+          R1 = linSpace C1;
+          R2 = linSpace C2;
+          R1 = apply(numColumns R1, i -> R1_{i});
+          R2 = apply(numColumns R2, i -> R2_{i});
+          (c,d) := (set R1,set R2);
+          l := (sort matrix {join(select(R1,i->not d#?i),select(R2,i->not c#?i))})_{0};
+          if c#?l then symbol > else symbol <)))))
+
+customConeSort = method()
+customConeSort List := L -> (
+	L = apply(L, l -> posHull l);
+	L = sort L;
+	L = apply(L, l -> (rays l, linealitySpace l));
+	L
+)
+
+
+raySort = value Polyhedra#"private dictionary"#"raySort"
+raySortOfFan = (fan) -> (
+    r := rays fan;
+    raySort for i from 0 to numColumns r - 1 list r_{i}
+    )
+
+-- PURPOSE : Checking for a matrix if it is over ZZ or QQ and returning an error if not
+--   INPUT : '(M,msg)',  where 'M' is a matrix and 'msg' is the name of the object 'M' describes
+--  OUTPUT : The matrix promoted to QQ if it was over ZZ or QQ, otherwise an error
+chkZZQQ = (M,msg) -> (
+     R := ring M;
+     if R =!= ZZ and R =!= QQ then error("expected matrix of ",msg," to be over ZZ or QQ");
+     promote(M,QQ));
+
+
+-- PURPOSE : Constructing the fan of projective n-space
+generateRandomMatrix = method(TypicalValue => Matrix)
+
+--   INPUT : '(m,n,h)',  where 'm' and 'n' are strictly positive integers and 'h' is an integer
+--  OUTPUT : An 'm' by 'n' matrix with random entries between 0 and 'h'
+generateRandomMatrix (ZZ,ZZ,ZZ) := (m,n,h) -> matrix apply(m, i -> apply(n, j -> random h+1))
+
+--   INPUT : '(m,n,l,h)',  where 'm' and 'n' are strictly positive integers and 'l' 'h' are integers 
+--     	    	      	   of which 'l' is the smaller one
+--  OUTPUT : An 'm' by 'n' matrix with random entries between 0 and 'h'
+generateRandomMatrix (ZZ,ZZ,ZZ,ZZ) := (m,n,l,h) -> matrix apply(m, i -> apply(n, j -> random(l,h)))
+
+
+-- PURPOSE : Computing the intersection of the images of two matrices
+--   INPUT : '(M,N)', two matrices with the same target
+--  OUTPUT : a matrix with the minimal generators of the intersection
+intersectMatrices = (M,N) -> (
+     m := numColumns M;
+     N = gens ker(M | N);
+     N = N^{0..m-1};
+     gens trim image(M*N));
+
+  
+-- PURPOSE : Solving the system R*X=F
+--   INPUT : '(R,F)',  two matrices over ZZ
+--  OUTPUT : a matrix of QQ solutions
+systemSolver = (R,F) -> (
+     (R1,Lmatrix,Rmatrix) := smithNormalForm lift(R,ZZ);
+     F1 := entries(Lmatrix * F);
+     Rmatrix * (matrix apply(numRows R1, i -> F1#i / R1_(i,i)) || map(QQ^(numColumns R1 - numRows R1),QQ^(#F1#0),0)))
+
+-- PURPOSE : Constructing the fan of projective n-space
+--   INPUT : 'n',  a strictly positive integer
+--  OUTPUT : The fan of projective n-space
+projectiveSpaceFan = method(TypicalValue => Fan)
+projectiveSpaceFan ZZ := n -> (
+     if n < 1 then error("The dimension has to be strictly positive.");
+     normalFan convexHull (map(ZZ^n,ZZ^n,1)|map(ZZ^n,ZZ^1,0)))
+
+
+-- PURPOSE : Constructing the fan of the product of n projective 1-spaces
+--   INPUT : 'n',  a strictly positive integer
+--  OUTPUT : The fan of the product of n projective 1-spaces
+pp1ProductFan = method(TypicalValue => Fan)
+pp1ProductFan ZZ := n -> (
+     if n < 1 then error("The number of PP^1's has to be strictly positive.");
+     normalFan hypercube n)
+
+
+-- PURPOSE : Constructing the fan of the Hirzebruch n-surface
+--   INPUT : 'n',  a positive integer
+--  OUTPUT : The fan of the Hirzebruch n-surface
+hirzebruchFan = method(TypicalValue => Fan)
+hirzebruchFan ZZ := n -> hirzebruch n
+ 
+---------------------------------------
+-- PRINTING BEHAVIOR
+---------------------------------------
+-- This is just some adhoc editing, sorry to anybody trying to decipher this!
+-- But the basics are: "string | string" will adjoin things horizontally, and
+-- "string || string" will adjoin things vertically. Everything done here is
+-- gluing strings together with whitespace depending on the width/heights of
+-- the matrices here.
+-- For those trying to understand, worth pointing out that the HEIGHT of a string
+-- is obtained via "length" and NOT "height".
+vertSpace = n -> (s := ""; if n == 1 then return "" else for i to n-2 do s = s || ""; s)
+horSpace = n -> (s := " "; if n == 0 then return "" else if n == 1 then return s else for i to n-2 do s = s | " "; s)
+
+displayFiltrations = method()
+displayFiltrations ToricVectorBundle := E -> (
+    filtMats := filtrationMatrices E;
+    filtJumps := filtrationJumps E;
+    -- here is the range of indices we want to print
+    rng := {(min flatten filtJumps)-1, (max flatten filtJumps)+2};
+    -- put all of the matrices that appear there into a hash table indexed by rays.
+    matTable := hashTable for p in rays E list p => (
+        hashTable for i from rng_0 to rng_1 list i => filteredPiece(E,p,i)
+        );
+    -- to align things properly, we need easy access to the heights of those matrices as strings.
+    h' := hashTable for p in rays E list p => max(for M in values matTable#p list length net M);
+    -- initialize the string we'll output, as well as a bunch of spacing strings.
+    mainStr := "";
+    colonStr := " ";
+    subsetStr := " ";
+    dotsStr := " ... ";
+    -- here's where the chaos begins. we're trying to make a grid of filtrations, where the row is
+    -- indexed by rays and the column is the index of the filtration. we're going to construct that grid
+    -- column by column.
+    -- 
+    -- this is the first column of that grid. it's just the list of rays, with vertical spacing
+    -- added based on the sizes of the matrices appearing in the filtration for that ray.
+    -- NOTE: one additional feature of this chunk is that it makes it so that subsetStr and
+    -- dotsStr are now fully column strings. by that i mean they are not just single characters,
+    -- they have height equal to the height of the whole net at the end, but their vertical
+    -- spacing is now perfectly calibrated. so whenever we need to put subsets for our
+    -- filtrations, we can just use this single string now.
+    w := max for p in rays E list floor(((width net p)-3)/2);
+    rayStr := horSpace(w) | "ray" | horSpace(w);
+    for p in rays E do (
+        -- here's the adjusted vertical spacing depending on the matrices.
+        h := floor((h'#p)/2);
+        -- for small numbers, this is a very slight adjustment parameter to make things look nicer.
+        c := if even h'#p and h'#p != 2 then 1 else 0;
+        rayStr = rayStr || vertSpace(h-c+1) || net p || vertSpace(h);
+        colonStr = colonStr || vertSpace(h-c+1) || " : " || vertSpace(h);
+        dotsStr = dotsStr || vertSpace(h-c+1) || " ... " || vertSpace(h);
+        subsetStr = subsetStr || vertSpace(h-c+1) || " ⊃ " || vertSpace(h);
+        );
+    mainStr = rayStr | colonStr | dotsStr | subsetStr;
+    -- this is the main meat of the display. we construct the grid column by column in the same way.
+    for i from rng_0 to rng_1 do (
+        -- some of the matrices might be smaller than others because of negative signs or numbers, so this
+        -- acts as an adjustment parameter to center the matrices.
+        w = max({0} | (for p in rays E list ceiling(((width net (matTable#p)#i)-(width net i))/2)));
+        -- put the index of the filtration at the top, and then...
+        matStr := if max values h' == 1 then horSpace(w) | net i else (horSpace(w) | net i) || vertSpace(1);
+        -- start populating the grid entries of the column with the matrices.
+        for p in rays E do (
+            w' := max({0} | (for q in rays E list floor(((width net (matTable#q)#i)-(width net (matTable#p)#i))/2)));
+            h := floor((h'#p)/2);
+            c := if even h'#p and h'#p != 2 then 1 else 0;
+            if length net (matTable#p)#i == 1 then matStr = matStr || (vertSpace(h-c) || (horSpace(w') | net (matTable#p)#i) || vertSpace(h+1));
+            if length net (matTable#p)#i == 2 then matStr = matStr || ((horSpace(w') | net (matTable#p)#i) || vertSpace(2));
+            if length net (matTable#p)#i > 2 then matStr = matStr || (((horSpace(w') | net (matTable#p)#i)) || vertSpace(1));
+            );
+        mainStr = mainStr | matStr | subsetStr
+        );
+    -- at the very end, all of the filtrations tail off, so we'll add the dots string again.
+    mainStr = mainStr | dotsStr;
+    mainStr
+    )
+
+-- Shamelessly I have copied Greg's kludge from NormalToricVarieties
+-- to get printing of maps to look nice.
+hasAttribute = value Core#"private dictionary"#"hasAttribute";
+getAttribute = value Core#"private dictionary"#"getAttribute";
+ReverseDictionary = value Core#"private dictionary"#"ReverseDictionary";
+expression ToricVectorBundle := E -> (
+    if hasAttribute (E, ReverseDictionary) 
+    then expression getAttribute (E, ReverseDictionary)
+    else net E
+    )
+net ToricVectorBundle := E -> (
+    "ToricVectorBundle of rank " | net rank E | " on " | net variety E
+    )
 
 ---------------------------------------
 -- DOCUMENTATION
 ---------------------------------------
-
 
 beginDocumentation()
 
@@ -3826,7 +2260,7 @@ document {
      over each full dimensional cone, and for each codimension-one cone a transition matrix 
      (See ",TO ToricVectorBundleKaneyama,"). The description of an equivariant vector bundle given by Klyachko 
      consists of filtrations of a fixed vector space for each ray in the fan of the base variety. Furthermore,
-     these filtrations have to satisfy a certain compatibility condition (See ",TO ToricVectorBundleKlyachko,").",
+     these filtrations have to satisfy a certain compatibility condition (See ",TO ToricVectorBundle,").",
      
      PARA{}, "For the mathematical background see ",
      
@@ -3839,7 +2273,7 @@ document {
      SeeAlso => {"Polyhedra::Polyhedra"}
      
      }
-
+-*
 document {
      Key => ToricVectorBundle,
      Headline => "the class of all toric vector bundles",
@@ -5691,7 +4125,6 @@ document {
      
      }
 
--*
 doc ///
     Key
         ToricVectorBundleMap
@@ -6006,34 +4439,6 @@ doc ///
         (matrix, SimplicialMap)
 	(map, SimplicialMap)    		
 	(isWellDefined, SimplicialMap)
-///
-*-
-
-
-
----------------------------------------
--- TESTS
----------------------------------------
-
-
--- Test 0
--- Checking toricVectorBundle for Kaneyama type
-TEST ///
-T = toricVectorBundleKaneyama(2,pp1ProductFan 2)
-assert(T#"baseChangeTable" === hashTable {(0,1) => map(QQ^2,QQ^2,1),(0,2) => map(QQ^2,QQ^2,1),(1,3) => map(QQ^2,QQ^2,1),(2,3) => map(QQ^2,QQ^2,1)})
-assert(T#"degreeTable" === hashTable apply(facesAsCones(0,pp1ProductFan 2), C -> (rays C, linealitySpace C) => map(ZZ^2,ZZ^2,0)))
-assert(rank T == 2)
-assert(T#"dimension of the variety" == 2)
-L1 = {matrix {{1,0},{0,1}},matrix{{0,1},{1,0}},matrix{{-1,0},{-1,1}}}
-L2 = {matrix {{-1,0},{0,-1}},matrix{{0,1},{1,0}},matrix{{0,-1},{-1,0}}}
-T = toricVectorBundleKaneyama(2,projectiveSpaceFan 2,L1,L2)
-assert(T#"baseChangeTable" === hashTable {(0,1) => matrix {{-1/1,0},{0,-1}},(0,2) => matrix{{0/1,1},{1,0}},(1,2) => matrix{{0/1,-1},{-1,0}}})
-assert(T#"degreeTable" === hashTable {(matrix {{1,-1},{0,-1}}, map(ZZ^2,0,0)) => matrix{{-1,0},{-1,1}}, (matrix {{1,0},{0,1}}, map(ZZ^2,0,0)) => matrix{{0,1},{1,0}}, (matrix {{-1,0},{-1,1}}, map(ZZ^2,0,0)) => matrix{{1,0},{0,1}}})
-assert(rank T == 2)
-assert(T#"dimension of the variety" == 2)
-///
-
--- Test 1
 -- Checking toricVectorBundle for Klyachko type -- maybe need to get rid of/modify this becuase it uses the old definition
 TEST ///
 T = toricVectorBundle(2,pp1ProductFan 2);
@@ -6052,8 +4457,34 @@ assert(rank T == 2)
 assert(T#"dimension of the variety" == 2)
 ///
 
--- TODO: fix these tests, we no longer have cocycleCheck and regCheck - combined to give isWellDefined
--- Test 2
+///
+*-
+
+
+
+---------------------------------------
+-- TESTS
+---------------------------------------
+
+------------ KANEYAMA TESTS -----------
+-- Checking Kaneyama constructor.
+
+-*
+TEST ///
+T = toricVectorBundleKaneyama(2,pp1ProductFan 2)
+assert(T#"baseChangeTable" === hashTable {(0,1) => map(QQ^2,QQ^2,1),(0,2) => map(QQ^2,QQ^2,1),(1,3) => map(QQ^2,QQ^2,1),(2,3) => map(QQ^2,QQ^2,1)})
+assert(T#"degreeTable" === hashTable apply(facesAsCones(0,pp1ProductFan 2), C -> (rays C, linealitySpace C) => map(ZZ^2,ZZ^2,0)))
+assert(rank T == 2)
+assert(T#"dimension of the variety" == 2)
+L1 = {matrix {{1,0},{0,1}},matrix{{0,1},{1,0}},matrix{{-1,0},{-1,1}}}
+L2 = {matrix {{-1,0},{0,-1}},matrix{{0,1},{1,0}},matrix{{0,-1},{-1,0}}}
+T = toricVectorBundleKaneyama(2,projectiveSpaceFan 2,L1,L2)
+assert(T#"baseChangeTable" === hashTable {(0,1) => matrix {{-1/1,0},{0,-1}},(0,2) => matrix{{0/1,1},{1,0}},(1,2) => matrix{{0/1,-1},{-1,0}}})
+assert(T#"degreeTable" === hashTable {(matrix {{1,-1},{0,-1}}, map(ZZ^2,0,0)) => matrix{{-1,0},{-1,1}}, (matrix {{1,0},{0,1}}, map(ZZ^2,0,0)) => matrix{{0,1},{1,0}}, (matrix {{-1,0},{-1,1}}, map(ZZ^2,0,0)) => matrix{{1,0},{0,1}}})
+assert(rank T == 2)
+assert(T#"dimension of the variety" == 2)
+///
+
 -- Checking addBaseChange and cocycleCheck
 TEST ///
 T = toricVectorBundleKaneyama(2,pp1ProductFan 2)
@@ -6063,7 +4494,6 @@ T1 = addBaseChange(T,{matrix{{1,2},{0,1}},matrix{{1,0},{3,1}},matrix{{1,-2},{0,1
 assert not cocycleCheck T1
 ///
 
--- Test 3
 -- Checking regCheck
 TEST ///
 T = toricVectorBundleKaneyama(2,pp1ProductFan 2)
@@ -6074,10 +4504,9 @@ T1 = addDegrees(T,{matrix{{-1,0},{-3,-1}},matrix{{-1,0},{3,1}},matrix{{1,2},{-3,
 assert regCheck T1
 ///
 
--- Test 4
--- Checking tangentBundle for Kaneyama -- I don't think this exists anymore? Where did it go?
+-- Checking tangentBundle for Kaneyama
 TEST ///
-T = tangentBundle(pp1ProductFan 2,"Type" => "Kaneyama")
+T = tangentBundleKaneyama(pp1ProductFan 2)
 assert(T#"baseChangeTable" === hashTable {(0,1) => map(QQ^2,QQ^2,{{1, 0}, {0, -1}}), (0,2) => map(QQ^2,QQ^2,{{-1, 0}, {0, 1}}), (1,3) => map(QQ^2,QQ^2,{{-1, 0}, {0, 1}}), (2,3) => map(QQ^2,QQ^2,{{1, 0}, {0, -1}})})
 assert(T#"degreeTable" === hashTable {(matrix {{-1,0},{0,1}}, map(ZZ^2,0,0)) => matrix{{1,0},{0,-1}},(matrix {{-1,0},{0,-1}}, map(ZZ^2,0,0)) => matrix{{1,0},{0,1}},(matrix {{1,0},{0,1}}, map(ZZ^2,0,0)) => matrix{{-1,0},{0,-1}}, (matrix {{1,0},{0,-1}}, map(ZZ^2,0,0)) => matrix{{-1,0},{0,1}}})
 assert(rank T == 2)
@@ -6087,22 +4516,6 @@ assert(T#"baseChangeTable" === hashTable {(0,1) => map(QQ^3,QQ^3,{{1, -1, 0}, {0
 assert(T#"degreeTable" === hashTable {(matrix {{1,0,0},{0,1,0},{0,0,1}}, map(ZZ^3,0,0)) => matrix{{-1,0,0},{0,-1,0},{0,0,-1}},(matrix {{1,0,-1},{0,1,-1},{0,0,-1}}, map(ZZ^3,0,0)) => matrix{{0,-1,0},{0,0,-1},{1,1,1}},(matrix {{0,-1,0},{1,-1,0},{0,-1,1}}, map(ZZ^3,0,0)) => matrix{{1,1,1},{0,-1,0},{0,0,-1}}, (matrix {{1,-1,0},{0,-1,0},{0,-1,1}}, map(ZZ^3,0,0)) => matrix{{0,-1,0},{1,1,1},{0,0,-1}}})
 assert(rank T == 3)
 assert(T#"dimension of the variety" == 3)
-///
-
--- Test 5
--- Checking tangentBundle for Klyachko
-TEST ///
-T = tangentBundle hirzebruchFan 3
-assert(T#"ring" === QQ)
-assert(T#"filtrationMatricesTable" === hashTable {matrix{{-1},{3}} => matrix{{-1,0}},matrix{{0},{-1}} => matrix{{-1,0}},matrix{{1},{0}} => matrix{{-1,0}},matrix{{0},{1}} => matrix{{-1,0}}})
-assert(T#"baseTable" === hashTable {matrix{{-1},{3}} => matrix{{-1,1/3},{3,0}},matrix{{0},{-1}} => matrix{{0_QQ,1},{-1,0}},matrix{{1},{0}} => map(QQ^2,QQ^2,1),matrix{{0},{1}} => matrix{{0_QQ,1},{1,0}}})
-assert(rank T == 2)
-assert(T#"dimension of the variety" == 2)
-T = tangentBundle pp1ProductFan 3
-assert(T#"ring" === QQ)
-assert(T#"filtrationMatricesTable" === hashTable {matrix{{0},{1},{0}} => matrix{{-1,0,0}}, matrix{{-1},{0},{0}} => matrix{{-1,0,0}},matrix{{1},{0},{0}} => matrix{{-1,0,0}}, matrix{{0},{0},{-1}} => matrix{{-1,0,0}}, matrix{{0},{0},{1}} => matrix{{-1,0,0}}, matrix{{0},{-1},{0}} => matrix{{-1,0,0}}})
-assert(T#"baseTable" === hashTable {matrix{{0},{1},{0}} => matrix{{0_QQ,1,0},{1,0,0},{0,0,1}}, matrix{{-1},{0},{0}} => matrix{{-1_QQ,0,0},{0,1,0},{0,0,1}},matrix{{1},{0},{0}} => matrix{{1_QQ,0,0},{0,1,0},{0,0,1}}, matrix{{0},{0},{-1}} => matrix{{0_QQ,1,0},{0,0,1},{-1,0,0}}, matrix{{0},{0},{1}} => matrix{{0_QQ,1,0},{0,0,1},{1,0,0}}, matrix{{0},{-1},{0}} => matrix{{0_QQ,1,0},{-1,0,0},{0,0,1}}})
-assert(rank T == 3)
 ///
 
 -- Test 6
@@ -6211,6 +4624,24 @@ assert(sort degrees cohomology(1,T) == sort degrees (ring T)^{{2, 1, 0}, {1, 1, 
 assert(sort degrees cohomology(2,T) == sort degrees (ring T)^0)
 assert(sort degrees cohomology(3,T) == sort degrees (ring T)^0)
 ///
+
+-*
+T1 = trivialBundle(X = toricProjectiveSpace 1 ** toricProjectiveSpace 1, 2)
+assert(sort degrees cohomology(0,T1) == sort degrees (grRing T1)^{{0,0},{0,0}})
+assert(sort degrees cohomology(1,T1) == sort degrees (grRing T1)^0)
+assert(sort degrees cohomology(2,T1) == sort degrees (grRing T1)^0)
+T2 = tangentBundle X
+assert(sort degrees cohomology(0,T2,matrix{{0},{0}}) == sort degrees (grRing T2)^{{0,0},{0,0}})
+assert(sort degrees cohomology(0,T2,matrix{{1},{1}}) == sort degrees (grRing T2)^0)
+assert(sort degrees cohomology(0,T2) == sort degrees (grRing T2)^{{1,0},{0,1},{0,0},{0,0},{0,-1},{-1,0}})
+assert(sort degrees cohomology(1,T2) == sort degrees (grRing T2)^0)
+assert(sort degrees cohomology(2,T2) == sort degrees (grRing T2)^0)
+T3 = tangentBundle(Y = hirzebruchSurface 3 ** toricProjectiveSpace 1)
+assert(sort degrees cohomology(0,T3) == sort degrees (grRing T3)^{{0, 0, 1}, {1, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {-1, 0, 0}, {0, 0, -1}, {0, -1, 0}, {-1, -1, 0}, {-2, -1, 0}, {-3, -1, 0}})
+assert(sort degrees cohomology(1,T3) == sort degrees (grRing T3)^{{2, 1, 0}, {1, 1, 0}})
+assert(sort degrees cohomology(2,T3) == sort degrees (grRing T3)^0)
+assert(sort degrees cohomology(3,T3) == sort degrees (grRing T3)^0)
+*-
 
 -- Test 13
 -- Checking weilToCartier
@@ -6503,11 +4934,12 @@ assert(cartierIndex({1,1,1},F) == 3)
 assert(cartierIndex({3,3,3},F) == 1)
 ///
 
+*-
 -- ADDING NEW TESTS JUNE/JULY 2026
 -- Test 31
 -- Checking isWellDefined (Kaneyama) (combining the tests for cocycleCheck and regCheck)--TODO: FIX THIS
 TEST ///
-T = toricVectorBundle(2,pp1ProductFan 2,"Type" => "Kaneyama")
+T = toricVectorBundleKaneyama(2,pp1ProductFan 2)
 assert isWellDefined T
 --tests for cocycleCheck
 T1 = addBaseChange(T,{matrix{{1,2},{0,1}},matrix{{1,0},{3,1}},matrix{{1,-2},{0,1}},matrix{{1,0},{-3,1}}})
@@ -6683,9 +5115,9 @@ assert(map isomorphism(E1,E2) == matrix(ring E1, {{0,1},{1,0}}))
 -- here's another random example
 Y = hirzebruchSurface 2;
 E1' = tangentBundle Y ++ tangentBundle Y;
-M = matrix(ring E1, {{1,1,0,2},{0,1,1,1},{0,1,0,-1},{0,0,0,1}});
-filtmats = apply(filtrationMatrices E1, m -> M * m)
-E2' = toricVectorBundle(Y,filtmats, filtrationJumps E1)
+M = matrix(ring E1', {{1,1,0,2},{0,1,1,1},{0,1,0,-1},{0,0,0,1}});
+filtmats = apply(filtrationMatrices E1', m -> M * m)
+E2' = toricVectorBundle(Y,filtmats, filtrationJumps E1')
 assert(map isomorphism(E1',E2') == M)
 ///
 
@@ -6787,14 +5219,14 @@ assert (not isWellDefined map(E, L1 ++ L2 ++ L3, id_((ring E)^3)))
 --Test 43
 --Checking weilDecoration on the direct sum of the tangent bundle with a line bundle on P2.
 TEST ///
-M=toricProjectiveSpace 2;
-V=tangentBundle M++lineBundle(M_1);
-W=weilDecoration V;
-L={{0,infinity},{1,{1,0,0}},{2,{0,1,0}},{1,{0,0,1}},{3,{0,0,0}}};
-WL= apply (W, i -> {rank i#0, i#1});
-assert (L==WL)
+M = toricProjectiveSpace 2;
+V = tangentBundle M++lineBundle(M_1);
+W = weilDecoration V;
+(strats, divs) = toSequence transpose ((strata W)/toList)
+assert(strats/rank == {1,1,2,3})
+assert(divs == {M_2, M_0, M_1, M_1 - M_1})
 E = weilToKlyachko(M,W)
-assert( E== V)
+assert(E == V)
 ///
 
 -- Test 44
@@ -6824,8 +5256,6 @@ assert( filtrationJumps (kg) =={{0}, {0}, {0}, {0}} )
 assert( filtrationMatrices kg == {matrix {{1_(ZZ/101)}}, matrix {{1_(ZZ/101)}}, matrix {{1_(ZZ/101)}}, matrix {{1_(ZZ/101)}}})
 kf = ker f;
 assert ( ker f == trivialBundle(X,0))
-
-
 
 -- Cokernel
 CKf = coker f;
@@ -6901,5 +5331,14 @@ assert(areIsomorphic(E1,E2))
 ---------------------------------------
 -- END OF FILE
 ---------------------------------------
+end
+
+restart
+debug needsPackage "ToricVectorBundles"
+check "ToricVectorBundles"
+
+X = toricProjectiveSpace 3
+(filts, jumps) = toSequence transpose for i to 3 list {random(ZZ^3,ZZ^3),for j to 2 list random(-3,3)}
+E = toricVectorBundle(X,filts,jumps)
 
 -- We store some archived code that René wrote.
