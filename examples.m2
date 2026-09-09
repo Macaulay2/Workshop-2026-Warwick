@@ -235,6 +235,90 @@ netList oo
 LL = apply(CGBMain(F, {}, ReduceStrata => true), e -> toList e)
 netList oo
 
+----------
+--The following are all examples taken from Nabeshima
+
+--Example 4.8
+U = QQ[a,b,c, MonomialOrder => Lex]
+R = U[x,y, MonomialOrder => Lex]
+F={a*x^2+b*y^2,c*x^2+y^2,2*a*x-2*c*y}
+
+--Example F_i, for i=1,2,3,4,5,6,7,8
+U = QQ[a,b,c,d, MonomialOrder => Lex]
+R = U[x,y,z,w, MonomialOrder => Lex]
+F1={a*x^4*y+x*y^2+b*x,x^3+2*x*y,b*x^2+x^2*y}
+F2={a*x^2*y^3+b*y+y,x^2*y^2+x*y+2,a*x^2+b*y+2}
+F3={a*x^4+c*x^2+b,b*x^3+x^2+2,c*x^2+d*x}
+F4={a*x^3*y+c*x*y^2,x^4*y+3*d*y,c*x^2+b*x*y,x^2*y^2+a*x^2,x^5+y^5}
+F5={a*x^2*y+b*x+y^3,a*x^2*y+b*x*y,y^2+b*x^2*y+c*x*y}
+F6={x^4+a*x^3+b*x^2+c*x+d, 4*x^3+3*a*x^2+2*b*x+c}
+F7={x^3 - a, y^4-b, x+y-a*z}
+F8={a*x^2 + b*y, c*w^2 + z, (x - z)^2 + (y - w)^2, 2*d*x*w - 2*b*y}
+--------
+
+--The following are examples from Montes and Recio
+U = QQ[a,b, MonomialOrder => Lex]
+R = U[x_2, x_3, y_2, y_3, MonomialOrder => GRevLex]
+E4 = {(a - 1)*y_2 - b*(x_2 - 1),
+     (a - 1)*(x_2 + 1) + b*y_2,
+     (a + 1)*y_3 - b*(x_3 + 1),
+     (a + 1)*(x_3 - 1) + b*y_3,
+     (x_3 - a)^2 + y_3^2 - (x_2 - a)^2 - y_2^2}
+
+
+U = QQ[a, b, sv, cv, sw, cw, MonomialOrder => Lex]
+R = U[x_1, y_1, x_2, y_2, MonomialOrder => GRevLex]
+E5 = {(x_1 - a)^2 + (y_1 - 1)^2 - a^2 - 1,
+     (x_2 + b)^2 + (y_2 - 1)^2 - b^2 - 1,
+     a*(x_1 - a) + (y_1 - 1) + (a^2 + 1)*cv,
+     -b*(x_2 + b) + (y_2 - 1) + (1 + b^2)*cw,
+     a*(y_1 - 1) - (x_1 - a) + (a^2 + 1)*sv,
+     -b*(y_2 - 1) - (x_2 + b) + (b^2 + 1)*sw,
+     x_1*y_2 - 2*x_1 - x_2*y_1 + 2*x_2,
+     cv^2 + sv^2 - 1,
+     cw^2 + sw^2 - 1}
+
+--Examples from KSW (they took the ones from
+--Nabeshima and made them more complex)
+U = QQ[a,b,c,d, MonomialOrder => Lex]
+R = U[x,y,z,w, MonomialOrder => GRevLex]
+
+S1= {a*x^4 + c*x^2 + y,
+     b*x^3 + x^2 + 2,
+     c*x^2 + d*x + y}
+
+
+S2= {a*x^3*y + c*x*y^2 + b*x + y,
+     x^4*y + 3*d*y,
+     c*x^2 + b*x*y,
+     x^2*y^2 + a*x^2,
+     x^5 + y^5}
+
+
+S3= {a*x^2*y + b*x^2 + y^3,
+     a*x^2*y + b*x*y + c*y^2,
+     a*y^3 + b*x^2*y + c*x*y}
+
+
+S4= {x^4 + a*x^3 + b*x^2 + c*x*y + d,
+     4*x^3 + 3*a*x^2*y + 2*b*x + c + y}
+
+
+S5= {a*x^2 + b*y*z + c*z*w,
+     c*w^2 + b*y + z,
+     (x - z)^2 + (y - w)^2,
+     2*d*x*w - 2*b*y*z}
+
+-- Example from KSW: "the famous P3P problem
+--from computer vision."
+U = QQ[p, q, r, a, b, MonomialOrder => Lex]
+R = U[x,y, MonomialOrder => GRevLex]
+
+P3P= {(1 - a)*y^2 - a*x^2 - p*y + a*r*x*y + 1,
+     (1 - b)*x^2 - b*y^2 - q*x + b*r*x*y + 1}
+
+
+
 
 ---------------------------
 -- TODO:
