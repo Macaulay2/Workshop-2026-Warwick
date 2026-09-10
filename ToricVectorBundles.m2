@@ -91,7 +91,6 @@ export {
     "eulerChi",
     "filteredPiece",
     "moduleToKlyachko",
-    "moduleToKlyachko'",
     "klyachkoToModule",
     "isGeneral",
     "weilDecoration",
@@ -1166,95 +1165,10 @@ weilDecorationDivisors List := weilDecorationList -> (
 
 
 
-moduleToKlyachko = method()
+moduleToKlyachko = method(Options => {Strategy => "image"})
 -- A: presentation of the module we are sheafifying that is fine-graded
-moduleToKlyachko (NormalToricVariety, Matrix):= (X,A) -> (
-    
-  if not isHomogeneous A then(error("The map is not homogeneous with respect to the fine-grading" ););
-    S := ring A;
-    coxX := ring X;
-    n:= numgens S;
-    if n != numgens coxX or not isPolynomialRing S then(error("The ring of the matrix is not compatible with the toric variety"););
-    if degrees S != entries(id_(ZZ^n)) then (error("The module is not fine graded"););
-    if  all( flatten entries A , p -> # terms p <= 1) != true then( error("The presentation matrix is not equivariant"););
-    s0:= trivialBundle(X,0) ;
-    sdegs:= degrees source A;
-    tdegs := degrees target A;
-    sour := fold(directSum,s0,  apply(sdegs, l -> (if l != splice{n:0} then( lineBundle(X, -l ))else(trivialBundle (X,1)) )) );
-    t0:= trivialBundle( X,0);
-    targ := fold(directSum,s0,  apply(tdegs, l -> (if l != splice{n:0} then( lineBundle(X, -l ))else(trivialBundle (X,1)) )) );
-    -- TODO check that this is in fact the map that we want
-    -- The map evaluates the variables to be 1 which should give the map at the fiber over the identity point
-    phi := map( coefficientRing S, S, toList(n:1));
-    -- Avoids problems with the image of the map being a module for instance
-    A = matrix A; 
-    f:= map( targ, sour, phi**A);
-    f
-)
--- M = image matrix...
-moduleToKlyachko (NormalToricVariety, Module):= (X,M) -> (
-    -- Obtain the ToricVectorBundleMap associated to the presentation
-  A := gens M;
-  S := ring M;
-  n := numgens S;
-  if S =!= ring X then (error("The module is not defined over the Cox ring of the toric variety"););
-  if  all( flatten entries A , p -> # terms p <= 1) != true then( error("The presentation matrix is not equivariant"););
 
-  -- Source degrees
-  p := numColumns (A);
-  MS := new MutableHashTable from apply(p , j -> {j,{}});
-  -- target degrees
-  q := numRows (A);
-  NS := new MutableHashTable from apply(q , i -> {i,{}});
-  aux := apply(entries A, i -> apply( i, j -> exponents j));
-  jnew := 0;
-  inew := 0; 
-  -- It assumes that one of the shifts is zero
-  MS#0 = toList(n:0);
--- Track lists of degrees instead of cloning the MutableHashTables
-  oldMS := apply(p, j -> MS#j);
-  oldNS := apply(q, i -> NS#i);
-  currentMS :={};
-  currentNS :={};
-
-  while isMember({}, values MS) or isMember({}, values NS) do(
-      if oldMS == currentMS and oldNS == currentNS then(
-          jnew = min apply(p, j -> if MS#j == {} then( j)else( infinity) );
-          if jnew != infinity then( MS#jnew= toList(n:0); )else(
-          inew = min apply(q, i -> if NS#i == {} then( i)else( infinity) );
-          if inew != infinity then( NS#inew= toList(n:0); );
-          );
-          
-      );
-
-      oldMS = apply(p, j -> MS#j);
-      oldNS = apply(q, i -> NS#i);
-
-      for j from 0 to p-1 do(
-          for i from 0 to q-1 do(
-              if (aux_i)_j != {} then(
-                  if NS#i !={} and MS#j == {}  then(MS#j = flatten (aux_i)_j + NS#i );
-                  if MS#j !={} and NS#i == {} then(NS#i = - flatten (aux_i)_j + MS#j);
-              );
-          );
-      );
-      
-      currentMS = apply(p, j -> MS#j);
-      currentNS = apply(q, i -> NS#i);
-
-  ); 
-  sdegs := - apply(p , j -> MS#j );
-  tdegs := - apply(q , i -> NS#i );
-  R := newRing( S, Degrees => entries id_(ZZ^(n)));
-  AM := map(R^tdegs,R^sdegs,sub(A, R) );
-  if not isHomogeneous AM then(error("The module is not homogeneous with respect to the fine-grading" ););
-  image moduleToKlyachko(X, AM)
-)
-
---- Alternative method that is applied for matrices directly and returns the map between the bundles
-
-moduleToKlyachko' = method()
-moduleToKlyachko' (NormalToricVariety, Matrix):= (X,A) -> (
+moduleToKlyachko (NormalToricVariety, Matrix):= opts -> (X,A) -> (
     -- Obtain the ToricVectorBundleMap associated to the presentation
   S := ring A;
   n := numgens S;
@@ -1328,6 +1242,18 @@ moduleToKlyachko' (NormalToricVariety, Matrix):= (X,A) -> (
 )
 
 
+
+-- M = image matrix...
+moduleToKlyachko (NormalToricVariety, Module):= opts -> (X,M) -> (
+    -- Obtain the ToricVectorBundleMap associated to the presentation
+    A := gens M;
+  if opts#Strategy == "image" then(
+  
+ return image moduleToKlyachko(X, A);)else(
+ A = presentation M;
+ return coker moduleToKlyachko(X, A);
+ );
+)
 -- The code that follows take a toric vector bundle with Klyachko description and returns a module over the Cox ring of the toric variety, M, such that the sheafification of M is the starting vector bundle.
 -- Note that different modules can have the same associated sheaf. 
 -- isTwistOf( E, moduleToKlyachko(variety E, klyachkoToModule(E)) ) should return true
