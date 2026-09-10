@@ -503,7 +503,7 @@ PGBMain (CGBTriple) := T -> (
     RExttoRExt':=cgbData#"RExttoRExt'";
     RExttoR:=cgbData#"RExttoR";
     --print(E, length N);
-    if not(consistencyCheckAllTogether(E, N)) then (
+    if not(isConsistentRabinowitsch(E, N)) then (
         return {} --The domain is empty
     );
     --Compute the GB of union(E, F), but viewing the parameters as variables
@@ -531,10 +531,10 @@ PGBMain (CGBTriple) := T -> (
         productList = {0_KU};
     );
     PGB := {};
-    if consistencyCheckAllTogether (E, productList) then (
+    if isConsistentRabinowitsch (E, productList) then (
         PGB = {{E, productList, {1_R}}};
     );
-    if not(consistencyCheckAllTogether (productList, N)) then (
+    if not(isConsistentRabinowitsch (productList, N)) then (
         return PGB
     );
     --Elements of GB that do not only contain parameters
@@ -544,7 +544,7 @@ PGBMain (CGBTriple) := T -> (
     h := squareFreePart(lcm(H));
     if h == 1 then h = 1_KU;
     productList = unique(apply(totalListProduct(N, {sub(h, KU)}), i -> squareFreePart(i)));
-    if consistencyCheckAllTogether(Gr, productList) then (
+    if isConsistentRabinowitsch(Gr, productList) then (
         PGB = unique(PGB | {{Gr, productList, Gm}});
     );
 
@@ -604,8 +604,8 @@ CCheck = method();
 CCheck (List, RingElement) := (E, f) -> (
     R := ring f;
     U := gens R;
-    if f == 0 then return true;
     supports := apply(E, g -> (
+        --if g == 0 then (return 0_R);
         e := first exponents(leadMonomial g);
         select(0..(#e-1), i -> e_i != 0)
     ));
@@ -703,7 +703,7 @@ consistencyCheckAllTogether = method(
 consistencyCheckAllTogether (List, RingElement) := o -> (E, f) -> (
     if (f % ideal E) == 0 then (
         print "true: direct ideal membership check was used";
-        return true; -- inconsistent
+        return false; -- inconsistent
     );
 
     d := dim ideal E;
@@ -715,12 +715,12 @@ consistencyCheckAllTogether (List, RingElement) := o -> (E, f) -> (
 
     if CCheck(E,f) then (
         print "false: CCheck was used";
-        return false; -- consistent
+        return true; -- consistent
     );
 
     if ICheck(E,f, Loops => o.Loops) then (
         print "true: ICheck was used";
-        return true; -- inconsistent
+        return false; -- inconsistent
     );
 
     print "General check was used";
@@ -729,7 +729,7 @@ consistencyCheckAllTogether (List, RingElement) := o -> (E, f) -> (
 
 consistencyCheckAllTogether (List, List) := o -> (E, N) -> (
   for f in N do(
-    check = consistencyCheckAllTogether(E, f);
+    check := consistencyCheckAllTogether(E, f);
     if not(instance(consistencyCheckAllTogether(E, f), Nothing)) then (
       return check
     );
