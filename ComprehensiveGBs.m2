@@ -818,8 +818,8 @@ doc ///
     Text
       Here $X = \{x,y\}$ and $U = \{a,b\}$. If we wanted to find a comprehensive Groebner system over $\mathb{Q}^2$ for $F = \langle ax+by\rangle$, we input the following:
     Example
-      F1 = {a*x+b*y};
-      S1 = {};
+      F1 = {a*x+b*y}
+      S1 = {}
       CGBMain(F1,S1)
     Text
       CGBMain has several options: ReduceStrata, Strategy, and Verbose. ReduceStrata is an option to ignore computations on strata which have already been considered. This value is set to false by default. For smaller examples, changing this to true can reduce computation times, as for the following example. It will also give more easily parseable results.
@@ -895,6 +895,9 @@ doc ///
     Text
       Setting Verbose to True will print whatever $F$ and $S$ that CGBMainRec is currently working on:
     Example
+      R1 = QQ[a,b][x,y];
+      F1 = {a*x+b*y};
+      S1 = {};
       CGBMain(F1,S1,Verbose=>true)
   SeeAlso
     CGBMain
