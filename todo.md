@@ -97,7 +97,9 @@ Update (Weijia): The implementation of `pruneG` seems correct.
 
 Update (Weijia): Observe that when `CGBMain(F, eliminateVariables F)` is called, we do have
   `E = {b*c^2-b, a*c^2-a, b^3*c-a^3, a^3*c-b^3, a^6-b^6}`.
-  So `CGB` works well; just don't call `CGBMain(F, {})` as in examples.m2!!!
+  I've updated `CGBMain` so that `CGBMain F` works well;
+  just don't call `CGBMain(F, {})` as in examples.m2: the hypothesis of Theorem 3.3, i.e.,
+  $V(S)\subseteq V(\langle F\rangle\cap k[U])$ is not satisfied for $S = \{\}$!!!
 
 10. [DONE] Add other ways to call PGBMain (like CGBMain) where the user supplied just the list of polynomials etc.
 

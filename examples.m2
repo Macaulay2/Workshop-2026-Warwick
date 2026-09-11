@@ -232,7 +232,7 @@ T = CGBFromTriple({{0_U}, {1_U}, F})
 L= PGBMain(T)
 netList oo
 
-LL = apply(CGBMain(F, {}, ReduceStrata => true), e -> toList e)
+LL = apply(CGBMain(F, ReduceStrata => true), e -> toList e)
 netList oo
 
 ----------
