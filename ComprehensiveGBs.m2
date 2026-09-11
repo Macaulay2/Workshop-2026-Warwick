@@ -192,7 +192,9 @@ CGBMain = method(
     ); -- Initialises CGBMainRec
 
 CGBMain (List) := o -> (F) -> (
-  CGBMain(F, first entries eliminateVariables F, o)
+  R := ring first F;
+  S := first entries eliminateVariables F;
+  CGBMain(F, S, o) | apply(S, s -> ({}, sub(s, R), {1_R}))
 )
 CGBMain (List, List) := o -> (F, S) -> (
   R := ring F_0;
@@ -846,10 +848,12 @@ doc ///
     Example
       CGBMain(F1,S1,Verbose=>true)
     Text
-      CGBMain can take in one or two lists as inputs - when $S$ is not specified, the function will
-      use a basis of the elimination ideal $\langle F\rangle\cap k[U]$, computed by eliminating the variables $X$.
-      This allows to determine the largest set S satisfying the required hypothesis $V(S)\subseteq V(\langle F\rangle\cap k[U])$.
-      On the other hand, passing $S = \{\}$ is only valid when $\langle F\rangle\cap k[U]$ is zero.
+      CGBMain can take in one or two lists as inputs.
+      When $S$ is not specified, the function returns a comprehensive Groebner system on the whole parameter space,
+      by computing a basis $\{s_1,\dots,s_r\}$ of the elimination ideal $\langle F\rangle\cap k[U]$, passing that basis as $S$ to CGBMain,
+      and appending the extra segments $(\{\}, s_i, \{1\})$ for $i=1,\dots,r$ to the output.
+      When $S$ is specified, the function returns a comprehensive Groebner system on $V(S)$, under the assumption that
+      $V(S)\subseteq V(\langle F\rangle\cap k[U])$.
   SeeAlso
     CGB
     ReduceStrata
