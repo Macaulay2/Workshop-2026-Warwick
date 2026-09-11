@@ -192,7 +192,7 @@ CGBMain = method(
     ); -- Initialises CGBMainRec
 
 CGBMain (List) := o -> (F) -> (
-  CGBMain(F,{},o)
+  CGBMain(F, first entries eliminateVariables F, o)
 )
 CGBMain (List, List) := o -> (F, S) -> (
   R := ring F_0;
@@ -810,7 +810,7 @@ doc ///
       of Sequences of the form (E,N,G), where G is a Groebner basis on the set $V(E)\setminus V(N)$
   Description
     Text
-      Implementation of the Algorithm proposed by Suzuki and Sato. Given a tower polynomial ring $R = k[U][X]$ for $U$ a set of parameters and $X$ a set of variables, $F\subset R$ an ideal of variables and parameters, and $S\subset k[U]$ an ideal satisfying $V(S)\subseteq V(\langle F\rangle\cap k[U])$, CGBMain takes $F$ and $S$ as inputs and returns a comprehensive Groebner system.
+      Implementation of the Algorithm proposed by Suzuki and Sato. Given a tower polynomial ring $R = k[U][X]$ for $U$ a set of parameters and $X$ a set of variables, $F\subset R$ an ideal of variables and parameters, and $S\subset k[U]$ an ideal satisfying $V(S)\subseteq V(\langle F\rangle\cap k[U])$, CGBMain takes $F$ and $S$ as inputs and returns a comprehensive Groebner system on $V(S)$.
       The function itself passes $F$ and $S$ to CGBMainRec after initialising various objects.
       As above, the ring must be initialised as a tower ring:
     Example
@@ -839,7 +839,10 @@ doc ///
     Example
       CGBMain(F1,S1,Verbose=>true)
     Text
-      CGBMain can take in one or two lists as inputs - when $S$ is not specified, the function will assume S = {}.
+      CGBMain can take in one or two lists as inputs - when $S$ is not specified, the function will
+      use a basis of the elimination ideal $\langle F\rangle\cap k[U]$, computed by eliminating the variables $X$.
+      This allows to determine the largest set S satisfying the required hypothesis $V(S)\subseteq V(\langle F\rangle\cap k[U])$.
+      On the other hand, passing $S = \{\}$ is only valid when $\langle F\rangle\cap k[U]$ is zero.
   SeeAlso
     CGB
     ReduceStrata
