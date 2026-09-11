@@ -1191,7 +1191,7 @@ wellformedBundleFiltrations (ToricVectorBundle) := tvb -> (
  toricVectorBundle( variety tvb, mats, jumps)
 )
 
-*-
+*- 
 ---------------------------------------------------------------------------
 -- DOCUMENTATION
 ---------------------------------------------------------------------------
