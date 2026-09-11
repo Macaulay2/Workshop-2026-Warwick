@@ -655,7 +655,7 @@ CCheck (List, RingElement) := (E, f) -> (
     -- fAlpha = sub(fAlpha, newR); -- shouldn't need this
     GspE := flatten entries gens spE;
 
-    if zeroDimCheck(GspE, fAlpha) then (
+    if dim( ideal(GspE)) == 0 and zeroDimCheck(GspE, fAlpha) then (
         return true; -- certifies consistency
     );
     return false -- unknown consistency (i.e., it could still be consistent)
