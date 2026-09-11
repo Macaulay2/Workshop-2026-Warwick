@@ -503,7 +503,11 @@ PGBMain (CGBTriple) := T -> (
     RExttoRExt':=cgbData#"RExttoRExt'";
     RExttoR:=cgbData#"RExttoR";
     --print(E, length N);
-    if not(isConsistentRabinowitsch(E, N)) then (
+    if ideal E == ideal(0_KU) or ideal N == ideal(0_KU) then (
+      if ideal N == ideal(0_KU) then (
+        return {} --The domain is empty
+      ) --in all other cases, we have consistency
+    ) else if not(consistencyCheckAllTogether(E, N)) then (
         return {} --The domain is empty
     );
     --Compute the GB of union(E, F), but viewing the parameters as variables
@@ -723,7 +727,9 @@ consistencyCheckAllTogether (List, RingElement) := o -> (E, f) -> (
     return null; -- temporary
 );
 
+-- Cannot have ideal E = (0) or ideal F = (0)
 consistencyCheckAllTogether (List, List) := o -> (E, N) -> (
+<<<<<<< HEAD
     for f in N do (
         check := consistencyCheckAllTogether(E, f, Loops => o.Loops);
 
@@ -737,6 +743,26 @@ consistencyCheckAllTogether (List, List) := o -> (E, N) -> (
     );
 
     return true;
+=======
+  failed := false;
+  for f in N do(
+    check := consistencyCheckAllTogether(E, f);
+    if not(instance(consistencyCheckAllTogether(E, f), Nothing)) then (
+      if not(check) then (
+        return check
+      );
+    ) else (
+      failed = true;
+      break
+    );
+  );
+  if failed then (
+    return isConsistentRabinowitsch(E, N)
+  ) else (
+    return true
+  );
+  
+>>>>>>> 0ac9278 (implementing allConsistencyCheck in PGBMain)
 );
 
 
