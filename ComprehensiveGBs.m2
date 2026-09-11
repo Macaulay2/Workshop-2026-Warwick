@@ -119,12 +119,12 @@ listOfFactors (RingElement) := (h) -> (
 
 squareFreePart = method() -- returns the square free part of a ring element
 squareFreePart (RingElement) := (h) -> (
-  product listOfFactors h
+  R := ring h;
+  f := product listOfFactors h;
+  return f_R
 );
 
-squareFreePart (ZZ) := (h) -> (
-  1
-);
+
 
 isConsistent = method(); -- returns whether or not rad(E) intersect N is empty
 isConsistent (List, List) := (E, N) -> (
@@ -505,11 +505,7 @@ PGBMain (CGBTriple) := T -> (
     RExttoRExt':=cgbData#"RExttoRExt'";
     RExttoR:=cgbData#"RExttoR";
     --print(E, length N);
-    if ideal E == ideal(0_KU) or ideal N == ideal(0_KU) then (
-      if ideal N == ideal(0_KU) then (
-        return {} --The domain is empty
-      ) --in all other cases, we have consistency
-    ) else if not(consistencyCheckAllTogether(E, N)) then (
+    if not(consistencyCheckAllTogether(E, N)) then (
         return {} --The domain is empty
     );
     --Compute the GB of union(E, F), but viewing the parameters as variables
@@ -537,10 +533,10 @@ PGBMain (CGBTriple) := T -> (
         productList = {0_KU};
     );
     PGB := {};
-    if isConsistentRabinowitsch (E, productList) then (
+    if consistencyCheckAllTogether (E, productList) then (
         PGB = {{E, productList, {1_R}}};
     );
-    if not(isConsistentRabinowitsch (productList, N)) then (
+    if not(consistencyCheckAllTogether(productList, N)) then (
         return PGB
     );
     --Elements of GB that do not only contain parameters
@@ -548,9 +544,8 @@ PGBMain (CGBTriple) := T -> (
     Gm := MDBasis(listDiff);
     H := unique(apply(Gm, g->squareFreePart(leadCoefficient(sub(g, R)))));
     h := squareFreePart(lcm(H));
-    if h == 1 then h = 1_KU;
     productList = unique(apply(totalListProduct(N, {sub(h, KU)}), i -> squareFreePart(i)));
-    if isConsistentRabinowitsch(Gr, productList) then (
+    if consistencyCheckAllTogether(Gr, productList) then (
         PGB = unique(PGB | {{Gr, productList, Gm}});
     );
 
@@ -731,6 +726,16 @@ consistencyCheckAllTogether (List, RingElement) := o -> (E, f) -> (
 
 -- Cannot have ideal E = (0) or ideal F = (0)
 consistencyCheckAllTogether (List, List) := o -> (E, N) -> (
+    if length E == 0 then (
+      if length N == 0 then (
+        return false
+      );
+    ) else (
+      KU := ring E_0;
+      if ideal E == ideal(0_KU) or ideal N == ideal(0_KU) then (
+        if ideal N == ideal(0_KU) then return false;
+        return true);
+    );
     for f in N do (
         check := consistencyCheckAllTogether(E, f, Loops => o.Loops);
 
@@ -743,7 +748,7 @@ consistencyCheckAllTogether (List, List) := o -> (E, N) -> (
         );
     );
 
-    return true;
+    return true
 );
 
 
