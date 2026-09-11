@@ -729,7 +729,6 @@ consistencyCheckAllTogether (List, RingElement) := o -> (E, f) -> (
 
 -- Cannot have ideal E = (0) or ideal F = (0)
 consistencyCheckAllTogether (List, List) := o -> (E, N) -> (
-<<<<<<< HEAD
     for f in N do (
         check := consistencyCheckAllTogether(E, f, Loops => o.Loops);
 
@@ -743,26 +742,6 @@ consistencyCheckAllTogether (List, List) := o -> (E, N) -> (
     );
 
     return true;
-=======
-  failed := false;
-  for f in N do(
-    check := consistencyCheckAllTogether(E, f);
-    if not(instance(consistencyCheckAllTogether(E, f), Nothing)) then (
-      if not(check) then (
-        return check
-      );
-    ) else (
-      failed = true;
-      break
-    );
-  );
-  if failed then (
-    return isConsistentRabinowitsch(E, N)
-  ) else (
-    return true
-  );
-  
->>>>>>> 0ac9278 (implementing allConsistencyCheck in PGBMain)
 );
 
 
