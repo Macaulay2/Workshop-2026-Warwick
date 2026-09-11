@@ -4374,7 +4374,21 @@ doc ///
         (matrix, SimplicialMap)
 	(map, SimplicialMap)    		
 	(isWellDefined, SimplicialMap)
+
+*-
+
+
+
+-------------------------------------------
+-- TESTS
+-------------------------------------------
+
+
+-------------------------------------------
+-- TESTS for the datatype toricVectorBundle
+-------------------------------------------
 -- Checking toricVectorBundle for Klyachko type -- maybe need to get rid of/modify this becuase it uses the old definition
+-*
 TEST ///
 T = toricVectorBundle(2,pp1ProductFan 2);
 assert(T#"ring" === QQ)
@@ -4391,86 +4405,42 @@ assert(T#"baseTable" === hashTable {matrix{{-1},{-1}} => matrix {{1,0},{0,1}},ma
 assert(rank T == 2)
 assert(T#"dimension of the variety" == 2)
 ///
-
-///
 *-
 
+-- Tests for basic constructors
 
+-- Checking trivialBundle
+TEST ///
+X = toricProjectiveSpace 2
+E = trivialBundle(X,4)
+assert (rank E == 4)
+assert ((filtrationMatrices E)_0 == id_((ring E)^4))
+assert ((filtrationJumps E)_0 == toList(4:0))
+///
 
----------------------------------------
--- TESTS
----------------------------------------
+-- Checking lineBundle
+TEST ///
+X = hirzebruchSurface 3
+D = toricDivisor({5,-3,1,2},X)
+L = lineBundle(D)
+assert (rank L == 1)
+assert (numColumns filteredPiece(L, (rays X)_0, 5) == 1)
+assert (numColumns filteredPiece(L, (rays X)_0, 6) == 0)
 
------------- KANEYAMA TESTS -----------
--- Checking Kaneyama constructor.
+assert (numColumns filteredPiece(L, (rays X)_1, -3) == 1)
+assert (numColumns filteredPiece(L, (rays X)_1, 0) == 0)
 
+L2 = lineBundle(X, {3,4,1,0});
+assert (rank L2 == 1)
+assert( filtrationJumps L2 =={{3}, {4}, {1}, {0}})
+assert((filtrationMatrices L2)_0 == matrix{{1_QQ}})
+
+///
+
+-- Check for cotangentBundle
+TEST ///
 -*
-TEST ///
-T = toricVectorBundleKaneyama(2,pp1ProductFan 2)
-assert(T#"baseChangeTable" === hashTable {(0,1) => map(QQ^2,QQ^2,1),(0,2) => map(QQ^2,QQ^2,1),(1,3) => map(QQ^2,QQ^2,1),(2,3) => map(QQ^2,QQ^2,1)})
-assert(T#"degreeTable" === hashTable apply(facesAsCones(0,pp1ProductFan 2), C -> (rays C, linealitySpace C) => map(ZZ^2,ZZ^2,0)))
-assert(rank T == 2)
-assert(T#"dimension of the variety" == 2)
-L1 = {matrix {{1,0},{0,1}},matrix{{0,1},{1,0}},matrix{{-1,0},{-1,1}}}
-L2 = {matrix {{-1,0},{0,-1}},matrix{{0,1},{1,0}},matrix{{0,-1},{-1,0}}}
-T = toricVectorBundleKaneyama(2,projectiveSpaceFan 2,L1,L2)
-assert(T#"baseChangeTable" === hashTable {(0,1) => matrix {{-1/1,0},{0,-1}},(0,2) => matrix{{0/1,1},{1,0}},(1,2) => matrix{{0/1,-1},{-1,0}}})
-assert(T#"degreeTable" === hashTable {(matrix {{1,-1},{0,-1}}, map(ZZ^2,0,0)) => matrix{{-1,0},{-1,1}}, (matrix {{1,0},{0,1}}, map(ZZ^2,0,0)) => matrix{{0,1},{1,0}}, (matrix {{-1,0},{-1,1}}, map(ZZ^2,0,0)) => matrix{{1,0},{0,1}}})
-assert(rank T == 2)
-assert(T#"dimension of the variety" == 2)
-///
-
--- Checking addBaseChange and cocycleCheck
-TEST ///
-T = toricVectorBundleKaneyama(2,pp1ProductFan 2)
-T1 = addBaseChange(T,{matrix{{1,2},{0,1}},matrix{{1,0},{3,1}},matrix{{1,-2},{0,1}},matrix{{1,0},{-3,1}}})
-assert cocycleCheck T1
-T1 = addBaseChange(T,{matrix{{1,2},{0,1}},matrix{{1,0},{3,1}},matrix{{1,-2},{0,1}},matrix{{1,0},{-2,1}}})
-assert not cocycleCheck T1
-///
-
--- Checking regCheck
-TEST ///
-T = toricVectorBundleKaneyama(2,pp1ProductFan 2)
-assert regCheck T
-T1 = addDegrees(T,{matrix{{1,2},{3,1}},matrix{{-1,0},{3,1}},matrix{{1,2},{-3,-1}},matrix{{-1,0},{-3,-1}}})
-assert not regCheck T1
-T1 = addDegrees(T,{matrix{{-1,0},{-3,-1}},matrix{{-1,0},{3,1}},matrix{{1,2},{-3,-1}},matrix{{1,2},{3,1}}})
-assert regCheck T1
-///
-
--- Checking tangentBundle for Kaneyama
-TEST ///
-T = tangentBundleKaneyama(pp1ProductFan 2)
-assert(T#"baseChangeTable" === hashTable {(0,1) => map(QQ^2,QQ^2,{{1, 0}, {0, -1}}), (0,2) => map(QQ^2,QQ^2,{{-1, 0}, {0, 1}}), (1,3) => map(QQ^2,QQ^2,{{-1, 0}, {0, 1}}), (2,3) => map(QQ^2,QQ^2,{{1, 0}, {0, -1}})})
-assert(T#"degreeTable" === hashTable {(matrix {{-1,0},{0,1}}, map(ZZ^2,0,0)) => matrix{{1,0},{0,-1}},(matrix {{-1,0},{0,-1}}, map(ZZ^2,0,0)) => matrix{{1,0},{0,1}},(matrix {{1,0},{0,1}}, map(ZZ^2,0,0)) => matrix{{-1,0},{0,-1}}, (matrix {{1,0},{0,-1}}, map(ZZ^2,0,0)) => matrix{{-1,0},{0,1}}})
-assert(rank T == 2)
-assert(T#"dimension of the variety" == 2)
-T = tangentBundle(projectiveSpaceFan 3, "Type" => "Kaneyama")
-assert(T#"baseChangeTable" === hashTable {(0,1) => map(QQ^3,QQ^3,{{1, -1, 0}, {0, -1, 0}, {0, -1, 1}}), (0,2) => map(QQ^3,QQ^3,{{-1, 0, 0}, {-1, 1, 0}, {-1, 0, 1}}), (1,2) => map(QQ^3,QQ^3,{{-1, 1, 0}, {-1, 0, 0}, {-1, 0, 1}}), (0,3) => map(QQ^3,QQ^3,{{1, 0, -1}, {0, 0, -1}, {0, 1, -1}}), (1,3) => map(QQ^3,QQ^3,{{1, 0, -1}, {0, 1, -1}, {0, 0, -1}}), (2,3) => map(QQ^3,QQ^3,{{0, 0, -1}, {1, 0, -1}, {0, 1, -1}})})
-assert(T#"degreeTable" === hashTable {(matrix {{1,0,0},{0,1,0},{0,0,1}}, map(ZZ^3,0,0)) => matrix{{-1,0,0},{0,-1,0},{0,0,-1}},(matrix {{1,0,-1},{0,1,-1},{0,0,-1}}, map(ZZ^3,0,0)) => matrix{{0,-1,0},{0,0,-1},{1,1,1}},(matrix {{0,-1,0},{1,-1,0},{0,-1,1}}, map(ZZ^3,0,0)) => matrix{{1,1,1},{0,-1,0},{0,0,-1}}, (matrix {{1,-1,0},{0,-1,0},{0,-1,1}}, map(ZZ^3,0,0)) => matrix{{0,-1,0},{1,1,1},{0,0,-1}}})
-assert(rank T == 3)
-assert(T#"dimension of the variety" == 3)
-///
-
--- Test 6
--- Checking cotangentBundle for Kaneyama
-TEST ///
-T = cotangentBundle(hirzebruchFan 3,"Type" => "Kaneyama")
-assert(T#"baseChangeTable" === hashTable {(0,1) => map(QQ^2,QQ^2,{{1, 0}, {0, -1}}), (0,2) => map(QQ^2,QQ^2,{{-1, 3}, {0, 1}}), (1,3) => map(QQ^2,QQ^2,{{-1, -3}, {0, 1}}), (2,3) => map(QQ^2,QQ^2,{{1, 0}, {0, -1}})})
-assert(T#"degreeTable" === hashTable {(matrix {{1,0},{0,-1}}, map(ZZ^2,0,0)) => matrix{{1,0},{0,-1}},(matrix {{1,0},{0,1}}, map(ZZ^2,0,0)) => matrix{{1,0},{0,1}},(matrix {{0,-1},{1,3}}, map(ZZ^2,0,0)) => matrix{{-1,3},{0,1}}, (matrix {{0,-1},{-1,3}}, map(ZZ^2,0,0)) => matrix{{-1,-3},{0,-1}}})
-assert(rank T == 2)
-assert(T#"dimension of the variety" == 2)
-T = cotangentBundle(pp1ProductFan 3, "Type" => "Kaneyama")
-assert(T#"baseChangeTable" === hashTable {(2,6) => matrix{{-1_QQ,0,0},{0,1,0},{0,0,1}}, (4,5) => matrix{{1_QQ,0,0},{0,1,0},{0,0,-1}}, (4,6) => matrix{{1_QQ,0,0},{0,-1,0},{0,0,1}}, (3,7) => matrix{{-1_QQ,0,0},{0,1,0},{0,0,1}}, (5,7) => matrix{{1_QQ,0,0},{0,-1,0},{0,0,1}}, (6,7) => matrix{{1_QQ,0,0},{0,1,0},{0,0,-1}}, (0,1) => matrix{{1_QQ,0,0},{0,1,0},{0,0,-1}}, (0,2) => matrix{{1_QQ,0,0},{0,-1,0},{0,0,1}}, (1,3) => matrix{{1_QQ,0,0},{0,-1,0},{0,0,1}}, (0,4) => matrix{{-1_QQ,0,0},{0,1,0},{0,0,1}}, (2,3) => matrix{{1_QQ,0,0},{0,1,0},{0,0,-1}}, (1,5) => matrix{{-1_QQ,0,0},{0,1,0},{0,0,1}}})
-assert(T#"degreeTable" === hashTable {(matrix {{1,0,0},{0,1,0},{0,0,1}}, map(ZZ^3,0,0)) => matrix{{1,0,0},{0,1,0},{0,0,1}},(matrix {{-1,0,0},{0,1,0},{0,0,1}}, map(ZZ^3,0,0)) => matrix{{-1,0,0},{0,1,0},{0,0,1}},(matrix {{1,0,0},{0,-1,0},{0,0,1}}, map(ZZ^3,0,0)) => matrix{{1,0,0},{0,-1,0},{0,0,1}},(matrix {{1,0,0},{0,1,0},{0,0,-1}}, map(ZZ^3,0,0)) => matrix{{1,0,0},{0,1,0},{0,0,-1}},(matrix {{-1,0,0},{0,-1,0},{0,0,1}}, map(ZZ^3,0,0)) => matrix{{-1,0,0},{0,-1,0},{0,0,1}},(matrix {{-1,0,0},{0,1,0},{0,0,-1}}, map(ZZ^3,0,0)) => matrix{{-1,0,0},{0,1,0},{0,0,-1}},(matrix {{1,0,0},{0,-1,0},{0,0,-1}}, map(ZZ^3,0,0)) => matrix{{1,0,0},{0,-1,0},{0,0,-1}},(matrix {{-1,0,0},{0,-1,0},{0,0,-1}}, map(ZZ^3,0,0)) => matrix{{-1,0,0},{0,-1,0},{0,0,-1}}})
-assert(rank T == 3)
-assert(T#"dimension of the variety" == 3)
-///
-
--- Test 7
--- Checking cotangentBundle for Klyachko -- fails, because of modified cotangentBundle definition?
-TEST ///
+-- the old test 7
 T = cotangentBundle hirzebruchFan 2
 assert(T#"ring" === QQ)
 assert(T#"filtrationMatricesTable" === hashTable {matrix{{-1},{2}} => matrix{{1,0}},matrix{{0},{-1}} => matrix{{1,0}},matrix{{1},{0}} => matrix{{1,0}},matrix{{0},{1}} => matrix{{1,0}}})
@@ -4482,96 +4452,8 @@ assert(T#"ring" === QQ)
 assert(T#"filtrationMatricesTable" === hashTable {matrix{{0},{1},{0}} => matrix{{1,0,0}}, matrix{{-1},{0},{0}} => matrix{{1,0,0}},matrix{{1},{0},{0}} => matrix{{1,0,0}}, matrix{{0},{0},{-1}} => matrix{{1,0,0}}, matrix{{0},{0},{1}} => matrix{{1,0,0}}, matrix{{0},{-1},{0}} => matrix{{1,0,0}}})
 assert(T#"baseTable" === hashTable {matrix{{0},{1},{0}} => matrix{{0_QQ,1,0},{1,0,0},{0,0,1}}, matrix{{-1},{0},{0}} => matrix{{-1_QQ,0,0},{0,1,0},{0,0,1}},matrix{{1},{0},{0}} => matrix{{1_QQ,0,0},{0,1,0},{0,0,1}}, matrix{{0},{0},{-1}} => matrix{{0_QQ,1,0},{0,0,1},{-1,0,0}}, matrix{{0},{0},{1}} => matrix{{0_QQ,1,0},{0,0,1},{1,0,0}}, matrix{{0},{-1},{0}} => matrix{{0_QQ,1,0},{-1,0,0},{0,0,1}}})
 assert(rank T == 3)
-///
-
--- Test 8
--- Checking isWellDefined
-TEST ///
-T = toricVectorBundle(2,pp1ProductFan 2)
-T1 = addBase(T,{matrix{{1,2},{3,1}},matrix{{-1,0},{3,1}},matrix{{1,2},{-3,-1}},matrix{{-1,0},{-3,-1}}})
-assert isWellDefined T1
-T = toricVectorBundle(1,normalFan crossPolytope 3)
-L = apply({2,1,1,2,2,1,1,2}, i -> matrix {{i}});
-T = addFiltration(T,L)
-assert not isWellDefined T
-///
-
--- Test 9
--- Checking deltaE for Kaneyama
-TEST ///
-T = toricVectorBundle(3,projectiveSpaceFan 2,"Type" => "Kaneyama")
-assert(deltaE T == convexHull matrix{{0},{0}})
-T = tangentBundle(projectiveSpaceFan 2,"Type" => "Kaneyama")
-assert(deltaE T == convexHull matrix {{-1,2,-1},{-1,-1,2}})
-T = cotangentBundle(pp1ProductFan 3,"Type" => "Kaneyama")
-assert(deltaE T == convexHull matrix {{-1,1,-1,1,-1,1,-1,1},{-1,-1,1,1,-1,-1,1,1},{-1,-1,-1,-1,1,1,1,1}})
-///
-
--- Test 10
--- Checking deltaE for Klyachko
-TEST ///
-T = toricVectorBundle(3,projectiveSpaceFan 2)
-assert(deltaE T == convexHull matrix{{0},{0}})
-T = tangentBundle projectiveSpaceFan 2
-assert(deltaE T == convexHull matrix {{-1,2,-1},{-1,-1,2}})
-T = cotangentBundle pp1ProductFan 3
-assert(deltaE T == convexHull matrix {{-1,1,-1,1,-1,1,-1,1},{-1,-1,1,1,-1,-1,1,1},{-1,-1,-1,-1,1,1,1,1}})
-///
-
--- Test 11
--- Checking cohomology for Kaneyama
-TEST ///
-T = toricVectorBundle(2,pp1ProductFan 2,"Type" => "Kaneyama")
-assert(sort degrees cohomology(0,T,matrix{{0},{0}}) == sort degrees (ring T)^{{0,0},{0,0}})
-assert(sort degrees cohomology(0,T) == sort degrees (ring T)^{{0,0},{0,0}})
-assert(sort degrees cohomology(1,T) == sort degrees (ring T)^0)
-assert(sort degrees cohomology(2,T) == sort degrees (ring T)^0)
-T1 = tangentBundle(pp1ProductFan 2,"Type" => "Kaneyama")
-assert(sort degrees cohomology(0,T1,matrix{{0},{0}}) == sort degrees (ring T1)^{{0,0},{0,0}})
-assert(sort degrees cohomology(0,T1,matrix{{1},{1}}) == sort degrees (ring T1)^0)
-assert(sort degrees cohomology(0,T1) == sort degrees (ring T1)^{{1,0},{0,1},{0,0},{0,0},{0,-1},{-1,0}})
-assert(sort degrees cohomology(1,T1) == sort degrees (ring T1)^0)
-assert(sort degrees cohomology(2,T1) == sort degrees (ring T1)^0)
-T = tangentBundle(hirzebruchFan 3 * projectiveSpaceFan 1,"Type" => "Kaneyama")
-assert(cohomology(0,T,{matrix {{2},{1},{0}}, matrix{{3},{1},{0}}}) == {(ring T)^{{-2,-1,0}},(ring T)^{{-3,-1,0}}})
-assert(cohomology(1,T,{matrix {{-2},{-1},{0}}, matrix{{-1},{-1},{0}}}) == {(ring T)^{{2, 1, 0}},(ring T)^{{1, 1, 0}}})
-assert(cohomology(2,T,matrix{{0},{0},{0}}) == (ring T)^0)
-assert(cohomology(3,T,matrix{{0},{0},{0}}) == (ring T)^0)
-///
-
--- Test 12
--- Checking cohomology for Klyachko
-TEST ///
-T = toricVectorBundle(2,pp1ProductFan 2)
-assert(sort degrees cohomology(0,T,matrix{{0},{0}}) == sort degrees (ring T)^{{0,0},{0,0}})
-assert(sort degrees cohomology(0,T) == sort degrees (ring T)^{{0,0},{0,0}})
-assert(sort degrees cohomology(1,T) == sort degrees (ring T)^0)
-assert(sort degrees cohomology(2,T) == sort degrees (ring T)^0)
-T1 = tangentBundle pp1ProductFan 2
-assert(sort degrees cohomology(0,T1,matrix{{0},{0}}) == sort degrees (ring T1)^{{0,0},{0,0}})
-assert(sort degrees cohomology(0,T1,matrix{{1},{1}}) == sort degrees (ring T1)^0)
-assert(sort degrees cohomology(0,T1) == sort degrees (ring T1)^{{1,0},{0,1},{0,0},{0,0},{0,-1},{-1,0}})
-assert(sort degrees cohomology(1,T1) == sort degrees (ring T1)^0)
-assert(sort degrees cohomology(2,T1) == sort degrees (ring T1)^0)
-T = tangentBundle(hirzebruchFan 3 * projectiveSpaceFan 1)
-assert(sort degrees cohomology(0,T) == sort degrees (ring T)^{{0, 0, 1}, {1, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {-1, 0, 0}, {0, 0, -1}, {0, -1, 0}, {-1, -1, 0}, {-2, -1, 0}, {-3, -1, 0}})
-assert(sort degrees cohomology(1,T) == sort degrees (ring T)^{{2, 1, 0}, {1, 1, 0}})
-assert(sort degrees cohomology(2,T) == sort degrees (ring T)^0)
-assert(sort degrees cohomology(3,T) == sort degrees (ring T)^0)
-///
-
--*
-
 *-
 
----------------------------------------
--- TESTS
----------------------------------------
--- Tests for the datatype toricVectorBundle
-
-
--- Check for cotangentBundle
-TEST ///
 T = cotangentBundle hirzebruchSurface 2
 assert(ring T === QQ)
 assert(filtrationJumps T === {{0,-1},{0,-1},{0,-1},{0,-1}})
@@ -4585,54 +4467,108 @@ assert(filtrationMatrices T === {matrix(QQ,{{-1,0,0},{0,1,0},{0,0,1}}),matrix(QQ
 assert(rank T == 3)
 ///
 
+-- Missing a test for tangentbundle?
 
--- Checking deltaE for Klyachko
-TEST ///
-T = trivialBundle(toricProjectiveSpace(2),3)
-assert(deltaE T == convexHull matrix{{0},{0}})
-T = tangentBundle toricProjectiveSpace 2
-assert(deltaE T == convexHull matrix {{-1,2,-1},{-1,-1,2}})
-T = cotangentBundle(toricProjectiveSpace(1) ** toricProjectiveSpace(1) ** toricProjectiveSpace(1))
-assert(deltaE T == convexHull matrix {{-1,1,-1,1,-1,1,-1,1},{-1,-1,1,1,-1,-1,1,1},{-1,-1,-1,-1,1,1,1,1}})
+-- Tests for getter functions
+
+--Test for ring
+TEST///
+X = toricProjectiveSpace 2;
+T1 = trivialBundle(X,2);
+assert(ring T1 === QQ)
+Y = hirzebruchSurface(3, CoefficientRing=>ZZ/101);
+T2 = cotangentBundle(Y);
+assert(ring T2 === ZZ/101)
 ///
 
+-- Tests for operations
 
--- Checking cohomology for Klyachko
-TEST ///
-T1 = trivialBundle(X = toricProjectiveSpace 1 ** toricProjectiveSpace 1, 2)
-assert(sort degrees cohomology(0,T1) == sort degrees (grRing T1)^{{0,0},{0,0}})
-assert(sort degrees cohomology(1,T1) == sort degrees (grRing T1)^0)
-assert(sort degrees cohomology(2,T1) == sort degrees (grRing T1)^0)
-T2 = tangentBundle X
-assert(sort degrees cohomology(0,T2,matrix{{0},{0}}) == sort degrees (grRing T2)^{{0,0},{0,0}})
-assert(sort degrees cohomology(0,T2,matrix{{1},{1}}) == sort degrees (grRing T2)^0)
-assert(sort degrees cohomology(0,T2) == sort degrees (grRing T2)^{{1,0},{0,1},{0,0},{0,0},{0,-1},{-1,0}})
-assert(sort degrees cohomology(1,T2) == sort degrees (grRing T2)^0)
-assert(sort degrees cohomology(2,T2) == sort degrees (grRing T2)^0)
-T3 = tangentBundle(Y = hirzebruchSurface 3 ** toricProjectiveSpace 1)
-assert(sort degrees cohomology(0,T3) == sort degrees (grRing T3)^{{0, 0, 1}, {1, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {-1, 0, 0}, {0, 0, -1}, {0, -1, 0}, {-1, -1, 0}, {-2, -1, 0}, {-3, -1, 0}})
-assert(sort degrees cohomology(1,T3) == sort degrees (grRing T3)^{{2, 1, 0}, {1, 1, 0}})
-assert(sort degrees cohomology(2,T3) == sort degrees (grRing T3)^0)
-assert(sort degrees cohomology(3,T3) == sort degrees (grRing T3)^0)
+--Test direct sum
+TEST///
+-*
+-- the old test for direct sum: weilToCartier is depreciated?
+T1 = tangentBundle projectiveSpaceFan 3
+T2 = weilToCartier({1,7,5,3},projectiveSpaceFan 3)
+T = T1 ++ T2
+assert(T#"ring" === QQ)
+assert(T#"filtrationMatricesTable" === hashTable {matrix{{-1},{-1},{-1}} => matrix{{-1,0,0,-1}},matrix{{0},{0},{1}} => matrix{{-1,0,0,-7}},matrix{{0},{1},{0}} => matrix{{-1,0,0,-5}}, matrix{{1},{0},{0}} => matrix{{-1,0,0,-3}}})
+assert(T#"baseTable" === hashTable {matrix{{-1},{-1},{-1}} => matrix{{-1_QQ,0,0,0},{-1,1,0,0},{-1,0,1,0},{0,0,0,1}},matrix{{0},{0},{1}} => matrix{{0_QQ,1,0,0},{0,0,1,0},{1,0,0,0},{0,0,0,1}},matrix{{0},{1},{0}} => matrix{{0_QQ,1,0,0},{1,0,0,0},{0,0,1,0},{0,0,0,1}}, matrix{{1},{0},{0}} => matrix{{1_QQ,0,0,0},{0,1,0,0},{0,0,1,0},{0,0,0,1}}})
+assert(rank T == 4)
+assert(T#"dimension of the variety" == 3)
+assert(T == directSum {T1,T2})
+T1 = cotangentBundle hirzebruchFan 3
+T2 = tangentBundle hirzebruchFan 3
+T = T1 ++ T2
+assert(T#"ring" === QQ)
+assert(T#"filtrationMatricesTable" === hashTable {matrix{{-1},{3}} => matrix{{1,0,-1,0}},matrix{{0},{-1}} => matrix{{1,0,-1,0}},matrix{{0},{1}} => matrix{{1,0,-1,0}}, matrix{{1},{0}} => matrix{{1,0,-1,0}}})
+assert(T#"baseTable" === hashTable {matrix{{-1},{3}} => matrix{{0,3,0,0},{1/3,1,0,0},{0,0,-1,1/3},{0,0,3,0}},matrix{{0},{-1}} => matrix{{0_QQ,1,0,0},{-1,0,0,0},{0,0,0,1},{0,0,-1,0}},matrix{{0},{1}} => matrix{{0,1_QQ,0,0},{1,0,0,0},{0,0,0,1},{0,0,1,0}}, matrix{{1},{0}} => map(QQ^4,QQ^4,1)})
+assert(rank T == 4)
+assert(T#"dimension of the variety" == 2)
+*-
+X = toricProjectiveSpace 2;
+T1 = trivialBundle(X,2);
+T2 = tangentBundle(X);
+T= T1++T2;
+assert( rank(T) == 4)
+assert( rank(T) == rank (T1) + rank (T2))
+assert( filteredPiece(T, {-1,-1},0) == matrix(QQ, {{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, -1, -1}, {0, 0, -1, 0}} ))
+assert( variety(T)=== variety(T2) )
+assert(filtrationJumps(T)=={{0, 0, 1, 0}, {0, 0, 1, 0}, {0, 0, 1, 0}} )
+assert(filtrationMatrices(T) == {matrix(QQ, {{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, -1, -1}, {0, 0, -1, 0}}), matrix(QQ, {{1, 0, 0, 0},{0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}}), matrix(QQ, {{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 0, 1},{0, 0, 1, 0}} )} )
 ///
 
+--Test tensor product
+TEST///
+-*
+-- old test for tensor products
+T1 = tangentBundle pp1ProductFan 2
+T2 = cotangentBundle pp1ProductFan 2
+T = T1 ** T2
+assert(T#"ring" === QQ)
+assert(T#"filtrationMatricesTable" === hashTable {matrix{{-1},{0}} => matrix{{0,-1,1,0}},matrix{{0},{-1}} => matrix{{0,-1,1,0}},matrix{{0},{1}} => matrix{{0,-1,1,0}}, matrix{{1},{0}} => matrix{{0,-1,1,0}}})
+assert(T#"baseTable" === hashTable {matrix{{-1},{0}} => matrix{{1_QQ,0,0,0},{0,-1,0,0},{0,0,-1,0},{0,0,0,1}},matrix {{0},{-1}} => matrix{{0_QQ,0,0,1},{0,0,-1,0},{0,-1,0,0},{1,0,0,0}},matrix {{0},{1}} => matrix{{0_QQ,0,0,1},{0,0,1,0},{0,1,0,0},{1,0,0,0}},matrix{{1},{0}} => matrix{{1_QQ,0,0,0},{0,1,0,0},{0,0,1,0},{0,0,0,1}}})
+assert(rank T == 4)
+assert(T#"dimension of the variety" == 2)
+T1 = tangentBundle hirzebruchFan 2
+T2 = weilToCartier({5,1,7,3},hirzebruchFan 2)
+T2 = T2 ++ T2
+T = T1 ** T2
+assert(T#"ring" === QQ)
+assert(T#"filtrationMatricesTable" === hashTable {matrix{{-1},{2}} => matrix{{-8,-8,-7,-7}},matrix{{0},{-1}} => matrix{{-6,-6,-5,-5}},matrix{{0},{1}} => matrix{{-2,-2,-1,-1}}, matrix{{1},{0}} => matrix{{-4,-4,-3,-3}}})
+assert(T#"baseTable" === hashTable {matrix{{-1},{2}} => matrix{{-1,0,1/2,0},{0,-1,0,1/2},{2,0,0,0},{0,2,0,0}},matrix {{0},{-1}} => matrix{{0_QQ,0,1,0},{0,0,0,1},{-1,0,0,0},{0,-1,0,0}},matrix {{0},{1}} => matrix{{0_QQ,0,1,0},{0,0,0,1},{1,0,0,0},{0,1,0,0}},matrix{{1},{0}} => matrix{{1_QQ,0,0,0},{0,1,0,0},{0,0,1,0},{0,0,0,1}}})
+assert(rank T == 4)
+assert(T#"dimension of the variety" == 2)
+*-
 
--- Checking symmetricPower for Klyachko
-TEST ///
-T = tangentBundle toricProjectiveSpace 3
-T = symmetricPower(T,2)
-assert(ring T === QQ)
-assert(filtrationJumps T == {{2, 1, 1, 0, 0, 0}, {2, 1, 1, 0, 0, 0}, {2, 1, 1, 0, 0, 0}, {2, 1, 1, 0, 0, 0}})
-assert(filtrationMatrices T == {map(QQ^6,QQ^6,{{1, 0, 0, 0, 0, 0}, {2, -1, 0, 0, 0, 0}, {2, 0, -1, 0, 0, 0}, {1, -1, 0, 1, 0, 0},
-      {2, -1, -1, 0, 1, 0}, {1, 0, -1, 0, 0, 1}}),map(QQ^6,QQ^6,{{1, 0, 0, 0, 0, 0}, {0, 1, 0, 0, 0, 0},
-      {0, 0, 1, 0, 0, 0}, {0, 0, 0, 1, 0, 0}, {0, 0, 0, 0, 1, 0}, {0, 0, 0, 0, 0, 1}}),map(QQ^6,QQ^6,{{0,
-      0, 0, 1, 0, 0}, {0, 1, 0, 0, 0, 0}, {0, 0, 0, 0, 1, 0}, {1, 0, 0, 0, 0, 0}, {0, 0, 1, 0, 0, 0}, {0,
-      0, 0, 0, 0, 1}}),map(QQ^6,QQ^6,{{0, 0, 0, 1, 0, 0}, {0, 0, 0, 0, 1, 0}, {0, 1, 0, 0, 0, 0}, {0, 0, 0,
-      0, 0, 1}, {0, 0, 1, 0, 0, 0}, {1, 0, 0, 0, 0, 0}})})
-assert(rank T == 6)
-assert(dim variety T == 3)
+X = toricProjectiveSpace 2;
+T1 = trivialBundle(X,3);
+T2 = tangentBundle(X);
+T= T1**T2;
+assert( rank(T) == 6)
+assert( rank(T) == rank (T1)* rank (T2))
+assert( filteredPiece(T, {-1,-1},1) ==  matrix(QQ, {{-1, 0, 0}, {-1, 0, 0}, {0, -1, 0}, {0, -1, 0}, {0, 0, -1}, {0, 0, -1}}))
+assert( variety(T)=== variety(T2) )
+assert(filtrationJumps(T)=={{1, 0, 1, 0, 1, 0}, {1, 0, 1, 0, 1, 0}, {1, 0, 1, 0, 1, 0}})
+assert(filtrationMatrices(T) ==  {matrix(QQ, {{-1, -1, 0, 0, 0, 0}, {-1, 0, 0, 0, 0, 0}, {0, 0, -1, -1, 0, 0}, {0, 0, -1, 0, 0,      0}, {0, 0, 0, 0, -1, -1}, {0, 0, 0, 0, -1, 0}}), matrix(QQ, {{1, 0, 0, 0, 0, 0}, {0, 1, 0, 0, 0,  0}, {0, 0, 1, 0, 0, 0}, {0, 0, 0, 1, 0, 0}, {0, 0, 0, 0, 1, 0}, {0, 0, 0, 0, 0, 1}}), matrix(QQ,      {{0, 1, 0, 0, 0, 0}, {1, 0, 0, 0, 0, 0}, {0, 0, 0, 1, 0, 0}, {0, 0, 1, 0, 0, 0}, {0, 0, 0,      0, 0, 1}, {0, 0, 0, 0, 1, 0}})} )
 ///
 
+-- Checking dual for Klyachko
+-- TODO: weilToCartier is depreciated?
+TEST ///
+T = dual weilToCartier({1,4,3,2},projectiveSpaceFan 3)
+assert(T#"ring" === QQ)
+assert(T#"filtrationMatricesTable" === hashTable {matrix{{-1},{-1},{-1}} => matrix{{1}},matrix{{0},{0},{1}} => matrix{{4}},matrix{{0},{1},{0}} => matrix{{3}}, matrix{{1},{0},{0}} => matrix{{2}}})
+assert(T#"baseTable" === hashTable {matrix{{-1},{-1},{-1}} => matrix{{1_QQ}},matrix{{0},{0},{1}} => matrix{{1_QQ}},matrix{{0},{1},{0}} => matrix{{1_QQ}}, matrix{{1},{0},{0}} => matrix{{1_QQ}}})
+assert(rank T == 1)
+assert(T#"dimension of the variety" == 3)
+T1 = tangentBundle projectiveSpaceFan 3
+T = dual(T1 ++ T)
+assert(T#"ring" === QQ)
+assert(T#"filtrationMatricesTable" === hashTable {matrix{{-1},{-1},{-1}} => matrix{{1,0,0,-1}},matrix{{0},{0},{1}} => matrix{{1,0,0,-4}},matrix{{0},{1},{0}} => matrix{{1,0,0,-3}}, matrix{{1},{0},{0}} => matrix{{1,0,0,-2}}})
+assert(T#"baseTable" === hashTable {matrix{{-1},{-1},{-1}} => matrix{{-1_QQ,-1,-1,0},{0,1,0,0},{0,0,1,0},{0,0,0,1}},matrix{{0},{0},{1}} => matrix{{0_QQ,1,0,0},{0,0,1,0},{1,0,0,0},{0,0,0,1}},matrix{{0},{1},{0}} => matrix{{0_QQ,1,0,0},{1,0,0,0},{0,0,1,0},{0,0,0,1}}, matrix{{1},{0},{0}} => matrix{{1_QQ,0,0,0},{0,1,0,0},{0,0,1,0},{0,0,0,1}}})
+assert(rank T == 4)
+assert(T#"dimension of the variety" == 3)
+///
 
 -- Checking exteriorPower for Klyachko
 TEST ///
@@ -4665,159 +4601,22 @@ E2 = (exteriorPower(E,0)**exteriorPower(L,2))++(exteriorPower(E,1)**exteriorPowe
 assert(areIsomorphic(E1,E2))
 ///
 
-
--- Checking eulerChi
-TEST ///
-T = tangentBundle hirzebruchSurface 3
-assert(eulerChi(matrix {{0},{0}},T) == 2)
-assert(eulerChi T == 6)
-
-T = cotangentBundle toricProjectiveSpace 4
-assert(eulerChi T == -1)
-///
-
-
--- Test for image, kernel and cokernel
-TEST ///
-X = toricProjectiveSpace(3, CoefficientRing=> ZZ/101);
-TX = tangentBundle X;
-triv = trivialBundle(X,1);
-sumoflbs = lineBundle X_0 ++ lineBundle X_1 ++ lineBundle X_2 ++ lineBundle X_3;
-f = map(sumoflbs,triv,matrix(ZZ/101,{{1},{1},{1},{1}}));
-g = map(TX,sumoflbs, transpose sub(matrix rays X,ZZ/101));
--- Image
-imf = image f;
-kg = ker g;
-assert(areIsomorphic(imf , kg))
-assert( rank(imf)== 1)
-assert( variety imf === X)
-assert( filtrationJumps (imf) =={{0}, {0}, {0}, {0}} )
-assert( filtrationMatrices imf == {matrix {{1_(ZZ/101)}}, matrix {{1_(ZZ/101)}}, matrix {{1_(ZZ/101)}}, matrix {{1_(ZZ/101)}}})
-img= image g;
-assert ( img == target g)
-
--- Kernel
-assert( rank(kg)== 1)
-assert( variety kg === X)
-assert( filtrationJumps (kg) =={{0}, {0}, {0}, {0}} )
-assert( filtrationMatrices kg == {matrix {{1_(ZZ/101)}}, matrix {{1_(ZZ/101)}}, matrix {{1_(ZZ/101)}}, matrix {{1_(ZZ/101)}}})
-kf = ker f;
-assert ( ker f == trivialBundle(X,0))
-
--- Cokernel
-CKf = coker f;
-assert(areIsomorphic(CKf , TX))
-assert( rank(CKf)== 3)
-assert( variety CKf === X)
--- The next two tests may have to be changed if the way of computing the filtered pieces changes
-assert( filtrationJumps( CKf)=={{1, 0, 0}, {1, 0, 0}, {1, 0, 0}, {1, 0, 0}} )
-assert( filtrationMatrices(CKf)=={matrix(ZZ/101, {{-1, 1, 0}, {-1, 0, 1}, {-1, 0, 0}}), matrix(ZZ/101, {{1, -1, 0}, {0, -1, 1}, {0, -1, 0}}), matrix(ZZ/101, {{0, -1, 1}, {1, -1, 0}, {0, -1, 0}}), matrix(ZZ/101, {{0, -1, 1}, {0, -1, 0}, {1, -1, 0}}) } )
--- g is surjective
-CKg = coker g;
-assert(CKg== trivialBundle(X,0) )
-///
-
-
--- Checking twist
+-- Checking symmetricPower for Klyachko
 TEST ///
 T = tangentBundle toricProjectiveSpace 3
-L = {1,-4,3,-2}
-T = twist(T,L)
+T = symmetricPower(T,2)
 assert(ring T === QQ)
-assert(filtrationJumps T == {{2, 1, 1}, {-3, -4, -4}, {4, 3, 3}, {-1, -2, -2}})
-assert(filtrationMatrices T == {map(QQ^3,QQ^3,{{-1, 0, 0}, {-1, 1, 0}, {-1, 0, 1}}),map(QQ^3,QQ^3,{{1, 0, 0}, {0, 1, 0}, {0, 0,
-       1}}),map(QQ^3,QQ^3,{{0, 1, 0}, {1, 0, 0}, {0, 0, 1}}),map(QQ^3,QQ^3,{{0, 1, 0}, {0, 0, 1}, {1, 0,
-       0}})})
-assert(rank T == 3)
+assert(filtrationJumps T == {{2, 1, 1, 0, 0, 0}, {2, 1, 1, 0, 0, 0}, {2, 1, 1, 0, 0, 0}, {2, 1, 1, 0, 0, 0}})
+assert(filtrationMatrices T == {map(QQ^6,QQ^6,{{1, 0, 0, 0, 0, 0}, {2, -1, 0, 0, 0, 0}, {2, 0, -1, 0, 0, 0}, {1, -1, 0, 1, 0, 0},
+      {2, -1, -1, 0, 1, 0}, {1, 0, -1, 0, 0, 1}}),map(QQ^6,QQ^6,{{1, 0, 0, 0, 0, 0}, {0, 1, 0, 0, 0, 0},
+      {0, 0, 1, 0, 0, 0}, {0, 0, 0, 1, 0, 0}, {0, 0, 0, 0, 1, 0}, {0, 0, 0, 0, 0, 1}}),map(QQ^6,QQ^6,{{0,
+      0, 0, 1, 0, 0}, {0, 1, 0, 0, 0, 0}, {0, 0, 0, 0, 1, 0}, {1, 0, 0, 0, 0, 0}, {0, 0, 1, 0, 0, 0}, {0,
+      0, 0, 0, 0, 1}}),map(QQ^6,QQ^6,{{0, 0, 0, 1, 0, 0}, {0, 0, 0, 0, 1, 0}, {0, 1, 0, 0, 0, 0}, {0, 0, 0,
+      0, 0, 1}, {0, 0, 1, 0, 0, 0}, {1, 0, 0, 0, 0, 0}})})
+assert(rank T == 6)
 assert(dim variety T == 3)
 ///
 
-
--- Checking isGeneral
-TEST ///
-T = tangentBundle (toricProjectiveSpace 1 ** toricProjectiveSpace 1 ** toricProjectiveSpace 1)
-assert isGeneral T
-
--*
--- old version of the test case
-L1 = {matrix {{1,0},{0,1}},matrix{{1,1},{0,1}},matrix{{-1,0},{0,1}},matrix{{-1,1},{0,-1}}}
-L2 = {matrix {{-1,0}},matrix{{-1,0}},matrix{{-1,0}},matrix{{1,1}}}
-T = toricVectorBundle(2,hirzebruchFan 3,L1,L2)
-assert not isGeneral T
-*-
-
--- this is the updated version of the old test case but the assertion failed. 
-L1 = {{-1,-1},{1,0},{1,0},{1,0}}
-L2 = {matrix{{-1,1},{0,-1}},matrix{{1,1},{0,1}},matrix{{-1,0},{0,1}},matrix{{1,0},{0,1}}}
-T = toricVectorBundle(hirzebruchSurface 3,L2,L1)
-assert not isGeneral T
-
-///
-
--- Test 32
--- Checking trivialBundle
-TEST ///
-X = toricProjectiveSpace 2
-E = trivialBundle(X,4)
-assert (rank E == 4)
-assert ((filtrationMatrices E)_0 == id_((ring E)^4))
-assert ((filtrationJumps E)_0 == toList(4:0))
-///
-
-
--- Test 33
--- Checking the isInjective and isSurjective method
-
-TEST ///
-X = toricProjectiveSpace 2
-D1 = toricDivisor({1,0,0},X)
-D2 = toricDivisor({0,1,0},X)
-D3 = toricDivisor({0,0,1},X)
-
-L1 = lineBundle(D1)
-L2 = lineBundle(D2)
-L3 = lineBundle(D3)
-
-E1 = trivialBundle(X,1)
-E2 = L1 ++ L2 ++ L3
-
-f = map(E2, E1, matrix(QQ,{{1},{1},{1}}))
-
-Y = toricProjectiveSpace 3
-F1 = trivialBundle(X,5)
-F2 = trivialBundle(X,3)
-
-g = map(F2,F1,matrix(ring F1, {{1,0,0,0,0},{0,1,0,0,0},{0,0,1,0,0}}))
-
-
-assert (isInjective f)
-assert (not isInjective g)
-assert (isSurjective g)
-assert (not isSurjective f)
-///
-
-
--- Test 34
--- Checking lineBundle
-TEST ///
-X = hirzebruchSurface 3
-D = toricDivisor({5,-3,1,2},X)
-L = lineBundle(D)
-assert (rank L == 1)
-assert (numColumns filteredPiece(L, (rays X)_0, 5) == 1)
-assert (numColumns filteredPiece(L, (rays X)_0, 6) == 0)
-
-assert (numColumns filteredPiece(L, (rays X)_1, -3) == 1)
-assert (numColumns filteredPiece(L, (rays X)_1, 0) == 0)
-
-L2 = lineBundle(X, {3,4,1,0});
-assert (rank L2 == 1)
-assert( filtrationJumps L2 =={{3}, {4}, {1}, {0}})
-assert((filtrationMatrices L2)_0 == matrix{{1_QQ}})
-
-///
-
---Test 35
 --Checking areIsomorphic
 --first test, check trivial bundles of different ranks are not isomorphic
 TEST ///
@@ -4884,7 +4683,6 @@ assert areIsomorphic (T1,T2)
 
 ///
 
---Test 36
 --Test for isomorphism
 TEST///
 PP3 = toricProjectiveSpace 3;
@@ -4924,52 +4722,85 @@ E2' = toricVectorBundle(Y,filtmats, filtrationJumps E1')
 assert(map isomorphism(E1',E2') == M)
 ///
 
---Test 37
---Test for ring
-TEST///
-X = toricProjectiveSpace 2;
-T1 = trivialBundle(X,2);
-assert(ring T1 === QQ)
-Y = hirzebruchSurface(3, CoefficientRing=>ZZ/101);
-T2 = cotangentBundle(Y);
-assert(ring T2 === ZZ/101)
+-- No test for isTwistOf?
+
+-- Tests for cohomological computations
+
+-- Checking eulerChi
+TEST ///
+T = tangentBundle hirzebruchSurface 3
+assert(eulerChi(matrix {{0},{0}},T) == 2)
+assert(eulerChi T == 6)
+
+T = cotangentBundle toricProjectiveSpace 4
+assert(eulerChi T == -1)
 ///
 
---Test 38
---Test direct sum
-TEST///
-X = toricProjectiveSpace 2;
-T1 = trivialBundle(X,2);
-T2 = tangentBundle(X);
-T= T1++T2;
-assert( rank(T) == 4)
-assert( rank(T) == rank (T1) + rank (T2))
-assert( filteredPiece(T, {-1,-1},0) == matrix(QQ, {{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, -1, -1}, {0, 0, -1, 0}} ))
-assert( variety(T)=== variety(T2) )
-assert(filtrationJumps(T)=={{0, 0, 1, 0}, {0, 0, 1, 0}, {0, 0, 1, 0}} )
-assert(filtrationMatrices(T) == {matrix(QQ, {{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, -1, -1}, {0, 0, -1, 0}}), matrix(QQ, {{1, 0, 0, 0},{0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}}), matrix(QQ, {{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 0, 1},{0, 0, 1, 0}} )} )
+-- Checking cohomology for Klyachko
+TEST ///
+T1 = trivialBundle(X = toricProjectiveSpace 1 ** toricProjectiveSpace 1, 2)
+assert(sort degrees cohomology(0,T1) == sort degrees (grRing T1)^{{0,0},{0,0}})
+assert(sort degrees cohomology(1,T1) == sort degrees (grRing T1)^0)
+assert(sort degrees cohomology(2,T1) == sort degrees (grRing T1)^0)
+T2 = tangentBundle X
+assert(sort degrees cohomology(0,T2,matrix{{0},{0}}) == sort degrees (grRing T2)^{{0,0},{0,0}})
+assert(sort degrees cohomology(0,T2,matrix{{1},{1}}) == sort degrees (grRing T2)^0)
+assert(sort degrees cohomology(0,T2) == sort degrees (grRing T2)^{{1,0},{0,1},{0,0},{0,0},{0,-1},{-1,0}})
+assert(sort degrees cohomology(1,T2) == sort degrees (grRing T2)^0)
+assert(sort degrees cohomology(2,T2) == sort degrees (grRing T2)^0)
+T3 = tangentBundle(Y = hirzebruchSurface 3 ** toricProjectiveSpace 1)
+assert(sort degrees cohomology(0,T3) == sort degrees (grRing T3)^{{0, 0, 1}, {1, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {-1, 0, 0}, {0, 0, -1}, {0, -1, 0}, {-1, -1, 0}, {-2, -1, 0}, {-3, -1, 0}})
+assert(sort degrees cohomology(1,T3) == sort degrees (grRing T3)^{{2, 1, 0}, {1, 1, 0}})
+assert(sort degrees cohomology(2,T3) == sort degrees (grRing T3)^0)
+assert(sort degrees cohomology(3,T3) == sort degrees (grRing T3)^0)
 ///
 
 
-
---Test 39
---Test tensor product
-TEST///
-X = toricProjectiveSpace 2;
-T1 = trivialBundle(X,3);
-T2 = tangentBundle(X);
-T= T1**T2;
-assert( rank(T) == 6)
-assert( rank(T) == rank (T1)* rank (T2))
-assert( filteredPiece(T, {-1,-1},1) ==  matrix(QQ, {{-1, 0, 0}, {-1, 0, 0}, {0, -1, 0}, {0, -1, 0}, {0, 0, -1}, {0, 0, -1}}))
-assert( variety(T)=== variety(T2) )
-assert(filtrationJumps(T)=={{1, 0, 1, 0, 1, 0}, {1, 0, 1, 0, 1, 0}, {1, 0, 1, 0, 1, 0}})
-assert(filtrationMatrices(T) ==  {matrix(QQ, {{-1, -1, 0, 0, 0, 0}, {-1, 0, 0, 0, 0, 0}, {0, 0, -1, -1, 0, 0}, {0, 0, -1, 0, 0,      0}, {0, 0, 0, 0, -1, -1}, {0, 0, 0, 0, -1, 0}}), matrix(QQ, {{1, 0, 0, 0, 0, 0}, {0, 1, 0, 0, 0,  0}, {0, 0, 1, 0, 0, 0}, {0, 0, 0, 1, 0, 0}, {0, 0, 0, 0, 1, 0}, {0, 0, 0, 0, 0, 1}}), matrix(QQ,      {{0, 1, 0, 0, 0, 0}, {1, 0, 0, 0, 0, 0}, {0, 0, 0, 1, 0, 0}, {0, 0, 1, 0, 0, 0}, {0, 0, 0,      0, 0, 1}, {0, 0, 0, 0, 1, 0}})} )
+-- Checking deltaE for Klyachko
+TEST ///
+T = trivialBundle(toricProjectiveSpace(2),3)
+assert(deltaE T == convexHull matrix{{0},{0}})
+T = tangentBundle toricProjectiveSpace 2
+assert(deltaE T == convexHull matrix {{-1,2,-1},{-1,-1,2}})
+T = cotangentBundle(toricProjectiveSpace(1) ** toricProjectiveSpace(1) ** toricProjectiveSpace(1))
+assert(deltaE T == convexHull matrix {{-1,1,-1,1,-1,1,-1,1},{-1,-1,1,1,-1,-1,1,1},{-1,-1,-1,-1,1,1,1,1}})
 ///
 
---Test 40
---Test for twist
-TEST///
+
+-- Checking isGeneral
+TEST ///
+T = tangentBundle (toricProjectiveSpace 1 ** toricProjectiveSpace 1 ** toricProjectiveSpace 1)
+assert isGeneral T
+
+-*
+-- old version of the test case
+L1 = {matrix {{1,0},{0,1}},matrix{{1,1},{0,1}},matrix{{-1,0},{0,1}},matrix{{-1,1},{0,-1}}}
+L2 = {matrix {{-1,0}},matrix{{-1,0}},matrix{{-1,0}},matrix{{1,1}}}
+T = toricVectorBundle(2,hirzebruchFan 3,L1,L2)
+assert not isGeneral T
+*-
+
+-- this is the updated version of the old test case but the assertion failed. 
+L1 = {{-1,-1},{1,0},{1,0},{1,0}}
+L2 = {matrix{{-1,1},{0,-1}},matrix{{1,1},{0,1}},matrix{{-1,0},{0,1}},matrix{{1,0},{0,1}}}
+T = toricVectorBundle(hirzebruchSurface 3,L2,L1)
+assert not isGeneral T
+
+///
+
+-- Checking twist
+TEST ///
+T = tangentBundle toricProjectiveSpace 3
+L = {1,-4,3,-2}
+T = twist(T,L)
+assert(ring T === QQ)
+assert(filtrationJumps T == {{2, 1, 1}, {-3, -4, -4}, {4, 3, 3}, {-1, -2, -2}})
+assert(filtrationMatrices T == {map(QQ^3,QQ^3,{{-1, 0, 0}, {-1, 1, 0}, {-1, 0, 1}}),map(QQ^3,QQ^3,{{1, 0, 0}, {0, 1, 0}, {0, 0,
+       1}}),map(QQ^3,QQ^3,{{0, 1, 0}, {1, 0, 0}, {0, 0, 1}}),map(QQ^3,QQ^3,{{0, 1, 0}, {0, 0, 1}, {1, 0,
+       0}})})
+assert(rank T == 3)
+assert(dim variety T == 3)
+
 X = toricProjectiveSpace 2;
 T1 = tangentBundle(X);
 L = lineBundle(toricDivisor({1,2,-1},X));
@@ -4981,8 +4812,8 @@ assert(filtrationMatrices(T) == {matrix(QQ, {{-1, -1}, {-1, 0}}), matrix(QQ ,{{1
 assert(areIsomorphic(T, T1**L) )
 ///
 
+-- Tests for maps
 
---Test 41
 --Test for ToricVectorBundleMap
 TEST///
 PP3 = toricProjectiveSpace 3;
@@ -4998,7 +4829,6 @@ assert(map tvbMap === M)
 
 ///
 
---Test 42
 --Test for isWellDefined for ToricVectorBundleMap
 TEST///
 X = toricProjectiveSpace 3;
@@ -5017,9 +4847,78 @@ L3 = lineBundle(D3)
 assert (not isWellDefined map(E, L1 ++ L2 ++ L3, id_((ring E)^3)))
 ///
 
+-- Tests for isInjective and isSurjective
+
+TEST ///
+X = toricProjectiveSpace 2
+D1 = toricDivisor({1,0,0},X)
+D2 = toricDivisor({0,1,0},X)
+D3 = toricDivisor({0,0,1},X)
+
+L1 = lineBundle(D1)
+L2 = lineBundle(D2)
+L3 = lineBundle(D3)
+
+E1 = trivialBundle(X,1)
+E2 = L1 ++ L2 ++ L3
+
+f = map(E2, E1, matrix(QQ,{{1},{1},{1}}))
+
+Y = toricProjectiveSpace 3
+F1 = trivialBundle(X,5)
+F2 = trivialBundle(X,3)
+
+g = map(F2,F1,matrix(ring F1, {{1,0,0,0,0},{0,1,0,0,0},{0,0,1,0,0}}))
 
 
---Test 43
+assert (isInjective f)
+assert (not isInjective g)
+assert (isSurjective g)
+assert (not isSurjective f)
+///
+
+-- Test for image, kernel and cokernel
+TEST ///
+X = toricProjectiveSpace(3, CoefficientRing=> ZZ/101);
+TX = tangentBundle X;
+triv = trivialBundle(X,1);
+sumoflbs = lineBundle X_0 ++ lineBundle X_1 ++ lineBundle X_2 ++ lineBundle X_3;
+f = map(sumoflbs,triv,matrix(ZZ/101,{{1},{1},{1},{1}}));
+g = map(TX,sumoflbs, transpose sub(matrix rays X,ZZ/101));
+-- Image
+imf = image f;
+kg = ker g;
+assert(areIsomorphic(imf , kg))
+assert( rank(imf)== 1)
+assert( variety imf === X)
+assert( filtrationJumps (imf) =={{0}, {0}, {0}, {0}} )
+assert( filtrationMatrices imf == {matrix {{1_(ZZ/101)}}, matrix {{1_(ZZ/101)}}, matrix {{1_(ZZ/101)}}, matrix {{1_(ZZ/101)}}})
+img= image g;
+assert ( img == target g)
+
+-- Kernel
+assert( rank(kg)== 1)
+assert( variety kg === X)
+assert( filtrationJumps (kg) =={{0}, {0}, {0}, {0}} )
+assert( filtrationMatrices kg == {matrix {{1_(ZZ/101)}}, matrix {{1_(ZZ/101)}}, matrix {{1_(ZZ/101)}}, matrix {{1_(ZZ/101)}}})
+kf = ker f;
+assert ( ker f == trivialBundle(X,0))
+
+-- Cokernel
+CKf = coker f;
+assert(areIsomorphic(CKf , TX))
+assert( rank(CKf)== 3)
+assert( variety CKf === X)
+-- The next two tests may have to be changed if the way of computing the filtered pieces changes
+assert( filtrationJumps( CKf)=={{1, 0, 0}, {1, 0, 0}, {1, 0, 0}, {1, 0, 0}} )
+assert( filtrationMatrices(CKf)=={matrix(ZZ/101, {{-1, 1, 0}, {-1, 0, 1}, {-1, 0, 0}}), matrix(ZZ/101, {{1, -1, 0}, {0, -1, 1}, {0, -1, 0}}), matrix(ZZ/101, {{0, -1, 1}, {1, -1, 0}, {0, -1, 0}}), matrix(ZZ/101, {{0, -1, 1}, {0, -1, 0}, {1, -1, 0}}) } )
+-- g is surjective
+CKg = coker g;
+assert(CKg== trivialBundle(X,0) )
+///
+
+-- Tests for Weil decorations
+
 --Checking weilDecoration on the direct sum of the tangent bundle with a line bundle on P2.
 TEST ///
 M = toricProjectiveSpace 2;
@@ -5073,7 +4972,118 @@ assert(lcm(D1,D5) == D7)
 
 ///
 
--- Test 13
+
+-------------------------------------------
+-- TESTS for the Kaneyama bundles
+-------------------------------------------
+TEST ///
+T = toricVectorBundleKaneyama(2,pp1ProductFan 2)
+assert(T#"baseChangeTable" === hashTable {(0,1) => map(QQ^2,QQ^2,1),(0,2) => map(QQ^2,QQ^2,1),(1,3) => map(QQ^2,QQ^2,1),(2,3) => map(QQ^2,QQ^2,1)})
+assert(T#"degreeTable" === hashTable apply(facesAsCones(0,pp1ProductFan 2), C -> (rays C, linealitySpace C) => map(ZZ^2,ZZ^2,0)))
+assert(rank T == 2)
+assert(T#"dimension of the variety" == 2)
+L1 = {matrix {{1,0},{0,1}},matrix{{0,1},{1,0}},matrix{{-1,0},{-1,1}}}
+L2 = {matrix {{-1,0},{0,-1}},matrix{{0,1},{1,0}},matrix{{0,-1},{-1,0}}}
+T = toricVectorBundleKaneyama(2,projectiveSpaceFan 2,L1,L2)
+assert(T#"baseChangeTable" === hashTable {(0,1) => matrix {{-1/1,0},{0,-1}},(0,2) => matrix{{0/1,1},{1,0}},(1,2) => matrix{{0/1,-1},{-1,0}}})
+assert(T#"degreeTable" === hashTable {(matrix {{1,-1},{0,-1}}, map(ZZ^2,0,0)) => matrix{{-1,0},{-1,1}}, (matrix {{1,0},{0,1}}, map(ZZ^2,0,0)) => matrix{{0,1},{1,0}}, (matrix {{-1,0},{-1,1}}, map(ZZ^2,0,0)) => matrix{{1,0},{0,1}}})
+assert(rank T == 2)
+assert(T#"dimension of the variety" == 2)
+///
+
+-- Checking addBaseChange and cocycleCheck
+TEST ///
+T = toricVectorBundleKaneyama(2,pp1ProductFan 2)
+T1 = addBaseChange(T,{matrix{{1,2},{0,1}},matrix{{1,0},{3,1}},matrix{{1,-2},{0,1}},matrix{{1,0},{-3,1}}})
+assert cocycleCheck T1
+T1 = addBaseChange(T,{matrix{{1,2},{0,1}},matrix{{1,0},{3,1}},matrix{{1,-2},{0,1}},matrix{{1,0},{-2,1}}})
+assert not cocycleCheck T1
+///
+
+-- Checking regCheck
+TEST ///
+T = toricVectorBundleKaneyama(2,pp1ProductFan 2)
+assert regCheck T
+T1 = addDegrees(T,{matrix{{1,2},{3,1}},matrix{{-1,0},{3,1}},matrix{{1,2},{-3,-1}},matrix{{-1,0},{-3,-1}}})
+assert not regCheck T1
+T1 = addDegrees(T,{matrix{{-1,0},{-3,-1}},matrix{{-1,0},{3,1}},matrix{{1,2},{-3,-1}},matrix{{1,2},{3,1}}})
+assert regCheck T1
+///
+
+-- Test 8
+-- Checking isWellDefined
+TEST ///
+T = toricVectorBundle(2,pp1ProductFan 2)
+T1 = addBase(T,{matrix{{1,2},{3,1}},matrix{{-1,0},{3,1}},matrix{{1,2},{-3,-1}},matrix{{-1,0},{-3,-1}}})
+assert isWellDefined T1
+T = toricVectorBundle(1,normalFan crossPolytope 3)
+L = apply({2,1,1,2,2,1,1,2}, i -> matrix {{i}});
+T = addFiltration(T,L)
+assert not isWellDefined T
+///
+
+-- Checking tangentBundle for Kaneyama
+TEST ///
+T = tangentBundleKaneyama(pp1ProductFan 2)
+assert(T#"baseChangeTable" === hashTable {(0,1) => map(QQ^2,QQ^2,{{1, 0}, {0, -1}}), (0,2) => map(QQ^2,QQ^2,{{-1, 0}, {0, 1}}), (1,3) => map(QQ^2,QQ^2,{{-1, 0}, {0, 1}}), (2,3) => map(QQ^2,QQ^2,{{1, 0}, {0, -1}})})
+assert(T#"degreeTable" === hashTable {(matrix {{-1,0},{0,1}}, map(ZZ^2,0,0)) => matrix{{1,0},{0,-1}},(matrix {{-1,0},{0,-1}}, map(ZZ^2,0,0)) => matrix{{1,0},{0,1}},(matrix {{1,0},{0,1}}, map(ZZ^2,0,0)) => matrix{{-1,0},{0,-1}}, (matrix {{1,0},{0,-1}}, map(ZZ^2,0,0)) => matrix{{-1,0},{0,1}}})
+assert(rank T == 2)
+assert(T#"dimension of the variety" == 2)
+T = tangentBundle(projectiveSpaceFan 3, "Type" => "Kaneyama")
+assert(T#"baseChangeTable" === hashTable {(0,1) => map(QQ^3,QQ^3,{{1, -1, 0}, {0, -1, 0}, {0, -1, 1}}), (0,2) => map(QQ^3,QQ^3,{{-1, 0, 0}, {-1, 1, 0}, {-1, 0, 1}}), (1,2) => map(QQ^3,QQ^3,{{-1, 1, 0}, {-1, 0, 0}, {-1, 0, 1}}), (0,3) => map(QQ^3,QQ^3,{{1, 0, -1}, {0, 0, -1}, {0, 1, -1}}), (1,3) => map(QQ^3,QQ^3,{{1, 0, -1}, {0, 1, -1}, {0, 0, -1}}), (2,3) => map(QQ^3,QQ^3,{{0, 0, -1}, {1, 0, -1}, {0, 1, -1}})})
+assert(T#"degreeTable" === hashTable {(matrix {{1,0,0},{0,1,0},{0,0,1}}, map(ZZ^3,0,0)) => matrix{{-1,0,0},{0,-1,0},{0,0,-1}},(matrix {{1,0,-1},{0,1,-1},{0,0,-1}}, map(ZZ^3,0,0)) => matrix{{0,-1,0},{0,0,-1},{1,1,1}},(matrix {{0,-1,0},{1,-1,0},{0,-1,1}}, map(ZZ^3,0,0)) => matrix{{1,1,1},{0,-1,0},{0,0,-1}}, (matrix {{1,-1,0},{0,-1,0},{0,-1,1}}, map(ZZ^3,0,0)) => matrix{{0,-1,0},{1,1,1},{0,0,-1}}})
+assert(rank T == 3)
+assert(T#"dimension of the variety" == 3)
+///
+
+-- Test 6
+-- Checking cotangentBundle for Kaneyama
+TEST ///
+T = cotangentBundle(hirzebruchFan 3,"Type" => "Kaneyama")
+assert(T#"baseChangeTable" === hashTable {(0,1) => map(QQ^2,QQ^2,{{1, 0}, {0, -1}}), (0,2) => map(QQ^2,QQ^2,{{-1, 3}, {0, 1}}), (1,3) => map(QQ^2,QQ^2,{{-1, -3}, {0, 1}}), (2,3) => map(QQ^2,QQ^2,{{1, 0}, {0, -1}})})
+assert(T#"degreeTable" === hashTable {(matrix {{1,0},{0,-1}}, map(ZZ^2,0,0)) => matrix{{1,0},{0,-1}},(matrix {{1,0},{0,1}}, map(ZZ^2,0,0)) => matrix{{1,0},{0,1}},(matrix {{0,-1},{1,3}}, map(ZZ^2,0,0)) => matrix{{-1,3},{0,1}}, (matrix {{0,-1},{-1,3}}, map(ZZ^2,0,0)) => matrix{{-1,-3},{0,-1}}})
+assert(rank T == 2)
+assert(T#"dimension of the variety" == 2)
+T = cotangentBundle(pp1ProductFan 3, "Type" => "Kaneyama")
+assert(T#"baseChangeTable" === hashTable {(2,6) => matrix{{-1_QQ,0,0},{0,1,0},{0,0,1}}, (4,5) => matrix{{1_QQ,0,0},{0,1,0},{0,0,-1}}, (4,6) => matrix{{1_QQ,0,0},{0,-1,0},{0,0,1}}, (3,7) => matrix{{-1_QQ,0,0},{0,1,0},{0,0,1}}, (5,7) => matrix{{1_QQ,0,0},{0,-1,0},{0,0,1}}, (6,7) => matrix{{1_QQ,0,0},{0,1,0},{0,0,-1}}, (0,1) => matrix{{1_QQ,0,0},{0,1,0},{0,0,-1}}, (0,2) => matrix{{1_QQ,0,0},{0,-1,0},{0,0,1}}, (1,3) => matrix{{1_QQ,0,0},{0,-1,0},{0,0,1}}, (0,4) => matrix{{-1_QQ,0,0},{0,1,0},{0,0,1}}, (2,3) => matrix{{1_QQ,0,0},{0,1,0},{0,0,-1}}, (1,5) => matrix{{-1_QQ,0,0},{0,1,0},{0,0,1}}})
+assert(T#"degreeTable" === hashTable {(matrix {{1,0,0},{0,1,0},{0,0,1}}, map(ZZ^3,0,0)) => matrix{{1,0,0},{0,1,0},{0,0,1}},(matrix {{-1,0,0},{0,1,0},{0,0,1}}, map(ZZ^3,0,0)) => matrix{{-1,0,0},{0,1,0},{0,0,1}},(matrix {{1,0,0},{0,-1,0},{0,0,1}}, map(ZZ^3,0,0)) => matrix{{1,0,0},{0,-1,0},{0,0,1}},(matrix {{1,0,0},{0,1,0},{0,0,-1}}, map(ZZ^3,0,0)) => matrix{{1,0,0},{0,1,0},{0,0,-1}},(matrix {{-1,0,0},{0,-1,0},{0,0,1}}, map(ZZ^3,0,0)) => matrix{{-1,0,0},{0,-1,0},{0,0,1}},(matrix {{-1,0,0},{0,1,0},{0,0,-1}}, map(ZZ^3,0,0)) => matrix{{-1,0,0},{0,1,0},{0,0,-1}},(matrix {{1,0,0},{0,-1,0},{0,0,-1}}, map(ZZ^3,0,0)) => matrix{{1,0,0},{0,-1,0},{0,0,-1}},(matrix {{-1,0,0},{0,-1,0},{0,0,-1}}, map(ZZ^3,0,0)) => matrix{{-1,0,0},{0,-1,0},{0,0,-1}}})
+assert(rank T == 3)
+assert(T#"dimension of the variety" == 3)
+///
+
+-- Test 9
+-- Checking deltaE for Kaneyama
+TEST ///
+T = toricVectorBundle(3,projectiveSpaceFan 2,"Type" => "Kaneyama")
+assert(deltaE T == convexHull matrix{{0},{0}})
+T = tangentBundle(projectiveSpaceFan 2,"Type" => "Kaneyama")
+assert(deltaE T == convexHull matrix {{-1,2,-1},{-1,-1,2}})
+T = cotangentBundle(pp1ProductFan 3,"Type" => "Kaneyama")
+assert(deltaE T == convexHull matrix {{-1,1,-1,1,-1,1,-1,1},{-1,-1,1,1,-1,-1,1,1},{-1,-1,-1,-1,1,1,1,1}})
+///
+
+-- Test 11
+-- Checking cohomology for Kaneyama
+TEST ///
+T = toricVectorBundle(2,pp1ProductFan 2,"Type" => "Kaneyama")
+assert(sort degrees cohomology(0,T,matrix{{0},{0}}) == sort degrees (ring T)^{{0,0},{0,0}})
+assert(sort degrees cohomology(0,T) == sort degrees (ring T)^{{0,0},{0,0}})
+assert(sort degrees cohomology(1,T) == sort degrees (ring T)^0)
+assert(sort degrees cohomology(2,T) == sort degrees (ring T)^0)
+T1 = tangentBundle(pp1ProductFan 2,"Type" => "Kaneyama")
+assert(sort degrees cohomology(0,T1,matrix{{0},{0}}) == sort degrees (ring T1)^{{0,0},{0,0}})
+assert(sort degrees cohomology(0,T1,matrix{{1},{1}}) == sort degrees (ring T1)^0)
+assert(sort degrees cohomology(0,T1) == sort degrees (ring T1)^{{1,0},{0,1},{0,0},{0,0},{0,-1},{-1,0}})
+assert(sort degrees cohomology(1,T1) == sort degrees (ring T1)^0)
+assert(sort degrees cohomology(2,T1) == sort degrees (ring T1)^0)
+T = tangentBundle(hirzebruchFan 3 * projectiveSpaceFan 1,"Type" => "Kaneyama")
+assert(cohomology(0,T,{matrix {{2},{1},{0}}, matrix{{3},{1},{0}}}) == {(ring T)^{{-2,-1,0}},(ring T)^{{-3,-1,0}}})
+assert(cohomology(1,T,{matrix {{-2},{-1},{0}}, matrix{{-1},{-1},{0}}}) == {(ring T)^{{2, 1, 0}},(ring T)^{{1, 1, 0}}})
+assert(cohomology(2,T,matrix{{0},{0},{0}}) == (ring T)^0)
+assert(cohomology(3,T,matrix{{0},{0},{0}}) == (ring T)^0)
+///
+
+
 -- Checking weilToCartier
 TEST ///
 T = weilToCartier({1,4,3,2},projectiveSpaceFan 3,"Type" => "Kaneyama")
@@ -5109,28 +5119,6 @@ assert(rank T == 4)
 assert(T#"dimension of the variety" == 2)
 ///
 
---Test 15
--- Checking directSum for Klyachko
-TEST ///
-T1 = tangentBundle projectiveSpaceFan 3
-T2 = weilToCartier({1,7,5,3},projectiveSpaceFan 3)
-T = T1 ++ T2
-assert(T#"ring" === QQ)
-assert(T#"filtrationMatricesTable" === hashTable {matrix{{-1},{-1},{-1}} => matrix{{-1,0,0,-1}},matrix{{0},{0},{1}} => matrix{{-1,0,0,-7}},matrix{{0},{1},{0}} => matrix{{-1,0,0,-5}}, matrix{{1},{0},{0}} => matrix{{-1,0,0,-3}}})
-assert(T#"baseTable" === hashTable {matrix{{-1},{-1},{-1}} => matrix{{-1_QQ,0,0,0},{-1,1,0,0},{-1,0,1,0},{0,0,0,1}},matrix{{0},{0},{1}} => matrix{{0_QQ,1,0,0},{0,0,1,0},{1,0,0,0},{0,0,0,1}},matrix{{0},{1},{0}} => matrix{{0_QQ,1,0,0},{1,0,0,0},{0,0,1,0},{0,0,0,1}}, matrix{{1},{0},{0}} => matrix{{1_QQ,0,0,0},{0,1,0,0},{0,0,1,0},{0,0,0,1}}})
-assert(rank T == 4)
-assert(T#"dimension of the variety" == 3)
-assert(T == directSum {T1,T2})
-T1 = cotangentBundle hirzebruchFan 3
-T2 = tangentBundle hirzebruchFan 3
-T = T1 ++ T2
-assert(T#"ring" === QQ)
-assert(T#"filtrationMatricesTable" === hashTable {matrix{{-1},{3}} => matrix{{1,0,-1,0}},matrix{{0},{-1}} => matrix{{1,0,-1,0}},matrix{{0},{1}} => matrix{{1,0,-1,0}}, matrix{{1},{0}} => matrix{{1,0,-1,0}}})
-assert(T#"baseTable" === hashTable {matrix{{-1},{3}} => matrix{{0,3,0,0},{1/3,1,0,0},{0,0,-1,1/3},{0,0,3,0}},matrix{{0},{-1}} => matrix{{0_QQ,1,0,0},{-1,0,0,0},{0,0,0,1},{0,0,-1,0}},matrix{{0},{1}} => matrix{{0,1_QQ,0,0},{1,0,0,0},{0,0,0,1},{0,0,1,0}}, matrix{{1},{0}} => map(QQ^4,QQ^4,1)})
-assert(rank T == 4)
-assert(T#"dimension of the variety" == 2)
-///
-
 -- Test 16
 -- Checking dual for Kaneyama
 TEST ///
@@ -5143,24 +5131,6 @@ T1 = tangentBundle(projectiveSpaceFan 3,"Type" => "Kaneyama")
 T = dual(T1 ++ T)
 assert(T#"baseChangeTable" === hashTable{(0,2) => matrix{{-1_QQ,-1,-1,0},{0,1,0,0},{0,0,1,0},{0,0,0,1}},(0,1) => matrix{{1_QQ,0,0,0},{-1,-1,-1,0},{0,0,1,0},{0,0,0,1}}, (0,3) => matrix{{1_QQ,0,0,0},{-1,-1,-1,0},{0,1,0,0},{0,0,0,1}}, (1,2) => matrix{{0_QQ,1,0,0},{-1,-1,-1,0},{0,0,1,0},{0,0,0,1}},(1,3) => matrix{{1_QQ,0,0,0},{0,1,0,0},{-1,-1,-1,0},{0,0,0,1}},(2,3) => matrix{{-1_QQ,-1,-1,0},{1,0,0,0},{0,1,0,0},{0,0,0,1}}})
 assert(T#"degreeTable" === hashTable{(matrix {{1,0,-1},{0,1,-1},{0,0,-1}}, map(ZZ^3,0,0)) => matrix{{0,1,0,-2},{0,0,1,-3},{-1,-1,-1,6}},(matrix {{0,-1,0},{1,-1,0},{0,-1,1}}, map(ZZ^3,0,0)) => matrix{{-1,-1,-1,8},{0,1,0,-3},{0,0,1,-4}},(matrix {{1,-1,0},{0,-1,0},{0,-1,1}}, map(ZZ^3,0,0)) => matrix{{0,1,0,-2},{-1,-1,-1,7},{0,0,1,-4}}, (map(ZZ^3,ZZ^3,1), map(ZZ^3,0,0)) => matrix{{1,0,0,-2},{0,1,0,-3},{0,0,1,-4}}})
-assert(rank T == 4)
-assert(T#"dimension of the variety" == 3)
-///
-
--- Test 17
--- Checking dual for Klyachko
-TEST ///
-T = dual weilToCartier({1,4,3,2},projectiveSpaceFan 3)
-assert(T#"ring" === QQ)
-assert(T#"filtrationMatricesTable" === hashTable {matrix{{-1},{-1},{-1}} => matrix{{1}},matrix{{0},{0},{1}} => matrix{{4}},matrix{{0},{1},{0}} => matrix{{3}}, matrix{{1},{0},{0}} => matrix{{2}}})
-assert(T#"baseTable" === hashTable {matrix{{-1},{-1},{-1}} => matrix{{1_QQ}},matrix{{0},{0},{1}} => matrix{{1_QQ}},matrix{{0},{1},{0}} => matrix{{1_QQ}}, matrix{{1},{0},{0}} => matrix{{1_QQ}}})
-assert(rank T == 1)
-assert(T#"dimension of the variety" == 3)
-T1 = tangentBundle projectiveSpaceFan 3
-T = dual(T1 ++ T)
-assert(T#"ring" === QQ)
-assert(T#"filtrationMatricesTable" === hashTable {matrix{{-1},{-1},{-1}} => matrix{{1,0,0,-1}},matrix{{0},{0},{1}} => matrix{{1,0,0,-4}},matrix{{0},{1},{0}} => matrix{{1,0,0,-3}}, matrix{{1},{0},{0}} => matrix{{1,0,0,-2}}})
-assert(T#"baseTable" === hashTable {matrix{{-1},{-1},{-1}} => matrix{{-1_QQ,-1,-1,0},{0,1,0,0},{0,0,1,0},{0,0,0,1}},matrix{{0},{0},{1}} => matrix{{0_QQ,1,0,0},{0,0,1,0},{1,0,0,0},{0,0,0,1}},matrix{{0},{1},{0}} => matrix{{0_QQ,1,0,0},{1,0,0,0},{0,0,1,0},{0,0,0,1}}, matrix{{1},{0},{0}} => matrix{{1_QQ,0,0,0},{0,1,0,0},{0,0,1,0},{0,0,0,1}}})
 assert(rank T == 4)
 assert(T#"dimension of the variety" == 3)
 ///
@@ -5181,28 +5151,6 @@ T2 = T2 ++ T2
 T = T1 ** T2
 assert(T#"baseChangeTable" === hashTable{(0,1) => matrix{{1_QQ,0,0,0},{0,-1,0,0},{0,0,1,0},{0,0,0,-1}},(0,2) => matrix{{-1_QQ,0,0,0},{2,1,0,0},{0,0,-1,0},{0,0,2,1}}, (1,3) => matrix{{-1_QQ,0,0,0},{-2,1,0,0},{0,0,-1,0},{0,0,-2,1}}, (2,3) => matrix{{1_QQ,0,0,0},{0,-1,0,0},{0,0,1,0},{0,0,0,-1}}})
 assert(T#"degreeTable" === hashTable{(matrix {{1,0},{0,1}}, map(ZZ^2,0,0)) => matrix{{-4,-3,-4,-3},{-1,-2,-1,-2}},(matrix {{1,0},{0,-1}}, map(ZZ^2,0,0)) => matrix{{-4,-3,-4,-3},{5,6,5,6}},(matrix {{0,-1},{-1,2}}, map(ZZ^2,0,0)) => matrix{{18,19,18,19},{5,6,5,6}},(matrix {{0,-1},{1,2}}, map(ZZ^2,0,0)) => matrix{{6,3,6,3},{-1,-2,-1,-2}}})
-assert(rank T == 4)
-assert(T#"dimension of the variety" == 2)
-///
-
--- Test 19
--- Checking tensor for Klyachko
-TEST ///
-T1 = tangentBundle pp1ProductFan 2
-T2 = cotangentBundle pp1ProductFan 2
-T = T1 ** T2
-assert(T#"ring" === QQ)
-assert(T#"filtrationMatricesTable" === hashTable {matrix{{-1},{0}} => matrix{{0,-1,1,0}},matrix{{0},{-1}} => matrix{{0,-1,1,0}},matrix{{0},{1}} => matrix{{0,-1,1,0}}, matrix{{1},{0}} => matrix{{0,-1,1,0}}})
-assert(T#"baseTable" === hashTable {matrix{{-1},{0}} => matrix{{1_QQ,0,0,0},{0,-1,0,0},{0,0,-1,0},{0,0,0,1}},matrix {{0},{-1}} => matrix{{0_QQ,0,0,1},{0,0,-1,0},{0,-1,0,0},{1,0,0,0}},matrix {{0},{1}} => matrix{{0_QQ,0,0,1},{0,0,1,0},{0,1,0,0},{1,0,0,0}},matrix{{1},{0}} => matrix{{1_QQ,0,0,0},{0,1,0,0},{0,0,1,0},{0,0,0,1}}})
-assert(rank T == 4)
-assert(T#"dimension of the variety" == 2)
-T1 = tangentBundle hirzebruchFan 2
-T2 = weilToCartier({5,1,7,3},hirzebruchFan 2)
-T2 = T2 ++ T2
-T = T1 ** T2
-assert(T#"ring" === QQ)
-assert(T#"filtrationMatricesTable" === hashTable {matrix{{-1},{2}} => matrix{{-8,-8,-7,-7}},matrix{{0},{-1}} => matrix{{-6,-6,-5,-5}},matrix{{0},{1}} => matrix{{-2,-2,-1,-1}}, matrix{{1},{0}} => matrix{{-4,-4,-3,-3}}})
-assert(T#"baseTable" === hashTable {matrix{{-1},{2}} => matrix{{-1,0,1/2,0},{0,-1,0,1/2},{2,0,0,0},{0,2,0,0}},matrix {{0},{-1}} => matrix{{0_QQ,0,1,0},{0,0,0,1},{-1,0,0,0},{0,-1,0,0}},matrix {{0},{1}} => matrix{{0_QQ,0,1,0},{0,0,0,1},{1,0,0,0},{0,1,0,0}},matrix{{1},{0}} => matrix{{1_QQ,0,0,0},{0,1,0,0},{0,0,1,0},{0,0,0,1}}})
 assert(rank T == 4)
 assert(T#"dimension of the variety" == 2)
 ///
