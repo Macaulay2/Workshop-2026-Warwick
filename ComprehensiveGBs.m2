@@ -724,13 +724,19 @@ consistencyCheckAllTogether (List, RingElement) := o -> (E, f) -> (
 );
 
 consistencyCheckAllTogether (List, List) := o -> (E, N) -> (
-  for f in N do(
-    check := consistencyCheckAllTogether(E, f);
-    if not(instance(consistencyCheckAllTogether(E, f), Nothing)) then (
-      return check
+    for f in N do (
+        check := consistencyCheckAllTogether(E, f, Loops => o.Loops);
+
+        if check === false then (
+            return false;
+        );
+
+        if instance(check, Nothing) then (
+            return isConsistentRabinowitsch(E, N);
+        );
     );
-  );
-  return isConsistentRabinowitsch(E, N)
+
+    return true;
 );
 
 
