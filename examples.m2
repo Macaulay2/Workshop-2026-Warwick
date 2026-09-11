@@ -253,7 +253,7 @@ F4={a*x^3*y+c*x*y^2,x^4*y+3*d*y,c*x^2+b*x*y,x^2*y^2+a*x^2,x^5+y^5}
 F5={a*x^2*y+b*x+y^3,a*x^2*y+b*x*y,y^2+b*x^2*y+c*x*y}
 F6={x^4+a*x^3+b*x^2+c*x+d, 4*x^3+3*a*x^2+2*b*x+c}
 F7={x^3 - a, y^4-b, x+y-a*z}
-F8={a*x^2 + b*y, c*w^2 + z, (x - z)^2 + (y - w)^2, 2*d*x*w - 2*b*y}
+F8={a*x^2+b*y, c*w^2 + z, (x-z)^2 + (y-w)^2, 2*d*x*w - 2*b*y}
 --------
 
 --The following are examples from Montes and Recio
@@ -306,7 +306,7 @@ S4= {x^4 + a*x^3 + b*x^2 + c*x*y + d,
 
 S5= {a*x^2 + b*y*z + c*z*w,
      c*w^2 + b*y + z,
-     (x - z)^2 + (y - w)^2,
+     (x-z)^2 + (y-w)^2,
      2*d*x*w - 2*b*y*z}
 
 -- Example from KSW: "the famous P3P problem
