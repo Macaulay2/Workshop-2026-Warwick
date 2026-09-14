@@ -1,5 +1,13 @@
 I will type here some questions so that I don't forget and I also do not send many emails.
+
 1) at the moment the map RtoRExt is: RtoRExt := map(RExt, R, drop(gens RExt, 1)) where 
 RExt := K[getSymbol "l", X, U, MonomialOrder => {Lex => 1} | ringOrder R | ringOrder KU] and
 R= K[U][X]
 is the image of this map correct or is it mapping the X's to the U's?
+
+2) I am changing the subs from PGBMain to maps, but I do not want to change directly in case there is something in the code I am not understanding (this is Angelo's code), I would suggest the following change:
+a := apply(E, e -> KUtoRFlat(e));
+G := first entries gens(gb (ideal(a|F)));
+instead of: G := first entries gens(gb (ideal(apply((E | F), e -> sub(e, RFlat)))));
+in this way, we can replace the sub with the map KUtoRFlat only on the elements of E, 
+the elements of F belong to K[U,X], which is not exactly RFlat, but this is related to my question 1)
