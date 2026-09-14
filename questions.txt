@@ -1,0 +1,5 @@
+I will type here some questions so that I don't forget and I also do not send many emails.
+1) at the moment the map RtoRExt is: RtoRExt := map(RExt, R, drop(gens RExt, 1)) where 
+RExt := K[getSymbol "l", X, U, MonomialOrder => {Lex => 1} | ringOrder R | ringOrder KU] and
+R= K[U][X]
+is the image of this map correct or is it mapping the X's to the U's?
