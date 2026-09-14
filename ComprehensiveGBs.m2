@@ -89,11 +89,14 @@ CGBDataFromRings Ring := CGBData => (R) -> (
   RFlat := K[X, U, MonomialOrder => ringOrder R | ringOrder KU];
   RExt' := KU[l, X, MonomialOrder => {Lex => 1} | ringOrder R];
   RFlatl := RFlat[l];
-  RtoRExt := map(RExt, R, drop(gens RExt, 1));
+  RtoRExt := map(RExt, R, drop(gens RExt, 1));--just checking, is the order okay here? first the X and the the U?
   RExttoRFlatl:= map(RFlatl,RExt, gens RFlatl | gens coefficientRing RFlatl);
   RExttoRExt':= map(RExt',RExt, gens RExt'| gens coefficientRing RExt');
   RExttoR:= map(R, RExt, {1} | gens R | gens coefficientRing R);
-  RingsandThings := {R,X,RExt,RFlat,RExt',KU,RFlatl,RtoRExt,RExttoRFlatl,RExttoRExt',RExttoR};
+  KUtoRFlat := map(RFlat, KU, take(gens RFlat, -#gens KU));
+  RFlattoR := map(R, RFlat, gens R | gens coefficientRing R);
+  KUtoR := map(R, KU, gens coefficientRing R);
+  RingsandThings := {R,X,RExt,RFlat,RExt',KU,RFlatl,RtoRExt,RExttoRFlatl,RExttoRExt',RExttoR,KUtoRFlat,RFlattoR,KUtoR};
 
   new CGBData from {
     "R"             => R,
@@ -106,7 +109,10 @@ CGBDataFromRings Ring := CGBData => (R) -> (
     "RtoRExt"       => RtoRExt,
     "RExttoRFlatl"  => RExttoRFlatl,
     "RExttoRExt'"   => RExttoRExt',
-    "RExttoR"       => RExttoR
+    "RExttoR"       => RExttoR,
+    "KUtoRFlat"     => KUtoRFlat,
+    "RFlattoR"      => RFlattoR,
+    "KUtoR"         => KUtoR
     }
 );
 
@@ -211,7 +217,10 @@ CGBMain (List, List) := o -> (F, S) -> (
   RExttoRFlatl:= map(RFlatl,RExt, gens RFlatl | gens coefficientRing RFlatl);
   RExttoRExt':= map(RExt',RExt, gens RExt'| gens coefficientRing RExt');
   RExttoR:= map(R, RExt, {1} | gens R | gens coefficientRing R);
-  RingsandThings := {R,X,RExt,RFlat,RExt',KU,RFlatl,RtoRExt,RExttoRFlatl,RExttoRExt',RExttoR};
+  KUtoRFlat := map(RFlat, KU, take(gens RFlat, -#gens KU));
+  RFlattoR := map(R, RFlat, gens R | gens coefficientRing R);
+  KUtoR := map(R, KU, gens coefficientRing R);
+  RingsandThings := {R,X,RExt,RFlat,RExt',KU,RFlatl,RtoRExt,RExttoRFlatl,RExttoRExt',RExttoR,KUtoRFlat,RFlattoR,KUtoR};
 
   cgbData := new CGBData from {
     "R"             => R,
@@ -224,7 +233,10 @@ CGBMain (List, List) := o -> (F, S) -> (
     "RtoRExt"       => RtoRExt,
     "RExttoRFlatl"  => RExttoRFlatl,
     "RExttoRExt'"   => RExttoRExt',
-    "RExttoR"       => RExttoR
+    "RExttoR"       => RExttoR,
+    "KUtoRFlat"     => KUtoRFlat,
+    "RFlattoR"      => RFlattoR,
+    "KUtoR"         => KUtoR
     };
 
   R = RingsandThings_0;
@@ -238,7 +250,10 @@ CGBMain (List, List) := o -> (F, S) -> (
   RExttoRFlatl = RingsandThings_8;
   RExttoRExt' = RingsandThings_9;
   RExttoR = RingsandThings_10;
-  RingsandThings = {R,X,RExt,RFlat,RExt',KU,RFlatl,RtoRExt,RExttoRFlatl,RExttoRExt',RExttoR};
+  KUtoRFlat = RingsandThings_11;
+  RFlattoR = RingsandThings_12;
+  KUtoR = RingsandThings_13;
+  RingsandThings = {R,X,RExt,RFlat,RExt',KU,RFlatl,RtoRExt,RExttoRFlatl,RExttoRExt',RExttoR,KUtoRFlat,RFlattoR,KUtoR};
   CGBMainRec(F, S, {}, RingsandThings, o)
 )
 
@@ -262,6 +277,9 @@ CGBMainRec (List, List, List, List) := o -> (F, S, memo, RingsandThings) -> (
   RExttoRFlatl := RingsandThings_8;
   RExttoRExt' := RingsandThings_9;
   RExttoR := RingsandThings_10;
+  KUtoRFlat := RingsandThings_11;
+  RFlattoR := RingsandThings_12;
+  KUtoR := RingsandThings_13;
   if o.Verbose then (
       print("Computing CGB for F = " | toString F | " and S = " | toString S);
       );
@@ -504,6 +522,9 @@ PGBMain (CGBTriple) := T -> (
     RExttoRFlatl:=cgbData#"RExttoRFlatl";
     RExttoRExt':=cgbData#"RExttoRExt'";
     RExttoR:=cgbData#"RExttoR";
+    KUtoRFlat:=cgbData#"KUtoRFlat";
+    RFlattoR:=cgbData#"RFlattoR";
+    KUtoR:=cgbData#"KUtoR";
     --print(E, length N);
     if not(consistencyCheckAllTogether(E, N)) then (
         return {} --The domain is empty
@@ -514,7 +535,7 @@ PGBMain (CGBTriple) := T -> (
         return {{E, N, {promote(1, R)}}} --Trivial case where the vanishing set is empty
     );
     Gr := for g in G list ( --The polynomials in G that only contain the parameters
-        l := lift(sub(g, R), KU, Verify =>false);
+        l := lift(RFlattoR(g), KU, Verify =>false);
         --lift() with Verify=>false returns Null when the lift is not possible
         --i.e. when the polynomial contains something other than parametetrs
         if instance(l, Nothing) then (continue);
@@ -540,7 +561,7 @@ PGBMain (CGBTriple) := T -> (
         return PGB
     );
     --Elements of GB that do not only contain parameters
-    listDiff := toList((new Set from apply(G, i->sub(i, R))) - (new Set from apply(Gr, i->sub(i, R))));
+    listDiff := toList((new Set from apply(G, i->RFlattoR(i))) - (new Set from apply(Gr, i->KUtoR(i))));
     Gm := MDBasis(listDiff);
     H := unique(apply(Gm, g->squareFreePart(leadCoefficient(sub(g, R)))));
     h := squareFreePart(lcm(H));

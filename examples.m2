@@ -314,8 +314,8 @@ S5= {a*x^2 + b*y*z + c*z*w,
 U = QQ[p, q, r, a, b, MonomialOrder => Lex]
 R = U[x,y, MonomialOrder => GRevLex]
 
-P3P= {(1 - a)*y^2 - a*x^2 - p*y + a*r*x*y + 1,
-     (1 - b)*x^2 - b*y^2 - q*x + b*r*x*y + 1}
+P3P= {(1 - a)*y^2 - a*x^2 - p*y + a*r*x*y +1,
+     (1 - b)*x^2 - b*y^2 - q*x + b*r*x*y +1}
 
 T = CGBFromTriple({{0_U}, {1_U}, P3P})
 L= PGBMain(T)
