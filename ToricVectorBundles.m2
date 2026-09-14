@@ -1174,7 +1174,8 @@ moduleToKlyachko (NormalToricVariety, Matrix):= opts -> (X,A) -> (
   n := numgens S;
   if S =!= ring X then (error("The module is not defined over the Cox ring of the toric variety"););
   if  all( flatten entries A , p -> # terms p <= 1) != true then( error("The presentation matrix is not equivariant"););
-
+  -- TODO: This correction should be the twist that we are introuducing when assuming MS#0 is {0,...,0}, but it is not working
+    correction := flatten entries ( matrix(rays X) *( transpose matrix{(degrees source A)_0}));
   -- Source degrees
   p := numColumns (A);
   MS := new MutableHashTable from apply(p , j -> {j,{}});
@@ -1184,8 +1185,7 @@ moduleToKlyachko (NormalToricVariety, Matrix):= opts -> (X,A) -> (
   aux := apply(entries A, i -> apply( i, j -> exponents j));
   jnew := 0;
   inew := 0; 
-  -- It assumes that one of the shifts is zero
-  MS#0 = toList(n:0);
+ MS#0 = toList(n:0); 
 -- Track lists of degrees instead of cloning the MutableHashTables
   oldMS := apply(p, j -> MS#j);
   oldNS := apply(q, i -> NS#i);
@@ -1221,14 +1221,10 @@ moduleToKlyachko (NormalToricVariety, Matrix):= opts -> (X,A) -> (
   sdegs := - apply(p , j -> MS#j );
   tdegs := - apply(q , i -> NS#i );
   R := newRing( S, Degrees => entries id_(ZZ^(n)));
-  A = map(R^tdegs,R^sdegs,sub(A, R) );
-  if not isHomogeneous A then(error("The module is not homogeneous with respect to the fine-grading" ););
-  coxX := ring X;
-    if n != numgens coxX or not isPolynomialRing S then(error("The ring of the matrix is not compatible with the toric variety"););
-    if  all( flatten entries A , p -> # terms p <= 1) != true then( error("The presentation matrix is not equivariant"););
+  Anew := map(R^tdegs,R^sdegs,sub(A, R) );
     s0:= trivialBundle(X,0) ;
-    sdegs2:= degrees source A;
-    tdegs2 := degrees target A;
+    sdegs2:= degrees source Anew;
+    tdegs2 := degrees target Anew;
     sour2 := fold(directSum,s0,  apply(sdegs2, l -> (if l != splice{n:0} then( lineBundle(X, -l ))else(trivialBundle (X,1)) )) );
     t0:= trivialBundle( X,0);
     targ2 := fold(directSum,s0,  apply(tdegs2, l -> (if l != splice{n:0} then( lineBundle(X, -l ))else(trivialBundle (X,1)) )) );
@@ -1236,8 +1232,8 @@ moduleToKlyachko (NormalToricVariety, Matrix):= opts -> (X,A) -> (
     -- The map evaluates the variables to be 1 which should give the map at the fiber over the identity point
     phi := map( coefficientRing R, R, toList(n:1));
     -- Avoids problems with the image of the map being a module for instance
-    A =   matrix entries A; 
-    f:= map( targ2, sour2, phi**A);
+    Anew =   matrix entries Anew; 
+    f:= map( targ2 , sour2, phi**Anew);
     f
 )
 
@@ -1246,12 +1242,12 @@ moduleToKlyachko (NormalToricVariety, Matrix):= opts -> (X,A) -> (
 -- M = image matrix...
 moduleToKlyachko (NormalToricVariety, Module):= opts -> (X,M) -> (
     -- Obtain the ToricVectorBundleMap associated to the presentation
-    A := gens M;
-  if opts#Strategy == "image" then(
-  
- return image moduleToKlyachko(X, A);)else(
- A = presentation M;
- return coker moduleToKlyachko(X, A);
+
+  if opts#Strategy == "image" then( 
+    M = gens M;
+ return image moduleToKlyachko(X, M);)else(
+ M = presentation M;
+ return coker moduleToKlyachko(X, M);
  );
 )
 -- The code that follows take a toric vector bundle with Klyachko description and returns a module over the Cox ring of the toric variety, M, such that the sheafification of M is the starting vector bundle.
@@ -1292,9 +1288,9 @@ klyachkoToModule ToricVectorBundle := E -> (
 
     A := map(S^r, , Mat);  -- source degrees inferred automatically
     Mtwisted := image A;
-    -- Undo the twist at the module level: shift the grading back by the class of
-    -- the divisor sum(offsets_j * D_j) that the twist above added.
-    w := apply(picd, g -> sum(n, j ->  offsets_j*(degree S_j)_g));
+    -- Undo the twist at the module level: shift the grading back by the class of the divisor sum(offsets_j * D_j) that the twist above added.
+    
+    w := apply(picd, g -> sum(n, j ->  offsets_j*((degree S_j)_g -1)));
     Mtwisted**S^{w}
     
 )
