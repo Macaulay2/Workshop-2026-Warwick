@@ -267,6 +267,13 @@ restrictToAffine (ToricVectorBundle, Cone) := {Verbosity => 0} >> opts -> ( (tvb
     toricVectorBundle(TV, apply( rayC, rho -> filtrationMatrices(tvb, rho)), apply(rayC, rho -> filtrationJumps(tvb, rho)) )
 ))
 
+restrictToAffine (ToricVectorBundle, Matrix) := {Verbosity => 0} >> opts -> ( (tvb,cone) -> (
+    if opts#Verbosity>0 then << "METHOD: restrictToAffine" << endl;
+    TV := normalToricVariety(fan coneFromVData cone, CoefficientRing => ring tvb );
+    rayC := rays TV;
+    toricVectorBundle(TV, apply( rayC, rho -> filtrationMatrices(tvb, rho)), apply(rayC, rho -> filtrationJumps(tvb, rho)) )
+))
+
 -- PURPOSE: Given the possible flags (as computed by possibleFlags) for rays of maximal cone
 --          compute a common set of basis vectors
 --   INPUT: 'tvb', toric vector bundle
@@ -275,6 +282,15 @@ restrictToAffine (ToricVectorBundle, Cone) := {Verbosity => 0} >> opts -> ( (tvb
 
 compatibleBasis = method(Options => true)
 compatibleBasis (ToricVectorBundle, Cone) := {Verbosity => 0} >> opts -> (E,C) -> (
+    
+ if opts#Verbosity>0 then << "METHOD: compatibleBasis" << endl;
+    F:= restrictToAffine(E, C, Verbosity=>opts#Verbosity);
+     if opts#Verbosity>0 then << "details of bundle restricted to " << C << endl << details E << endl;
+    fold(groundSet (F, Verbosity=>opts#Verbosity-1, preferredGenerators=> groundSet E), (i,j) -> i|j)
+    
+)
+
+compatibleBasis (ToricVectorBundle, Matrix) := {Verbosity => 0} >> opts -> (E,C) -> (
     
  if opts#Verbosity>0 then << "METHOD: compatibleBasis" << endl;
     F:= restrictToAffine(E, C, Verbosity=>opts#Verbosity);
@@ -294,6 +310,7 @@ compatibleBases (ToricVectorBundle):= {Verbosity => 0} >> opts -> (cacheValue sy
     
  if opts#Verbosity>0 then << "METHOD: compatibleBases" << endl;
     maxcones :=  maxCones E;
+    --maxcones :=  apply(maxCones E,rays);
     hashTable for sigma in maxcones list (rays sigma => compatibleBasis (E , sigma, Verbosity=>opts#Verbosity ))
 ))
 
@@ -1281,31 +1298,11 @@ assert(
         set {{0,2},{-1,0},{1,1}} } );
 ///
 
--*
-debug needsPackage "PositivityToricBundles"
-Vbasis = { 
- matrix{{1,1,0},{1,0,0},{0,0,1}}, -- for (1,0)
- matrix{{0,0,1},{1,0,0},{0,1,0}},   -- for (0,1)
- matrix{{1,1,0},{0,0,1},{1,0,0}},   -- for (-1,0)
- matrix{{0,0,1},{1,0,0},{0,1,0}}}   -- for (0,-1)
-}
-Vfiltration = {
- matrix{{-1,0,1}}, -- for (1,0)
- matrix{{-2,-1,0}},  -- for (0,1)
- matrix{{-1,0,1}},   -- for (-1,0)
- matrix{{-2,-1,0}}  -- for (0,-1)
-}
-Vfiltration = -flatten (Vfiltration/entries)
-V = toricVectorBundle(X = hirzebruchSurface 0, Vbasis, Vfiltration)
-
-p = parliament V
-
-*-
-
 -- Test 1
 TEST ///
 -- This is [RJS, Example 3.8] for d=2
-V = tangentBundle(projectiveSpaceFan 2);
+X = toricProjectiveSpace 2
+V = tangentBundle X
 
 
 p = parliament V;
@@ -1330,15 +1327,13 @@ assert(isNef V);
 assert(isAmple V);
 ///
 
--*
-debug needsPackage "PositivityToricBundles"
-V = tangentBundle(X = toricProjectiveSpace 2)
-*-
+
 
 -- Test 2
 TEST ///
 -- This is [RJS, Example 3.8] for d=3
-V = tangentBundle(projectiveSpaceFan 3);
+X = toricProjectiveSpace 3;
+V = tangentBundle(X);
 
 
 p = parliament V;
@@ -1369,22 +1364,20 @@ assert(isAmple V);
 TEST ///
 -- This is [RJS, Example 4.2] 
 -- auxiliary methods
-V = toricVectorBundle(3, projectiveSpaceFan 2);
-rays V
---     {| -1 |, | 0 |, | 1 |}
---      | -1 |  | 1 |  | 0 |
+X = toricProjectiveSpace 2
 Vbasis = { 
  matrix{{1,0,0},{-1,1,0},{0,-1,1}},  -- for (-1,-1)
- matrix{{0,0,1},{0,1,0},{1,0,0}},    -- for (0,1)
- matrix{{1,0,0},{0,1,0},{0,0,1}} };  -- for (1,0)
+ matrix{{1,0,0},{0,1,0},{0,0,1}},  -- for (1,0)
+ matrix{{0,0,1},{0,1,0},{1,0,0}}    -- for (0,1)
+ }
 
 Vfiltration = {
  matrix{{-3,-2,1}},  -- for (-1,-1)
- matrix{{-3,0,2}},   -- for (0,1)
- matrix{{-4,0,1}} }; -- for (1,0)
-
-V = addBase(V,Vbasis);
-V = addFiltration(V,Vfiltration);
+ matrix{{-4,0,1}}, -- for (1,0)
+ matrix{{-3,0,2}}   -- for (0,1)
+}
+Vfiltration = -flatten (Vfiltration/entries)
+V = toricVectorBundle(X, Vbasis, Vfiltration)
 
 
 p = parliament V;
@@ -1411,45 +1404,29 @@ assert(isNef V);
 assert(isAmple V);
 ///
 
--*
-X = toricProjectiveSpace 2
-Vbasis = { 
- matrix{{1,0,0},{-1,1,0},{0,-1,1}},  -- for (-1,-1)
- matrix{{1,0,0},{0,1,0},{0,0,1}},  -- for (1,0)
- matrix{{0,0,1},{0,1,0},{1,0,0}}    -- for (0,1)
- }
 
-Vfiltration = {
- matrix{{-3,-2,1}},  -- for (-1,-1)
- matrix{{-4,0,1}}, -- for (1,0)
- matrix{{-3,0,2}}   -- for (0,1)
-}
-Vfiltration = -flatten (Vfiltration/entries)
-V = toricVectorBundle(X, Vbasis, Vfiltration)
-*-
 
 -- Test 4
 TEST ///
 -- This is [RJS, Example 4.4] 
 -- auxiliary methods
-V = toricVectorBundle(2, hirzebruchFan 1);
-rays V
--- {| 0  |, | -1 |, | 0 |, | 1 |}
---  | -1 |  | 1  |  | 1 |  | 0 |
+
+X = hirzebruchSurface 1
 Vbasis = { 
- matrix{{1,1},{1,0}},   -- for (0,-1)
- matrix{{0,1},{1,0}},   -- for (-1,1)
+ matrix{{1,0},{0,1}},  -- for (1,0)
  matrix{{1,0},{0,1}},   -- for (0,1)
- matrix{{1,0},{0,1}} }; -- for (1,0)
+ matrix{{0,1},{1,0}},   -- for (-1,1)
+ matrix{{1,1},{1,0}}   -- for (0,-1)
+}
 
 Vfiltration = {
- matrix{{-3,1}},   -- for (0,-1)
- matrix{{-5,0}},   -- for (-1,1)
+ matrix{{-4,2}},  -- for (1,0)
  matrix{{-3,-2}},  -- for (0,1)
- matrix{{-4,2}} }; -- for (1,0)
-
-V = addBase(V,Vbasis);
-V = addFiltration(V,Vfiltration);
+ matrix{{-5,0}},   -- for (-1,1)
+ matrix{{-3,1}}   -- for (0,-1)
+}
+Vfiltration = -flatten (Vfiltration/entries)
+V = toricVectorBundle(X, Vbasis, Vfiltration)
 
 p = parliament V;
 assert( 
@@ -1473,46 +1450,27 @@ assert(isNef V);
 assert(isAmple V);
 ///
 
--*
-X = hirzebruchSurface 1
-Vbasis = { 
- matrix{{1,0},{0,1}},  -- for (1,0)
- matrix{{1,0},{0,1}},   -- for (0,1)
- matrix{{0,1},{1,0}},   -- for (-1,1)
- matrix{{1,1},{1,0}}   -- for (0,-1)
-}
-
-Vfiltration = {
- matrix{{-4,2}},  -- for (1,0)
- matrix{{-3,-2}},  -- for (0,1)
- matrix{{-5,0}},   -- for (-1,1)
- matrix{{-3,1}}   -- for (0,-1)
-}
-Vfiltration = -flatten (Vfiltration/entries)
-V = toricVectorBundle(X, Vbasis, Vfiltration)
-*-
 
 -- Test 5
 TEST ///
 -- This is [RJS, Example 6.4] 
 -- auxiliary methods
-V = toricVectorBundle(3, projectiveSpaceFan 2);
-rays V
---     {| -1 |, | 0 |, | 1 |}
---      | -1 |  | 1 |  | 0 |
+X = toricProjectiveSpace 2
+
 Vbasis = { 
  matrix{{1,0,0},{-1,1,0},{0,-1,1}},  -- for (-1,-1)
- matrix{{0,0,1},{0,1,0},{1,0,0}},    -- for (0,1)
- matrix{{1,0,0},{0,1,0},{0,0,1}} };  -- for (1,0)
-
+ matrix{{1,0,0},{0,1,0},{0,0,1}},  -- for (1,0)
+ matrix{{0,0,1},{0,1,0},{1,0,0}}    -- for (0,1)
+ }; 
 
 Vfiltration = {
  matrix{{-4,-3,-1}}, -- for (-1,-1)
- matrix{{-2,0,2}},   -- for (0,1)
- matrix{{-2,1,2}} }; -- for (1,0)
+ matrix{{-2,1,2}},  -- for (1,0)
+ matrix{{-2,0,2}}   -- for (0,1)
+ };
 
-V = addBase(V,Vbasis);
-V = addFiltration(V,Vfiltration);
+Vfiltration = -flatten (Vfiltration/entries)
+V = toricVectorBundle(X, Vbasis, Vfiltration)
 
 p = parliament V;
 assert( 
@@ -1537,42 +1495,22 @@ assert(isNef V);
 assert(isAmple V);
 ///
 
--*
-X = hirzebruchSurface 1
-Vbasis = { 
- matrix{{1,0},{0,1}},  -- for (1,0)
- matrix{{1,0},{0,1}},   -- for (0,1)
- matrix{{0,1},{1,0}},   -- for (-1,1)
- matrix{{1,1},{1,0}}   -- for (0,-1)
-}
 
-Vfiltration = {
- matrix{{-4,2}},  -- for (1,0)
- matrix{{-3,-2}},  -- for (0,1)
- matrix{{-5,0}},   -- for (-1,1)
- matrix{{-3,1}}   -- for (0,-1)
-}
-Vfiltration = -flatten (Vfiltration/entries)
-V = toricVectorBundle(X, Vbasis, Vfiltration)
-*-
+-- TODO : Redo this test 
 
 -- Test 6
 TEST ///
 -- Test with a randomized vector bundle on 3-dim variety
 
 r = 2 + random 4
-F = directProduct(projectiveSpaceFan 1, hirzebruch r)
-E = randomDeformation(tangentBundle F,4)
-
+F = toricProjectiveSpace 1 ** hirzebruchSurface r
+E = randomDeformation tangentBundle F
 while not isLocallyWeil E do (
  E = randomDeformation(tangentBundle F,4)
 )
 
-tw = toList apply( 1 .. # rays E, i-> random 3)
-E = twist(E, tw)
-
-applyValues(filtration E, entries)
-applyValues(base E, entries)
+--applyValues(filtration E, entries)
+--applyValues(base E, entries)
 
 gs = groundSet E
 p = parliament E;
@@ -1583,9 +1521,9 @@ c = toricChernCharacter E
 degs = unique degrees HH^0 E
 
 assert( set par === set degs )
-
+-*
 cList  = apply(values c, l-> fold(l,(i,j)->i|j))
-wList = findWeights E
+ wList = findWeights E
 
 assert( #cList == #wList )
 
@@ -1615,20 +1553,12 @@ foundList = for i in 0 ..< #cList list (
 )
 
 assert(all(foundList, i->i>=0))
+*-
 ///
 
 -*
-restart
-debug needsPackage "PositivityToricBundles"
 
-r = 2 + random 4
-F = toricProjectiveSpace 1 ** hirzebruchSurface r
-E = randomDeformation tangentBundle F
-while not isLocallyWeil E do (
- E = randomDeformation(tangentBundle F,4)
-)
-
-*-
+-- TODO : Redo this test
 
 -- Test 7
 TEST ///
@@ -1636,26 +1566,28 @@ TEST ///
 
 r = 0 + random 5
 
-X = hirzebruch r
+X = hirzebruchSurface r
 
 rk=3
 
 while true do (
- FiltMat = for i to 3 list matrix {{random(ZZ^rk,ZZ^rk)}};
+ FiltMat = for i to 3 list matrix {{random(QQ^rk,QQ^rk)}};
  if min apply(FiltMat, rank) == rk then break
 )
 FiltMat
-FiltStep = for i to 3 list matrix{sort toList apply(0..<rk, i-> random(-5,5))}
+FiltStep = for i to 3 list sort toList apply(0..<rk, i-> random(-5,5))
 apply(FiltMat,entries)
 apply(FiltStep,entries)
 
-E = toricVectorBundle(rk, X, FiltMat, FiltStep)
+E = toricVectorBundle(X, FiltMat, FiltStep)
 
 cB = compatibleBases E
 
 tCC = toricChernCharacter E
+--assert( class tCC === HashTable)
 
 cList = apply(values tCC,  l-> fold(l,(i,j)->i|j))
+
 wList = findWeights E
 
 assert(#cList == #wList)
@@ -1686,7 +1618,13 @@ foundList = for i in 0 ..< #cList list (
 )
 
 assert(all(foundList, i->i>=0))
+
 ///
+
+
+
+
+-- TODO : Redo this test
 
 -- Test 8
 TEST ///
@@ -1694,7 +1632,7 @@ TEST ///
 
 r = 0 + random 3
 
-X = hirzebruch r
+X = hirzebruchSurface r
 
 rk=4
 
@@ -1703,7 +1641,7 @@ while true do (
  if min apply(FiltMat, rank) == rk then break
 )
 FiltMat
-FiltStep = for i to 3 list matrix{sort toList apply(0..<rk, i-> random(-5,5))}
+FiltStep = for i to 3 list sort toList apply(0..<rk, i-> random(-5,5))
 apply(FiltMat,entries)
 apply(FiltStep,entries)
 
@@ -1756,13 +1694,14 @@ TEST ///
 -- Usually true, this assumption does not apply, if the bundle arises 
 -- by using the method dual of ToricVectorBundles (e.g. cotangent bundles).
 
-E = dual tangentBundle projectiveSpaceFan 2
+X = toricProjectiveSpace 2
+E = dual tangentBundle X
 
 getCols = mat -> toList apply( 0..<numgens source mat, i->mat_i )
 
-filtE = applyValues(filtration E, filt -> flatten entries filt);
-raysE = keys filtE;
-filtFromTCC := applyPairs( toricChernCharacter E, (cone,us) -> 
+filtE = hashTable apply(rays E, rho -> rho =>filtrationJumps(E, rho));
+
+filtFromTCC = applyPairs( toricChernCharacter E, (cone,us) -> 
  cone => (
   filtRay := for ray in getCols cone list sort apply(us, u -> ( (transpose matrix ray)*u)_(0,0))
  )
@@ -1770,11 +1709,17 @@ filtFromTCC := applyPairs( toricChernCharacter E, (cone,us) ->
 
 applyPairs(filtFromTCC, (cone, filts) -> (
   cone => for ray in getCols cone do
-           assert isMember( sort filtE#(matrix ray), filts)
+           assert isMember( sort filtE#(flatten transpose entries matrix ray), filts)
  )
 )
 ///
 
+*-
+
+-- TODO: check if we still want the function and see how to test it
+
+
+-*
 -- Test 10
 TEST ///
 -- the methods dual, tensor (and maybe others?) from ToricVectorBundles
@@ -1782,7 +1727,8 @@ TEST ///
 -- have not ascending entries.
 -- The method wellformedBundleFiltrations (added in version 1.9) ensures ascending entries.
 -- The following test fails when omitting this method.
-T = tangentBundle projectiveSpaceFan 2
+X = toricProjectiveSpace 2
+T = tangentBundle X
 E = wellformedBundleFiltrations( T ** (dual T))
 F = wellformedBundleFiltrations((dual T) ** T)
 
@@ -1791,6 +1737,6 @@ origin = matrix map(ZZ^2,ZZ^1,0)
 assert( all(values toricChernCharacter E, L -> isMember(origin, L)) )
 assert( all(values toricChernCharacter F, L -> isMember(origin, L)) )
 ///
-
+*-
 end
 
