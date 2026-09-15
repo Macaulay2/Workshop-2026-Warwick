@@ -73,7 +73,9 @@ export {
     "ToricVectorBundleKaneyama",
     "ToricVectorBundleMap",
     -- Constructors
+    "cotangentBundleKaneyama",
     "lineBundle",
+    "tangentBundleKaneyama",
     "toricVectorBundle",
     "trivialBundle",
     "toricVectorBundleKaneyama",
@@ -1792,6 +1794,7 @@ weilToCartierKaneyama (List,Fan) := opts -> (L,F) -> (
 -- PURPOSE : Computing the cotangent bundle on a smooth, pure, and full dimensional Toric Variety 
 --   INPUT : 'F',  a smooth, pure, and full dimensional Fan
 --  OUTPUT : 'tvb',  a ToricVectorBundleKaneyama
+
 tangentBundleKaneyama = method()
 tangentBundleKaneyama Fan := F -> dual cotangentBundleKaneyama F
 cotangentBundleKaneyama = method()
@@ -4464,6 +4467,20 @@ assert(rank T == 3)
 ///
 
 -- Missing a test for tangentbundle?
+-- Checking tangentBundle for Klyachko
+TEST ///
+T = tangentBundle hirzebruchFan 3
+assert(T#"ring" === QQ)
+assert(T#"filtrationMatricesTable" === hashTable {matrix{{-1},{3}} => matrix{{-1,0}},matrix{{0},{-1}} => matrix{{-1,0}},matrix{{1},{0}} => matrix{{-1,0}},matrix{{0},{1}} => matrix{{-1,0}}})
+assert(T#"baseTable" === hashTable {matrix{{-1},{3}} => matrix{{-1,1/3},{3,0}},matrix{{0},{-1}} => matrix{{0_QQ,1},{-1,0}},matrix{{1},{0}} => map(QQ^2,QQ^2,1),matrix{{0},{1}} => matrix{{0_QQ,1},{1,0}}})
+assert(rank T == 2)
+assert(T#"dimension of the variety" == 2)
+T = tangentBundle pp1ProductFan 3
+assert(T#"ring" === QQ)
+assert(T#"filtrationMatricesTable" === hashTable {matrix{{0},{1},{0}} => matrix{{-1,0,0}}, matrix{{-1},{0},{0}} => matrix{{-1,0,0}},matrix{{1},{0},{0}} => matrix{{-1,0,0}}, matrix{{0},{0},{-1}} => matrix{{-1,0,0}}, matrix{{0},{0},{1}} => matrix{{-1,0,0}}, matrix{{0},{-1},{0}} => matrix{{-1,0,0}}})
+assert(T#"baseTable" === hashTable {matrix{{0},{1},{0}} => matrix{{0_QQ,1,0},{1,0,0},{0,0,1}}, matrix{{-1},{0},{0}} => matrix{{-1_QQ,0,0},{0,1,0},{0,0,1}},matrix{{1},{0},{0}} => matrix{{1_QQ,0,0},{0,1,0},{0,0,1}}, matrix{{0},{0},{-1}} => matrix{{0_QQ,1,0},{0,0,1},{-1,0,0}}, matrix{{0},{0},{1}} => matrix{{0_QQ,1,0},{0,0,1},{1,0,0}}, matrix{{0},{-1},{0}} => matrix{{0_QQ,1,0},{-1,0,0},{0,0,1}}})
+assert(rank T == 3)
+///
 
 -- Tests for getter functions
 
