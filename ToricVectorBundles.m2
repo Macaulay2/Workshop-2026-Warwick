@@ -88,7 +88,9 @@ export {
     "ToricVectorBundleNew",
     "ToricVectorBundleMap",
     -- Constructors
+    "cotangentBundleKaneyama",
     "lineBundle",
+    "tangentBundleKaneyama",
     "toricVectorBundle",
     "trivialBundle",
     "toricVectorBundleKaneyama",
@@ -3141,8 +3143,9 @@ weilToCartierKaneyama (List,Fan) := opts -> (L,F) -> (
 
 -- PURPOSE : Computing the cotangent bundle on a smooth, pure, and full dimensional Toric Variety 
 --   INPUT : 'F',  a smooth, pure, and full dimensional Fan
---  OUTPUT : 'tvb',  a ToricVectorBundleKaneyama 
-cotangentBundleKaneyama = F -> (
+--  OUTPUT : 'tvb',  a ToricVectorBundleKaneyama
+cotangentBundleKaneyama = method();
+cotangentBundleKaneyama Fan := F -> (
      -- Checking for input errors
      if not isSmooth F then error("The Toric Variety has to be smooth.");
      if not isComplete F then error("The Toric Variety has to be complete.");
@@ -3170,6 +3173,9 @@ cotangentBundleKaneyama = F -> (
      E.cache.cocyle = true;
      E)
  
+tangentBundleKaneyama = method();
+tangentBundleKaneyama Fan := F -> ( dual cotangentBundleKaneyama(F)
+    )
 -- PURPOSE : Computing the Cech complex of a vector bundle (Kaneyama)
 --   INPUT : '(k,T,u)', where 'k' is an integer between -1 and the dimension of the bundle +1, 'T' a ToricVectorBundleKaneyama, and 'u' a
 --     	    	        one column matrix giving a degree vector
@@ -5586,14 +5592,14 @@ assert regCheck T1
 ///
 
 -- Test 4
--- Checking tangentBundle for Kaneyama -- I don't think this exists anymore? Where did it go?
+-- Checking tangentBundle for Kaneyama
 TEST ///
-T = tangentBundle(pp1ProductFan 2,"Type" => "Kaneyama")
+T = tangentBundleKaneyama(pp1ProductFan 2)
 assert(T#"baseChangeTable" === hashTable {(0,1) => map(QQ^2,QQ^2,{{1, 0}, {0, -1}}), (0,2) => map(QQ^2,QQ^2,{{-1, 0}, {0, 1}}), (1,3) => map(QQ^2,QQ^2,{{-1, 0}, {0, 1}}), (2,3) => map(QQ^2,QQ^2,{{1, 0}, {0, -1}})})
 assert(T#"degreeTable" === hashTable {(matrix {{-1,0},{0,1}}, map(ZZ^2,0,0)) => matrix{{1,0},{0,-1}},(matrix {{-1,0},{0,-1}}, map(ZZ^2,0,0)) => matrix{{1,0},{0,1}},(matrix {{1,0},{0,1}}, map(ZZ^2,0,0)) => matrix{{-1,0},{0,-1}}, (matrix {{1,0},{0,-1}}, map(ZZ^2,0,0)) => matrix{{-1,0},{0,1}}})
 assert(rank T == 2)
 assert(T#"dimension of the variety" == 2)
-T = tangentBundle(projectiveSpaceFan 3, "Type" => "Kaneyama")
+T = tangentBundleKaneyama(projectiveSpaceFan 3)
 assert(T#"baseChangeTable" === hashTable {(0,1) => map(QQ^3,QQ^3,{{1, -1, 0}, {0, -1, 0}, {0, -1, 1}}), (0,2) => map(QQ^3,QQ^3,{{-1, 0, 0}, {-1, 1, 0}, {-1, 0, 1}}), (1,2) => map(QQ^3,QQ^3,{{-1, 1, 0}, {-1, 0, 0}, {-1, 0, 1}}), (0,3) => map(QQ^3,QQ^3,{{1, 0, -1}, {0, 0, -1}, {0, 1, -1}}), (1,3) => map(QQ^3,QQ^3,{{1, 0, -1}, {0, 1, -1}, {0, 0, -1}}), (2,3) => map(QQ^3,QQ^3,{{0, 0, -1}, {1, 0, -1}, {0, 1, -1}})})
 assert(T#"degreeTable" === hashTable {(matrix {{1,0,0},{0,1,0},{0,0,1}}, map(ZZ^3,0,0)) => matrix{{-1,0,0},{0,-1,0},{0,0,-1}},(matrix {{1,0,-1},{0,1,-1},{0,0,-1}}, map(ZZ^3,0,0)) => matrix{{0,-1,0},{0,0,-1},{1,1,1}},(matrix {{0,-1,0},{1,-1,0},{0,-1,1}}, map(ZZ^3,0,0)) => matrix{{1,1,1},{0,-1,0},{0,0,-1}}, (matrix {{1,-1,0},{0,-1,0},{0,-1,1}}, map(ZZ^3,0,0)) => matrix{{0,-1,0},{1,1,1},{0,0,-1}}})
 assert(rank T == 3)
@@ -5619,12 +5625,12 @@ assert(rank T == 3)
 -- Test 6
 -- Checking cotangentBundle for Kaneyama
 TEST ///
-T = cotangentBundle(hirzebruchFan 3,"Type" => "Kaneyama")
+T = cotangentBundleKaneyama(hirzebruchFan 3)
 assert(T#"baseChangeTable" === hashTable {(0,1) => map(QQ^2,QQ^2,{{1, 0}, {0, -1}}), (0,2) => map(QQ^2,QQ^2,{{-1, 3}, {0, 1}}), (1,3) => map(QQ^2,QQ^2,{{-1, -3}, {0, 1}}), (2,3) => map(QQ^2,QQ^2,{{1, 0}, {0, -1}})})
 assert(T#"degreeTable" === hashTable {(matrix {{1,0},{0,-1}}, map(ZZ^2,0,0)) => matrix{{1,0},{0,-1}},(matrix {{1,0},{0,1}}, map(ZZ^2,0,0)) => matrix{{1,0},{0,1}},(matrix {{0,-1},{1,3}}, map(ZZ^2,0,0)) => matrix{{-1,3},{0,1}}, (matrix {{0,-1},{-1,3}}, map(ZZ^2,0,0)) => matrix{{-1,-3},{0,-1}}})
 assert(rank T == 2)
 assert(T#"dimension of the variety" == 2)
-T = cotangentBundle(pp1ProductFan 3, "Type" => "Kaneyama")
+T = cotangentBundleKaneyama(pp1ProductFan 3)
 assert(T#"baseChangeTable" === hashTable {(2,6) => matrix{{-1_QQ,0,0},{0,1,0},{0,0,1}}, (4,5) => matrix{{1_QQ,0,0},{0,1,0},{0,0,-1}}, (4,6) => matrix{{1_QQ,0,0},{0,-1,0},{0,0,1}}, (3,7) => matrix{{-1_QQ,0,0},{0,1,0},{0,0,1}}, (5,7) => matrix{{1_QQ,0,0},{0,-1,0},{0,0,1}}, (6,7) => matrix{{1_QQ,0,0},{0,1,0},{0,0,-1}}, (0,1) => matrix{{1_QQ,0,0},{0,1,0},{0,0,-1}}, (0,2) => matrix{{1_QQ,0,0},{0,-1,0},{0,0,1}}, (1,3) => matrix{{1_QQ,0,0},{0,-1,0},{0,0,1}}, (0,4) => matrix{{-1_QQ,0,0},{0,1,0},{0,0,1}}, (2,3) => matrix{{1_QQ,0,0},{0,1,0},{0,0,-1}}, (1,5) => matrix{{-1_QQ,0,0},{0,1,0},{0,0,1}}})
 assert(T#"degreeTable" === hashTable {(matrix {{1,0,0},{0,1,0},{0,0,1}}, map(ZZ^3,0,0)) => matrix{{1,0,0},{0,1,0},{0,0,1}},(matrix {{-1,0,0},{0,1,0},{0,0,1}}, map(ZZ^3,0,0)) => matrix{{-1,0,0},{0,1,0},{0,0,1}},(matrix {{1,0,0},{0,-1,0},{0,0,1}}, map(ZZ^3,0,0)) => matrix{{1,0,0},{0,-1,0},{0,0,1}},(matrix {{1,0,0},{0,1,0},{0,0,-1}}, map(ZZ^3,0,0)) => matrix{{1,0,0},{0,1,0},{0,0,-1}},(matrix {{-1,0,0},{0,-1,0},{0,0,1}}, map(ZZ^3,0,0)) => matrix{{-1,0,0},{0,-1,0},{0,0,1}},(matrix {{-1,0,0},{0,1,0},{0,0,-1}}, map(ZZ^3,0,0)) => matrix{{-1,0,0},{0,1,0},{0,0,-1}},(matrix {{1,0,0},{0,-1,0},{0,0,-1}}, map(ZZ^3,0,0)) => matrix{{1,0,0},{0,-1,0},{0,0,-1}},(matrix {{-1,0,0},{0,-1,0},{0,0,-1}}, map(ZZ^3,0,0)) => matrix{{-1,0,0},{0,-1,0},{0,0,-1}}})
 assert(rank T == 3)
