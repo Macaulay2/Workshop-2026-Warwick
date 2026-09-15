@@ -79,8 +79,6 @@ export {
     "toricVectorBundle",
     "trivialBundle",
     "toricVectorBundleKaneyama",
-    "tangentBundleKaneyama",
-    "cotangentBundleKaneyama",
     -- Getters
     "filtrationMatrices",
     "filtrationJumps",
@@ -119,7 +117,7 @@ export {
     "customConeSort"
     }
 
-load "Kaneyama.m2"
+--load "Kaneyama.m2"
 -- These are cached keywords as part of:
 -- cechComplex
 protect cech
