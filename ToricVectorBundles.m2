@@ -85,10 +85,14 @@ export {
     "strata",
     -- Operations
     "areIsomorphic",
+    "cechComplexKaneyama",
     "deltaE",
+    "deltaEKaneyama",
     "details",
+    "detailsKaneyama",
     "filtrations" => "details",
     "eulerChi",
+    "eulerChiKaneyama",
     "filteredPiece",
     "moduleToKlyachko",
     "klyachkoToModule",
@@ -117,7 +121,7 @@ export {
     "customConeSort"
     }
 
---load "Kaneyama.m2"
+load "Kaneyama.m2"
 -- These are cached keywords as part of:
 -- cechComplex
 protect cech
