@@ -279,7 +279,6 @@ dual ToricVectorBundle := {} >> opts -> tvb -> (
     return toricVectorBundle(variety tvb, filtMats, filtJumps)
     )
 
-
 -- PURPOSE : Computing the 'l'-th exterior power of a ToricVectorBundle
 --   INPUT : '(TVB, l)',  where 'l' is a strictly positive integer and 'TVB'is a TorcVectorBundle
 --  OUTPUT : the 'l'-th exterior power of TVB
@@ -861,14 +860,13 @@ isSurjective (ToricVectorBundleMap) := f -> (
 jumpsAux = (L,mm) ->(
     ref := transpose entries L_0; 
     r:= # ref;
-    -- Extracts the porsitions where the vectors appear in the original matrix
-    Jl := apply(#L, i->(positions(ref, v -> isSubset({v}, transpose entries  (L_i)  ))));
-    apply(sum(#Jl,  i ->apply(#ref, j -> if member(j, Jl_i) then 1 else 0)), n -> n+mm-1)
-    
+    -- Extracts the positions where the vectors appear in the original matrix
+    Jl := apply(#L, i->(positions(ref, v -> isSubset({v}, transpose entries (L_i)))));
+    apply(sum(#Jl,  i ->apply(#ref, j -> if member(j, Jl_i) then 1 else 0)), n -> n+mm-1)    
 )
--- Auxiliary fucntion to simplify the choice of basis done
+-- Auxiliary function to simplify the choice of basis done
 -- Given a non square matrix of full rank and a list of jumps it returns a square matrix and a list of jumps
--- such that the filtartion defined is the same as the one we started with. 
+-- such that the filtration defined is the same as the one we started with. 
 -- This fucntion is used in weilToKyachko but also in coker, image and ker
 -- TODO: check that it interacts correctly with isWellDefined ToricVectorBundle
 -- The input is of the form ML={Matrix, List}
@@ -908,32 +906,32 @@ image (ToricVectorBundleMap) := f ->(
     minj:= min flatten filtrationJumps(E1);
     maxj:= max flatten filtrationJumps(E1);
     steps:=  toList(minj..maxj);
-    -- Map that will make the image of te filtrations square by "projecting them"
-    pr:= (prune image (M)).cache.pruningMap;
-    -- Get the image of the pieces
-    L:={};
-    if numcols M > numrows M then(
-    L= apply(Xrays,  p ->
+    -- get the images of the filtered pieces
+    L := apply(Xrays,  p ->
         apply(steps, i ->(
-        M*filteredPiece(E1,p,i)
-        ))
-    );)
-    else(
-        L= apply(Xrays,  p ->
-        apply(steps, i ->(
-        pr*filteredPiece(E1,p,i)
-        ))
-    );
-
-    );
+                prod := M * filteredPiece(E1,p,i);
+                -- take the image of the filtered piece and prune it.
+                pr := (prune image prod).cache.pruningMap;
+                -- then apply that pruning map.
+                prod * matrix pr
+                ))
+        );
     -- Define the new data
-    -- The command matrix is there so that the map is simplify to be betweent free modules
     newMatrices:= apply(L, i -> matrix i_0 );
-    newJumps := apply( L , l -> jumpsAux(l, minj ) );
+    newJumps := apply(L , l -> jumpsAux(l, minj));
     newData := transpose {newMatrices, newJumps};
     -- Refine it it needed
     newData = transpose apply( newData, a -> adaptedBasis(a) );
     newMatrices = newData_0;
+    -- if the map is not surjective, then we also need to make sure that the
+    -- matrices are square, which we do one final prune for.
+    newMatrices = for m in newMatrices list (
+        if numcols m != numrows m then (
+            pr := (prune image transpose m).cache.pruningMap;
+            transpose (transpose m * matrix pr)
+            )
+        else m
+        );
     newJumps= newData_1;
     toricVectorBundle(X, newMatrices, newJumps)
 )
@@ -4892,6 +4890,13 @@ assert( filtrationMatrices imf == {matrix {{1_(ZZ/101)}}, matrix {{1_(ZZ/101)}},
 img= image g;
 assert ( img == target g)
 
+E = tangentBundle hirzebruchSurface 2;
+m = id_(QQ^2);
+z = transpose matrix {{0,0,0,0}};
+M = z | z | (m || m);
+f = map(E ++ E, E ++ E, transpose M)
+assert(image f == E)
+
 -- Kernel
 assert( rank(kg)== 1)
 assert( variety kg === X)
@@ -5233,3 +5238,17 @@ X = toricProjectiveSpace 3
 E = toricVectorBundle(X,filts,jumps)
 
 -- We store some archived code that René wrote.
+
+X = toricProjectiveSpace 1
+--source
+mats = {map(QQ^6,QQ^6,{{1, 0, 0, 0, 0, 0}, {0, 1, 0, 0, 0, 0}, {0, 0, 1, 0, 0, 0}, {0, 0, 0, 1, 0, 0}, {0, 0, 0, 0, 1, 0}, {0, 0, 0, 0, 0, 1}}),map(QQ^6,QQ^6,{{1, 0, 0, 0, 0, 0}, {0, 1, 0, 0, 0, 0}, {0, 0, 1, 0, 0, 0}, {0, 0, 0, 1, 0, 0}, {0, 0, 0, 0, 1, 0},
+       {0, 0, 0, 0, 0, 1}})}
+jumps = {{0,0,0,1,1,1},{0,0,1,0,0,1}}
+E = toricVectorBundle(X,mats,jumps)
+-- target
+mats' = {map(QQ^2,QQ^2,{{1, 0}, {0, 1}}),map(QQ^2,QQ^2,{{1, 0}, {0, 1}})}
+jumps' = {{2,2},{2,2}}
+E' = toricVectorBundle(X,mats',jumps')
+-- map
+M = map(QQ^2,QQ^6,{{1, 0, 1, 1, 0, 1}, {0, 1, 0, 0, 1, 0}})
+f = map(E',E,M)
