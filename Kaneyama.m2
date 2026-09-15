@@ -83,8 +83,8 @@ rank ToricVectorBundleKaneyama := T -> T#"rank of the vector bundle"
 rays ToricVectorBundleKaneyama := {} >> o -> tvb -> raySortOfFan tvb#"ToricVariety"
 
  --there was no getter for the ring, could add?
-
- details ToricVectorBundleKaneyama := tvb -> (
+detailsKaneyama = method();
+detailsKaneyama ToricVectorBundleKaneyama := tvb -> (
      hashTable apply(pairs(tvb#"topConeTable"), p -> ( p#1 => (rays posHull p#0,tvb#"degreeTable"#(p#0)))),tvb#"baseChangeTable")
 
 maxCones ToricVectorBundleKaneyama := T -> (
@@ -301,9 +301,10 @@ dual ToricVectorBundleKaneyama := {} >> opts -> tvb -> (
         E)
 
 -- PURPOSE : Compute the Euler characteristic
+eulerChiKaneyama = method();
 --   INPUT : '(u,T)',  where 'T' is a ToricVectorBundleKaneyama and 'u' is a one column matrix over ZZ giving a degree vector
 --  OUTPUT : The Euler characteristic of the Cech complex at degree 'u'
-eulerChi (Matrix,ToricVectorBundleKaneyama) := (u,T) -> (
+eulerChiKaneyama (Matrix,ToricVectorBundleKaneyama) := (u,T) -> (
     if not T.cache.?eulerChi then T.cache.eulerChi = new MutableHashTable;
     if not T.cache.eulerChi#?u then (
 	  n := T#"dimension of the variety";
@@ -313,7 +314,7 @@ eulerChi (Matrix,ToricVectorBundleKaneyama) := (u,T) -> (
 
 --   INPUT : 'T',  a ToricVectorBundleKaneyama
 --  OUTPUT : The Euler characteristic of the bundle
-eulerChi ToricVectorBundleKaneyama := T -> (
+eulerChiKaneyama ToricVectorBundleKaneyama := T -> (
      -- Compute the set of degrees with possible cohomology
      L := latticePoints deltaE T;
      -- Sum up their characteristics
@@ -365,10 +366,11 @@ cohomology(ZZ,ToricVectorBundleKaneyama) := opts -> (i,T)-> (
 hh(ZZ,ToricVectorBundleKaneyama) := ZZ => (i,T) -> rank cohomology(i,T)
 
 -- PURPOSE : Computing the polytope deltaE in the degree space such that outside this polytope
---     	     every cohomology is 0 
+--     	     every cohomology is 0
+deltaEKaneyama = method();
 --   INPUT : 'tvb',  a ToricVectorBundleKaneyama
 --  OUTPUT : a Polyhedron
-deltaE ToricVectorBundleKaneyama := (cacheValue symbol deltaE)( tvb -> (
+deltaEKaneyama ToricVectorBundleKaneyama := (cacheValue symbol deltaE)( tvb -> (
      	  if not isComplete tvb#"ToricVariety" then error("The toric variety needs to be complete.");
      	  n := tvb#"dimension of the variety";
       
@@ -527,12 +529,13 @@ cotangentBundleKaneyama Fan := F -> (
      E)
  
 -- PURPOSE : Computing the Cech complex of a vector bundle (Kaneyama)
+cechComplexKaneyama = method();
 --   INPUT : '(k,T,u)', where 'k' is an integer between -1 and the dimension of the bundle +1, 'T' a ToricVectorBundleKaneyama, and 'u' a
 --     	    	        one column matrix giving a degree vector
 --  OUTPUT : '(Fk,Fkcolumns,FktoFk+1)', where 'Fk' is a hashTable with the summands of the 'k'th chain, 'Fkcolumns' is a hashTable with the
 --     	    	      	   	        dimensions of these summands, and 'FktoFk+1' is a hashTable with the components of the 'k'th 
 --     	    	      	   	        boundary operator
-cechComplex (ZZ,ToricVectorBundleKaneyama,Matrix) := (k,tvb,u) -> ( 
+cechComplexKaneyama (ZZ,ToricVectorBundleKaneyama,Matrix) := (k,tvb,u) -> ( 
      -- Checking for input errors
      if numRows u != tvb#"dimension of the variety" or numColumns u != 1 then error("Expected a matrix with 1 column and ", toString tvb#"dimension of the variety", " rows.");
      if ring u =!= ZZ then error("The degree has to be an integer vector.");
@@ -655,6 +658,3 @@ cechComplex (ZZ,ToricVectorBundleKaneyama,Matrix) := (k,tvb,u) -> (
 	  tvb.cache.cech#(k,u) = (M21,d21);
 	  tvb.cache.cech#(k+1,u) = M31);
      tvb.cache.cech#(k,u))
----------------------------------------------------------------
--- AUXILIARY FUNCTIONS FOR KANEYAMA
----------------------------------------------------------------
