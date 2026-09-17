@@ -5,6 +5,13 @@ RExt := K[getSymbol "l", X, U, MonomialOrder => {Lex => 1} | ringOrder R | ringO
 R= K[U][X]
 is the image of this map correct or is it mapping the X's to the U's?
 
+Answer (Weijia): the image of this map looks correct. Try this:
+
+KU = QQ[a,b]; R = KU[x,y,z]; f = a*x^2 + b*y + a*b*z;
+RExt = QQ[l,x,y,z,a,b, MonomialOrder => {Lex=>1, Lex=>3, Lex=>2}];
+RtoRExt = map(RExt, R, drop(gens RExt, 1));
+RtoRExt f
+
 2) I am changing the subs from PGBMain to maps, but I do not want to change directly in case there is something in the code I am not understanding (this is Angelo's code), I would suggest the following change:
 a := apply(E, e -> KUtoRFlat(e));
 G := first entries gens(gb (ideal(a|F)));
