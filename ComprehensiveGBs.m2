@@ -786,16 +786,40 @@ doc ///
     a package for computing Comprehensive Groebner Bases (CGBs).
   Description
     Text
-      This package provides the implementations of two differnt algorithms for computing a comprehensive Gr\"obner system and a comprehensive Gr\"obner basis of a parametric ideal. 
-      For a definition see Definition 2 of @HREF("#ref2","[2]")@ and Definition 2.1 of @HREF("ref2","[2]")@
+      This package provides the implementations of two differnt algorithms for computing a comprehensive Gr\"obner system and a
+      comprehensive Gr\"obner basis of a parametric ideal. In the following we refer to Section 2 of @HREF("#ref1","[1]")@.
+      
+      Let $k$ be a field, $R$ be the polynomial ring $k[U]$ in the parameters $U=\{u_1,\ldots,u_m\}, and $R[X]$ be the polynomial ring
+      over $R$ in the variables $X=\{x_1,\ldots,x_n\} and $X\cap U=\emptyset$.
+      Call $L$ the algebraic closure of $k$. Given $a \in L^m$, the specialization homomorphism of $R$ induced by $a$ is
+      $\sigma_a:R\rightarrow L$, $\sigma_a(f)=f(a)$. $\sigma_a$ extends canonically to a homomorphism $\sigma_a:R[X]\rightarrow L[X]$
+      by applying $\sigma_a$ coefficient-wise.
+      For an $E\subseteq R=k[U]$, the variety defined by $E$ in $L^m$, denoted by $V(E)$ is
+      $$V(E)=\{a\in L^m :\sigma_a(f)=0 \mbox{ for all } f \in E \}.$$
 
+      A set $A\subseteq L^m$ is said constructible if it exists a pair of finite sets of polynomials $(E,N)$ such that
+      $A=V(E)\setminus V(N)$, where $E,N\subseteq k[U]$.
+
+      Let $F$ be a subset of $R[X]$, $E_1,N_1,\ldots, E_t,N_t$ be subsets of $R=k[U]$, $G_1,\ldots,G_t$ be subsets of $R[X]$,
+      and S a subset of $L^m$ such that $S\subseteq (V(E_1)\setminus V(N_1) \cup \ldots \cup V(E_t)\setminus V(N_t)$. A finite set
+      $\mathcal{G} = \{(E_1,N_1,G_1),\ldots,(E_t,N_t,G_t)\} is called a comprehnsive Gr{\"o}bner system on $S$ for $F$ if
+      $\sigma_a(G_i)$ is a Gr{\"o}bner basis of the ideal $(\sigma_a(F))\subseteq L[X]$ for $a \in V(E_i)\setminusV(N_i)$ and
+      $i=1,\ldots,t$. Each $(E_i,N_i,G_i)$ is called a branch of $\mathcal{G}$. In particular, if $S=L^m$, then $\mathcal{G}$ is
+      called a comprehensive Gr{\"o}bner system for F.
+
+      Given $S$ a basis of the elimination ideal of $(F)\cap k[U]$, a comprehenvive Gr{\"o}bner basis $\mathcal{B}$ for $F\subseteq R[X]$
+      is the union of all the sets $G_i$ in a comprehensive Gr{\"o}bner system $\mathcal{G}$ for F on $S$. Notice that, $(\sigma_a(F))=(1)
+      for any $a \in L^m \setminus V(S)$. Therefore, $\mathcal{G} \cup \{(\emptyset,S,S)\} is a comprehensive Gr{\"o}bner system for $F$.
+      
+    
       The function @TO "CBGMain"@ is the implementation of Algorithm CGBMain of @HREF("#ref2","[2]")@.
 
-      Instead the function @TO "PGBMain"@ corresponds to the Algorithm PGBMain of @HREF("#ref1","[2]")@.
+      Instead the function @TO "PGBMain"@ corresponds to the Algorithm PGBMain of @HREF("#ref1","[1]")@.
       
   References
-    @LABEL("[2]","id" => "ref2")@ Akira Suzuki and Yosuke Sato. 2006. A simple algorithm to compute comprehensive Gröbner bases using Gröbner bases. In Proceedings of the 2006 international symposium on Symbolic and algebraic computation (ISSAC '06). Association for Computing Machinery, New York, NY, USA, 326–331. https://doi.org/10.1145/1145768.1145821
-    @LABEL("[1]","id" => "ref1")@ Deepak Kapur, Yao Sun, and Dingkang Wang. 2013. An efficient algorithm for computing a comprehensive Gr\"obner system of a parametric polynomial system. In Journal of Symbolic Computation, 49, 27-44.
+      @LABEL("[1]","id" => "ref1")@ Deepak Kapur, Yao Sun, and Dingkang Wang. 2013. An efficient algorithm for computing a comprehensive Gr\"obner system of a parametric polynomial system. In Journal of Symbolic Computation, 49, 27-44.
+      @LABEL("[2]","id" => "ref2")@ Akira Suzuki and Yosuke Sato. 2006. A simple algorithm to compute comprehensive Gröbner bases using Gröbner bases. In Proceedings of the 2006 international symposium on Symbolic and algebraic computation (ISSAC '06). Association for Computing Machinery, New York, NY, USA, 326–331. https://doi.org/10.1145/1145768.1145821
+    
 ///
 
 
