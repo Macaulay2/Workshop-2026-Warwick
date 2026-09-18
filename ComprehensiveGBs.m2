@@ -44,7 +44,6 @@ protect flattenedRing
 protect triple            --Probably needs to be changed b/c 
                           --too generic?
 
-
 ringOrder = method(); -- returns the monomial order of a polynomial ring
 ringOrder PolynomialRing := List => R -> (
     order := select(toList (options R).MonomialOrder, orderEntry -> not member(first orderEntry, {MonomialSize, Position}));
@@ -96,6 +95,8 @@ CGBDataFromRings Ring := CGBData => (R) -> (
   KUtoRFlat := map(RFlat, KU, take(gens RFlat, -#gens KU));
   RFlattoR := map(R, RFlat, gens R | gens coefficientRing R);
   KUtoR := map(R, KU, gens coefficientRing R);
+  RtoRFlat := map(RFlat, R, gens RFlat);
+
   RingsandThings := {R,X,RExt,RFlat,RExt',KU,RFlatl,RtoRExt,RExttoRFlatl,RExttoRExt',RExttoR,KUtoRFlat,RFlattoR,KUtoR};
 
   new CGBData from {
@@ -112,7 +113,8 @@ CGBDataFromRings Ring := CGBData => (R) -> (
     "RExttoR"       => RExttoR,
     "KUtoRFlat"     => KUtoRFlat,
     "RFlattoR"      => RFlattoR,
-    "KUtoR"         => KUtoR
+    "KUtoR"         => KUtoR,
+    "RtoRFlat"      => RtoRFlat
     }
 );
 
@@ -220,7 +222,8 @@ CGBMain (List, List) := o -> (F, S) -> (
   KUtoRFlat := map(RFlat, KU, take(gens RFlat, -#gens KU));
   RFlattoR := map(R, RFlat, gens R | gens coefficientRing R);
   KUtoR := map(R, KU, gens coefficientRing R);
-  RingsandThings := {R,X,RExt,RFlat,RExt',KU,RFlatl,RtoRExt,RExttoRFlatl,RExttoRExt',RExttoR,KUtoRFlat,RFlattoR,KUtoR};
+  RtoRFlat := map(RFlat, R, gens RFlat);
+  RingsandThings := {R,X,RExt,RFlat,RExt',KU,RFlatl,RtoRExt,RExttoRFlatl,RExttoRExt',RExttoR,KUtoRFlat,RFlattoR,KUtoR,RtoRFlat};
 
   cgbData := new CGBData from {
     "R"             => R,
@@ -236,7 +239,8 @@ CGBMain (List, List) := o -> (F, S) -> (
     "RExttoR"       => RExttoR,
     "KUtoRFlat"     => KUtoRFlat,
     "RFlattoR"      => RFlattoR,
-    "KUtoR"         => KUtoR
+    "KUtoR"         => KUtoR,
+    "RtoRFlat"      => RtoRFlat
     };
 
   R = RingsandThings_0;
@@ -253,7 +257,8 @@ CGBMain (List, List) := o -> (F, S) -> (
   KUtoRFlat = RingsandThings_11;
   RFlattoR = RingsandThings_12;
   KUtoR = RingsandThings_13;
-  RingsandThings = {R,X,RExt,RFlat,RExt',KU,RFlatl,RtoRExt,RExttoRFlatl,RExttoRExt',RExttoR,KUtoRFlat,RFlattoR,KUtoR};
+  RtoRFlat = RingsandThings_14;
+  RingsandThings = {R,X,RExt,RFlat,RExt',KU,RFlatl,RtoRExt,RExttoRFlatl,RExttoRExt',RExttoR,KUtoRFlat,RFlattoR,KUtoR,RtoRFlat};
   CGBMainRec(F, S, {}, RingsandThings, o)
 )
 
@@ -280,6 +285,8 @@ CGBMainRec (List, List, List, List) := o -> (F, S, memo, RingsandThings) -> (
   KUtoRFlat := RingsandThings_11;
   RFlattoR := RingsandThings_12;
   KUtoR := RingsandThings_13;
+  RtoRFlat := RingsandThings_14;
+
   if o.Verbose then (
       print("Computing CGB for F = " | toString F | " and S = " | toString S);
       );
@@ -525,12 +532,13 @@ PGBMain (CGBTriple) := T -> (
     KUtoRFlat:=cgbData#"KUtoRFlat";
     RFlattoR:=cgbData#"RFlattoR";
     KUtoR:=cgbData#"KUtoR";
+    RtoRFlat:=cgbData#"RtoRFlat";
     --print(E, length N);
     if not(consistencyCheckAllTogether(E, N)) then (
         return {} --The domain is empty
     );
     --Compute the GB of union(E, F), but viewing the parameters as variables
-    G := first entries gens(gb (ideal(apply((E | F), e -> sub(e, RFlat)))));
+    G := first entries gens gb ideal ((KUtoRFlat \ E) | (RtoRFlat \ F));
     if member(sub(1, RFlat), G) then (
         return {{E, N, {promote(1, R)}}} --Trivial case where the vanishing set is empty
     );
@@ -812,7 +820,7 @@ doc ///
       for any $a \in L^m \setminus V(S)$. Therefore, $\mathcal{G} \cup \{(\emptyset,S,S)\}$ is a comprehensive Gröbner system for $F$.
       
     
-      The function @TO "CBGMain"@ is the implementation of Algorithm CGBMain of @HREF("#ref2","[2]")@.
+      The function @TO "CGBMain"@ is the implementation of Algorithm CGBMain of @HREF("#ref2","[2]")@.
 
       Instead the function @TO "PGBMain"@ corresponds to the Algorithm PGBMain of @HREF("#ref1","[1]")@.
       
@@ -848,9 +856,13 @@ doc ///
 
 doc ///
   Key
-    "CGBMain"
+    CGBMain
     (CGBMain, List, List)
     (CGBMain, List)
+    [CGBMain, Strategy]
+    [CGBMain, Verbose]
+    [CGBMain, ReduceStrata]
+    [CGBMain, Depth]
   Headline
     a method that computes a Comprehensive Groebner System
   Usage
@@ -864,6 +876,7 @@ doc ///
     ReduceStrata=>Boolean
     Strategy=>String
     Verbose=>Boolean
+    Depth=>ZZ
   Outputs
     G :List
       of Sequences of the form (E,N,G), where G is a Gröbner basis on the set $V(E)\setminus V(N)$
@@ -936,7 +949,7 @@ doc ///
 
 doc ///
   Key
-    Strategy
+    "CGB Strategy"
   Headline
     how to compute the radical in @TO "ReduceStrata"@
   Description
@@ -1043,6 +1056,74 @@ doc ///
     ComprehensiveGBs
     PGBMain
 ///
+
+
+doc ///
+  Key
+    "CGB"
+    (CGB, List)
+    [CGB, Strategy]
+    [CGB, Verbose]
+    [CGB, ReduceStrata]
+    [CGB, Depth]
+  Headline
+    a method that computes a Comprehensive Groebner System
+  Usage
+    G = CGB F
+  Inputs
+    F :List
+       a list of polynomials in a ring $R = k[U][X]$
+    ReduceStrata=>Boolean
+    Strategy=>String
+    Verbose=>Boolean
+    Depth=>ZZ
+  Outputs
+    G :List
+      of Sequences of the form (E,N,G), where G is a Gröbner basis on the set $V(E)\setminus V(N)$
+  Description
+    Text
+      Implementation of the Algorithm proposed by Suzuki and Sato. Given a tower polynomial ring $R = k[U][X]$ for $U$ a set of parameters and $X$ a set of variables, $F\subset R$ an ideal of variables and parameters, and $S\subset k[U]$ an ideal satisfying $V(S)\subseteq V(\langle F\rangle\cap k[U])$, CGBMain takes $F$ and $S$ as inputs and returns a comprehensive Groebner system on $V(S)$.
+      The function itself passes $F$ and $S$ to CGBMainRec after initialising various objects.
+      As above, the ring must be initialised as a tower ring:
+    Example
+      R1 = QQ[a,b][x,y]
+      S1 = {}
+    Text
+      Here $X = \{x,y\}$ and $U = \{a,b\}$. If we wanted to find a comprehensive Groebner system over $\mathb{Q}^2$ for $F = \langle ax+by\rangle$, we input the following:
+    Example
+      F1 = {a*x+b*y}
+    Text
+      CGBMain has several options: ReduceStrata, Strategy, and Verbose. ReduceStrata is an option to ignore computations on strata which have already been considered. This value is set to false by default. For smaller examples, changing this to true can reduce computation times, as for the following example. It will also give more easily parseable results.
+    Example
+      R2 = QQ[a,b][x,y,z];
+      F2 = {x^2-a,y^3-b,x+y-z};
+      S2 = {};
+    Text
+      The value is false by default as this is not true in general - for the example below (which will not be computed to save time, though the reader may verify if they desire) the option being false has an execution time of less than a minute. Setting ReduceStrata to true increases this execution time significantly (a rough estimate for time has not been found, as the computation takes so long).
+    Example
+      R3 = QQ[a,b][x,y,z,s, MonomialOrder => Lex];
+      f=(x-a)^2+b*y^2+b;
+      F3 = {f-z,x^2+y^2+z^2-s,x+z*diff(x, f),y+z*diff(y, f)}
+    Text
+      Strategy is an option that depends on ReduceStrata, and has two valid inputs, being "radical" and "Rabinowitsch" - other inputs will return an error. The former reduces strata by directly computing radicals of ideals, and the latter utilises the Rabinowitsch trick. The latter is, in general, considerably faster.
+      Setting Verbose to True will print whatever $F$ and $S$ that CGBMainRec is currently working on:
+    Example
+      CGBMain(F1,S1,Verbose=>true)
+    Text
+      CGBMain can take in one or two lists as inputs.
+      When $S$ is not specified, the function returns a comprehensive Gröbner system on the whole parameter space,
+      by computing a basis $\{s_1,\dots,s_r\}$ of the elimination ideal $\langle F\rangle\cap k[U]$, passing that basis as $S$ to CGBMain,
+      and appending the extra segments $(\{\}, s_i, \{1\})$ for $i=1,\dots,r$ to the output.
+      When $S$ is specified, the function returns a comprehensive Groebner system on $V(S)$, under the assumption that
+      $V(S)\subseteq V(\langle F\rangle\cap k[U])$.
+  SeeAlso
+    CGBMain
+    ReduceStrata
+    Strategy
+    Verbose
+    Depth
+  ///
+
 
 
 -* Test section *-
