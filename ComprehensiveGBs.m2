@@ -88,7 +88,7 @@ CGBDataFromRings Ring := CGBData => (R) -> (
   RFlat := K[X, U, MonomialOrder => ringOrder R | ringOrder KU];
   RExt' := KU[l, X, MonomialOrder => {Lex => 1} | ringOrder R];
   RFlatl := RFlat[l];
-  RtoRExt := map(RExt, R, drop(gens RExt, 1));--just checking, is the order okay here? first the X and the the U?
+  RtoRExt := map(RExt, R, drop(gens RExt, 1));
   RExttoRFlatl:= map(RFlatl,RExt, gens RFlatl | gens coefficientRing RFlatl);
   RExttoRExt':= map(RExt',RExt, gens RExt'| gens coefficientRing RExt');
   RExttoR:= map(R, RExt, {1} | gens R | gens coefficientRing R);
