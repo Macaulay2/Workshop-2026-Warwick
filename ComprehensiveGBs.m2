@@ -1433,12 +1433,8 @@ ExpResult = set{
     set ((f -> sub(f, R')) \ {y, x})
     }
 }
-LSet = set for stratum in L list for i from 0 to 2 list set (stratum_i)
 
-ring first (L_3)_1 -- Problem is that this element is in ZZ and not U'
-ring first (L_2)_1 -- ... like this element
-
---assert((new Set from L) == ExpResult )
+assert( (new Set from for r in L list for p in r list set p) == ExpResult )
 
 ///
 
@@ -1454,6 +1450,7 @@ check "ComprehensiveGBs"
 
 uninstallPackage "ComprehensiveGBs"
 restart
+needsPackage "ComprehensiveGBs"
 installPackage "ComprehensiveGBs"
 viewHelp "ComprehensiveGBs"
 
