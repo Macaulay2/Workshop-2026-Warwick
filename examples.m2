@@ -31,7 +31,6 @@ print("Rabinowitsch:", benchmark "G = CGBMain(F, {}, ReduceStrata => true, Strat
 
 -- Dulcis in fundu: we have some DOCUMENTATION!
 viewHelp ComprehensiveGBs
-*-
 
 end
 
@@ -329,4 +328,3 @@ L= PGBMain(T)
 -- try examples of generic initial ideal 'gin'?
 -- recursion depth limit
 -- How big can we go?
->>>>>>> 527bfb3 (add todos)
