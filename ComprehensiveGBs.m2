@@ -80,14 +80,16 @@ CGBFromTriple List := CGBTriple => (L) -> (
 CGBDataFromRings = method();
 
 CGBDataFromRings Ring := CGBData => (R) -> (
-  X := gens R;
   KU := coefficientRing R;
-  U := gens KU;
   K := coefficientRing KU;
-  RExt := K[getSymbol "l", X, U, MonomialOrder => {Lex => 1} | ringOrder R | ringOrder KU];
-  l := first gens RExt;
-  RFlat := K[X, U, MonomialOrder => ringOrder R | ringOrder KU];
-  RExt' := KU[l, X, MonomialOrder => {Lex => 1} | ringOrder R];
+  n := numgens R;
+  m := numgens KU;
+  x := local x;
+  u := local u;
+  l := local l;
+  RExt := K[l, x_1..x_n, u_1..u_m, MonomialOrder => {Lex => 1} | ringOrder R | ringOrder KU];
+  RFlat := K[x_1..x_n, u_1..u_m, MonomialOrder => ringOrder R | ringOrder KU];
+  RExt' := KU[l, x_1..x_n, MonomialOrder => {Lex => 1} | ringOrder R];
   RFlatl := RFlat[l];
   RtoRExt := map(RExt, R, drop(gens RExt, 1));
   RExttoRFlatl:= map(RFlatl,RExt, gens RFlatl | gens coefficientRing RFlatl);
@@ -98,11 +100,8 @@ CGBDataFromRings Ring := CGBData => (R) -> (
   KUtoR := map(R, KU, gens coefficientRing R);
   RtoRFlat := map(RFlat, R, gens RFlat);
 
-  RingsandThings := {R,X,RExt,RFlat,RExt',KU,RFlatl,RtoRExt,RExttoRFlatl,RExttoRExt',RExttoR,KUtoRFlat,RFlattoR,KUtoR};
-
   new CGBData from {
     "R"             => R,
-    "X"             => X,
     "RExt"          => RExt,
     "RFlat"         => RFlat,
     "RExt'"         => RExt',
@@ -150,9 +149,11 @@ isConsistentRabinowitsch (List, List) :=(E,N) -> (
         );
     if isEmpty N then(return false);
     R := ring E_0;
-    S := (baseRing R)[Variables => 1+numgens R];
-    M := map(S,R, (gens S)_{0..(numgens(R)-1)});
-    any(N, f -> not isMember(1, ideal(apply(E,p->M(p))|{(M(f)*last(gens S)-1)})))
+    u := local u;
+    y := local y;
+    S := (baseRing R)[u_1..u_(numgens R), y];
+    M := map(S, R, take(gens S, numgens R));
+    any(N, f -> not isMember(1, ideal((M \ E)|{(M(f)*last(gens S)-1)})))
 )
 --R=QQ[x,y]
 --E={x+y}
@@ -206,60 +207,11 @@ CGBMain (List) := o -> (F) -> (
   CGBMain(F, S, o) | apply(S, s -> ({}, sub(s, R), {1_R}))
 )
 CGBMain (List, List) := o -> (F, S) -> (
-  R := ring F_0;
-  X := gens R;
-  KU := coefficientRing R;
-  U := gens KU;
-  K := coefficientRing KU;
-  RExt := K[getSymbol "l", X, U, MonomialOrder => {Lex => 1} | ringOrder R | ringOrder KU];
-  l := first gens RExt;
-  RFlat := K[X, U, MonomialOrder => ringOrder R | ringOrder KU];
-  RExt' := KU[l, X, MonomialOrder => {Lex => 1} | ringOrder R];
-  RFlatl := RFlat[l];
-  RtoRExt := map(RExt, R, drop(gens RExt, 1));
-  RExttoRFlatl:= map(RFlatl,RExt, gens RFlatl | gens coefficientRing RFlatl);
-  RExttoRExt':= map(RExt',RExt, gens RExt'| gens coefficientRing RExt');
-  RExttoR:= map(R, RExt, {1} | gens R | gens coefficientRing R);
-  KUtoRFlat := map(RFlat, KU, take(gens RFlat, -#gens KU));
-  RFlattoR := map(R, RFlat, gens R | gens coefficientRing R);
-  KUtoR := map(R, KU, gens coefficientRing R);
-  RtoRFlat := map(RFlat, R, gens RFlat);
-  RingsandThings := {R,X,RExt,RFlat,RExt',KU,RFlatl,RtoRExt,RExttoRFlatl,RExttoRExt',RExttoR,KUtoRFlat,RFlattoR,KUtoR,RtoRFlat};
-
-  cgbData := new CGBData from {
-    "R"             => R,
-    "X"             => X,
-    "RExt"          => RExt,
-    "RFlat"         => RFlat,
-    "RExt'"         => RExt',
-    "KU"            => KU,
-    "RFlatl"        => RFlatl,
-    "RtoRExt"       => RtoRExt,
-    "RExttoRFlatl"  => RExttoRFlatl,
-    "RExttoRExt'"   => RExttoRExt',
-    "RExttoR"       => RExttoR,
-    "KUtoRFlat"     => KUtoRFlat,
-    "RFlattoR"      => RFlattoR,
-    "KUtoR"         => KUtoR,
-    "RtoRFlat"      => RtoRFlat
-    };
-
-  R = RingsandThings_0;
-  X = RingsandThings_1;
-  RExt = RingsandThings_2;
-  RFlat = RingsandThings_3;
-  RExt' = RingsandThings_4;
-  KU = RingsandThings_5;
-  RFlatl = RingsandThings_6;
-  RtoRExt = RingsandThings_7;
-  RExttoRFlatl = RingsandThings_8;
-  RExttoRExt' = RingsandThings_9;
-  RExttoR = RingsandThings_10;
-  KUtoRFlat = RingsandThings_11;
-  RFlattoR = RingsandThings_12;
-  KUtoR = RingsandThings_13;
-  RtoRFlat = RingsandThings_14;
-  RingsandThings = {R,X,RExt,RFlat,RExt',KU,RFlatl,RtoRExt,RExttoRFlatl,RExttoRExt',RExttoR,KUtoRFlat,RFlattoR,KUtoR,RtoRFlat};
+  cgbData := CGBDataFromRings(ring F_0);
+  RingsandThings := apply({
+    "R", "RExt", "RFlat", "RExt'", "KU", "RFlatl", "RtoRExt", "RExttoRFlatl",
+    "RExttoRExt'", "RExttoR", "KUtoRFlat", "RFlattoR", "KUtoR", "RtoRFlat"
+  }, k -> cgbData#k);
   CGBMainRec(F, S, {}, RingsandThings, o)
 )
 
@@ -273,20 +225,19 @@ CGBMainRec = method(
     );
 CGBMainRec (List, List, List, List) := o -> (F, S, memo, RingsandThings) -> (
   R := RingsandThings_0;
-  X := RingsandThings_1;
-  RExt := RingsandThings_2;
-  RFlat := RingsandThings_3;
-  RExt' := RingsandThings_4;
-  KU := RingsandThings_5;
-  RFlatl := RingsandThings_6;
-  RtoRExt := RingsandThings_7;
-  RExttoRFlatl := RingsandThings_8;
-  RExttoRExt' := RingsandThings_9;
-  RExttoR := RingsandThings_10;
-  KUtoRFlat := RingsandThings_11;
-  RFlattoR := RingsandThings_12;
-  KUtoR := RingsandThings_13;
-  RtoRFlat := RingsandThings_14;
+  RExt := RingsandThings_1;
+  RFlat := RingsandThings_2;
+  RExt' := RingsandThings_3;
+  KU := RingsandThings_4;
+  RFlatl := RingsandThings_5;
+  RtoRExt := RingsandThings_6;
+  RExttoRFlatl := RingsandThings_7;
+  RExttoRExt' := RingsandThings_8;
+  RExttoR := RingsandThings_9;
+  KUtoRFlat := RingsandThings_10;
+  RFlattoR := RingsandThings_11;
+  KUtoR := RingsandThings_12;
+  RtoRFlat := RingsandThings_13;
 
   if o.Verbose then (
       print("Computing CGB for F = " | toString F | " and S = " | toString S);
@@ -299,9 +250,10 @@ CGBMainRec (List, List, List, List) := o -> (F, S, memo, RingsandThings) -> (
   B := apply(S, i -> (l-1) * RtoRExt(i));
   G := (entries gens gb(ideal join(A, B)))_0; -- isn't G in RExt? why do we substitute it in the line below? Let's clean it up without a sub
 
+  n := numgens R;
   pruneG := select(G, g -> (
           (first first exponents(leadMonomial sub(g,RExt))) > 0) and
-      any(exponents(sub(leadCoefficient RExttoRFlatl(g),RFlat)), i -> any(i_(toList(0..(#(X)-1))), i -> i > 0)));
+      any(exponents(sub(leadCoefficient RExttoRFlatl(g),RFlat)), i -> any(i_(toList(0..(n-1))), i -> i > 0)));
   pruneG = apply(pruneG, g -> leadCoefficient RExttoRExt'(g));
   h := lcm pruneG;
   for i in 0..(#(factor h)-1) do (
@@ -414,8 +366,8 @@ eliminateVariables(List):=F->(
     n:=numgens(R);
     C:=coefficientRing R;
     m:=numgens C;
-    x:=getSymbol "x";
-    u:=getSymbol "u";
+    x:=local x;
+    u:=local u;
     K:=coefficientRing C;
     S:=K[x_1..x_n,u_1..u_m, MonomialOrder => ringOrder R | ringOrder C];
     U:=gens C;
@@ -437,8 +389,8 @@ cgbOnGraph=method()
 cgbOnGraph(List,ZZ):=(G,d)->(
   V:=G_0;
   E:=G_1;
-  x:=getSymbol "x";
-  w:=getSymbol "w";
+  x:=local x;
+  w:=local w;
   S:=QQ[toSequence apply(E, l -> w_l)];
   R:=S[x_(V_0,1)..x_(V_(#V-1),d)];
   F:=for i in E list(sum(1..d,k->(R_(2*i_0+k-3)-R_(2*i_1+k-3))^2)-S_(position(E, j -> j === i)));
@@ -530,7 +482,6 @@ PGBMain (CGBTriple) := T -> (
     {E, N, F} := T#"triple";
     cgbData := T#"cgbData";
     R:=cgbData#"R";
-    X:=cgbData#"X";
     RExt:=cgbData#"RExt"; 
     RFlat:=cgbData#"RFlat";
     RExt':=cgbData#"RExt'";
