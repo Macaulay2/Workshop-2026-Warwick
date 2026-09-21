@@ -1045,7 +1045,7 @@ doc ///
     [CGB, ReduceStrata]
     [CGB, Depth]
   Headline
-    a method that computes a Comprehensive Groebner System
+    a method that computes a Comprehensive Groebner Basis
   Usage
     G = CGB F
   Inputs
@@ -1057,25 +1057,24 @@ doc ///
     Depth=>ZZ
   Outputs
     G :List
-      of Sequences of the form (E,N,G), where G is a Gröbner basis on the set $V(E)\setminus V(N)$
+      of polynomials forming a comprehensive Gröbner basis of $\langle F\rangle$
   Description
     Text
-      Implementation of the Algorithm proposed by Suzuki and Sato. Given a tower polynomial ring $R = k[U][X]$ for $U$ a set of parameters and $X$ a set of variables, $F\subset R$ an ideal of variables and parameters, and $S\subset k[U]$ an ideal satisfying $V(S)\subseteq V(\langle F\rangle\cap k[U])$, CGBMain takes $F$ and $S$ as inputs and returns a comprehensive Groebner system on $V(S)$.
-      The function itself passes $F$ and $S$ to CGBMainRec after initialising various objects.
+      Implementation of the Algorithm proposed by Suzuki and Sato. Given a tower polynomial ring $R = k[U][X]$ for $U$ a set of parameters and $X$ a set of variables, and $F\subset R$ an ideal of variables and parameters, CGB takes $F$ as input and returns a comprehensive Groebner basis of $\langle F\rangle$ over the whole parameter space.
+      The function computes a comprehensive Groebner system with CGBMain and returns the union of its Groebner bases, together with a basis of the elimination ideal $\langle F\rangle\cap k[U]$.
       As above, the ring must be initialised as a tower ring:
     Example
       R1 = QQ[a,b][x,y]
-      S1 = {}
     Text
-      Here $X = \{x,y\}$ and $U = \{a,b\}$. If we wanted to find a comprehensive Groebner system over $\mathb{Q}^2$ for $F = \langle ax+by\rangle$, we input the following:
+      Here $X = \{x,y\}$ and $U = \{a,b\}$. If we wanted to find a comprehensive Groebner basis over $\mathb{Q}^2$ for $F = \langle ax+by\rangle$, we input the following:
     Example
       F1 = {a*x+b*y}
+      CGB F1
     Text
-      CGBMain has several options: ReduceStrata, Strategy, and Verbose. ReduceStrata is an option to ignore computations on strata which have already been considered. This value is set to false by default. For smaller examples, changing this to true can reduce computation times, as for the following example. It will also give more easily parseable results.
+      CGB has several options: ReduceStrata, Strategy, and Verbose. ReduceStrata is an option to ignore computations on strata which have already been considered. This value is set to false by default. For smaller examples, changing this to true can reduce computation times, as for the following example. It will also give more easily parseable results.
     Example
       R2 = QQ[a,b][x,y,z];
       F2 = {x^2-a,y^3-b,x+y-z};
-      S2 = {};
     Text
       The value is false by default as this is not true in general - for the example below (which will not be computed to save time, though the reader may verify if they desire) the option being false has an execution time of less than a minute. Setting ReduceStrata to true increases this execution time significantly (a rough estimate for time has not been found, as the computation takes so long).
     Example
@@ -1086,14 +1085,7 @@ doc ///
       Strategy is an option that depends on ReduceStrata, and has two valid inputs, being "radical" and "Rabinowitsch" - other inputs will return an error. The former reduces strata by directly computing radicals of ideals, and the latter utilises the Rabinowitsch trick. The latter is, in general, considerably faster.
       Setting Verbose to True will print whatever $F$ and $S$ that CGBMainRec is currently working on:
     Example
-      CGBMain(F1,S1,Verbose=>true)
-    Text
-      CGBMain can take in one or two lists as inputs.
-      When $S$ is not specified, the function returns a comprehensive Gröbner system on the whole parameter space,
-      by computing a basis $\{s_1,\dots,s_r\}$ of the elimination ideal $\langle F\rangle\cap k[U]$, passing that basis as $S$ to CGBMain,
-      and appending the extra segments $(\{\}, s_i, \{1\})$ for $i=1,\dots,r$ to the output.
-      When $S$ is specified, the function returns a comprehensive Groebner system on $V(S)$, under the assumption that
-      $V(S)\subseteq V(\langle F\rangle\cap k[U])$.
+      CGB(F1,Verbose=>true)
   SeeAlso
     CGBMain
     ReduceStrata
