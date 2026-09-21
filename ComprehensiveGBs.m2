@@ -576,7 +576,7 @@ PGBMain (CGBTriple) := T -> (
     if consistencyCheckAllTogether (E, productList) then (
         PGB = {{E, productList, {1_R}}};
     );
-    if not(consistencyCheckAllTogether(productList, N)) then (
+    if not(consistencyCheckAllTogether(Gr, N)) then (
         return PGB
     );
     --Elements of GB that do not only contain parameters
