@@ -422,8 +422,7 @@ cgbOnGraph(List,ZZ):=(G,d)->(
   S:=QQ[toSequence apply(E, l -> w_l)];
   R:=S[x_(V_0,1)..x_(V_(#V-1),d)];
   F:=for i in E list(sum(1..d,k->(R_(2*i_0+k-3)-R_(2*i_1+k-3))^2)-S_(position(E, j -> j === i)));
-  -- FIXME: {} is not in general a valid stratum here!
-  (F, CGBMain(F, {}, CheckAssumption => false))
+  (F, CGBMain F)
 )
 
 --Given two lists A and B return the list
