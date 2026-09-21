@@ -788,19 +788,24 @@ consistencyCheckAllTogether (List, List) := o -> (E, N) -> (
         if ideal N == ideal(0_KU) then return false;
         return true);
     );
+    undecided := false;
     for f in N do (
         check := consistencyCheckAllTogether(E, f, Loops => o.Loops);
 
-        if check === false then (
-            return false;
+        if check === true then (
+            return true;
         );
 
         if instance(check, Nothing) then (
-            return isConsistentRabinowitsch(E, N);
+            undecided = true;
         );
     );
 
-    return true
+    if undecided then (
+        return isConsistentRabinowitsch(E, N)
+    );
+
+    return false
 );
 
 
