@@ -69,6 +69,7 @@ CGBFromTriple = method(); --Constructor for a CGBTriple starting from
 
 CGBFromTriple List := CGBTriple => (L) -> (
     if(length L == 3 and length L_0 > 0 and length L_2 > 0) then (
+        if any(L_1, n -> zero n) then error("Please remove zeros from N");
         R := ring L_2_0;
         return new CGBTriple from {
             "triple" => L,
