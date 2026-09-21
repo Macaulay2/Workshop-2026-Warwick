@@ -571,7 +571,11 @@ PGBMain (CGBTriple) := T -> (
     --Elements of GB that do not only contain parameters
     listDiff := toList((new Set from apply(G, i->RFlattoR(i))) - (new Set from apply(Gr, i->KUtoR(i))));
     Gm := MDBasis(listDiff);
-    H := unique(apply(Gm, g->squareFreePart(leadCoefficient(sub(g, R)))));
+    H := unique flatten apply(Gm, g -> listOfFactors(leadCoefficient(sub(g, R))));
+    H = select(H, t -> not isConstant t);
+    if length H == 0 then (
+        H = {1_KU};
+    );
     h := squareFreePart(lcm(H));
     productList = unique(apply(totalListProduct(N, {sub(h, KU)}), i -> squareFreePart(i)));
     if consistencyCheckAllTogether(Gr, productList) then (
