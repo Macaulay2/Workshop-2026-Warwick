@@ -477,6 +477,16 @@ MDBasis (List) := (G) -> (
     if length F == 0 then (
         return {}
         );
+    -- Section 7.1, first heuristic
+    simpler := lc -> max({0} | apply(listOfFactors lc, f -> first degree f));
+    -- Section 7.1, second heuristic
+    lpps := apply(G, leadMonomial);
+    minimal := select(G, g -> not any(lpps, m -> m != leadMonomial g and (leadMonomial g) % m == 0));
+    freq := tally apply(minimal, g -> toString leadCoefficient g);
+    sharedCount := lc -> if freq#?(toString lc) then freq#(toString lc) else 0;
+    -- order the input by those two heuristics;
+    -- if there are still ties, order by the keys (chosen purely arbitrarily) after them
+    F = sort(F, g -> (lc := leadCoefficient g; (- sharedCount lc, simpler lc, #terms lc, first degree lc, toString g)));
     Basis := {first F};
     F = delete(first F, F); 
     for g in F do ( --loop through elements of G
@@ -1430,8 +1440,8 @@ ExpResult = set{
     },
   {
     set ((f -> sub(f, U')) \ {b*c^2-b, a*c^2-a, b^3*c-a^3, a^3*c-b^3, a^6-b^6}),
-    set ((f -> sub(f, U')) \ {a*b}),
-    set ((f -> sub(f, R')) \ {a^2*y-b^2*c, b*x-a*c*y})
+    set ((f -> sub(f, U')) \ {b}),
+    set ((f -> sub(f, R')) \ {b*y-a, b*x-a*c*y})
   },
   {
     set ((f -> sub(f, U')) \ {b, a}),
