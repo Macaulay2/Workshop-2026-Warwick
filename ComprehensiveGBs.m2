@@ -122,7 +122,7 @@ CGBDataFromRings Ring := CGBData => (R) -> (
 listOfFactors = method() -- returns the list of factors of a ring element
 listOfFactors (RingElement) := (h) -> (
   hfac := factor h;
-  apply(#hfac, i -> if isConstant hfac#i#0 then 1_(ring h) else hfac#i#0)
+  select(apply(#hfac, i -> hfac#i#0), t -> not isConstant t)
 );
 
 squareFreePart = method() -- returns the square free part of a ring element
@@ -572,7 +572,6 @@ PGBMain (CGBTriple) := T -> (
     listDiff := toList((new Set from apply(G, i->RFlattoR(i))) - (new Set from apply(Gr, i->KUtoR(i))));
     Gm := MDBasis(listDiff);
     H := unique flatten apply(Gm, g -> listOfFactors(leadCoefficient(sub(g, R))));
-    H = select(H, t -> not isConstant t);
     if length H == 0 then (
         H = {1_KU};
     );
