@@ -1010,7 +1010,15 @@ cokernel (ToricVectorBundleMap) := f ->(
     newMatrices = newData_0;
     newJumps= newData_1;
     toricVectorBundle(X, newMatrices, newJumps)
-    )
+)
+
+ToricVectorBundleMap ++ ToricVectorBundleMap := (tvbmap1,tvbmap2) -> (
+    map(tvbmap1.target ++ tvbmap2.target, tvbmap1.source ++ tvbmap2.source, tvbmap1.map ++ tvbmap2.map)
+)
+
+ToricVectorBundleMap ** ToricVectorBundleMap := (tvbmap1,tvbmap2) -> (
+    map(tvbmap1.target ** tvbmap2.target, tvbmap1.source ** tvbmap2.source, tvbmap1.map ** tvbmap2.map)
+)
 
  ---------------------------------------
 -- WEIL DECORATIONS
@@ -4266,6 +4274,32 @@ assert( filtrationMatrices(CKf)=={matrix(ZZ/101, {{-1, 1, 0}, {-1, 0, 1}, {-1, 0
 -- g is surjective
 CKg = coker g;
 assert(CKg== trivialBundle(X,0) )
+///
+
+
+--Checking direct sum of maps
+TEST ///
+X = toricProjectiveSpace 1
+E0 = lineBundle(X,{0,0})
+E1 = lineBundle(X,{1,0})
+E01 = lineBundle(X,{-1,0})
+f = map(E1,E0,matrix(QQ,{{4}}))
+g = map(E0,E01,matrix(QQ,{{7}}))
+h = f ++ g
+assert(h.map == matrix(QQ,{{4,0},{0,7}}))
+///
+
+--Checking tensor of maps
+TEST ///
+X = toricProjectiveSpace 1
+E0 = lineBundle(X,{0,0})
+E1 = lineBundle(X,{1,0})
+E01 = lineBundle(X,{-1,0})
+E2 = lineBundle(X,{2,0})
+f = map(E1 ++ E0, E0 ++ E01, matrix(QQ,{{4,0},{0,7}}))
+g = map(E2, E0, matrix(QQ,{{3}}))
+h = f ** g
+assert(h.map == matrix(QQ,{{12,0},{0,21}}))
 ///
 
 -- Tests for Weil decorations
