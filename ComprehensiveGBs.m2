@@ -724,7 +724,7 @@ ICheck (List, RingElement) := o -> (E, f) -> (
             s = s + (p*m) % H; --H stores the computed Groebner basis, so it is not computed twice
         );
         *-
-        s := (p^2) % H; -- Looks like this is equivalent to the above, but much faster?
+        s := (p^2) % H; -- This is of course equivalent to the above, but why is it much faster?
         if s == 0 then (
             return true; -- certifies inconsistency
         );
