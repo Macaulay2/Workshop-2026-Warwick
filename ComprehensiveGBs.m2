@@ -583,15 +583,20 @@ PGBMain (CGBTriple) := T -> (
     );
 
     for i in 0..(length(H)-1) do (
+        -- Both CCheck and ICheck require E to be a Groebner basis of <E>!
+        E' := first entries gens gb ideal unique(Gr | {H_i});
+        if length E' == 0 then (
+            E' = {0_KU};
+        );
         if i == 0 then (
             PGB = unique(PGB | PGBMain(CGBFromTriple({
-            unique(Gr | {H_i}), 
+            E',
             N, 
             listDiff}
             )))
         ) else (
         PGB = unique(PGB | PGBMain(CGBFromTriple({
-            unique(Gr | {H_i}), 
+            E',
             unique(totalListProduct(N, {squareFreePart(product(H_{0..(i-1)}))})), 
             listDiff}
         ))));
