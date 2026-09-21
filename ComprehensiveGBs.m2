@@ -27,7 +27,8 @@ export {
     "CGBFromTriple", 
     "PGBMain", 
     "MDBasis",
-    "Depth"
+    "Depth",
+    "CheckAssumption"
     } -- functions, objects to export
 
 protect CGBMainTriples
@@ -199,22 +200,41 @@ CGBMain = method(
         ReduceStrata => false,
         Strategy => "Rabinowitsch",
         Verbose => false,
-        Depth => -1
+        Depth => -1,
+        CheckAssumption => true
         }
     ); -- Initialises CGBMainRec
 
 CGBMain (List) := o -> (F) -> (
   R := ring first F;
   S := first entries eliminateVariables F;
-  CGBMain(F, S, o) | apply(S, s -> ({}, sub(s, R), {1_R}))
+  CGBMain(F, S, o ++ {CheckAssumption => false}) | apply(S, s -> ({}, sub(s, R), {1_R}))
 )
 CGBMain (List, List) := o -> (F, S) -> (
-  cgbData := CGBDataFromRings(ring F_0);
+  R := ring first F;
+  KU := coefficientRing R;
+  S' := apply(S, s -> (
+    s' := sub(s, R);
+    if not liftable(s', KU) then
+      error("S must consist of polynomials in the parameters; found " | toString s);
+    lift(s', KU)
+  ));
+  if o.CheckAssumption then (
+    -- V(S) is contained in V(<F> cap k[U]) <=> (S, <F> cap k[U]) is inconsistent
+    if isConsistentRabinowitsch(S', first entries eliminateVariables F) then
+      error("V(S) is not contained in V(ideal F cap k[U]); pass CheckAssumption => false to skip this check");
+  );
+  cgbData := CGBDataFromRings R;
   RingsandThings := apply({
     "R", "RExt", "RFlat", "RExt'", "KU", "RFlatl", "RtoRExt", "RExttoRFlatl",
     "RExttoRExt'", "RExttoR", "KUtoRFlat", "RFlattoR", "KUtoR", "RtoRFlat"
   }, k -> cgbData#k);
-  CGBMainRec(F, S, {}, RingsandThings, o)
+  CGBMainRec(F, S, {}, RingsandThings,
+    ReduceStrata => o.ReduceStrata,
+    Strategy => o.Strategy,
+    Verbose => o.Verbose,
+    Depth => o.Depth
+  )
 )
 
 CGBMainRec = method(
@@ -353,7 +373,13 @@ CGB=method( Options => {
 CGB(List):= o -> F->(
     s:=first entries eliminateVariables(F);
     result:=s;
-    G:=CGBMain(F,s, ReduceStrata => o.ReduceStrata, Strategy => o.Strategy , Verbose => o.Verbose, Depth => o.Depth);
+    G:=CGBMain(F,s,
+        ReduceStrata => o.ReduceStrata,
+        Strategy => o.Strategy,
+        Verbose => o.Verbose,
+        Depth => o.Depth,
+        CheckAssumption => false
+    );
     for i in G do (
         result=result|(i_2);
         );
@@ -396,7 +422,8 @@ cgbOnGraph(List,ZZ):=(G,d)->(
   S:=QQ[toSequence apply(E, l -> w_l)];
   R:=S[x_(V_0,1)..x_(V_(#V-1),d)];
   F:=for i in E list(sum(1..d,k->(R_(2*i_0+k-3)-R_(2*i_1+k-3))^2)-S_(position(E, j -> j === i)));
-  (F, CGBMain(F, {}))
+  -- FIXME: {} is not in general a valid stratum here!
+  (F, CGBMain(F, {}, CheckAssumption => false))
 )
 
 --Given two lists A and B return the list
@@ -841,6 +868,7 @@ doc ///
     [CGBMain, Verbose]
     [CGBMain, ReduceStrata]
     [CGBMain, Depth]
+    [CGBMain, CheckAssumption]
   Headline
     a method that computes a Comprehensive Groebner System
   Usage
@@ -851,6 +879,7 @@ doc ///
        a list of polynomials in a ring $R = k[U][X]$
     S :List
        a list of polynomials in a ring $RU = k[U]$
+    CheckAssumption=>Boolean
     ReduceStrata=>Boolean
     Strategy=>String
     Verbose=>Boolean
@@ -894,7 +923,8 @@ doc ///
       by computing a basis $\{s_1,\dots,s_r\}$ of the elimination ideal $\langle F\rangle\cap k[U]$, passing that basis as $S$ to CGBMain,
       and appending the extra segments $(\{\}, s_i, \{1\})$ for $i=1,\dots,r$ to the output.
       When $S$ is specified, the function returns a comprehensive Groebner system on $V(S)$, under the assumption that
-      $V(S)\subseteq V(\langle F\rangle\cap k[U])$.
+      $V(S)\subseteq V(\langle F\rangle\cap k[U])$. That assumption is verified before the computation starts, and an error is raised when it fails.
+      If the assumption is known to be true, the option CheckAssumption can be set to false to skip the verification step.
   SeeAlso
     CGB
     ReduceStrata
