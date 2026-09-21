@@ -113,6 +113,8 @@ P3P= {(1 - a)*y^2 - a*x^2 - p*y + a*r*x*y + 1,
 T = CGBFromTriple({{0_U}, {1_U}, P3P})
 L= PGBMain(T)
 
+Remark (Weijia): Using `Loops => 2` (or 3) helps a lot; not sure if ICheck can be improved to avoid this.
+
 # Future and long term TODOs
 
 1. I would like to look into the Bigatti et al. paper: https://link.springer.com/article/10.1007/s00200-025-00684-8 and see if we can implement this algorithm too
