@@ -698,10 +698,13 @@ ICheck (List, RingElement) := o -> (E, f) -> (
     p := f;
     H:= gens gb ideal E;
     for i from 1 to o.Loops do (
+        -*
         s := 0;
         for m in terms p do (
             s = s + (p*m) % H; --H stores the computed Groebner basis, so it is not computed twice
         );
+        *-
+        s := (p^2) % H; -- Looks like this is equivalent to the above, but much faster?
         if s == 0 then (
             return true; -- certifies inconsistency
         );
