@@ -68,13 +68,14 @@ CGBFromTriple = method(); --Constructor for a CGBTriple starting from
                           --polynomial to be studied on it.
 
 CGBFromTriple List := CGBTriple => (L) -> (
-    if(length L == 3 and length L_0 > 0 and length L_2 > 0) then (
-        if any(L_1, n -> zero n) then error("Please remove zeros from N");
-        R := ring L_2_0;
-        return new CGBTriple from {
-            "triple" => L,
-            "cgbData" => CGBDataFromRings(R)};
-        );
+    if length L != 3 then error("expected a triple {E, N, F} of three lists");
+    if length L_0 == 0 then error("E must not be empty; use {0} when no equality constraints are present");
+    if length L_2 == 0 then error("F must not be empty");
+    if any(L_1, n -> zero n) then error("Please remove zeros from N");
+    R := ring L_2_0;
+    return new CGBTriple from {
+        "triple" => L,
+        "cgbData" => CGBDataFromRings(R)};
 );
 
 CGBDataFromRings = method();
