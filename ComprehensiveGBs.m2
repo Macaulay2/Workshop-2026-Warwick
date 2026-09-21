@@ -536,13 +536,10 @@ PGBMain (CGBTriple) := T -> (
     listDiff := select(RFlattoR \ G, g -> not Gr'#?g);
     Gm := MDBasis(listDiff);
     H := unique flatten apply(Gm, g -> listOfFactors(leadCoefficient(sub(g, R))));
-    if length H == 0 then (
-        H = {1_KU};
-    );
-    h := squareFreePart(lcm(H));
+    h := squareFreePart lcm(H | {1_KU});
     productList = unique(apply(totalListProduct(N, {sub(h, KU)}), i -> squareFreePart(i)));
     if consistencyCheckAllTogether(Gr, productList) then (
-        PGB = unique(PGB | {{Gr, productList, Gm}});
+        PGB = unique(PGB | {{Gr, productList, if length Gm == 0 then {0_R} else Gm}});
     );
 
     for i in 0..(length(H)-1) do (
