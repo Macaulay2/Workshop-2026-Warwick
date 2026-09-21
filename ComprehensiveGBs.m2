@@ -415,13 +415,13 @@ eliminateVariables(List):=F->(
 
 cgbOnGraph=method()
 cgbOnGraph(List,ZZ):=(G,d)->(
-  V:=G_0;
+  V:=sort G_0;
   E:=G_1;
   x:=local x;
   w:=local w;
   S:=QQ[toSequence apply(E, l -> w_l)];
   R:=S[x_(V_0,1)..x_(V_(#V-1),d)];
-  F:=for i in E list(sum(1..d,k->(R_(2*i_0+k-3)-R_(2*i_1+k-3))^2)-S_(position(E, j -> j === i)));
+  F:=for i in E list(sum(1..d,k->(R_(d*(i_0-V_0)+k-1)-R_(d*(i_1-V_0)+k-1))^2)-S_(position(E, j -> j === i)));
   (F, CGBMain F)
 )
 
