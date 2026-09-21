@@ -127,6 +127,7 @@ listOfFactors (RingElement) := (h) -> (
 
 squareFreePart = method() -- returns the square free part of a ring element
 squareFreePart (RingElement) := (h) -> (
+  if zero h then return h;
   R := ring h;
   f := product listOfFactors h;
   return f_R
