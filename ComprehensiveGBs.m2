@@ -580,7 +580,8 @@ PGBMain (CGBTriple) := T -> (
         return PGB
     );
     --Elements of GB that do not only contain parameters
-    listDiff := toList((new Set from apply(G, i->RFlattoR(i))) - (new Set from apply(Gr, i->KUtoR(i))));
+    Gr' := new Set from (KUtoR \ Gr);
+    listDiff := select(RFlattoR \ G, g -> not Gr'#?g);
     Gm := MDBasis(listDiff);
     H := unique flatten apply(Gm, g -> listOfFactors(leadCoefficient(sub(g, R))));
     if length H == 0 then (
