@@ -105,6 +105,8 @@ should give the desired result, comparable to the output of `PGBMain(T)`.
 10. [DONE] Add other ways to call PGBMain (like CGBMain) where the user supplied just the list of polynomials etc.
 
 11. [Angie] This example does not work, understand why
+
+```macaulay2
 U = QQ[p, q, r, a, b, MonomialOrder => Lex]
 R = U[x,y, MonomialOrder => GRevLex]
 
@@ -113,6 +115,7 @@ P3P= {(1 - a)*y^2 - a*x^2 - p*y + a*r*x*y + 1,
 
 T = CGBFromTriple({{0_U}, {1_U}, P3P})
 L= PGBMain(T)
+```
 
 Remark (Weijia): Using `Loops => infinity` (which falls back to `isConsistentRabinowitsch`) or `Loops => 4` instead of `Loops => 5` helps a lot; not sure if ICheck can be improved to avoid this. Here is a reproducer:
 
