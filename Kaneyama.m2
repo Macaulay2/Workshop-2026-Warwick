@@ -304,25 +304,56 @@ dual ToricVectorBundleKaneyama := {} >> opts -> tvb -> (
             E.cache.cocycle = true);
         E)
 
+--brought this back from original ToricVectorBundles package
+exteriorPower (ZZ,ToricVectorBundleKaneyama) := ToricVectorBundleKaneyama => opts -> (l,tvb) -> (
+     k := tvb#"rank of the vector bundle";
+     -- Checking for input errors
+     if l < 0 then error("The power has to be positive.");
+     -- Generating the list of 'l'-tuples of 0..k-1 and the corresponding index table
+     ind := subsets(k,l);
+     indtable := hashTable apply(#ind, i -> ind#i => i);
+     if l == 0 then toricVectorBundleKaneyama(1,tvb#"ToricVariety")
+     else if l > k then toricVectorBundleKaneyama(0,tvb#"ToricVariety")
+     else (
+         -- Computing the 'l'-th exterior powers of the transition matrices
+         baseChangeTable := hashTable apply(pairs tvb#"baseChangeTable", p -> p#0 =>  matrix apply(ind, j -> apply(ind, k -> det (p#1)^j_k)));
+         -- Computing the 'l'-th exterior power of the degrees
+         degreeTable := hashTable apply(pairs tvb#"degreeTable", p -> p#0 => matrix {apply(ind, j -> (p#1)_j * matrix toList(l:{1}))});
+         E := new ToricVectorBundleKaneyama from {
+             "degreeTable" => degreeTable,
+             "baseChangeTable" => baseChangeTable,
+             "ToricVariety" => tvb#"ToricVariety",
+             "number of affine charts" => tvb#"number of affine charts",
+             "dimension of the variety" => tvb#"dimension of the variety",
+             "rank of the vector bundle" => #ind,
+             "codim1Table" => tvb#"codim1Table",
+             "topConeTable" => tvb#"topConeTable",
+             symbol cache => new CacheTable};
+         if tvb.cache.?regCheck and tvb.cache.regCheck and tvb.cache.?cocycle and tvb.cache.cocycle then (
+             E.cache.regCheck = true;
+             E.cache.cocycle = true);
+         E))
+
 -- PURPOSE : Compute the Euler characteristic
 eulerChiKaneyama = method();
 --   INPUT : '(u,T)',  where 'T' is a ToricVectorBundleKaneyama and 'u' is a one column matrix over ZZ giving a degree vector
 --  OUTPUT : The Euler characteristic of the Cech complex at degree 'u'
 eulerChiKaneyama (Matrix,ToricVectorBundleKaneyama) := (u,T) -> (
-    if not T.cache.?eulerChi then T.cache.eulerChi = new MutableHashTable;
-    if not T.cache.eulerChi#?u then (
+    if not T.cache.?eulerChiKaneyama then T.cache.eulerChiKaneyama = new MutableHashTable;
+    if not T.cache.eulerChiKaneyama#?u then (
 	  n := T#"dimension of the variety";
 	  -- Compute the Cech complex and compute the alternating sum of the dimensions
-	  T.cache.eulerChi#u = sum apply(n+2, i -> (-1)^i * numColumns (cechComplexKaneyama(i,T,u))#1));
-     T.cache.eulerChi#u)
+	  T.cache.eulerChiKaneyama#u = sum apply(n+2, i -> (-1)^i * numColumns (cechComplexKaneyama(i,T,u))#1));
+     T.cache.eulerChiKaneyama#u)
+
 
 --   INPUT : 'T',  a ToricVectorBundleKaneyama
 --  OUTPUT : The Euler characteristic of the bundle
 eulerChiKaneyama ToricVectorBundleKaneyama := T -> (
      -- Compute the set of degrees with possible cohomology
-     L := latticePoints deltaE T;
+     L := latticePoints deltaEKaneyama T;
      -- Sum up their characteristics
-     sum apply(L, l -> eulerChi(l,T)))
+     sum apply(L, l -> eulerChiKaneyama(l,T)))
 
 -- PURPOSE : Returning the table of codimension 1 cones of the underlying fan
 --   INPUT : 'T',  a ToricVectorBundleKaneyama
@@ -408,6 +439,46 @@ deltaEKaneyama ToricVectorBundleKaneyama := (cacheValue symbol deltaE)( tvb -> (
      	       M = matrix {L};
      	       convexHull M))
 
+symmetricPower(ZZ,ToricVectorBundleKaneyama) := (l,tvb) -> (
+     -- Checking for input errors
+     if l < 0 then error("The power has to be strictly positive.");
+     -- Extracting data
+     k := tvb#"rank of the vector bundle";
+     -- Generating the list of 'l'-tuples of 0..k-1 with duplicates and the corresponding index table
+     ind := sort apply(subsets(k+l-1,l),s -> apply(#s, i -> s#i-i));
+     allind := sort unique flatten apply(ind, permutations);
+     indtable := hashTable apply(#ind, i -> ind#i => i);
+     if l == 0 then toricVectorBundleKaneyama(1,tvb#"ToricVariety")
+     else (
+         -- Computing the 'l'-th symmetric powers of the transition matrices
+         baseChangeTable := hashTable apply(pairs tvb#"baseChangeTable", p -> (
+                 B := p#1;
+                 M := mutableMatrix(QQ,#ind,#ind);
+                 for i1 in ind do (
+                     Bi := B_(i1);
+                     for j in allind do M_(indtable#(sort j),indtable#i1) = M_(indtable#(sort j),indtable#i1) + product apply(#j, j1 -> Bi_(j#j1,j1)));
+                 M = matrix M;
+                 p#0 => M));
+         -- Computing the 'l'-th symmetric powers of the degrees
+         degreeTable := hashTable apply(pairs tvb#"degreeTable", p -> (
+                 dM := p#1;
+                 dM = transpose matrix apply(ind, j -> flatten entries(dM_j * matrix toList((#j):{1})));
+                 p#0 => dM));
+         E := new ToricVectorBundleKaneyama from {
+             "degreeTable" => degreeTable,
+             "baseChangeTable" => baseChangeTable,
+             "ToricVariety" => tvb#"ToricVariety",
+             "number of affine charts" => tvb#"number of affine charts",
+             "dimension of the variety" => tvb#"dimension of the variety",
+             "rank of the vector bundle" => #ind,
+             "codim1Table" => tvb#"codim1Table",
+             "topConeTable" => tvb#"topConeTable",
+             symbol cache => new CacheTable};
+         if tvb.cache.?regCheck and tvb.cache.regCheck and tvb.cache.?cocycle and tvb.cache.cocycle then (
+             E.cache.regCheck = true;
+             E.cache.cocycle = true);
+         E))
+
 -- PURPOSE : Returning the underlying fan of a toric vector bundle
 --   INPUT : 'T',  a ToricVectorBundleKaneyama
 --  OUTPUT : a Fan
@@ -458,7 +529,7 @@ weilToCartierKaneyama = method();
 
 --   INPUT : '(L,F)',  a list 'L' of weight vectors, one for each ray of the Fan 'F'
 --  OUTPUT : 'tvb',  a ToricVectorBundleKaneyama
-weilToCartierKaneyama (List,Fan) := opts -> (L,F) -> (
+weilToCartierKaneyama (List,Fan) := (L,F) -> (
     rl := raySortOfFan F;
     -- Checking for input errors
     if #L != #rl then error("The number of weights has to equal the number of rays.");
@@ -495,7 +566,8 @@ weilToCartierKaneyama (List,Fan) := opts -> (L,F) -> (
     if denom != 1 then error("The divisor is only QQ-Cartier, but "|toString(denom)|" times the divisor is Cartier.");
     gC = apply(gC, e -> substitute(denom*e,ZZ));
     -- Construct the actual line bundle
-    addDegrees(tvb,gC))
+    addDegrees(tvb,gC)
+    )
 
 -- PURPOSE : Computing the cotangent bundle on a smooth, pure, and full dimensional Toric Variety 
 --   INPUT : 'F',  a smooth, pure, and full dimensional Fan
