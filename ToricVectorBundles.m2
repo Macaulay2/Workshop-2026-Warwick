@@ -4439,29 +4439,30 @@ assert(T#"dimension of the variety" == 3)
 -- Test 9
 -- Checking deltaE for Kaneyama
 TEST ///
-T = toricVectorBundle(3,projectiveSpaceFan 2,"Type" => "Kaneyama")
-assert(deltaE T == convexHull matrix{{0},{0}})
-T = tangentBundle(projectiveSpaceFan 2,"Type" => "Kaneyama")
-assert(deltaE T == convexHull matrix {{-1,2,-1},{-1,-1,2}})
-T = cotangentBundle(pp1ProductFan 3,"Type" => "Kaneyama")
-assert(deltaE T == convexHull matrix {{-1,1,-1,1,-1,1,-1,1},{-1,-1,1,1,-1,-1,1,1},{-1,-1,-1,-1,1,1,1,1}})
+T = toricVectorBundleKaneyama(3,projectiveSpaceFan 2)
+
+assert(deltaEKaneyama T == convexHull matrix{{0},{0}})
+T = tangentBundleKaneyama(projectiveSpaceFan 2)
+assert(deltaEKaneyama T == convexHull matrix {{-1,2,-1},{-1,-1,2}})
+T = cotangentBundleKaneyama(pp1ProductFan 3)
+assert(deltaEKaneyama T == convexHull matrix {{-1,1,-1,1,-1,1,-1,1},{-1,-1,1,1,-1,-1,1,1},{-1,-1,-1,-1,1,1,1,1}})
 ///
 
 -- Test 11
 -- Checking cohomology for Kaneyama
 TEST ///
-T = toricVectorBundle(2,pp1ProductFan 2,"Type" => "Kaneyama")
+T = toricVectorBundleKaneyama(2,pp1ProductFan 2)
 assert(sort degrees cohomology(0,T,matrix{{0},{0}}) == sort degrees (ring T)^{{0,0},{0,0}})
 assert(sort degrees cohomology(0,T) == sort degrees (ring T)^{{0,0},{0,0}})
 assert(sort degrees cohomology(1,T) == sort degrees (ring T)^0)
 assert(sort degrees cohomology(2,T) == sort degrees (ring T)^0)
-T1 = tangentBundle(pp1ProductFan 2,"Type" => "Kaneyama")
+T1 = tangentBundleKaneyama(pp1ProductFan 2)
 assert(sort degrees cohomology(0,T1,matrix{{0},{0}}) == sort degrees (ring T1)^{{0,0},{0,0}})
 assert(sort degrees cohomology(0,T1,matrix{{1},{1}}) == sort degrees (ring T1)^0)
 assert(sort degrees cohomology(0,T1) == sort degrees (ring T1)^{{1,0},{0,1},{0,0},{0,0},{0,-1},{-1,0}})
 assert(sort degrees cohomology(1,T1) == sort degrees (ring T1)^0)
 assert(sort degrees cohomology(2,T1) == sort degrees (ring T1)^0)
-T = tangentBundle(hirzebruchFan 3 * projectiveSpaceFan 1,"Type" => "Kaneyama")
+T = tangentBundleKaneyama(hirzebruchFan 3 * projectiveSpaceFan 1)
 assert(cohomology(0,T,{matrix {{2},{1},{0}}, matrix{{3},{1},{0}}}) == {(ring T)^{{-2,-1,0}},(ring T)^{{-3,-1,0}}})
 assert(cohomology(1,T,{matrix {{-2},{-1},{0}}, matrix{{-1},{-1},{0}}}) == {(ring T)^{{2, 1, 0}},(ring T)^{{1, 1, 0}}})
 assert(cohomology(2,T,matrix{{0},{0},{0}}) == (ring T)^0)
@@ -4471,7 +4472,7 @@ assert(cohomology(3,T,matrix{{0},{0},{0}}) == (ring T)^0)
 
 -- Checking weilToCartier
 TEST ///
-T = weilToCartier({1,4,3,2},projectiveSpaceFan 3,"Type" => "Kaneyama")
+T = weilToCartierKaneyama({1,4,3,2},projectiveSpaceFan 3)
 assert(T#"baseChangeTable" === hashTable {(0,1) => map(QQ^1,QQ^1,1),(0,2) => map(QQ^1,QQ^1,1),(0,3) => map(QQ^1,QQ^1,1),(1,2) => map(QQ^1,QQ^1,1),(1,3) => map(QQ^1,QQ^1,1),(2,3) => map(QQ^1,QQ^1,1)})
 assert(T#"degreeTable" === hashTable {(matrix {{1,0,-1},{0,1,-1},{0,0,-1}}, map(ZZ^3,0,0)) => matrix{{-2},{-3},{6}},(matrix {{0,-1,0},{1,-1,0},{0,-1,1}}, map(ZZ^3,0,0)) => matrix{{8},{-3},{-4}},(matrix {{1,-1,0},{0,-1,0},{0,-1,1}}, map(ZZ^3,0,0)) => matrix{{-2},{7},{-4}}, (map(ZZ^3,ZZ^3,1), map(ZZ^3,0,0)) => matrix{{-2},{-3},{-4}}})
 assert(rank T == 1)
@@ -4587,7 +4588,7 @@ assert(cartierIndex({1,1,1},F) == 3)
 assert(cartierIndex({3,3,3},F) == 1)
 ///
 
-*-
+
 -- ADDING NEW TESTS JUNE/JULY 2026
 -- Test 31
 -- Checking isWellDefined (Kaneyama) (combining the tests for cocycleCheck and regCheck)--TODO: FIX THIS

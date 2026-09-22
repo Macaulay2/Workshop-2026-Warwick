@@ -81,8 +81,12 @@ net ToricVectorBundleKaneyama := tvb -> ( horizontalJoin flatten (
 rank ToricVectorBundleKaneyama := T -> T#"rank of the vector bundle"
 
 rays ToricVectorBundleKaneyama := {} >> o -> tvb -> raySortOfFan tvb#"ToricVariety"
-
+protect gradedRing
  --there was no getter for the ring, could add?
+ring ToricVectorBundleKaneyama := (cacheValue symbol gradedRing)( T -> (
+    QQ[DegreeRank => T#"dimension of the variety"])
+)
+
 detailsKaneyama = method();
 detailsKaneyama ToricVectorBundleKaneyama := tvb -> (
      hashTable apply(pairs(tvb#"topConeTable"), p -> ( p#1 => (rays posHull p#0,tvb#"degreeTable"#(p#0)))),tvb#"baseChangeTable")
@@ -309,7 +313,7 @@ eulerChiKaneyama (Matrix,ToricVectorBundleKaneyama) := (u,T) -> (
     if not T.cache.eulerChi#?u then (
 	  n := T#"dimension of the variety";
 	  -- Compute the Cech complex and compute the alternating sum of the dimensions
-	  T.cache.eulerChi#u = sum apply(n+2, i -> (-1)^i * numColumns (cechComplex(i,T,u))#1));
+	  T.cache.eulerChi#u = sum apply(n+2, i -> (-1)^i * numColumns (cechComplexKaneyama(i,T,u))#1));
      T.cache.eulerChi#u)
 
 --   INPUT : 'T',  a ToricVectorBundleKaneyama
@@ -336,10 +340,10 @@ cohomology (ZZ,ToricVectorBundleKaneyama,Matrix) := opts -> (k,T,u) -> (
      if not T.cache.?HH then T.cache.HH = new MutableHashTable;
      if not T.cache.HH#?(k,u) then (
 	  -- Get the k-1 th and k th differential
-	  d := if k == 0 then rank ker (cechComplex(k,T,u))#1 else (
+	  d := if k == 0 then rank ker (cechComplexKaneyama(k,T,u))#1 else (
 	       -- Generate the two boundary operators
-	       d1 := (cechComplex(k-1,T,u))#1;
-	       d2 := (cechComplex(k,T,u))#1;
+	       d1 := (cechComplexKaneyama(k-1,T,u))#1;
+	       d2 := (cechComplexKaneyama(k,T,u))#1;
 	       (rank ker d2) - (rank image d1));
 	  T.cache.HH#(k,u) = (ring T)^(toList(d:flatten entries(-u))));
      T.cache.HH#(k,u))
@@ -357,7 +361,7 @@ cohomology(ZZ,ToricVectorBundleKaneyama,List) := opts -> (i,T,P)-> (
 --  OUTPUT : the group as a graded module where the generators have the corresponding degree of the weight vector
 -- COMMENT : if the option "Degree" => 1 is given then it displays the number of degrees to calculate
 cohomology(ZZ,ToricVectorBundleKaneyama) := opts -> (i,T)-> (
-     L := cohomology(i,T,latticePoints deltaE T,Degree => opts.Degree);
+     L := cohomology(i,T,latticePoints deltaEKaneyama T,Degree => opts.Degree);
      if L == {} then (ring T)^0 else directSum L)
 
 -- PURPOSE : Computing the rank of the cohomology group of a given ToricVectorBundleKaneyama
