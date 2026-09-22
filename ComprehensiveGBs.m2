@@ -208,7 +208,7 @@ CGBMain = method(
 CGBMain (List) := o -> (F) -> (
   R := ring first F;
   S := first entries eliminateVariables F;
-  CGBMain(F, S, o ++ {CheckAssumption => false}) | apply(S, s -> ({}, sub(s, R), {1_R}))
+  apply(S, s -> ({}, sub(s, R), {1_R})) | CGBMain(F, S, o ++ {CheckAssumption => false})
 )
 CGBMain (List, List) := o -> (F, S) -> (
   R := ring first F;
@@ -920,7 +920,7 @@ doc ///
       CGBMain can take in one or two lists as inputs.
       When $S$ is not specified, the function returns a comprehensive Gröbner system on the whole parameter space,
       by computing a basis $\{s_1,\dots,s_r\}$ of the elimination ideal $\langle F\rangle\cap k[U]$, passing that basis as $S$ to CGBMain,
-      and appending the extra segments $(\{\}, s_i, \{1\})$ for $i=1,\dots,r$ to the output.
+      and prepending the extra segments $(\{\}, s_i, \{1\})$ for $i=1,\dots,r$ to the output.
       When $S$ is specified, the function returns a comprehensive Groebner system on $V(S)$, under the assumption that
       $V(S)\subseteq V(\langle F\rangle\cap k[U])$. That assumption is verified before the computation starts, and an error is raised when it fails.
       If the assumption is known to be true, the option CheckAssumption can be set to false to skip the verification step.
