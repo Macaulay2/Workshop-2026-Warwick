@@ -114,7 +114,26 @@ P3P= {(1 - a)*y^2 - a*x^2 - p*y + a*r*x*y + 1,
 T = CGBFromTriple({{0_U}, {1_U}, P3P})
 L= PGBMain(T)
 
-Remark (Weijia): Using `Loops => 4` instead of `Loops => 5` helps a lot; not sure if ICheck can be improved to avoid this.
+Remark (Weijia): Using `Loops => infinity` (which falls back to `isConsistentRabinowitsch`) or `Loops => 4` instead of `Loops => 5` helps a lot; not sure if ICheck can be improved to avoid this. Here is a reproducer:
+
+```macaulay2
+loadPackage "ComprehensiveGBs"
+debug ComprehensiveGBs
+U = QQ[p, q, r, a, b, MonomialOrder => Lex]
+E = {
+  r^2*a*b-a^2-2*a*b+2*a-b^2+2*b-1,
+  q^2*a^3-q^2*a^2*b-2*q^2*a^2-q^2*a*b^2+q^2*a+q^2*b^3-2*q^2*b^2+q^2*b-r^2*b^4+2*r^2*b^3-r^2*b^2-a^4+3*a^3*b-2*a^2*b^2+2*a^2-a*b^3+2*a*b^2-a*b+5*b^4-14*b^3+12*b^2-2*b-1,
+  q^2*r*a^2-2*q^2*r*a*b-q^2*r*a+q^2*r*b^2-q^2*r*b-r^3*b^3+r^3*b^2-r*a^3+4*r*a^2*b-r*a^2-5*r*a*b^2+4*r*a*b+r*a+6*r*b^3-11*r*b^2+4*r*b+r,
+  q^2*r^2*b^2+q^2*a^2-2*q^2*a*b-2*q^2*a-3*q^2*b^2+2*q^2*b+q^2-r^4*b^3+7*r^2*b^3-6*r^2*b^2-r^2*b-a^3+4*a^2*b-5*a*b^2+2*a*b+3*a-10*b^3+18*b^2-6*b-2,
+  p*a^2-p*b^2+2*p*b-p-q*r*a^2+q*r*a*b+q*r*a,
+  p*r*a*b-p*r*b^2+p*r*b-q*a^2+2*q*a+q*b^2-q,
+  p*r^2*b-2*p*a-2*p*b+2*p+q*r*a-q*r*b-q*r,
+  p*q*a+p*q*b-p*q-q^2*r*b+r^3*b^2-r*a^2+2*r*a*b-5*r*b^2+4*r*b+r,
+  p*q*r*b^2-p*q*r*b+q^2*a^2-q^2*a*b-2*q^2*a-2*q^2*b^2+q^2*b+q^2+r^2*b^3-r^2*b^2-a^3+2*a^2*b+a^2-a*b^2+a-4*b^3+7*b^2-2*b-1
+}
+f = q^3*r*a*b-q*r^3*a*b^2+4*q*r*a*b^2-4*q*r*a*b
+assert(not ICheck(E, f, Loops => infinity)) -- Loops => 5 is very slow!!!
+```
 
 # Future and long term TODOs
 
