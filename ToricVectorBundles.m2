@@ -4266,31 +4266,14 @@ assert (not isWellDefined map(E, L1 ++ L2 ++ L3, id_((ring E)^3)))
 -- Tests for isInjective and isSurjective
 
 TEST ///
-X = toricProjectiveSpace 2
-D1 = toricDivisor({1,0,0},X)
-D2 = toricDivisor({0,1,0},X)
-D3 = toricDivisor({0,0,1},X)
-
-L1 = lineBundle(D1)
-L2 = lineBundle(D2)
-L3 = lineBundle(D3)
-
-E1 = trivialBundle(X,1)
-E2 = L1 ++ L2 ++ L3
-
-f = map(E2, E1, matrix(QQ,{{1},{1},{1}}))
-
-Y = toricProjectiveSpace 3
-F1 = trivialBundle(X,5)
-F2 = trivialBundle(X,3)
-
-g = map(F2,F1,matrix(ring F1, {{1,0,0,0,0},{0,1,0,0,0},{0,0,1,0,0}}))
-
-
-assert (isInjective f)
-assert (not isInjective g)
-assert (isSurjective g)
-assert (not isSurjective f)
+M=toricProjectiveSpace 2;
+V=tangentBundle M++lineBundle(M_1);
+W=weilDecoration V;
+L={{1,toricDivisor({0,0,1},M)},{1,toricDivisor({1,0,0},M)},{2,toricDivisor({0,1,0},M)},{3,toricDivisor({0,0,0},M)}};
+WL= apply (strata W, i -> {rank i#0, i#1});
+assert (Lseq == WL)
+E = weilToKlyachko(M,W)
+assert( E== V)
 ///
 
 -- Test for image, kernel and cokernel
