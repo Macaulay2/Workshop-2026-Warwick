@@ -207,10 +207,11 @@ CGBMain = method(
 
 CGBMain (List) := o -> (F) -> (
   R := ring first F;
+  KU := coefficientRing R;
   S := first entries eliminateVariables F;
   cgs := CGBMain(F, S, o ++ {CheckAssumption => false});
   if #S == 0 then return cgs;
-  {({}, S, {1_R})} | cgs
+  {({0_KU}, S, {1_R})} | cgs
 )
 CGBMain (List, List) := o -> (F, S) -> (
   R := ring first F;
@@ -231,12 +232,13 @@ CGBMain (List, List) := o -> (F, S) -> (
     "R", "RExt", "RFlat", "RExt'", "KU", "RFlatl", "RtoRExt", "RExttoRFlatl",
     "RExttoRExt'", "RExttoR", "KUtoRFlat", "RFlattoR", "KUtoR", "RtoRFlat"
   }, k -> cgbData#k);
-  CGBMainRec(F, S', {}, RingsandThings,
+  cgs := CGBMainRec(F, S', {}, RingsandThings,
     ReduceStrata => o.ReduceStrata,
     Strategy => o.Strategy,
     Verbose => o.Verbose,
     Depth => o.Depth
-  )
+  );
+  apply(cgs, t -> (if #(t#0) == 0 then {0_KU} else t#0, t#1, t#2))
 )
 
 CGBMainRec = method(
@@ -922,7 +924,7 @@ doc ///
       CGBMain can take in one or two lists as inputs.
       When $S$ is not specified, the function returns a comprehensive Gröbner system on the whole parameter space,
       by computing a basis $\{s_1,\dots,s_r\}$ of the elimination ideal $\langle F\rangle\cap k[U]$, passing that basis as $S$ to CGBMain,
-      and prepending the extra segment $(\{\}, \{s_1,\dots,s_r\}, \{1\})$ to the output.
+      and prepending the extra segment $(\{0\}, \{s_1,\dots,s_r\}, \{1\})$ to the output.
       When $S$ is specified, the function returns a comprehensive Groebner system on $V(S)$, under the assumption that
       $V(S)\subseteq V(\langle F\rangle\cap k[U])$. That assumption is verified before the computation starts, and an error is raised when it fails.
       If the assumption is known to be true, the option CheckAssumption can be set to false to skip the verification step.
@@ -1177,7 +1179,7 @@ yR = variables#1;
 
 resultTest = CGBMain({aR*xR + bR*yR}, {});
 
-expected1 = ({}, {aP}, {aR*xR + bR*yR});
+expected1 = ({0_Ptest}, {aP}, {aR*xR + bR*yR});
 expected2 = ({aP}, {bP}, {aR^2*xR + aR*bR*yR, aR*xR + bR*yR});
 expected3 = ({aP, bP}, {1_Ptest}, {aR*xR + bR*yR});
 
@@ -1233,7 +1235,7 @@ w12 = promote(Stest_0,Rtest);
 
 expectedF = {x11^2 - 2*x11*x21 + x21^2 + x12^2 - 2*x12*x22 + x22^2 - w12 };
 expectedGG = {
-    ({}, {1_Stest}, expectedF)
+    ({0_Stest}, {1_Stest}, expectedF)
 };
 
 assert(F == expectedF);
@@ -1262,7 +1264,7 @@ yR = variables#1;
 
 resultTest = CGBMain({aR*xR + bR*yR}, {}, Verbose => true);
 
-expected1 = ({}, {aP}, {aR*xR + bR*yR});
+expected1 = ({0_Ptest}, {aP}, {aR*xR + bR*yR});
 expected2 = ({aP}, {bP}, {aR^2*xR + aR*bR*yR, aR*xR + bR*yR});
 expected3 = ({aP, bP}, {1_Ptest}, {aR*xR + bR*yR});
 
@@ -1335,7 +1337,7 @@ yR = variables#1;
 
 resultTest = CGBMain({aR*xR + bR*yR}, {}, Strategy => "radical");
 
-expected1 = ({}, {aP}, {aR*xR + bR*yR});
+expected1 = ({0_Ptest}, {aP}, {aR*xR + bR*yR});
 expected2 = ({aP}, {bP}, {aR^2*xR + aR*bR*yR, aR*xR + bR*yR});
 expected3 = ({aP, bP}, {1_Ptest}, {aR*xR + bR*yR});
 
@@ -1368,7 +1370,7 @@ yR = variables#1;
 
 resultTest = CGBMain({aR*xR + bR*yR}, {},  ReduceStrata => true);
 
-expected1 = ({}, {aP}, {aR*xR + bR*yR});
+expected1 = ({0_Ptest}, {aP}, {aR*xR + bR*yR});
 expected2 = ({aP}, {bP}, {aR^2*xR + aR*bR*yR, aR*xR + bR*yR});
 expected3 = ({aP, bP}, {1_Ptest}, {aR*xR + bR*yR});
 
