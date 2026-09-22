@@ -265,6 +265,7 @@ CGBMainRec (List, List, List, List) := o -> (F, S, memo, RingsandThings) -> (
   KUtoR := RingsandThings_12;
   RtoRFlat := RingsandThings_13;
 
+  S = first entries gens gb ideal S;
   if o.Verbose then (
       print("Computing CGB for F = " | toString F | " and S = " | toString S);
       );
@@ -1181,7 +1182,7 @@ resultTest = CGBMain({aR*xR + bR*yR}, {});
 
 expected1 = ({0_Ptest}, {aP}, {aR*xR + bR*yR});
 expected2 = ({aP}, {bP}, {aR^2*xR + aR*bR*yR, aR*xR + bR*yR});
-expected3 = ({aP, bP}, {1_Ptest}, {aR*xR + bR*yR});
+expected3 = ({bP, aP}, {1_Ptest}, {aR*xR + bR*yR});
 
 assert(#resultTest == 3);
 
@@ -1266,7 +1267,7 @@ resultTest = CGBMain({aR*xR + bR*yR}, {}, Verbose => true);
 
 expected1 = ({0_Ptest}, {aP}, {aR*xR + bR*yR});
 expected2 = ({aP}, {bP}, {aR^2*xR + aR*bR*yR, aR*xR + bR*yR});
-expected3 = ({aP, bP}, {1_Ptest}, {aR*xR + bR*yR});
+expected3 = ({bP, aP}, {1_Ptest}, {aR*xR + bR*yR});
 
 assert(#resultTest == 3);
 
@@ -1339,7 +1340,7 @@ resultTest = CGBMain({aR*xR + bR*yR}, {}, Strategy => "radical");
 
 expected1 = ({0_Ptest}, {aP}, {aR*xR + bR*yR});
 expected2 = ({aP}, {bP}, {aR^2*xR + aR*bR*yR, aR*xR + bR*yR});
-expected3 = ({aP, bP}, {1_Ptest}, {aR*xR + bR*yR});
+expected3 = ({bP, aP}, {1_Ptest}, {aR*xR + bR*yR});
 
 assert(#resultTest == 3);
 
@@ -1372,7 +1373,7 @@ resultTest = CGBMain({aR*xR + bR*yR}, {},  ReduceStrata => true);
 
 expected1 = ({0_Ptest}, {aP}, {aR*xR + bR*yR});
 expected2 = ({aP}, {bP}, {aR^2*xR + aR*bR*yR, aR*xR + bR*yR});
-expected3 = ({aP, bP}, {1_Ptest}, {aR*xR + bR*yR});
+expected3 = ({bP, aP}, {1_Ptest}, {aR*xR + bR*yR});
 
 assert(#resultTest == 3);
 
