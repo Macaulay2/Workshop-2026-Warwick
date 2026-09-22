@@ -208,7 +208,9 @@ CGBMain = method(
 CGBMain (List) := o -> (F) -> (
   R := ring first F;
   S := first entries eliminateVariables F;
-  apply(S, s -> ({}, sub(s, R), {1_R})) | CGBMain(F, S, o ++ {CheckAssumption => false})
+  cgs := CGBMain(F, S, o ++ {CheckAssumption => false});
+  if #S == 0 then return cgs;
+  {({}, S, {1_R})} | cgs
 )
 CGBMain (List, List) := o -> (F, S) -> (
   R := ring first F;
@@ -229,7 +231,7 @@ CGBMain (List, List) := o -> (F, S) -> (
     "R", "RExt", "RFlat", "RExt'", "KU", "RFlatl", "RtoRExt", "RExttoRFlatl",
     "RExttoRExt'", "RExttoR", "KUtoRFlat", "RFlattoR", "KUtoR", "RtoRFlat"
   }, k -> cgbData#k);
-  CGBMainRec(F, S, {}, RingsandThings,
+  CGBMainRec(F, S', {}, RingsandThings,
     ReduceStrata => o.ReduceStrata,
     Strategy => o.Strategy,
     Verbose => o.Verbose,
@@ -277,7 +279,7 @@ CGBMainRec (List, List, List, List) := o -> (F, S, memo, RingsandThings) -> (
           (first first exponents(leadMonomial sub(g,RExt))) > 0) and
       any(exponents(sub(leadCoefficient RExttoRFlatl(g),RFlat)), i -> any(i_(toList(0..(n-1))), i -> i > 0)));
   pruneG = apply(pruneG, g -> leadCoefficient RExttoRExt'(g));
-  h := lcm pruneG;
+  h := lcm(pruneG | {1_KU});
   for i in 0..(#(factor h)-1) do (
     if isConstant (factor h)#i#0 then(
          h = h//(factor h)#i#0;
@@ -286,7 +288,7 @@ CGBMainRec (List, List, List, List) := o -> (F, S, memo, RingsandThings) -> (
 
   if o.ReduceStrata then (
       memo = memo | {
-          (S, sub(h, R),
+          (S, {h},
               for g in G list (
                   g' := RExttoR(g);
                   if zero g' then continue;
@@ -300,7 +302,7 @@ CGBMainRec (List, List, List, List) := o -> (F, S, memo, RingsandThings) -> (
       return memo
     ) else (
       return {
-          (S, sub(h, R),
+          (S, {h},
               for g in G list (
                   g' := RExttoR(g);
                   if zero g' then continue;
@@ -322,9 +324,9 @@ CGBMainRec (List, List, List, List) := o -> (F, S, memo, RingsandThings) -> (
   if o.ReduceStrata then (
       diffset := {};
       for hi in H do (
-          diffset = {({sub(hi, KU)}, 1_(KU))};
+          diffset = {({hi}, 1_(KU))};
           for t in memo do (
-              diffset = diffConstructibleByLC(diffset, (apply(t#0, p -> sub(p, KU)), sub(t#1, KU)), Strategy => o.Strategy);
+              diffset = diffConstructibleByLC(diffset, (t#0, first t#1), Strategy => o.Strategy);
               if isEmpty diffset then (
                   break
                   );
@@ -333,19 +335,19 @@ CGBMainRec (List, List, List, List) := o -> (F, S, memo, RingsandThings) -> (
               continue;
               );
           if o.Depth != 0 then (
-              memo = CGBMainRec(F, append(S, sub(hi, R)), memo, RingsandThings, o ++ {Depth => o.Depth -1});
+              memo = CGBMainRec(F, append(S, hi), memo, RingsandThings, o ++ {Depth => o.Depth -1});
               )
           );
       return memo
       ) else (
       return {
-          (S, sub(h, R),
+          (S, {h},
               for g in G list (
                   g' := RExttoR(g);
                   if zero g' then continue;
                   g')
               )
-          } | if o.Depth == 0 then {} else flatten apply(H, hi -> CGBMainRec(F, append(S, sub(hi, R)), memo, RingsandThings, o ++ {Depth => o.Depth -1}))
+          } | if o.Depth == 0 then {} else flatten apply(H, hi -> CGBMainRec(F, append(S, hi), memo, RingsandThings, o ++ {Depth => o.Depth -1}))
       );
   );
 
@@ -920,7 +922,7 @@ doc ///
       CGBMain can take in one or two lists as inputs.
       When $S$ is not specified, the function returns a comprehensive Gröbner system on the whole parameter space,
       by computing a basis $\{s_1,\dots,s_r\}$ of the elimination ideal $\langle F\rangle\cap k[U]$, passing that basis as $S$ to CGBMain,
-      and prepending the extra segments $(\{\}, s_i, \{1\})$ for $i=1,\dots,r$ to the output.
+      and prepending the extra segment $(\{\}, \{s_1,\dots,s_r\}, \{1\})$ to the output.
       When $S$ is specified, the function returns a comprehensive Groebner system on $V(S)$, under the assumption that
       $V(S)\subseteq V(\langle F\rangle\cap k[U])$. That assumption is verified before the computation starts, and an error is raised when it fails.
       If the assumption is known to be true, the option CheckAssumption can be set to false to skip the verification step.
@@ -1163,8 +1165,11 @@ Rtest = Ptest[x,y, MonomialOrder => Lex];
 params = gens Ptest;
 variables = gens Rtest
 
-aR = promote (params#0 , Rtest);
-bR = promote (params#1 , Rtest);
+aP = params#0;
+bP = params#1;
+
+aR = promote (aP , Rtest);
+bR = promote (bP , Rtest);
    
 xR = variables#0;
 yR = variables#1;
@@ -1172,9 +1177,9 @@ yR = variables#1;
 
 resultTest = CGBMain({aR*xR + bR*yR}, {});
 
-expected1 = ({},aR, {aR*xR + bR*yR});
-expected2 = ({aR},bR,{aR^2*xR + aR*bR*yR, aR*xR + bR*yR});
-expected3 = ({aR,bR}, 1_Rtest, {aR*xR + bR*yR});
+expected1 = ({}, {aP}, {aR*xR + bR*yR});
+expected2 = ({aP}, {bP}, {aR^2*xR + aR*bR*yR, aR*xR + bR*yR});
+expected3 = ({aP, bP}, {1_Ptest}, {aR*xR + bR*yR});
 
 assert(#resultTest == 3);
 
@@ -1228,7 +1233,7 @@ w12 = promote(Stest_0,Rtest);
 
 expectedF = {x11^2 - 2*x11*x21 + x21^2 + x12^2 - 2*x12*x22 + x22^2 - w12 };
 expectedGG = {
-    ({}, 1, expectedF)
+    ({}, {1_Stest}, expectedF)
 };
 
 assert(F == expectedF);
@@ -1245,8 +1250,11 @@ Rtest = Ptest[x,y, MonomialOrder => Lex];
 params = gens Ptest;
 variables = gens Rtest
 
-aR = promote (params#0 , Rtest);
-bR = promote (params#1 , Rtest);
+aP = params#0;
+bP = params#1;
+
+aR = promote (aP , Rtest);
+bR = promote (bP , Rtest);
    
 xR = variables#0;
 yR = variables#1;
@@ -1254,9 +1262,9 @@ yR = variables#1;
 
 resultTest = CGBMain({aR*xR + bR*yR}, {}, Verbose => true);
 
-expected1 = ({},aR, {aR*xR + bR*yR});
-expected2 = ({aR},bR,{aR^2*xR + aR*bR*yR, aR*xR + bR*yR});
-expected3 = ({aR,bR}, 1_Rtest, {aR*xR + bR*yR});
+expected1 = ({}, {aP}, {aR*xR + bR*yR});
+expected2 = ({aP}, {bP}, {aR^2*xR + aR*bR*yR, aR*xR + bR*yR});
+expected3 = ({aP, bP}, {1_Ptest}, {aR*xR + bR*yR});
 
 assert(#resultTest == 3);
 
@@ -1315,8 +1323,11 @@ Rtest = Ptest[x,y, MonomialOrder => Lex];
 params = gens Ptest;
 variables = gens Rtest
 
-aR = promote (params#0 , Rtest);
-bR = promote (params#1 , Rtest);
+aP = params#0;
+bP = params#1;
+
+aR = promote (aP , Rtest);
+bR = promote (bP , Rtest);
    
 xR = variables#0;
 yR = variables#1;
@@ -1324,9 +1335,9 @@ yR = variables#1;
 
 resultTest = CGBMain({aR*xR + bR*yR}, {}, Strategy => "radical");
 
-expected1 = ({},aR, {aR*xR + bR*yR});
-expected2 = ({aR},bR,{aR^2*xR + aR*bR*yR, aR*xR + bR*yR});
-expected3 = ({aR,bR}, 1_Rtest, {aR*xR + bR*yR});
+expected1 = ({}, {aP}, {aR*xR + bR*yR});
+expected2 = ({aP}, {bP}, {aR^2*xR + aR*bR*yR, aR*xR + bR*yR});
+expected3 = ({aP, bP}, {1_Ptest}, {aR*xR + bR*yR});
 
 assert(#resultTest == 3);
 
@@ -1345,8 +1356,11 @@ Rtest = Ptest[x,y, MonomialOrder => Lex];
 params = gens Ptest;
 variables = gens Rtest
 
-aR = promote (params#0 , Rtest);
-bR = promote (params#1 , Rtest);
+aP = params#0;
+bP = params#1;
+
+aR = promote (aP , Rtest);
+bR = promote (bP , Rtest);
    
 xR = variables#0;
 yR = variables#1;
@@ -1354,9 +1368,9 @@ yR = variables#1;
 
 resultTest = CGBMain({aR*xR + bR*yR}, {},  ReduceStrata => true);
 
-expected1 = ({},aR, {aR*xR + bR*yR});
-expected2 = ({aR},bR,{aR^2*xR + aR*bR*yR, aR*xR + bR*yR});
-expected3 = ({aR,bR}, 1_Rtest, {aR*xR + bR*yR});
+expected1 = ({}, {aP}, {aR*xR + bR*yR});
+expected2 = ({aP}, {bP}, {aR^2*xR + aR*bR*yR, aR*xR + bR*yR});
+expected3 = ({aP, bP}, {1_Ptest}, {aR*xR + bR*yR});
 
 assert(#resultTest == 3);
 
