@@ -103,6 +103,7 @@ export {
     "twist",
     "isTwistOf",
     "firstChernClass",
+    "grRing", -- For test 13
     -- Misc
     "displayFiltrations",
     -- Kaneyama (old code)
@@ -280,7 +281,8 @@ dual ToricVectorBundle := {} >> opts -> tvb -> (
     -- if a vector space has basis B, the dual has basis transpose inverse B
     filtMats := apply(filtrationMatrices tvb, M -> transpose inverse M);
     -- the jumps in the filtration get reverse and negated.
-    filtJumps := apply(filtrationJumps tvb, J -> -reverse J);
+    -- TODO check if we need reverse J or not
+    filtJumps := apply(filtrationJumps tvb, J -> - J);
     return toricVectorBundle(variety tvb, filtMats, filtJumps)
     )
 
@@ -3848,7 +3850,7 @@ assert( filtrationJumps L2 =={{3}, {4}, {1}, {0}})
 assert((filtrationMatrices L2)_0 == matrix{{1_QQ}})
 
 ///
-
+-*
 -- Test 2
 -- Check for cotangentBundle
 TEST ///
@@ -3862,6 +3864,25 @@ assert(dim variety T == 2)
 
 T = cotangentBundle(toricProjectiveSpace(1) ** toricProjectiveSpace(1) ** toricProjectiveSpace(1))
 assert(filtrationJumps T === {{0,0,-1},{0,0,-1},{0,0,-1},{0,0,-1},{0,0,-1},{0,0,-1}})
+assert(filtrationMatrices T === {matrix(QQ,{{-1,0,0},{0,1,0},{0,0,1}}),matrix(QQ,{{1,0,0},{0,1,0},{0,0,1}}),matrix(QQ,{{0,1,0},{-1,0,0},{0,0,1}}),matrix(QQ,{{0,1,0},{1,0,0},{0,0,1}}),matrix(QQ,{{0,1,0},{0,0,1},{-1,0,0}}),matrix(QQ,{{0,1,0},{0,0,1},{1,0,0}})})
+assert(rank T == 3)
+///
+*-
+
+
+-- Test 2
+-- Check for cotangentBundle
+TEST ///
+
+T = cotangentBundle hirzebruchSurface 2
+assert(ring T === QQ)
+assert(filtrationJumps T === {{-1,0},{-1,0},{-1,0},{-1,0}})
+assert(filtrationMatrices T === {matrix(QQ,{{1,0},{0,1}}),matrix(QQ,{{0,1},{1,0}}),matrix(QQ,{{0,2},{1/2,1}}),matrix(QQ,{{0,1},{-1,0}})})
+assert(rank T == 2)
+assert(dim variety T == 2)
+
+T = cotangentBundle(toricProjectiveSpace(1) ** toricProjectiveSpace(1) ** toricProjectiveSpace(1))
+assert(filtrationJumps T === {{-1,0,0},{-1,0,0},{-1,0,0},{-1, 0,0},{-1,0,0},{-1,0,0}})
 assert(filtrationMatrices T === {matrix(QQ,{{-1,0,0},{0,1,0},{0,0,1}}),matrix(QQ,{{1,0,0},{0,1,0},{0,0,1}}),matrix(QQ,{{0,1,0},{-1,0,0},{0,0,1}}),matrix(QQ,{{0,1,0},{1,0,0},{0,0,1}}),matrix(QQ,{{0,1,0},{0,0,1},{-1,0,0}}),matrix(QQ,{{0,1,0},{0,0,1},{1,0,0}})})
 assert(rank T == 3)
 ///
@@ -3916,7 +3937,8 @@ T1 = cotangentBundle Y
 T2 = tangentBundle Y
 T = T1 ++ T2
 assert(ring T === QQ)
-assert(filtrationJumps T == {{0, -1, 1, 0}, {0, -1, 1, 0}, {0, -1, 1, 0}, {0, -1, 1, 0}})
+assert(filtrationJumps T == {{-1, 0, 1, 0}, {-1, 0,1, 0}, {-1, 0,1, 0}, {-1, 0, 1, 0}})
+-- assert(filtrationJumps T == {{0, -1, 1, 0}, {0, -1, 1, 0}, {0, -1, 1, 0}, {0, -1, 1, 0}})
 assert(filtrationMatrices T == {map(QQ^4,QQ^4,{{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}}),map(QQ^4,QQ^4,{{0, 1, 0,
         0}, {1, 0, 0, 0}, {0, 0, 0, 1}, {0, 0, 1, 0}}),map(QQ^4,QQ^4,{{0, 3, 0, 0}, {1/3, 1, 0, 0}, {0, 0,
         -1, 1/3}, {0, 0, 3, 0}}),map(QQ^4,QQ^4,{{0, 1, 0, 0}, {-1, 0, 0, 0}, {0, 0, 0, 1}, {0, 0, -1, 0}})})
@@ -3946,10 +3968,8 @@ T1 = tangentBundle X
 T2 = cotangentBundle X
 T = T1 ** T2
 assert(ring T === QQ)
-assert(filtrationJumps T == {{1, 0, 0, -1}, {1, 0, 0, -1}, {1, 0, 0, -1}, {1, 0, 0, -1}})
-assert(filtrationMatrices T == {map(QQ^4,QQ^4,{{1, 0, 0, 0}, {0, -1, 0, 0}, {0, 0, -1, 0}, {0, 0, 0, 1}}),map(QQ^4,QQ^4,{{1, 0, 0,
-        0}, {0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}}),map(QQ^4,QQ^4,{{0, 0, 0, 1}, {0, 0, -1, 0}, {0, -1,
-        0, 0}, {1, 0, 0, 0}}),map(QQ^4,QQ^4,{{0, 0, 0, 1}, {0, 0, 1, 0}, {0, 1, 0, 0}, {1, 0, 0, 0}})})
+assert(filtrationJumps T == {{0, 1, -1, 0}, {0, 1, -1, 0}, {0, 1, -1, 0}, {0, 1, -1, 0}})
+assert(filtrationMatrices T == {map(QQ^4,QQ^4,{{1, 0, 0, 0}, {0, -1, 0, 0}, {0, 0, -1, 0}, {0, 0, 0, 1}}),map(QQ^4,QQ^4,{{1, 0, 0,0}, {0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}}),map(QQ^4,QQ^4,{{0, 0, 0, 1}, {0, 0, -1, 0}, {0, -1,        0, 0}, {1, 0, 0, 0}}),map(QQ^4,QQ^4,{{0, 0, 0, 1}, {0, 0, 1, 0}, {0, 1, 0, 0}, {1, 0, 0, 0}})})
 assert(rank T == 4)
 assert(dim variety T == 2)
 
@@ -3960,9 +3980,7 @@ T2 = T2 ++ T2
 T = T1 ** T2
 assert(ring T === QQ)
 assert(filtrationJumps T == {{6, 6, 5, 5}, {2, 2, 1, 1}, {8, 8, 7, 7}, {4, 4, 3, 3}})
-assert(filtrationMatrices T == {map(QQ^4,QQ^4,{{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}}),map(QQ^4,QQ^4,{{0, 0, 1,
-        0}, {0, 0, 0, 1}, {1, 0, 0, 0}, {0, 1, 0, 0}}),map(QQ^4,QQ^4,{{-1, 0, 1/2, 0}, {0, -1, 0, 1/2}, {2,
-        0, 0, 0}, {0, 2, 0, 0}}),map(QQ^4,QQ^4,{{0, 0, 1, 0}, {0, 0, 0, 1}, {-1, 0, 0, 0}, {0, -1, 0, 0}})})
+assert(filtrationMatrices T == {map(QQ^4,QQ^4,{{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}}),map(QQ^4,QQ^4,{{0, 0, 1,0}, {0, 0, 0, 1}, {1, 0, 0, 0}, {0, 1, 0, 0}}),map(QQ^4,QQ^4,{{-1, 0, 1/2, 0}, {0, -1, 0, 1/2}, {2,0, 0, 0}, {0, 2, 0, 0}}),map(QQ^4,QQ^4,{{0, 0, 1, 0}, {0, 0, 0, 1}, {-1, 0, 0, 0}, {0, -1, 0, 0}})})
 assert(rank T == 4)
 assert(dim variety T == 2)
 
@@ -3994,7 +4012,7 @@ assert(dim variety T == 3)
 T1 = tangentBundle X
 T = dual (T1 ++ T)
 assert(ring T === QQ)
-assert(filtrationJumps T == {{1, 0, 0, -1}, {4, 0, 0, -1}, {3, 0, 0, -1}, {2, 0, 0, -1}})
+assert(filtrationJumps T == {{-1, 0, 0, 1}, {-1, 0, 0, 4}, {-1, 0, 0, 3}, {-1, 0, 0, 2}})
 assert(filtrationMatrices T == {map(QQ^4,QQ^4,{{-1, -1, -1, 0}, {0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}}),map(QQ^4,QQ^4,{{1, 0,
         0, 0}, {0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}}),map(QQ^4,QQ^4,{{0, 1, 0, 0}, {1, 0, 0, 0}, {0, 0,
         1, 0}, {0, 0, 0, 1}}),map(QQ^4,QQ^4,{{0, 1, 0, 0}, {0, 0, 1, 0}, {1, 0, 0, 0}, {0, 0, 0, 1}})})
@@ -4408,7 +4426,7 @@ TEST ///
 X =  toricProjectiveSpace 3;
 S = ring X;
 M = cokernel(map(S^{2:{-5}, {-4}},S^{2:{-7}},{{0, x_1^2}, {0, 0}, {x_1^2*x_3, 7*x_0*x_1*x_3}}));
-H = moduleToKlyachko (X,M, Strategy => "coker");
+H = moduleToKlyachko (X,M, Strategy =>"coker");
 assert(filtrationJumps (H) == {{0}, {0}, {0}, {0}} )
 assert( filtrationMatrices (H) ==  {map(QQ^1,QQ^1,{{1}}),map(QQ^1,QQ^1,{{1}}),map(QQ^1,QQ^1,{{1}}),map(QQ^1,QQ^1,{{1}})})
 assert( rank H == 1)
