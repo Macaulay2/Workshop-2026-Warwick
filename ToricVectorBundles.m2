@@ -127,7 +127,8 @@ export {
     "customConeSort",
     -- getters
     "filtrationMatrices",
-    "filtrationJumps"
+    "filtrationJumps",
+    "strata"
     }
 
 
@@ -6271,9 +6272,9 @@ TEST ///
 M=toricProjectiveSpace 2;
 V=tangentBundle M++lineBundle(M_1);
 W=weilDecoration V;
-L={{0,infinity},{1,{1,0,0}},{2,{0,1,0}},{1,{0,0,1}},{3,{0,0,0}}};
-WL= apply (W, i -> {rank i#0, i#1});
-assert (L==WL)
+L={{1,toricDivisor({0,0,1},M)},{1,toricDivisor({1,0,0},M)},{2,toricDivisor({0,1,0},M)},{3,toricDivisor({0,0,0},M)}};
+WL= apply (strata W, i -> {rank i#0, i#1});
+assert (Lseq == WL)
 E = weilToKlyachko(M,W)
 assert( E== V)
 ///
