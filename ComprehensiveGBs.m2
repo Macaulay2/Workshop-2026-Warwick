@@ -703,6 +703,9 @@ ICheck (List, RingElement) := o -> (E, f) -> (
     if zero promote(f, Q) then (
         return true; -- certifies inconsistency
     );
+    if o.Loops === infinity then (
+        return not isConsistentRabinowitsch(E, {squareFreePart f}); -- certifies inconsistency/consistency
+    );
     factors := listOfFactors f;
     promoted := apply(factors, g -> promote(g, Q));
     candidates := if #factors == 0 then {promote(f, Q)}
@@ -761,6 +764,12 @@ consistencyCheckAllTogether (List, RingElement) := o -> (E, f) -> (
     if ICheck(E,f, Loops => o.Loops) then (
         print "inconsistent: ICheck was used";
         return false; -- inconsistent
+    );
+
+    if o.Loops === infinity then (
+        -- ICheck also checks consistency when Loops is infinity
+        -- so if we reach this point, f is not in rad(E)
+        return true; -- consistent
     );
 
     print "General check was used";
