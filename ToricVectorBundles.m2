@@ -3877,7 +3877,7 @@ assert(dim variety T == 2)
 -- Tests for getter functions
 
 --Test for ring
-TEST///
+TEST ///
 X = toricProjectiveSpace 2;
 T1 = trivialBundle(X,2);
 assert(ring T1 === QQ)
@@ -3889,7 +3889,7 @@ assert(ring T2 === ZZ/101)
 -- Tests for operations
 
 --Test direct sum
-TEST///
+TEST ///
 -- old test
 X = toricProjectiveSpace 3
 T1 = tangentBundle X
@@ -3932,7 +3932,7 @@ assert(filtrationMatrices(T) == {matrix(QQ, {{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 
 ///
 
 --Test tensor product
-TEST///
+TEST ///
 -- old test
 X = toricProjectiveSpace 1 ** toricProjectiveSpace 1
 T1 = tangentBundle X
@@ -4108,7 +4108,7 @@ assert areIsomorphic (T1,T2)
 ///
 
 --Test for isomorphism
-TEST///
+TEST ///
 PP3 = toricProjectiveSpace 3;
 D = toricDivisor({1,2,-1,0},PP3);
 L1 = lineBundle D;
@@ -4231,7 +4231,7 @@ assert(areIsomorphic(T, T1**L) )
 -- Tests for maps
 
 --Test for ToricVectorBundleMap
-TEST///
+TEST ///
 PP3 = toricProjectiveSpace 3;
 trivPP3 = trivialBundle(PP3,3);
 tangPP3 = tangentBundle(PP3);
@@ -4246,7 +4246,7 @@ assert(map tvbMap === M)
 ///
 
 --Test for isWellDefined for ToricVectorBundleMap
-TEST///
+TEST ///
 X = toricProjectiveSpace 3;
 E = trivialBundle(X, 3);
 F = trivialBundle(X, 5);
