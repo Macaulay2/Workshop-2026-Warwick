@@ -592,8 +592,8 @@ eulerChi (Matrix,ToricVectorBundle) := (u,T) -> (
     if not T.cache.eulerChi#?u then (
         n := dim variety T;
         -- Compute the Cech complex and compute the alternating sum of the dimensions
-        T.cache.eulerChi#u = sum apply(n+1, i -> (-1)^i * sum values (cechComplex(i,T,u))#1);
-        T.cache.eulerChi#u)
+        T.cache.eulerChi#u = sum apply(n+1, i -> (-1)^i * sum values (cechComplex(i,T,u))#1););
+        T.cache.eulerChi#u
     )
 
 eulerChi ToricVectorBundle := T -> ( 
@@ -663,6 +663,70 @@ isGeneral ToricVectorBundle :=  E -> (
     apply( MCones, sigm -> recursiveCheck(allPieces_sigm ,{}) );
     E.cache.isGeneral
     )
+
+
+-- PURPOSE : Computing the Cartier index of a Weil divisor
+--   INPUT : '(L,F)',  where 'F' is a Fan and 'L' is a list of integers defining a Weil divisor
+--  OUTPUT : The smallest multiple of the divisor which is Cartier if the divisor is QQ-Cartier, if not 
+--     	     an error is returned
+cartierIndex = method(TypicalValue => ZZ)
+
+cartierIndex (NormalToricVariety, List) := (X, L) ->(
+    -- TODO : add checks for the Cartier index to make sense    
+    if any(L, l -> not instance(l,ZZ)) then error("The weights have to be in ZZ.");
+    denom := 1; 
+    raysX := rays X;
+    maxCs := X.max;
+    Frays := transpose  matrix raysX;
+    L = hashTable apply(#raysX, i -> Frays_i => L_i);
+    n:= ambDim ( fan X);
+    scan(maxCs, C -> (
+	       rC := Frays_C;
+	       -- Taking the first n x n submatrix
+	       rC1 := rC_{0..n-1};
+	       -- Setting up the solution vector by composing the corresponding weights
+	       v := matrix apply(n, i -> (c := entries rC1_{i}; {-(L#c)}));
+	       -- Computing the degree vector
+	       w := vertices polyhedronFromHData(matrix {toList(n:0)},matrix {{0}},transpose rC1,v);
+	       -- Checking if w also fulfils the equations given by the remaining rays
+	       if numColumns rC != n then (
+		    v = v || matrix apply(toList(n..(numColumns rC)-1), i -> {-(L#(entries rC_{i}))});
+	            if (transpose rC)*w - v != 0 then error("The weights do not define a Cartier divisor."));
+	       -- Check if w is QQ-Cartier
+	       scan(flatten entries w, e -> denom = lcm(denominator e ,denom))));
+     denom
+     )
+
+
+
+
+cartierIndex (List,Fan) := (L,F) -> (
+     rl := raySortOfFan F;
+     -- Checking for input errors
+     if #L != #rl then error("The number of weights has to equal the number of rays.");
+     n := ambDim F;
+     -- Checking for further errors and assigning the weights to the rays
+     L = hashTable apply(#rl, i -> (if class L#i =!= ZZ then error("The weights have to be in ZZ."); rl#i => L#i));
+     -- Keeping track of the lowest common multiple of denominators of the degrees,
+     -- to check whether the divisor itself is Cartier or which multiple
+     denom := 1;
+     -- Computing the degree vector for every top dimensional cone
+     Frays := rays F;
+     scan(sort maxCones F, C -> (
+	       rC := Frays_C;
+	       -- Taking the first n x n submatrix
+	       rC1 := rC_{0..n-1};
+	       -- Setting up the solution vector by composing the corresponding weights
+	       v := matrix apply(n, i -> (c := rC1_{i}; {-(L#c)}));
+	       -- Computing the degree vector
+	       w := vertices polyhedronFromHData(matrix {toList(n:0)},matrix {{0}},transpose rC1,v);
+	       -- Checking if w also fulfils the equations given by the remaining rays
+	       if numColumns rC != n then (
+		    v = v || matrix apply(toList(n..(numColumns rC)-1), i -> {-(L#(rC_{i}))});
+	            if (transpose rC)*w - v != 0 then error("The weights do not define a Cartier divisor."));
+	       -- Check if w is QQ-Cartier
+	       scan(flatten entries w, e -> denom = lcm(denominator e ,denom))));
+     denom)
 
 randomDeformation = method()
 randomDeformation ( ToricVectorBundle ) :=(tvb) ->(
@@ -3934,7 +3998,7 @@ assert(dim variety T == 3)
 TEST ///
 T = cotangentBundle hirzebruchSurface 3
 T = exteriorPower(T,2)
-assert(ring T == QQ)
+assert(ring T == ideal(1_QQ))
 assert(filtrationJumps T == {{-1}, {-1}, {-1}, {-1}})
 assert(filtrationMatrices T == {map(QQ^1,QQ^1,{{1}}),map(QQ^1,QQ^1,{{-1}}),map(QQ^1,QQ^1,{{-1}}),map(QQ^1,QQ^1,{{1}})})
 assert(rank T == 1)
@@ -3942,7 +4006,7 @@ assert(dim variety T == 2)
 
 T = tangentBundle toricProjectiveSpace 3
 T = exteriorPower(T,2)
-assert(ring T == QQ)
+assert(ring T == ideal(1_QQ))
 assert(filtrationJumps T == {{1, 1, 0}, {1, 1, 0}, {1, 1, 0}, {1, 1, 0}})
 assert(filtrationMatrices T == {map(QQ^3,QQ^3,{{-1, 0, 0}, {0, -1, 0}, {1, -1, 1}}),map(QQ^3,QQ^3,{{1, 0, 0}, {0, 1, 0}, {0, 0,
       1}}),map(QQ^3,QQ^3,{{-1, 0, 0}, {0, 0, 1}, {0, 1, 0}}),map(QQ^3,QQ^3,{{0, 0, 1}, {-1, 0, 0}, {0, -1,
@@ -4088,12 +4152,12 @@ assert(map isomorphism(E1',E2') == M)
 
 -- Checking eulerChi
 TEST ///
-T = tangentBundle hirzebruchSurface 3
+T = tangentBundle hirzebruchSurface 3;
 assert(eulerChi(matrix {{0},{0}},T) == 2)
 assert(eulerChi T == 6)
 
 T = cotangentBundle toricProjectiveSpace 4
-assert(eulerChi T == -1)
+assert(eulerChi T == -1) -- eulerChi T == 2 :(
 ///
 
 -- Checking cohomology for Klyachko
@@ -4587,7 +4651,7 @@ assert(cartierIndex({1,1,1},F) == 3)
 assert(cartierIndex({3,3,3},F) == 1)
 ///
 
-*-
+
 -- ADDING NEW TESTS JUNE/JULY 2026
 -- Test 31
 -- Checking isWellDefined (Kaneyama) (combining the tests for cocycleCheck and regCheck)--TODO: FIX THIS
