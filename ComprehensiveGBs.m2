@@ -691,7 +691,7 @@ CCheck (List, RingElement) := (E, f) -> (
 
 ICheck = method(
     Options => {
-        Loops => 5
+        Loops => infinity
     }
 );
 
@@ -739,7 +739,7 @@ ICheck (List, RingElement) := o -> (E, f) -> (
 
 consistencyCheckAllTogether = method(
     Options => {
-        Loops => 5
+        Loops => infinity
     }
 );
 
