@@ -696,20 +696,30 @@ ICheck = method(
 );
 
 ICheck (List, RingElement) := o -> (E, f) -> (
-    p := f;
-    H:= gens gb ideal E;
-    for i from 1 to o.Loops do (
-        -*
-        s := 0;
-        for m in terms p do (
-            s = s + (p*m) % H; --H stores the computed Groebner basis, so it is not computed twice
-        );
-        *-
-        s := (p^2) % H; -- This is of course equivalent to the above, but why is it much faster?
-        if s == 0 then (
+    if zero f then (
+        return true; -- certifies inconsistency
+    );
+    Q := (ring f) / ideal E;
+    if zero promote(f, Q) then (
+        return true; -- certifies inconsistency
+    );
+    factors := listOfFactors f;
+    promoted := apply(factors, g -> promote(g, Q));
+    candidates := if #factors == 0 then {promote(f, Q)}
+        else if #factors == 1 then promoted
+        else sort(promoted, z -> #terms z) | {promote(product factors, Q)};
+    for p in candidates do (
+        if zero p then (
             return true; -- certifies inconsistency
         );
-        p = s;
+        for i from 1 to o.Loops do (
+            s := p^2;
+            if zero s then (
+                return true; -- certifies inconsistency
+            );
+            if s == p then break;
+            p = s;
+        );
     );
 
     return false; -- unknown consistency
