@@ -3882,7 +3882,7 @@ assert(dim variety T == 2)
 
 -- Test 4
 --Test for ring
-TEST///
+TEST ///
 X = toricProjectiveSpace 2;
 T1 = trivialBundle(X,2);
 assert(ring T1 === QQ)
@@ -3895,7 +3895,7 @@ assert(ring T2 === ZZ/101)
 
 -- Test 5
 --Test direct sum
-TEST///
+TEST ///
 -- old test
 X = toricProjectiveSpace 3
 T1 = tangentBundle X
@@ -3939,7 +3939,7 @@ assert(filtrationMatrices(T) == {matrix(QQ, {{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 
 
 -- Test 6
 --Test tensor product
-TEST///
+TEST ///
 -- old test
 X = toricProjectiveSpace 1 ** toricProjectiveSpace 1
 T1 = tangentBundle X
@@ -4120,7 +4120,7 @@ assert areIsomorphic (T1,T2)
 
 -- Test 11
 --Test for isomorphism
-TEST///
+TEST ///
 PP3 = toricProjectiveSpace 3;
 D = toricDivisor({1,2,-1,0},PP3);
 L1 = lineBundle D;
@@ -4247,7 +4247,7 @@ assert(areIsomorphic(T, T1**L) )
 
 -- Test 17
 --Test for ToricVectorBundleMap
-TEST///
+TEST ///
 PP3 = toricProjectiveSpace 3;
 trivPP3 = trivialBundle(PP3,3);
 tangPP3 = tangentBundle(PP3);
@@ -4263,7 +4263,7 @@ assert(map tvbMap === M)
 
 -- Test 18
 --Test for isWellDefined for ToricVectorBundleMap
-TEST///
+TEST ///
 X = toricProjectiveSpace 3;
 E = trivialBundle(X, 3);
 F = trivialBundle(X, 5);
@@ -4530,29 +4530,30 @@ assert(T#"dimension of the variety" == 3)
 -- Test n+7
 -- Checking deltaE for Kaneyama
 TEST ///
-T = toricVectorBundle(3,projectiveSpaceFan 2,"Type" => "Kaneyama")
-assert(deltaE T == convexHull matrix{{0},{0}})
-T = tangentBundle(projectiveSpaceFan 2,"Type" => "Kaneyama")
-assert(deltaE T == convexHull matrix {{-1,2,-1},{-1,-1,2}})
-T = cotangentBundle(pp1ProductFan 3,"Type" => "Kaneyama")
-assert(deltaE T == convexHull matrix {{-1,1,-1,1,-1,1,-1,1},{-1,-1,1,1,-1,-1,1,1},{-1,-1,-1,-1,1,1,1,1}})
+T = toricVectorBundleKaneyama(3,projectiveSpaceFan 2)
+
+assert(deltaEKaneyama T == convexHull matrix{{0},{0}})
+T = tangentBundleKaneyama(projectiveSpaceFan 2)
+assert(deltaEKaneyama T == convexHull matrix {{-1,2,-1},{-1,-1,2}})
+T = cotangentBundleKaneyama(pp1ProductFan 3)
+assert(deltaEKaneyama T == convexHull matrix {{-1,1,-1,1,-1,1,-1,1},{-1,-1,1,1,-1,-1,1,1},{-1,-1,-1,-1,1,1,1,1}})
 ///
 
 -- Test n+8
 -- Checking cohomology for Kaneyama
 TEST ///
-T = toricVectorBundle(2,pp1ProductFan 2,"Type" => "Kaneyama")
+T = toricVectorBundleKaneyama(2,pp1ProductFan 2)
 assert(sort degrees cohomology(0,T,matrix{{0},{0}}) == sort degrees (ring T)^{{0,0},{0,0}})
 assert(sort degrees cohomology(0,T) == sort degrees (ring T)^{{0,0},{0,0}})
 assert(sort degrees cohomology(1,T) == sort degrees (ring T)^0)
 assert(sort degrees cohomology(2,T) == sort degrees (ring T)^0)
-T1 = tangentBundle(pp1ProductFan 2,"Type" => "Kaneyama")
+T1 = tangentBundleKaneyama(pp1ProductFan 2)
 assert(sort degrees cohomology(0,T1,matrix{{0},{0}}) == sort degrees (ring T1)^{{0,0},{0,0}})
 assert(sort degrees cohomology(0,T1,matrix{{1},{1}}) == sort degrees (ring T1)^0)
 assert(sort degrees cohomology(0,T1) == sort degrees (ring T1)^{{1,0},{0,1},{0,0},{0,0},{0,-1},{-1,0}})
 assert(sort degrees cohomology(1,T1) == sort degrees (ring T1)^0)
 assert(sort degrees cohomology(2,T1) == sort degrees (ring T1)^0)
-T = tangentBundle(hirzebruchFan 3 * projectiveSpaceFan 1,"Type" => "Kaneyama")
+T = tangentBundleKaneyama(hirzebruchFan 3 * projectiveSpaceFan 1)
 assert(cohomology(0,T,{matrix {{2},{1},{0}}, matrix{{3},{1},{0}}}) == {(ring T)^{{-2,-1,0}},(ring T)^{{-3,-1,0}}})
 assert(cohomology(1,T,{matrix {{-2},{-1},{0}}, matrix{{-1},{-1},{0}}}) == {(ring T)^{{2, 1, 0}},(ring T)^{{1, 1, 0}}})
 assert(cohomology(2,T,matrix{{0},{0},{0}}) == (ring T)^0)
@@ -4563,7 +4564,7 @@ assert(cohomology(3,T,matrix{{0},{0},{0}}) == (ring T)^0)
 -- Test n+9
 -- Checking weilToCartier
 TEST ///
-T = weilToCartier({1,4,3,2},projectiveSpaceFan 3,"Type" => "Kaneyama")
+T = weilToCartierKaneyama({1,4,3,2},projectiveSpaceFan 3)
 assert(T#"baseChangeTable" === hashTable {(0,1) => map(QQ^1,QQ^1,1),(0,2) => map(QQ^1,QQ^1,1),(0,3) => map(QQ^1,QQ^1,1),(1,2) => map(QQ^1,QQ^1,1),(1,3) => map(QQ^1,QQ^1,1),(2,3) => map(QQ^1,QQ^1,1)})
 assert(T#"degreeTable" === hashTable {(matrix {{1,0,-1},{0,1,-1},{0,0,-1}}, map(ZZ^3,0,0)) => matrix{{-2},{-3},{6}},(matrix {{0,-1,0},{1,-1,0},{0,-1,1}}, map(ZZ^3,0,0)) => matrix{{8},{-3},{-4}},(matrix {{1,-1,0},{0,-1,0},{0,-1,1}}, map(ZZ^3,0,0)) => matrix{{-2},{7},{-4}}, (map(ZZ^3,ZZ^3,1), map(ZZ^3,0,0)) => matrix{{-2},{-3},{-4}}})
 assert(rank T == 1)
