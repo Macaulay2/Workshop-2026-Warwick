@@ -81,8 +81,12 @@ net ToricVectorBundleKaneyama := tvb -> ( horizontalJoin flatten (
 rank ToricVectorBundleKaneyama := T -> T#"rank of the vector bundle"
 
 rays ToricVectorBundleKaneyama := {} >> o -> tvb -> raySortOfFan tvb#"ToricVariety"
-
+protect gradedRing
  --there was no getter for the ring, could add?
+ring ToricVectorBundleKaneyama := (cacheValue symbol gradedRing)( T -> (
+    QQ[DegreeRank => T#"dimension of the variety"])
+)
+
 detailsKaneyama = method();
 detailsKaneyama ToricVectorBundleKaneyama := tvb -> (
      hashTable apply(pairs(tvb#"topConeTable"), p -> ( p#1 => (rays posHull p#0,tvb#"degreeTable"#(p#0)))),tvb#"baseChangeTable")
@@ -341,6 +345,7 @@ eulerChiKaneyama (Matrix,ToricVectorBundleKaneyama) := (u,T) -> (
 	  -- Compute the Cech complex and compute the alternating sum of the dimensions
 	  T.cache.eulerChiKaneyama#u = sum apply(n+2, i -> (-1)^i * numColumns (cechComplexKaneyama(i,T,u))#1));
      T.cache.eulerChiKaneyama#u)
+
 
 --   INPUT : 'T',  a ToricVectorBundleKaneyama
 --  OUTPUT : The Euler characteristic of the bundle

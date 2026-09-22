@@ -592,8 +592,8 @@ eulerChi (Matrix,ToricVectorBundle) := (u,T) -> (
     if not T.cache.eulerChi#?u then (
         n := dim variety T;
         -- Compute the Cech complex and compute the alternating sum of the dimensions
-        T.cache.eulerChi#u = sum apply(n+1, i -> (-1)^i * sum values (cechComplex(i,T,u))#1);
-        T.cache.eulerChi#u)
+        T.cache.eulerChi#u = sum apply(n+1, i -> (-1)^i * sum values (cechComplex(i,T,u))#1););
+        T.cache.eulerChi#u
     )
 
 eulerChi ToricVectorBundle := T -> ( 
@@ -663,6 +663,70 @@ isGeneral ToricVectorBundle :=  E -> (
     apply( MCones, sigm -> recursiveCheck(allPieces_sigm ,{}) );
     E.cache.isGeneral
     )
+
+
+-- PURPOSE : Computing the Cartier index of a Weil divisor
+--   INPUT : '(L,F)',  where 'F' is a Fan and 'L' is a list of integers defining a Weil divisor
+--  OUTPUT : The smallest multiple of the divisor which is Cartier if the divisor is QQ-Cartier, if not 
+--     	     an error is returned
+cartierIndex = method(TypicalValue => ZZ)
+
+cartierIndex (NormalToricVariety, List) := (X, L) ->(
+    -- TODO : add checks for the Cartier index to make sense    
+    if any(L, l -> not instance(l,ZZ)) then error("The weights have to be in ZZ.");
+    denom := 1; 
+    raysX := rays X;
+    maxCs := X.max;
+    Frays := transpose  matrix raysX;
+    L = hashTable apply(#raysX, i -> Frays_i => L_i);
+    n:= ambDim ( fan X);
+    scan(maxCs, C -> (
+	       rC := Frays_C;
+	       -- Taking the first n x n submatrix
+	       rC1 := rC_{0..n-1};
+	       -- Setting up the solution vector by composing the corresponding weights
+	       v := matrix apply(n, i -> (c := entries rC1_{i}; {-(L#c)}));
+	       -- Computing the degree vector
+	       w := vertices polyhedronFromHData(matrix {toList(n:0)},matrix {{0}},transpose rC1,v);
+	       -- Checking if w also fulfils the equations given by the remaining rays
+	       if numColumns rC != n then (
+		    v = v || matrix apply(toList(n..(numColumns rC)-1), i -> {-(L#(entries rC_{i}))});
+	            if (transpose rC)*w - v != 0 then error("The weights do not define a Cartier divisor."));
+	       -- Check if w is QQ-Cartier
+	       scan(flatten entries w, e -> denom = lcm(denominator e ,denom))));
+     denom
+     )
+
+
+
+
+cartierIndex (List,Fan) := (L,F) -> (
+     rl := raySortOfFan F;
+     -- Checking for input errors
+     if #L != #rl then error("The number of weights has to equal the number of rays.");
+     n := ambDim F;
+     -- Checking for further errors and assigning the weights to the rays
+     L = hashTable apply(#rl, i -> (if class L#i =!= ZZ then error("The weights have to be in ZZ."); rl#i => L#i));
+     -- Keeping track of the lowest common multiple of denominators of the degrees,
+     -- to check whether the divisor itself is Cartier or which multiple
+     denom := 1;
+     -- Computing the degree vector for every top dimensional cone
+     Frays := rays F;
+     scan(sort maxCones F, C -> (
+	       rC := Frays_C;
+	       -- Taking the first n x n submatrix
+	       rC1 := rC_{0..n-1};
+	       -- Setting up the solution vector by composing the corresponding weights
+	       v := matrix apply(n, i -> (c := rC1_{i}; {-(L#c)}));
+	       -- Computing the degree vector
+	       w := vertices polyhedronFromHData(matrix {toList(n:0)},matrix {{0}},transpose rC1,v);
+	       -- Checking if w also fulfils the equations given by the remaining rays
+	       if numColumns rC != n then (
+		    v = v || matrix apply(toList(n..(numColumns rC)-1), i -> {-(L#(rC_{i}))});
+	            if (transpose rC)*w - v != 0 then error("The weights do not define a Cartier divisor."));
+	       -- Check if w is QQ-Cartier
+	       scan(flatten entries w, e -> denom = lcm(denominator e ,denom))));
+     denom)
 
 randomDeformation = method()
 randomDeformation ( ToricVectorBundle ) :=(tvb) ->(
@@ -1186,7 +1250,7 @@ moduleToKlyachko (NormalToricVariety, Matrix):= opts -> (X,A) -> (
   if S =!= ring X then (error("The module is not defined over the Cox ring of the toric variety"););
   if  all( flatten entries A , p -> # terms p <= 1) != true then( error("The presentation matrix is not equivariant"););
   -- TODO: This correction should be the twist that we are introuducing when assuming MS#0 is {0,...,0}, but it is not working
-    correction := flatten entries ( matrix(rays X) *( transpose matrix{(degrees source A)_0}));
+   -- correction := flatten entries ( matrix(rays X) *( transpose matrix{(degrees source A)_0}));
   -- Source degrees
   p := numColumns (A);
   MS := new MutableHashTable from apply(p , j -> {j,{}});
@@ -3755,6 +3819,7 @@ assert(T#"dimension of the variety" == 2)
 
 -- Tests for basic constructors
 
+-- Test 0
 -- Checking trivialBundle
 TEST ///
 X = toricProjectiveSpace 2
@@ -3764,6 +3829,7 @@ assert ((filtrationMatrices E)_0 == id_((ring E)^4))
 assert ((filtrationJumps E)_0 == toList(4:0))
 ///
 
+-- Test 1
 -- Checking lineBundle
 TEST ///
 X = hirzebruchSurface 3
@@ -3783,6 +3849,7 @@ assert((filtrationMatrices L2)_0 == matrix{{1_QQ}})
 
 ///
 
+-- Test 2
 -- Check for cotangentBundle
 TEST ///
 
@@ -3799,6 +3866,7 @@ assert(filtrationMatrices T === {matrix(QQ,{{-1,0,0},{0,1,0},{0,0,1}}),matrix(QQ
 assert(rank T == 3)
 ///
 
+-- Test 3
 -- Checking tangentBundle for Klyachko
 TEST ///
 T = tangentBundle hirzebruchSurface 3
@@ -3812,8 +3880,9 @@ assert(dim variety T == 2)
 
 -- Tests for getter functions
 
+-- Test 4
 --Test for ring
-TEST///
+TEST ///
 X = toricProjectiveSpace 2;
 T1 = trivialBundle(X,2);
 assert(ring T1 === QQ)
@@ -3824,8 +3893,9 @@ assert(ring T2 === ZZ/101)
 
 -- Tests for operations
 
+-- Test 5
 --Test direct sum
-TEST///
+TEST ///
 -- old test
 X = toricProjectiveSpace 3
 T1 = tangentBundle X
@@ -3867,8 +3937,9 @@ assert(filtrationJumps(T)=={{0, 0, 1, 0}, {0, 0, 1, 0}, {0, 0, 1, 0}} )
 assert(filtrationMatrices(T) == {matrix(QQ, {{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, -1, -1}, {0, 0, -1, 0}}), matrix(QQ, {{1, 0, 0, 0},{0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}}), matrix(QQ, {{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 0, 1},{0, 0, 1, 0}} )} )
 ///
 
+-- Test 6
 --Test tensor product
-TEST///
+TEST ///
 -- old test
 X = toricProjectiveSpace 1 ** toricProjectiveSpace 1
 T1 = tangentBundle X
@@ -3908,6 +3979,7 @@ assert(filtrationJumps(T)=={{1, 0, 1, 0, 1, 0}, {1, 0, 1, 0, 1, 0}, {1, 0, 1, 0,
 assert(filtrationMatrices(T) ==  {matrix(QQ, {{-1, -1, 0, 0, 0, 0}, {-1, 0, 0, 0, 0, 0}, {0, 0, -1, -1, 0, 0}, {0, 0, -1, 0, 0,      0}, {0, 0, 0, 0, -1, -1}, {0, 0, 0, 0, -1, 0}}), matrix(QQ, {{1, 0, 0, 0, 0, 0}, {0, 1, 0, 0, 0,  0}, {0, 0, 1, 0, 0, 0}, {0, 0, 0, 1, 0, 0}, {0, 0, 0, 0, 1, 0}, {0, 0, 0, 0, 0, 1}}), matrix(QQ,      {{0, 1, 0, 0, 0, 0}, {1, 0, 0, 0, 0, 0}, {0, 0, 0, 1, 0, 0}, {0, 0, 1, 0, 0, 0}, {0, 0, 0,      0, 0, 1}, {0, 0, 0, 0, 1, 0}})} )
 ///
 
+-- Test 7
 -- Checking dual for Klyachko
 TEST ///
 -- old test
@@ -3930,11 +4002,13 @@ assert(rank T == 4)
 assert(dim variety T == 3)
 ///
 
+-- Test 8
 -- Checking exteriorPower for Klyachko
 TEST ///
 T = cotangentBundle hirzebruchSurface 3
 T = exteriorPower(T,2)
 assert(ring T == ideal(1_QQ))
+
 assert(filtrationJumps T == {{-1}, {-1}, {-1}, {-1}})
 assert(filtrationMatrices T == {map(QQ^1,QQ^1,{{1}}),map(QQ^1,QQ^1,{{-1}}),map(QQ^1,QQ^1,{{-1}}),map(QQ^1,QQ^1,{{1}})})
 assert(rank T == 1)
@@ -3943,6 +4017,7 @@ assert(dim variety T == 2)
 T = tangentBundle toricProjectiveSpace 3
 T = exteriorPower(T,2)
 assert(ring T == ideal(1_QQ))
+
 assert(filtrationJumps T == {{1, 1, 0}, {1, 1, 0}, {1, 1, 0}, {1, 1, 0}})
 assert(filtrationMatrices T == {map(QQ^3,QQ^3,{{-1, 0, 0}, {0, -1, 0}, {1, -1, 1}}),map(QQ^3,QQ^3,{{1, 0, 0}, {0, 1, 0}, {0, 0,
       1}}),map(QQ^3,QQ^3,{{-1, 0, 0}, {0, 0, 1}, {0, 1, 0}}),map(QQ^3,QQ^3,{{0, 0, 1}, {-1, 0, 0}, {0, -1,
@@ -3961,6 +4036,7 @@ E2 = (exteriorPower(E,0)**exteriorPower(L,2))++(exteriorPower(E,1)**exteriorPowe
 assert(areIsomorphic(E1,E2))
 ///
 
+-- Test 9
 -- Checking symmetricPower for Klyachko
 TEST ///
 T = tangentBundle toricProjectiveSpace 3
@@ -3977,6 +4053,7 @@ assert(rank T == 6)
 assert(dim variety T == 3)
 ///
 
+-- Test 10
 --Checking areIsomorphic
 --first test, check trivial bundles of different ranks are not isomorphic
 TEST ///
@@ -4043,8 +4120,9 @@ assert areIsomorphic (T1,T2)
 
 ///
 
+-- Test 11
 --Test for isomorphism
-TEST///
+TEST ///
 PP3 = toricProjectiveSpace 3;
 D = toricDivisor({1,2,-1,0},PP3);
 L1 = lineBundle D;
@@ -4086,16 +4164,18 @@ assert(map isomorphism(E1',E2') == M)
 
 -- Tests for cohomological computations
 
+-- Test 12
 -- Checking eulerChi
 TEST ///
-T = tangentBundle hirzebruchSurface 3
+T = tangentBundle hirzebruchSurface 3;
 assert(eulerChi(matrix {{0},{0}},T) == 2)
 assert(eulerChi T == 6)
 
-T = cotangentBundle toricProjectiveSpace 4
-assert(eulerChi T == -1)
+T = cotangentBundle toricProjectiveSpace 4;
+assert(eulerChi T == -1) -- eulerChi T == 2 :(
 ///
 
+-- Test 13
 -- Checking cohomology for Klyachko
 TEST ///
 T1 = trivialBundle(X = toricProjectiveSpace 1 ** toricProjectiveSpace 1, 2)
@@ -4115,7 +4195,7 @@ assert(sort degrees cohomology(2,T3) == sort degrees (grRing T3)^0)
 assert(sort degrees cohomology(3,T3) == sort degrees (grRing T3)^0)
 ///
 
-
+-- Test 14
 -- Checking deltaE for Klyachko
 TEST ///
 T = trivialBundle(toricProjectiveSpace(2),3)
@@ -4126,7 +4206,7 @@ T = cotangentBundle(toricProjectiveSpace(1) ** toricProjectiveSpace(1) ** toricP
 assert(deltaE T == convexHull matrix {{-1,1,-1,1,-1,1,-1,1},{-1,-1,1,1,-1,-1,1,1},{-1,-1,-1,-1,1,1,1,1}})
 ///
 
-
+-- Test 15
 -- Checking isGeneral
 TEST ///
 T = tangentBundle (toricProjectiveSpace 1 ** toricProjectiveSpace 1 ** toricProjectiveSpace 1)
@@ -4140,6 +4220,7 @@ assert not isGeneral T
 
 ///
 
+-- Test 16
 -- Checking twist
 TEST ///
 T = tangentBundle toricProjectiveSpace 3
@@ -4166,8 +4247,9 @@ assert(areIsomorphic(T, T1**L) )
 
 -- Tests for maps
 
+-- Test 17
 --Test for ToricVectorBundleMap
-TEST///
+TEST ///
 PP3 = toricProjectiveSpace 3;
 trivPP3 = trivialBundle(PP3,3);
 tangPP3 = tangentBundle(PP3);
@@ -4181,8 +4263,9 @@ assert(map tvbMap === M)
 
 ///
 
+-- Test 18
 --Test for isWellDefined for ToricVectorBundleMap
-TEST///
+TEST ///
 X = toricProjectiveSpace 3;
 E = trivialBundle(X, 3);
 F = trivialBundle(X, 5);
@@ -4200,7 +4283,7 @@ assert (not isWellDefined map(E, L1 ++ L2 ++ L3, id_((ring E)^3)))
 ///
 
 -- Tests for isInjective and isSurjective
-
+-- Test 19
 TEST ///
 X = toricProjectiveSpace 2
 D1 = toricDivisor({1,0,0},X)
@@ -4229,6 +4312,7 @@ assert (isSurjective g)
 assert (not isSurjective f)
 ///
 
+-- Test 20
 -- Test for image, kernel and cokernel
 TEST ///
 X = toricProjectiveSpace(3, CoefficientRing=> ZZ/101);
@@ -4248,12 +4332,6 @@ assert( filtrationMatrices imf == {matrix {{1_(ZZ/101)}}, matrix {{1_(ZZ/101)}},
 img= image g;
 assert ( img == target g)
 
-E = tangentBundle hirzebruchSurface 2;
-m = id_(QQ^2);
-z = transpose matrix {{0,0,0,0}};
-M = z | z | (m || m);
-f = map(E ++ E, E ++ E, transpose M)
-assert(image f == E)
 
 -- Kernel
 assert( rank(kg)== 1)
@@ -4274,9 +4352,19 @@ assert( filtrationMatrices(CKf)=={matrix(ZZ/101, {{-1, 1, 0}, {-1, 0, 1}, {-1, 0
 -- g is surjective
 CKg = coker g;
 assert(CKg== trivialBundle(X,0) )
+
+
+
+
+E = tangentBundle hirzebruchSurface 2;
+m = id_(QQ^2);
+z = transpose matrix {{0,0,0,0}};
+M = z | z | (m || m);
+f = map(E ++ E, E ++ E, transpose M)
+assert(image f == E)
 ///
 
-
+-- Test 21
 --Checking direct sum of maps
 TEST ///
 X = toricProjectiveSpace 1
@@ -4289,6 +4377,7 @@ h = f ++ g
 assert(h.map == matrix(QQ,{{4,0},{0,7}}))
 ///
 
+-- Test 22
 --Checking tensor of maps
 TEST ///
 X = toricProjectiveSpace 1
@@ -4303,7 +4392,7 @@ assert(h.map == matrix(QQ,{{12,0},{0,21}}))
 ///
 
 -- Tests for Weil decorations
-
+-- Test 23
 --Checking weilDecoration on the direct sum of the tangent bundle with a line bundle on P2.
 TEST ///
 M = toricProjectiveSpace 2;
@@ -4316,19 +4405,19 @@ E = weilToKlyachko(M,W)
 assert(E == V)
 ///
 
--- Test 45
+-- Test 24
 TEST ///
 X =  toricProjectiveSpace 3;
 S = ring X;
 M = cokernel(map(S^{2:{-5}, {-4}},S^{2:{-7}},{{0, x_1^2}, {0, 0}, {x_1^2*x_3, 7*x_0*x_1*x_3}}));
-H = moduleToKlyachko (X,M);
+H = moduleToKlyachko (X,M, Strategy => "coker");
 assert(filtrationJumps (H) == {{0}, {0}, {0}, {0}} )
 assert( filtrationMatrices (H) ==  {map(QQ^1,QQ^1,{{1}}),map(QQ^1,QQ^1,{{1}}),map(QQ^1,QQ^1,{{1}}),map(QQ^1,QQ^1,{{1}})})
 assert( rank H == 1)
 ///
 
 
---Test 46
+--Test 25
 --Test for toricDivisor ? toricDivisor, gcd and lcm
 TEST ///
 --toricDivisor ? toricDivisor
@@ -4361,6 +4450,7 @@ assert(lcm(D1,D5) == D7)
 -------------------------------------------
 -- TESTS for the Kaneyama bundles
 -------------------------------------------
+-- Test n+1
 TEST ///
 T = toricVectorBundleKaneyama(2,pp1ProductFan 2)
 assert(T#"baseChangeTable" === hashTable {(0,1) => map(QQ^2,QQ^2,1),(0,2) => map(QQ^2,QQ^2,1),(1,3) => map(QQ^2,QQ^2,1),(2,3) => map(QQ^2,QQ^2,1)})
@@ -4376,6 +4466,7 @@ assert(rank T == 2)
 assert(T#"dimension of the variety" == 2)
 ///
 
+-- Test n+2
 -- Checking addBaseChange and cocycleCheck
 TEST ///
 T = toricVectorBundleKaneyama(2,pp1ProductFan 2)
@@ -4385,6 +4476,7 @@ T1 = addBaseChange(T,{matrix{{1,2},{0,1}},matrix{{1,0},{3,1}},matrix{{1,-2},{0,1
 assert not cocycleCheck T1
 ///
 
+-- Test n+3
 -- Checking regCheck
 TEST ///
 T = toricVectorBundleKaneyama(2,pp1ProductFan 2)
@@ -4395,7 +4487,7 @@ T1 = addDegrees(T,{matrix{{-1,0},{-3,-1}},matrix{{-1,0},{3,1}},matrix{{1,2},{-3,
 assert regCheck T1
 ///
 
--- Test 8
+-- Test n+4
 -- Checking isWellDefined TODO : I think this was intended for Klyachko type originally
 TEST ///
 T = toricVectorBundle(2,pp1ProductFan 2)
@@ -4407,6 +4499,7 @@ T = addFiltration(T,L)
 assert not isWellDefined T
 ///
 
+-- Test n+5
 -- Checking tangentBundle for Kaneyama
 TEST ///
 T = tangentBundleKaneyama(pp1ProductFan 2)
@@ -4421,7 +4514,7 @@ assert(rank T == 3)
 assert(T#"dimension of the variety" == 3)
 ///
 
--- Test 6
+-- Test n+6
 -- Checking cotangentBundle for Kaneyama
 TEST ///
 T = cotangentBundleKaneyama(hirzebruchFan 3)
@@ -4436,7 +4529,7 @@ assert(rank T == 3)
 assert(T#"dimension of the variety" == 3)
 ///
 
--- Test 9
+-- Test n+7
 -- Checking deltaE for Kaneyama
 TEST ///
 T = toricVectorBundleKaneyama(3,projectiveSpaceFan 2)
@@ -4447,7 +4540,7 @@ T = cotangentBundleKaneyama(pp1ProductFan 3)
 assert(deltaEKaneyama T == convexHull matrix {{-1,1,-1,1,-1,1,-1,1},{-1,-1,1,1,-1,-1,1,1},{-1,-1,-1,-1,1,1,1,1}})
 ///
 
--- Test 11
+-- Test n+8
 -- Checking cohomology for Kaneyama
 TEST ///
 T = toricVectorBundleKaneyama(2,pp1ProductFan 2)
@@ -4469,6 +4562,7 @@ assert(cohomology(3,T,matrix{{0},{0},{0}}) == (ring T)^0)
 ///
 
 
+-- Test n+9
 -- Checking weilToCartier
 TEST ///
 T = weilToCartierKaneyama({1,4,3,2},projectiveSpaceFan 3)
@@ -4484,9 +4578,10 @@ assert(T#"baseTable" === hashTable {matrix{{-1},{-1},{-1}} => matrix{{1_QQ}},mat
 assert(rank T == 1)
 assert(T#"dimension of the variety" == 3)
 *-
+
 ///
 
--- Test 14
+-- Test n+10
 -- Checking directSum for Kaneyama
 TEST ///
 T1 = tangentBundleKaneyama(projectiveSpaceFan 3)
@@ -4506,7 +4601,7 @@ assert(rank T == 4)
 assert(T#"dimension of the variety" == 2)
 ///
 
--- Test 16
+-- Test n+11
 -- Checking dual for Kaneyama
 TEST ///
 T = dual weilToCartierKaneyama({1,4,3,2},projectiveSpaceFan 3)
@@ -4522,7 +4617,7 @@ assert(rank T == 4)
 assert(T#"dimension of the variety" == 3)
 ///
 
--- Test 18
+-- Test n+12
 -- Checking tensor for Kaneyama
 TEST ///
 T1 = tangentBundleKaneyama(pp1ProductFan 2)
@@ -4542,7 +4637,7 @@ assert(rank T == 4)
 assert(T#"dimension of the variety" == 2)
 ///
 
--- Test 20
+-- Test n+13
 -- Checking symmetricPower for Kaneyama
 TEST ///
 T = tangentBundleKaneyama(projectiveSpaceFan 3)
@@ -4553,7 +4648,7 @@ assert(rank T == 6)
 assert(T#"dimension of the variety" == 3)
 ///
 
--- Test 22
+-- Test n+14
 -- Checking exteriorPower for Kaneyama -- did we get rid of this?
 TEST ///
 T = cotangentBundleKaneyama(hirzebruch 3)
@@ -4570,6 +4665,7 @@ assert(rank T == 3)
 assert(T#"dimension of the variety" == 3)
 ///
 
+-- Test n+15
 -- Checking eulerChi for Kaneyama
 TEST ///
 T = tangentBundleKaneyama(hirzebruchFan 3)
@@ -4578,7 +4674,7 @@ assert(eulerChiKaneyama(u,T) == 2)
 assert(eulerChiKaneyama T == 6)
 ///
 
--- Test 30
+-- Test n+16
 -- Checking cartierIndex
 TEST ///
 C=posHull matrix {{1,2},{2,1}}
@@ -4589,8 +4685,9 @@ assert(cartierIndex({1,1,1},F) == 3)
 assert(cartierIndex({3,3,3},F) == 1)
 ///
 
+
 -- ADDING NEW TESTS JUNE/JULY 2026
--- Test 31
+-- Test n+17
 -- Checking isWellDefined (Kaneyama) (combining the tests for cocycleCheck and regCheck)--TODO: FIX THIS
 TEST ///
 T = toricVectorBundleKaneyama(2,pp1ProductFan 2)
