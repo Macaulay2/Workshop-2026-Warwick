@@ -113,7 +113,7 @@ export {
     "charts",
     "cocycleCheck",
     "regCheck",
-    "weilToCartier", 
+    "weilToCartierKaneyama", 
     "hirzebruchFan",
     "pp1ProductFan", 
     "projectiveSpaceFan",
@@ -3934,7 +3934,7 @@ assert(dim variety T == 3)
 TEST ///
 T = cotangentBundle hirzebruchSurface 3
 T = exteriorPower(T,2)
-assert(ring T == QQ)
+assert(ring T == ideal(1_QQ))
 assert(filtrationJumps T == {{-1}, {-1}, {-1}, {-1}})
 assert(filtrationMatrices T == {map(QQ^1,QQ^1,{{1}}),map(QQ^1,QQ^1,{{-1}}),map(QQ^1,QQ^1,{{-1}}),map(QQ^1,QQ^1,{{1}})})
 assert(rank T == 1)
@@ -3942,7 +3942,7 @@ assert(dim variety T == 2)
 
 T = tangentBundle toricProjectiveSpace 3
 T = exteriorPower(T,2)
-assert(ring T == QQ)
+assert(ring T == ideal(1_QQ))
 assert(filtrationJumps T == {{1, 1, 0}, {1, 1, 0}, {1, 1, 0}, {1, 1, 0}})
 assert(filtrationMatrices T == {map(QQ^3,QQ^3,{{-1, 0, 0}, {0, -1, 0}, {1, -1, 1}}),map(QQ^3,QQ^3,{{1, 0, 0}, {0, 1, 0}, {0, 0,
       1}}),map(QQ^3,QQ^3,{{-1, 0, 0}, {0, 0, 1}, {0, 1, 0}}),map(QQ^3,QQ^3,{{0, 0, 1}, {-1, 0, 0}, {0, -1,
@@ -4380,7 +4380,7 @@ assert(T#"dimension of the variety" == 2)
 TEST ///
 T = toricVectorBundleKaneyama(2,pp1ProductFan 2)
 T1 = addBaseChange(T,{matrix{{1,2},{0,1}},matrix{{1,0},{3,1}},matrix{{1,-2},{0,1}},matrix{{1,0},{-3,1}}})
-assert cocycleCheck T1
+assert cocycleCheck T1 --TODO : cocycleCheck doesn't exist, combined with regCheck in isWellDefined
 T1 = addBaseChange(T,{matrix{{1,2},{0,1}},matrix{{1,0},{3,1}},matrix{{1,-2},{0,1}},matrix{{1,0},{-2,1}}})
 assert not cocycleCheck T1
 ///
@@ -4388,7 +4388,7 @@ assert not cocycleCheck T1
 -- Checking regCheck
 TEST ///
 T = toricVectorBundleKaneyama(2,pp1ProductFan 2)
-assert regCheck T
+assert regCheck T --TODO : regCheck doesn't exist, combined with cocycleCheck in isWellDefined
 T1 = addDegrees(T,{matrix{{1,2},{3,1}},matrix{{-1,0},{3,1}},matrix{{1,2},{-3,-1}},matrix{{-1,0},{-3,-1}}})
 assert not regCheck T1
 T1 = addDegrees(T,{matrix{{-1,0},{-3,-1}},matrix{{-1,0},{3,1}},matrix{{1,2},{-3,-1}},matrix{{1,2},{3,1}}})
@@ -4396,7 +4396,7 @@ assert regCheck T1
 ///
 
 -- Test 8
--- Checking isWellDefined
+-- Checking isWellDefined TODO : I think this was intended for Klyachko type originally
 TEST ///
 T = toricVectorBundle(2,pp1ProductFan 2)
 T1 = addBase(T,{matrix{{1,2},{3,1}},matrix{{-1,0},{3,1}},matrix{{1,2},{-3,-1}},matrix{{-1,0},{-3,-1}}})
@@ -4414,7 +4414,7 @@ assert(T#"baseChangeTable" === hashTable {(0,1) => map(QQ^2,QQ^2,{{1, 0}, {0, -1
 assert(T#"degreeTable" === hashTable {(matrix {{-1,0},{0,1}}, map(ZZ^2,0,0)) => matrix{{1,0},{0,-1}},(matrix {{-1,0},{0,-1}}, map(ZZ^2,0,0)) => matrix{{1,0},{0,1}},(matrix {{1,0},{0,1}}, map(ZZ^2,0,0)) => matrix{{-1,0},{0,-1}}, (matrix {{1,0},{0,-1}}, map(ZZ^2,0,0)) => matrix{{-1,0},{0,1}}})
 assert(rank T == 2)
 assert(T#"dimension of the variety" == 2)
-T = tangentBundle(projectiveSpaceFan 3, "Type" => "Kaneyama")
+T = tangentBundleKaneyama(projectiveSpaceFan 3)
 assert(T#"baseChangeTable" === hashTable {(0,1) => map(QQ^3,QQ^3,{{1, -1, 0}, {0, -1, 0}, {0, -1, 1}}), (0,2) => map(QQ^3,QQ^3,{{-1, 0, 0}, {-1, 1, 0}, {-1, 0, 1}}), (1,2) => map(QQ^3,QQ^3,{{-1, 1, 0}, {-1, 0, 0}, {-1, 0, 1}}), (0,3) => map(QQ^3,QQ^3,{{1, 0, -1}, {0, 0, -1}, {0, 1, -1}}), (1,3) => map(QQ^3,QQ^3,{{1, 0, -1}, {0, 1, -1}, {0, 0, -1}}), (2,3) => map(QQ^3,QQ^3,{{0, 0, -1}, {1, 0, -1}, {0, 1, -1}})})
 assert(T#"degreeTable" === hashTable {(matrix {{1,0,0},{0,1,0},{0,0,1}}, map(ZZ^3,0,0)) => matrix{{-1,0,0},{0,-1,0},{0,0,-1}},(matrix {{1,0,-1},{0,1,-1},{0,0,-1}}, map(ZZ^3,0,0)) => matrix{{0,-1,0},{0,0,-1},{1,1,1}},(matrix {{0,-1,0},{1,-1,0},{0,-1,1}}, map(ZZ^3,0,0)) => matrix{{1,1,1},{0,-1,0},{0,0,-1}}, (matrix {{1,-1,0},{0,-1,0},{0,-1,1}}, map(ZZ^3,0,0)) => matrix{{0,-1,0},{1,1,1},{0,0,-1}}})
 assert(rank T == 3)
@@ -4424,12 +4424,12 @@ assert(T#"dimension of the variety" == 3)
 -- Test 6
 -- Checking cotangentBundle for Kaneyama
 TEST ///
-T = cotangentBundle(hirzebruchFan 3,"Type" => "Kaneyama")
+T = cotangentBundleKaneyama(hirzebruchFan 3)
 assert(T#"baseChangeTable" === hashTable {(0,1) => map(QQ^2,QQ^2,{{1, 0}, {0, -1}}), (0,2) => map(QQ^2,QQ^2,{{-1, 3}, {0, 1}}), (1,3) => map(QQ^2,QQ^2,{{-1, -3}, {0, 1}}), (2,3) => map(QQ^2,QQ^2,{{1, 0}, {0, -1}})})
 assert(T#"degreeTable" === hashTable {(matrix {{1,0},{0,-1}}, map(ZZ^2,0,0)) => matrix{{1,0},{0,-1}},(matrix {{1,0},{0,1}}, map(ZZ^2,0,0)) => matrix{{1,0},{0,1}},(matrix {{0,-1},{1,3}}, map(ZZ^2,0,0)) => matrix{{-1,3},{0,1}}, (matrix {{0,-1},{-1,3}}, map(ZZ^2,0,0)) => matrix{{-1,-3},{0,-1}}})
 assert(rank T == 2)
 assert(T#"dimension of the variety" == 2)
-T = cotangentBundle(pp1ProductFan 3, "Type" => "Kaneyama")
+T = cotangentBundleKaneyama(pp1ProductFan 3)
 assert(T#"baseChangeTable" === hashTable {(2,6) => matrix{{-1_QQ,0,0},{0,1,0},{0,0,1}}, (4,5) => matrix{{1_QQ,0,0},{0,1,0},{0,0,-1}}, (4,6) => matrix{{1_QQ,0,0},{0,-1,0},{0,0,1}}, (3,7) => matrix{{-1_QQ,0,0},{0,1,0},{0,0,1}}, (5,7) => matrix{{1_QQ,0,0},{0,-1,0},{0,0,1}}, (6,7) => matrix{{1_QQ,0,0},{0,1,0},{0,0,-1}}, (0,1) => matrix{{1_QQ,0,0},{0,1,0},{0,0,-1}}, (0,2) => matrix{{1_QQ,0,0},{0,-1,0},{0,0,1}}, (1,3) => matrix{{1_QQ,0,0},{0,-1,0},{0,0,1}}, (0,4) => matrix{{-1_QQ,0,0},{0,1,0},{0,0,1}}, (2,3) => matrix{{1_QQ,0,0},{0,1,0},{0,0,-1}}, (1,5) => matrix{{-1_QQ,0,0},{0,1,0},{0,0,1}}})
 assert(T#"degreeTable" === hashTable {(matrix {{1,0,0},{0,1,0},{0,0,1}}, map(ZZ^3,0,0)) => matrix{{1,0,0},{0,1,0},{0,0,1}},(matrix {{-1,0,0},{0,1,0},{0,0,1}}, map(ZZ^3,0,0)) => matrix{{-1,0,0},{0,1,0},{0,0,1}},(matrix {{1,0,0},{0,-1,0},{0,0,1}}, map(ZZ^3,0,0)) => matrix{{1,0,0},{0,-1,0},{0,0,1}},(matrix {{1,0,0},{0,1,0},{0,0,-1}}, map(ZZ^3,0,0)) => matrix{{1,0,0},{0,1,0},{0,0,-1}},(matrix {{-1,0,0},{0,-1,0},{0,0,1}}, map(ZZ^3,0,0)) => matrix{{-1,0,0},{0,-1,0},{0,0,1}},(matrix {{-1,0,0},{0,1,0},{0,0,-1}}, map(ZZ^3,0,0)) => matrix{{-1,0,0},{0,1,0},{0,0,-1}},(matrix {{1,0,0},{0,-1,0},{0,0,-1}}, map(ZZ^3,0,0)) => matrix{{1,0,0},{0,-1,0},{0,0,-1}},(matrix {{-1,0,0},{0,-1,0},{0,0,-1}}, map(ZZ^3,0,0)) => matrix{{-1,0,0},{0,-1,0},{0,0,-1}}})
 assert(rank T == 3)
@@ -4439,29 +4439,29 @@ assert(T#"dimension of the variety" == 3)
 -- Test 9
 -- Checking deltaE for Kaneyama
 TEST ///
-T = toricVectorBundle(3,projectiveSpaceFan 2,"Type" => "Kaneyama")
-assert(deltaE T == convexHull matrix{{0},{0}})
-T = tangentBundle(projectiveSpaceFan 2,"Type" => "Kaneyama")
-assert(deltaE T == convexHull matrix {{-1,2,-1},{-1,-1,2}})
-T = cotangentBundle(pp1ProductFan 3,"Type" => "Kaneyama")
-assert(deltaE T == convexHull matrix {{-1,1,-1,1,-1,1,-1,1},{-1,-1,1,1,-1,-1,1,1},{-1,-1,-1,-1,1,1,1,1}})
+T = toricVectorBundleKaneyama(3,projectiveSpaceFan 2)
+assert(deltaEKaneyama T == convexHull matrix{{0},{0}})
+T = tangentBundleKaneyama(projectiveSpaceFan 2)
+assert(deltaEKaneyama T == convexHull matrix {{-1,2,-1},{-1,-1,2}})
+T = cotangentBundleKaneyama(pp1ProductFan 3)
+assert(deltaEKaneyama T == convexHull matrix {{-1,1,-1,1,-1,1,-1,1},{-1,-1,1,1,-1,-1,1,1},{-1,-1,-1,-1,1,1,1,1}})
 ///
 
 -- Test 11
 -- Checking cohomology for Kaneyama
 TEST ///
-T = toricVectorBundle(2,pp1ProductFan 2,"Type" => "Kaneyama")
+T = toricVectorBundleKaneyama(2,pp1ProductFan 2)
 assert(sort degrees cohomology(0,T,matrix{{0},{0}}) == sort degrees (ring T)^{{0,0},{0,0}})
 assert(sort degrees cohomology(0,T) == sort degrees (ring T)^{{0,0},{0,0}})
 assert(sort degrees cohomology(1,T) == sort degrees (ring T)^0)
 assert(sort degrees cohomology(2,T) == sort degrees (ring T)^0)
-T1 = tangentBundle(pp1ProductFan 2,"Type" => "Kaneyama")
+T1 = tangentBundleKaneyama(pp1ProductFan 2)
 assert(sort degrees cohomology(0,T1,matrix{{0},{0}}) == sort degrees (ring T1)^{{0,0},{0,0}})
 assert(sort degrees cohomology(0,T1,matrix{{1},{1}}) == sort degrees (ring T1)^0)
 assert(sort degrees cohomology(0,T1) == sort degrees (ring T1)^{{1,0},{0,1},{0,0},{0,0},{0,-1},{-1,0}})
 assert(sort degrees cohomology(1,T1) == sort degrees (ring T1)^0)
 assert(sort degrees cohomology(2,T1) == sort degrees (ring T1)^0)
-T = tangentBundle(hirzebruchFan 3 * projectiveSpaceFan 1,"Type" => "Kaneyama")
+T = tangentBundleKaneyama(hirzebruchFan 3 * projectiveSpaceFan 1)
 assert(cohomology(0,T,{matrix {{2},{1},{0}}, matrix{{3},{1},{0}}}) == {(ring T)^{{-2,-1,0}},(ring T)^{{-3,-1,0}}})
 assert(cohomology(1,T,{matrix {{-2},{-1},{0}}, matrix{{-1},{-1},{0}}}) == {(ring T)^{{2, 1, 0}},(ring T)^{{1, 1, 0}}})
 assert(cohomology(2,T,matrix{{0},{0},{0}}) == (ring T)^0)
@@ -4471,32 +4471,34 @@ assert(cohomology(3,T,matrix{{0},{0},{0}}) == (ring T)^0)
 
 -- Checking weilToCartier
 TEST ///
-T = weilToCartier({1,4,3,2},projectiveSpaceFan 3,"Type" => "Kaneyama")
+T = weilToCartierKaneyama({1,4,3,2},projectiveSpaceFan 3)
 assert(T#"baseChangeTable" === hashTable {(0,1) => map(QQ^1,QQ^1,1),(0,2) => map(QQ^1,QQ^1,1),(0,3) => map(QQ^1,QQ^1,1),(1,2) => map(QQ^1,QQ^1,1),(1,3) => map(QQ^1,QQ^1,1),(2,3) => map(QQ^1,QQ^1,1)})
 assert(T#"degreeTable" === hashTable {(matrix {{1,0,-1},{0,1,-1},{0,0,-1}}, map(ZZ^3,0,0)) => matrix{{-2},{-3},{6}},(matrix {{0,-1,0},{1,-1,0},{0,-1,1}}, map(ZZ^3,0,0)) => matrix{{8},{-3},{-4}},(matrix {{1,-1,0},{0,-1,0},{0,-1,1}}, map(ZZ^3,0,0)) => matrix{{-2},{7},{-4}}, (map(ZZ^3,ZZ^3,1), map(ZZ^3,0,0)) => matrix{{-2},{-3},{-4}}})
 assert(rank T == 1)
 assert(T#"dimension of the variety" == 3)
-T = weilToCartier({1,4,3,2},projectiveSpaceFan 3)
+-*
+T = weilToCartier({1,4,3,2},projectiveSpaceFan 3) --no weilToCartier for Klyachko?
 assert(T#"ring" === QQ)
 assert(T#"filtrationMatricesTable" === hashTable {matrix{{-1},{-1},{-1}} => matrix{{-1}},matrix{{0},{0},{1}} => matrix{{-4}},matrix{{0},{1},{0}} => matrix{{-3}}, matrix{{1},{0},{0}} => matrix{{-2}}})
 assert(T#"baseTable" === hashTable {matrix{{-1},{-1},{-1}} => matrix{{1_QQ}},matrix{{0},{0},{1}} => matrix{{1_QQ}},matrix{{0},{1},{0}} => matrix{{1_QQ}}, matrix{{1},{0},{0}} => matrix{{1_QQ}}})
 assert(rank T == 1)
 assert(T#"dimension of the variety" == 3)
+*-
 ///
 
 -- Test 14
 -- Checking directSum for Kaneyama
 TEST ///
-T1 = tangentBundle(projectiveSpaceFan 3,"Type" => "Kaneyama")
-T2 = weilToCartier({1,7,5,3},projectiveSpaceFan 3,"Type" => "Kaneyama")
+T1 = tangentBundleKaneyama(projectiveSpaceFan 3)
+T2 = weilToCartierKaneyama({1,7,5,3},projectiveSpaceFan 3)
 T = T1 ++ T2
 assert(T#"baseChangeTable" === hashTable {(0,1) => matrix{{1_QQ,-1,0,0},{0,-1,0,0},{0,-1,1,0},{0,0,0,1}}, (0,2) => matrix{{-1_QQ,0,0,0},{-1,1,0,0},{-1,0,1,0},{0,0,0,1}}, (1,2) => matrix{{-1_QQ,1,0,0},{-1,0,0,0},{-1,0,1,0},{0,0,0,1}}, (0,3) => matrix{{1_QQ,0,-1,0},{0,0,-1,0},{0,1,-1,0},{0,0,0,1}}, (1,3) => matrix{{1_QQ,0,-1,0},{0,1,-1,0},{0,0,-1,0},{0,0,0,1}}, (2,3) => matrix{{0_QQ,0,-1,0},{1,0,-1,0},{0,1,-1,0},{0,0,0,1}}})
 assert(T#"degreeTable" === hashTable {(matrix {{1,0,-1},{0,1,-1},{0,0,-1}}, map(ZZ^3,0,0)) => matrix{{0,-1,0,-3},{0,0,-1,-5},{1,1,1,9}},(matrix {{0,-1,0},{1,-1,0},{0,-1,1}}, map(ZZ^3,0,0)) => matrix{{1,1,1,13},{0,-1,0,-5},{0,0,-1,-7}},(matrix {{1,-1,0},{0,-1,0},{0,-1,1}}, map(ZZ^3,0,0)) => matrix{{0,-1,0,-3},{1,1,1,11},{0,0,-1,-7}}, (map(ZZ^3,ZZ^3,1),map(ZZ^3,0,0)) => matrix{{-1,0,0,-3},{0,-1,0,-5},{0,0,-1,-7}}})
 assert(rank T == 4)
 assert(T#"dimension of the variety" == 3)
 assert(T == directSum {T1,T2})
-T1 = cotangentBundle(hirzebruchFan 3,"Type" => "Kaneyama")
-T2 = tangentBundle(hirzebruchFan 3,"Type" => "Kaneyama")
+T1 = cotangentBundleKaneyama(hirzebruchFan 3)
+T2 = tangentBundleKaneyama(hirzebruchFan 3)
 T = T1 ++ T2
 assert(T#"baseChangeTable" === hashTable {(0,1) => matrix{{1_QQ,0,0,0},{0,-1,0,0},{0,0,1,0},{0,0,0,-1}}, (0,2) => matrix{{-1_QQ,3,0,0},{0,1,0,0},{0,0,-1,0},{0,0,3,1}}, (1,3) => matrix{{-1_QQ,-3,0,0},{0,1,0,0},{0,0,-1,0},{0,0,-3,1}}, (2,3) => matrix{{1_QQ,0,0,0},{0,-1,0,0},{0,0,1,0},{0,0,0,-1}}})
 assert(T#"degreeTable" === hashTable {(matrix {{1,0},{0,-1}}, map(ZZ^2,0,0)) => matrix{{1,0,-1,0},{0,-1,0,1}}, (matrix {{0,-1},{1,3}}, map(ZZ^2,0,0)) => matrix{{-1,3,1,-3},{0,1,0,-1}}, (matrix {{1,0},{0,1}}, map(ZZ^2,0,0)) => matrix{{1,0,-1,0},{0,1,0,-1}}, (matrix {{0,-1},{-1,3}}, map(ZZ^2,0,0)) => matrix {{-1,-3,1,3},{0,-1,0,1}}})
@@ -4507,12 +4509,12 @@ assert(T#"dimension of the variety" == 2)
 -- Test 16
 -- Checking dual for Kaneyama
 TEST ///
-T = dual weilToCartier({1,4,3,2},projectiveSpaceFan 3,"Type" => "Kaneyama")
+T = dual weilToCartierKaneyama({1,4,3,2},projectiveSpaceFan 3)
 assert(T#"baseChangeTable" === hashTable{(0,1) => matrix{{1_QQ}},(0,2) => matrix{{1_QQ}}, (0,3) => matrix{{1_QQ}}, (1,2) => matrix{{1_QQ}},(1,3) => matrix{{1_QQ}},(2,3) => matrix{{1_QQ}}})
 assert(T#"degreeTable" === hashTable{(matrix {{1,0,-1},{0,1,-1},{0,0,-1}}, map(ZZ^3,0,0)) => matrix{{2},{3},{-6}},(matrix {{0,-1,0},{1,-1,0},{0,-1,1}}, map(ZZ^3,0,0)) => matrix{{-8},{3},{4}},(matrix {{1,-1,0},{0,-1,0},{0,-1,1}}, map(ZZ^3,0,0)) => matrix{{2},{-7},{4}}, (map(ZZ^3,ZZ^3,1), map(ZZ^3,0,0)) => matrix{{2},{3},{4}}})
 assert(rank T == 1)
 assert(T#"dimension of the variety" == 3)
-T1 = tangentBundle(projectiveSpaceFan 3,"Type" => "Kaneyama")
+T1 = tangentBundleKaneyama(projectiveSpaceFan 3)
 T = dual(T1 ++ T)
 assert(T#"baseChangeTable" === hashTable{(0,2) => matrix{{-1_QQ,-1,-1,0},{0,1,0,0},{0,0,1,0},{0,0,0,1}},(0,1) => matrix{{1_QQ,0,0,0},{-1,-1,-1,0},{0,0,1,0},{0,0,0,1}}, (0,3) => matrix{{1_QQ,0,0,0},{-1,-1,-1,0},{0,1,0,0},{0,0,0,1}}, (1,2) => matrix{{0_QQ,1,0,0},{-1,-1,-1,0},{0,0,1,0},{0,0,0,1}},(1,3) => matrix{{1_QQ,0,0,0},{0,1,0,0},{-1,-1,-1,0},{0,0,0,1}},(2,3) => matrix{{-1_QQ,-1,-1,0},{1,0,0,0},{0,1,0,0},{0,0,0,1}}})
 assert(T#"degreeTable" === hashTable{(matrix {{1,0,-1},{0,1,-1},{0,0,-1}}, map(ZZ^3,0,0)) => matrix{{0,1,0,-2},{0,0,1,-3},{-1,-1,-1,6}},(matrix {{0,-1,0},{1,-1,0},{0,-1,1}}, map(ZZ^3,0,0)) => matrix{{-1,-1,-1,8},{0,1,0,-3},{0,0,1,-4}},(matrix {{1,-1,0},{0,-1,0},{0,-1,1}}, map(ZZ^3,0,0)) => matrix{{0,1,0,-2},{-1,-1,-1,7},{0,0,1,-4}}, (map(ZZ^3,ZZ^3,1), map(ZZ^3,0,0)) => matrix{{1,0,0,-2},{0,1,0,-3},{0,0,1,-4}}})
@@ -4523,15 +4525,15 @@ assert(T#"dimension of the variety" == 3)
 -- Test 18
 -- Checking tensor for Kaneyama
 TEST ///
-T1 = tangentBundle(pp1ProductFan 2,"Type" => "Kaneyama")
-T2 = cotangentBundle(pp1ProductFan 2,"Type" => "Kaneyama")
+T1 = tangentBundleKaneyama(pp1ProductFan 2)
+T2 = cotangentBundleKaneyama(pp1ProductFan 2)
 T = T1 ** T2
 assert(T#"baseChangeTable" === hashTable{(0,2) => matrix{{1_QQ,0,0,0},{0,-1,0,0},{0,0,-1,0},{0,0,0,1}},(0,1) => matrix{{1_QQ,0,0,0},{0,-1,0,0},{0,0,-1,0},{0,0,0,1}}, (1,3) => matrix{{1_QQ,0,0,0},{0,-1,0,0},{0,0,-1,0},{0,0,0,1}}, (2,3) => matrix{{1_QQ,0,0,0},{0,-1,0,0},{0,0,-1,0},{0,0,0,1}}})
 assert(T#"degreeTable" === hashTable{(matrix {{-1,0},{0,1}}, map(ZZ^2,0,0)) => matrix{{0,-1,1,0},{0,-1,1,0}},(matrix {{-1,0},{0,-1}}, map(ZZ^2,0,0)) => matrix{{0,-1,1,0},{0,1,-1,0}},(matrix {{1,0},{0,-1}}, map(ZZ^2,0,0)) => matrix{{0,1,-1,0},{0,1,-1,0}}, (map(ZZ^2,ZZ^2,1), map(ZZ^2,0,0)) => matrix{{0,1,-1,0},{0,-1,1,0}}})
 assert(rank T == 4)
 assert(T#"dimension of the variety" == 2)
-T1 = tangentBundle(hirzebruchFan 2,"Type" => "Kaneyama")
-T2 = weilToCartier({5,1,7,3},hirzebruchFan 2,"Type" => "Kaneyama")
+T1 = tangentBundleKaneyama(hirzebruchFan 2)
+T2 = weilToCartierKaneyama({5,1,7,3},hirzebruchFan 2)
 T2 = T2 ++ T2
 T = T1 ** T2
 assert(T#"baseChangeTable" === hashTable{(0,1) => matrix{{1_QQ,0,0,0},{0,-1,0,0},{0,0,1,0},{0,0,0,-1}},(0,2) => matrix{{-1_QQ,0,0,0},{2,1,0,0},{0,0,-1,0},{0,0,2,1}}, (1,3) => matrix{{-1_QQ,0,0,0},{-2,1,0,0},{0,0,-1,0},{0,0,-2,1}}, (2,3) => matrix{{1_QQ,0,0,0},{0,-1,0,0},{0,0,1,0},{0,0,0,-1}}})
@@ -4543,7 +4545,7 @@ assert(T#"dimension of the variety" == 2)
 -- Test 20
 -- Checking symmetricPower for Kaneyama
 TEST ///
-T = tangentBundle(projectiveSpaceFan 3,"Type" => "Kaneyama")
+T = tangentBundleKaneyama(projectiveSpaceFan 3)
 T = symmetricPower(2,T)
 assert(T#"baseChangeTable" === hashTable{(0,1) => matrix{{1_QQ,-1,0,1,0,0},{0,-1,0,2,0,0},{0,-1,1,2,-1,0},{0,0,0,1,0,0},{0,0,0,2,-1,0},{0,0,0,1,-1,1}},(0,2) => matrix{{1_QQ,0,0,0,0,0},{2,-1,0,0,0,0},{2,0,-1,0,0,0},{1,-1,0,1,0,0},{2,-1,-1,0,1,0},{1,0,-1,0,0,1}}, (0,3) => matrix{{1_QQ,0,-1,0,0,1},{0,0,-1,0,0,2},{0,1,-1,0,-1,2},{0,0,0,0,0,1},{0,0,0,0,-1,2},{0,0,0,1,-1,1}}, (1,2) => matrix{{1_QQ,-1,0,1,0,0},{2,-1,0,0,0,0},{2,-1,-1,0,1,0},{1,0,0,0,0,0},{2,0,-1,0,0,0},{1,0,-1,0,0,1}}, (1,3) => matrix{{1_QQ,0,-1,0,0,1},{0,1,-1,0,-1,2},{0,0,-1,0,0,2},{0,0,0,1,-1,1},{0,0,0,0,-1,2},{0,0,0,0,0,1}},(2,3) => matrix{{0_QQ,0,0,0,0,1},{0,0,-1,0,0,2},{0,0,0,0,-1,2},{1,0,-1,0,0,1},{0,1,-1,0,-1,2},{0,0,0,1,-1,1}}})
 assert(T#"degreeTable" === hashTable{(matrix {{1,-1,0},{0,-1,0},{0,-1,1}}, map(ZZ^3,0,0)) => matrix{{0,-1,0,-2,-1,0},{2,2,2,2,2,2},{0,0,-1,0,-1,-2}},(matrix {{1,0,0},{0,1,0},{0,0,1}}, map(ZZ^3,0,0)) => matrix{{-2,-1,-1,0,0,0},{0,-1,0,-2,-1,0},{0,0,-1,0,-1,-2}},(matrix {{1,0,-1},{0,1,-1},{0,0,-1}}, map(ZZ^3,0,0)) => matrix{{0,-1,0,-2,-1,0},{0,0,-1,0,-1,-2},{2,2,2,2,2,2}},(matrix {{0,-1,0},{1,-1,0},{0,-1,1}}, map(ZZ^3,0,0)) => matrix{{2,2,2,2,2,2},{0,-1,0,-2,-1,0},{0,0,-1,0,-1,-2}}})
@@ -4554,13 +4556,13 @@ assert(T#"dimension of the variety" == 3)
 -- Test 22
 -- Checking exteriorPower for Kaneyama -- did we get rid of this?
 TEST ///
-T = cotangentBundle(hirzebruch 3,"Type" => "Kaneyama")
+T = cotangentBundleKaneyama(hirzebruch 3)
 T = exteriorPower(2,T)
 assert(T#"baseChangeTable" === hashTable{(0,1) => matrix{{-1_QQ}}, (0,2) => matrix{{-1_QQ}}, (1,3) => matrix{{-1_QQ}}, (2,3) => matrix{{-1_QQ}}})
 assert(T#"degreeTable" === hashTable{(matrix {{1,0},{0,1}}, map(ZZ^2,0,0)) => matrix{{1},{1}},(matrix {{1,0},{0,-1}}, map(ZZ^2,0,0)) => matrix{{1},{-1}},(matrix {{0,-1},{1,3}}, map(ZZ^2,0,0)) => matrix {{2},{1}},(matrix {{0,-1},{-1,3}}, map(ZZ^2,0,0)) => matrix {{-4},{-1}}})
 assert(rank T == 1)
 assert(T#"dimension of the variety" == 2)
-T = tangentBundle(projectiveSpaceFan 3,"Type" => "Kaneyama")
+T = tangentBundleKaneyama(projectiveSpaceFan 3)
 T = exteriorPower(2,T)
 assert(T#"baseChangeTable" === hashTable{(0,1) => matrix{{-1_QQ,0,0},{-1,1,-1},{0,0,-1}}, (0,2) => matrix{{-1_QQ,0,0},{0,-1,0},{1,-1,1}}, (0,3) => matrix{{0_QQ,-1,0},{1,-1,1},{0,0,1}}, (1,2) => matrix{{1_QQ,0,0},{1,-1,1},{0,-1,0}}, (1,3) => matrix{{1_QQ,-1,1},{0,-1,0},{0,0,-1}}, (2,3) => matrix{{0_QQ,1,0},{0,0,1},{1,-1,1}}})
 assert(T#"degreeTable" === hashTable{(matrix {{1,-1,0},{0,-1,0},{0,-1,1}}, map(ZZ^3,0,0)) => matrix{{-1,0,-1},{2,2,2},{0,-1,-1}},(matrix {{1,0,0},{0,1,0},{0,0,1}}, map(ZZ^3,0,0)) => matrix{{-1,-1,0},{-1,0,-1},{0,-1,-1}},(matrix {{1,0,-1},{0,1,-1},{0,0,-1}}, map(ZZ^3,0,0)) => matrix{{-1,0,-1},{0,-1,-1},{2,2,2}},(matrix {{0,-1,0},{1,-1,0},{0,-1,1}}, map(ZZ^3,0,0)) => matrix{{2,2,2},{-1,0,-1},{0,-1,-1}}})
@@ -4570,10 +4572,10 @@ assert(T#"dimension of the variety" == 3)
 
 -- Checking eulerChi for Kaneyama
 TEST ///
-T = tangentBundle(hirzebruchFan 3,"Type" => "Kaneyama")
+T = tangentBundleKaneyama(hirzebruchFan 3)
 u = matrix {{0},{0}}
-assert(eulerChi(u,T) == 2)
-assert(eulerChi T == 6)
+assert(eulerChiKaneyama(u,T) == 2)
+assert(eulerChiKaneyama T == 6)
 ///
 
 -- Test 30
@@ -4587,7 +4589,6 @@ assert(cartierIndex({1,1,1},F) == 3)
 assert(cartierIndex({3,3,3},F) == 1)
 ///
 
-*-
 -- ADDING NEW TESTS JUNE/JULY 2026
 -- Test 31
 -- Checking isWellDefined (Kaneyama) (combining the tests for cocycleCheck and regCheck)--TODO: FIX THIS
