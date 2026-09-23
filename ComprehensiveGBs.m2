@@ -82,65 +82,65 @@ CGBFromTriple List := CGBTriple => (L) -> (
 CGBDataFromRings = method();
 
 CGBDataFromRings Ring := CGBData => (R) -> (
-  KU := coefficientRing R;
-  K := coefficientRing KU;
-  n := numgens R;
-  m := numgens KU;
-  x := local x;
-  u := local u;
-  l := local l;
-  RExt := K[l, x_1..x_n, u_1..u_m, MonomialOrder => {Lex => 1} | ringOrder R | ringOrder KU];
-  RFlat := K[x_1..x_n, u_1..u_m, MonomialOrder => ringOrder R | ringOrder KU];
-  RExt' := KU[l, x_1..x_n, MonomialOrder => {Lex => 1} | ringOrder R];
-  RFlatl := RFlat[l];
-  RtoRExt := map(RExt, R, drop(gens RExt, 1));
-  RExttoRFlatl:= map(RFlatl,RExt, gens RFlatl | gens coefficientRing RFlatl);
-  RExttoRExt':= map(RExt',RExt, gens RExt'| gens coefficientRing RExt');
-  RExttoR:= map(R, RExt, {1} | gens R | gens coefficientRing R);
-  KUtoRFlat := map(RFlat, KU, take(gens RFlat, -#gens KU));
-  RFlattoR := map(R, RFlat, gens R | gens coefficientRing R);
-  KUtoR := map(R, KU, gens coefficientRing R);
-  RtoRFlat := map(RFlat, R, gens RFlat);
+    KU := coefficientRing R;
+    K := coefficientRing KU;
+    n := numgens R;
+    m := numgens KU;
+    x := local x;
+    u := local u;
+    l := local l;
+    RExt := K[l, x_1..x_n, u_1..u_m, MonomialOrder => {Lex => 1} | ringOrder R | ringOrder KU];
+    RFlat := K[x_1..x_n, u_1..u_m, MonomialOrder => ringOrder R | ringOrder KU];
+    RExt' := KU[l, x_1..x_n, MonomialOrder => {Lex => 1} | ringOrder R];
+    RFlatl := RFlat[l];
+    RtoRExt := map(RExt, R, drop(gens RExt, 1));
+    RExttoRFlatl:= map(RFlatl,RExt, gens RFlatl | gens coefficientRing RFlatl);
+    RExttoRExt':= map(RExt',RExt, gens RExt'| gens coefficientRing RExt');
+    RExttoR:= map(R, RExt, {1} | gens R | gens coefficientRing R);
+    KUtoRFlat := map(RFlat, KU, take(gens RFlat, -#gens KU));
+    RFlattoR := map(R, RFlat, gens R | gens coefficientRing R);
+    KUtoR := map(R, KU, gens coefficientRing R);
+    RtoRFlat := map(RFlat, R, gens RFlat);
 
-  new CGBData from {
-    "R"             => R,
-    "RExt"          => RExt,
-    "RFlat"         => RFlat,
-    "RExt'"         => RExt',
-    "KU"            => KU,
-    "RFlatl"        => RFlatl,
-    "RtoRExt"       => RtoRExt,
-    "RExttoRFlatl"  => RExttoRFlatl,
-    "RExttoRExt'"   => RExttoRExt',
-    "RExttoR"       => RExttoR,
-    "KUtoRFlat"     => KUtoRFlat,
-    "RFlattoR"      => RFlattoR,
-    "KUtoR"         => KUtoR,
-    "RtoRFlat"      => RtoRFlat
+    new CGBData from {
+        "R"             => R,
+        "RExt"          => RExt,
+        "RFlat"         => RFlat,
+        "RExt'"         => RExt',
+        "KU"            => KU,
+        "RFlatl"        => RFlatl,
+        "RtoRExt"       => RtoRExt,
+        "RExttoRFlatl"  => RExttoRFlatl,
+        "RExttoRExt'"   => RExttoRExt',
+        "RExttoR"       => RExttoR,
+        "KUtoRFlat"     => KUtoRFlat,
+        "RFlattoR"      => RFlattoR,
+        "KUtoR"         => KUtoR,
+        "RtoRFlat"      => RtoRFlat
     }
 );
 
 
 listOfFactors = method() -- returns the list of factors of a ring element
 listOfFactors (RingElement) := (h) -> (
-  hfac := factor h;
-  select(apply(#hfac, i -> hfac#i#0), t -> not isConstant t)
+    hfac := factor h;
+    select(apply(#hfac, i -> hfac#i#0), t -> not isConstant t)
 );
 
 squareFreePart = method() -- returns the square free part of a ring element
 squareFreePart (RingElement) := (h) -> (
-  if zero h then return h;
-  R := ring h;
-  f := product listOfFactors h;
-  return f_R
+    if zero h then return h;
+    R := ring h;
+    f := product listOfFactors h;
+    return f_R
 );
 
 
 
 isConsistent = method(); -- returns whether or not rad(E) intersect N is empty
 isConsistent (List, List) := (E, N) -> (
-  I := radical ideal E;
-  any(N, p -> not isMember(p, I))
+    I := radical ideal E;
+    any(N, p -> not isMember(p, I))
 );
 
 isConsistentRabinowitsch = method(); -- isConsistent, using the Rabinowitsch trick
@@ -149,7 +149,7 @@ isConsistentRabinowitsch (List, List) :=(E,N) -> (
     if isEmpty E then(
         if zero first N then error("Please remove zeros from N"); 
         return true;
-        );
+    );
     if isEmpty N then(return false);
     R := ring E_0;
     u := local u;
@@ -170,25 +170,25 @@ diffLC = method(
     }
 );
 diffLC (Sequence, Sequence) := opts -> (A, B) -> (
-  result := {(A#0 | {B#1}, A#1)} | apply(B#0, p -> (A#0, A#1 * p));
-  if opts.Strategy == "radical" then (
-    select(result, t -> isConsistent(t#0, {t#1}))
+    result := {(A#0 | {B#1}, A#1)} | apply(B#0, p -> (A#0, A#1 * p));
+    if opts.Strategy == "radical" then (
+        select(result, t -> isConsistent(t#0, {t#1}))
     ) 
-  else if opts.Strategy == "Rabinowitsch" then (
-    select(result, t -> isConsistentRabinowitsch(t#0, {t#1}))
+    else if opts.Strategy == "Rabinowitsch" then (
+        select(result, t -> isConsistentRabinowitsch(t#0, {t#1}))
     )
-  else (
-    error "Unknown strategy for diffLC"
-  )
+    else (
+        error "Unknown strategy for diffLC"
+    )
 );
 
 diffConstructibleByLC = method(
     Options => {
         Strategy => "radical"
-        }
-    );
+    }
+);
 diffConstructibleByLC (List, Sequence) := opts -> (C, LC) -> (
-  flatten apply(C, t -> diffLC(t, LC, opts))
+    flatten apply(C, t -> diffLC(t, LC, opts))
 );
 
 
@@ -202,39 +202,39 @@ CGBMain = method(
         Verbose => false,
         Depth => -1,
         CheckAssumption => true
-        }
-    ); -- Initialises CGBMainRec
+    }
+); -- Initialises CGBMainRec
 
 CGBMain (List) := o -> (F) -> (
-  R := ring first F;
-  KU := coefficientRing R;
-  S := first entries eliminateVariables F;
-  cgs := CGBMain(F, S, o ++ {CheckAssumption => false});
-  if #S == 0 then return cgs;
-  {({0_KU}, S, {1_R})} | cgs
+    R := ring first F;
+    KU := coefficientRing R;
+    S := first entries eliminateVariables F;
+    cgs := CGBMain(F, S, o ++ {CheckAssumption => false});
+    if #S == 0 then return cgs;
+    {({0_KU}, S, {1_R})} | cgs
 )
 CGBMain (List, List) := o -> (F, S) -> (
-  R := ring first F;
-  KU := coefficientRing R;
-  S' := apply(S, s -> (
-    s' := sub(s, R);
-    if not liftable(s', KU) then
-      error("S must consist of polynomials in the parameters; found " | toString s);
-    lift(s', KU)
-  ));
-  if o.CheckAssumption then (
-    -- V(S) is contained in V(<F> cap k[U]) <=> (S, <F> cap k[U]) is inconsistent
-    if isConsistentRabinowitsch(S', first entries eliminateVariables F) then
-      error("V(S) is not contained in V(ideal F cap k[U]); pass CheckAssumption => false to skip this check");
-  );
-  cgbData := CGBDataFromRings R;
-  cgs := CGBMainRec(F, S', {}, cgbData,
-    ReduceStrata => o.ReduceStrata,
-    Strategy => o.Strategy,
-    Verbose => o.Verbose,
-    Depth => o.Depth
-  );
-  apply(cgs, t -> (if #(t#0) == 0 then {0_KU} else t#0, t#1, t#2))
+    R := ring first F;
+    KU := coefficientRing R;
+    S' := apply(S, s -> (
+        s' := sub(s, R);
+        if not liftable(s', KU) then
+            error("S must consist of polynomials in the parameters; found " | toString s);
+        lift(s', KU)
+    ));
+    if o.CheckAssumption then (
+        -- V(S) is contained in V(<F> cap k[U]) <=> (S, <F> cap k[U]) is inconsistent
+        if isConsistentRabinowitsch(S', first entries eliminateVariables F) then
+            error("V(S) is not contained in V(ideal F cap k[U]); pass CheckAssumption => false to skip this check");
+    );
+    cgbData := CGBDataFromRings R;
+    cgs := CGBMainRec(F, S', {}, cgbData,
+        ReduceStrata => o.ReduceStrata,
+        Strategy => o.Strategy,
+        Verbose => o.Verbose,
+        Depth => o.Depth
+    );
+    apply(cgs, t -> (if #(t#0) == 0 then {0_KU} else t#0, t#1, t#2))
 )
 
 CGBMainRec = method(
@@ -243,112 +243,112 @@ CGBMainRec = method(
         Strategy => "Rabinowitsch",
         Verbose => false,
         Depth => -1
-        }
-    );
+    }
+);
 CGBMainRec (List, List, List, CGBData) := o -> (F, S, memo, cgbData) -> (
-  R := cgbData#"R";
-  RExt := cgbData#"RExt";
-  RFlat := cgbData#"RFlat";
-  RExt' := cgbData#"RExt'";
-  KU := cgbData#"KU";
-  RFlatl := cgbData#"RFlatl";
-  RtoRExt := cgbData#"RtoRExt";
-  RExttoRFlatl := cgbData#"RExttoRFlatl";
-  RExttoRExt' := cgbData#"RExttoRExt'";
-  RExttoR := cgbData#"RExttoR";
-  KUtoRFlat := cgbData#"KUtoRFlat";
-  RFlattoR := cgbData#"RFlattoR";
-  KUtoR := cgbData#"KUtoR";
-  RtoRFlat := cgbData#"RtoRFlat";
+    R := cgbData#"R";
+    RExt := cgbData#"RExt";
+    RFlat := cgbData#"RFlat";
+    RExt' := cgbData#"RExt'";
+    KU := cgbData#"KU";
+    RFlatl := cgbData#"RFlatl";
+    RtoRExt := cgbData#"RtoRExt";
+    RExttoRFlatl := cgbData#"RExttoRFlatl";
+    RExttoRExt' := cgbData#"RExttoRExt'";
+    RExttoR := cgbData#"RExttoR";
+    KUtoRFlat := cgbData#"KUtoRFlat";
+    RFlattoR := cgbData#"RFlattoR";
+    KUtoR := cgbData#"KUtoR";
+    RtoRFlat := cgbData#"RtoRFlat";
 
-  S = first entries gens gb ideal S;
-  if o.Verbose then (
-      print("Computing CGB for F = " | toString F | " and S = " | toString S);
-      );
-  if 1 % (ideal S) == 0 then (
-    return {}
-  );
-  l := first gens RExt;
-  A := apply(F, i -> l * RtoRExt(i));
-  B := apply(S, i -> (l-1) * RtoRExt(i));
-  G := (entries gens gb(ideal join(A, B)))_0; -- isn't G in RExt? why do we substitute it in the line below? Let's clean it up without a sub
+    S = first entries gens gb ideal S;
+    if o.Verbose then (
+        print("Computing CGB for F = " | toString F | " and S = " | toString S);
+    );
+    if 1 % (ideal S) == 0 then (
+        return {}
+    );
+    l := first gens RExt;
+    A := apply(F, i -> l * RtoRExt(i));
+    B := apply(S, i -> (l-1) * RtoRExt(i));
+    G := (entries gens gb(ideal join(A, B)))_0; -- isn't G in RExt? why do we substitute it in the line below? Let's clean it up without a sub
 
-  n := numgens R;
-  pruneG := select(G, g -> (
-          (first first exponents(leadMonomial sub(g,RExt))) > 0) and
-      any(exponents(sub(leadCoefficient RExttoRFlatl(g),RFlat)), i -> any(i_(toList(0..(n-1))), i -> i > 0)));
-  pruneG = apply(pruneG, g -> leadCoefficient RExttoRExt'(g));
-  h := lcm(pruneG | {1_KU});
-  for i in 0..(#(factor h)-1) do (
-    if isConstant (factor h)#i#0 then(
-         h = h//(factor h)#i#0;
-         )
-      );
+    n := numgens R;
+    pruneG := select(G, g -> (
+        (first first exponents(leadMonomial sub(g,RExt))) > 0) and
+        any(exponents(sub(leadCoefficient RExttoRFlatl(g),RFlat)), i -> any(i_(toList(0..(n-1))), i -> i > 0)));
+    pruneG = apply(pruneG, g -> leadCoefficient RExttoRExt'(g));
+    h := lcm(pruneG | {1_KU});
+    for i in 0..(#(factor h)-1) do (
+        if isConstant (factor h)#i#0 then(
+            h = h//(factor h)#i#0;
+        )
+    );
 
-  if o.ReduceStrata then (
-      memo = memo | {
-          (S, {h},
-              for g in G list (
-                  g' := RExttoR(g);
-                  if zero g' then continue;
-                  g')
-              )
-          };
-      );
-
-  if pruneG == {} then (
     if o.ReduceStrata then (
-      return memo
+        memo = memo | {
+            (S, {h},
+                for g in G list (
+                    g' := RExttoR(g);
+                    if zero g' then continue;
+                    g')
+            )
+        };
+    );
+
+    if pruneG == {} then (
+        if o.ReduceStrata then (
+            return memo
+        ) else (
+            return {
+                (S, {h},
+                    for g in G list (
+                        g' := RExttoR(g);
+                        if zero g' then continue;
+                        g')
+                )
+            }
+        )
+    );
+
+    -- H := pruneG; -- (takes too long to terminate if we do not factor h)
+    -- H := unique apply(pruneG, g -> squareFreePart g); -- (takes a bit longer to terminate)
+
+    if o.Depth == 0 then (
+        -- TODO add a return statement for both ReduceStrata / non ReduceStrata
+
+    );
+
+    H := listOfFactors h;
+    if o.ReduceStrata then (
+        diffset := {};
+        for hi in H do (
+            diffset = {({hi}, 1_(KU))};
+            for t in memo do (
+                diffset = diffConstructibleByLC(diffset, (t#0, first t#1), Strategy => o.Strategy);
+                if isEmpty diffset then (
+                    break
+                );
+            );
+            if isEmpty diffset then (
+                continue;
+            );
+            if o.Depth != 0 then (
+                memo = CGBMainRec(F, append(S, hi), memo, cgbData, o ++ {Depth => o.Depth -1});
+            )
+        );
+        return memo
     ) else (
-      return {
-          (S, {h},
-              for g in G list (
-                  g' := RExttoR(g);
-                  if zero g' then continue;
-                  g')
-              )
-          }
-      )
-  );
-
-  -- H := pruneG; -- (takes too long to terminate if we do not factor h)
-  -- H := unique apply(pruneG, g -> squareFreePart g); -- (takes a bit longer to terminate)
-
-  if o.Depth == 0 then (
-      -- TODO add a return statement for both ReduceStrata / non ReduceStrata
-
-      );
-
-  H := listOfFactors h;
-  if o.ReduceStrata then (
-      diffset := {};
-      for hi in H do (
-          diffset = {({hi}, 1_(KU))};
-          for t in memo do (
-              diffset = diffConstructibleByLC(diffset, (t#0, first t#1), Strategy => o.Strategy);
-              if isEmpty diffset then (
-                  break
-                  );
-              );
-          if isEmpty diffset then (
-              continue;
-              );
-          if o.Depth != 0 then (
-              memo = CGBMainRec(F, append(S, hi), memo, cgbData, o ++ {Depth => o.Depth -1});
-              )
-          );
-      return memo
-      ) else (
-      return {
-          (S, {h},
-              for g in G list (
-                  g' := RExttoR(g);
-                  if zero g' then continue;
-                  g')
-              )
-          } | if o.Depth == 0 then {} else flatten apply(H, hi -> CGBMainRec(F, append(S, hi), memo, cgbData, o ++ {Depth => o.Depth -1}))
-      );
-  );
+        return {
+            (S, {h},
+                for g in G list (
+                    g' := RExttoR(g);
+                    if zero g' then continue;
+                    g')
+            )
+        } | if o.Depth == 0 then {} else flatten apply(H, hi -> CGBMainRec(F, append(S, hi), memo, cgbData, o ++ {Depth => o.Depth -1}))
+    );
+);
 
 
 -*
@@ -366,11 +366,11 @@ profileSummary
 *-
 
 CGB=method( Options => {
-        ReduceStrata => false,
-        Strategy => "Rabinowitsch",
-        Verbose => false,
-        Depth => -1
-        })
+    ReduceStrata => false,
+    Strategy => "Rabinowitsch",
+    Verbose => false,
+    Depth => -1
+})
 CGB(List):= o -> F->(
     s:=first entries eliminateVariables(F);
     result:=s;
@@ -383,7 +383,7 @@ CGB(List):= o -> F->(
     );
     for i in G do (
         result=result|(i_2);
-        );
+    );
     
     unique result
 )
@@ -409,21 +409,21 @@ eliminateVariables(List):=F->(
     S':=selectInSubring(#variableBlocks,F'gbgens);
     mm:=map(C,ring S',
         toList(n:0)|gens C   
-        );
+    );
     mm(S')
-    )
+)
 
 
 cgbOnGraph=method()
 cgbOnGraph(List,ZZ):=(G,d)->(
-  V:=sort G_0;
-  E:=G_1;
-  x:=local x;
-  w:=local w;
-  S:=QQ[toSequence apply(E, l -> w_l)];
-  R:=S[x_(V_0,1)..x_(V_(#V-1),d)];
-  F:=for i in E list(sum(1..d,k->(R_(d*(i_0-V_0)+k-1)-R_(d*(i_1-V_0)+k-1))^2)-S_(position(E, j -> j === i)));
-  (F, CGBMain F)
+    V:=sort G_0;
+    E:=G_1;
+    x:=local x;
+    w:=local w;
+    S:=QQ[toSequence apply(E, l -> w_l)];
+    R:=S[x_(V_0,1)..x_(V_(#V-1),d)];
+    F:=for i in E list(sum(1..d,k->(R_(d*(i_0-V_0)+k-1)-R_(d*(i_1-V_0)+k-1))^2)-S_(position(E, j -> j === i)));
+    (F, CGBMain F)
 )
 
 --Given two lists A and B return the list
@@ -431,10 +431,10 @@ cgbOnGraph(List,ZZ):=(G,d)->(
 totalListProduct = method();
 totalListProduct (List, List) := (A, B) -> (
     if length A == 0 then (
-      return B
+        return B
     );
     if length B == 0 then (
-      return A
+        return A
     );
     return flatten(
         for a in A list(
