@@ -64,11 +64,11 @@ CGBFromTriple = method(); -- Constructor for a CGBTriple starting from
                           -- parametric strata and G is the set of
                           -- polynomial to be studied on it.
 
-CGBFromTriple List := CGBTriple => (L) -> (
-    if length L != 3 then error("expected a triple {E, N, F} of three lists");
-    if length L_0 == 0 then error("E must not be empty; use {0} when no equality constraints are present");
-    if length L_2 == 0 then error("F must not be empty");
-    if any(L_1, n -> zero n) then error("Please remove zeros from N");
+CGBFromTriple List := CGBTriple => L -> (
+    if length L != 3 then error "expected a triple {E, N, F} of three lists";
+    if length L_0 == 0 then error "E must not be empty; use {0} when no equality constraints are present";
+    if length L_2 == 0 then error "F must not be empty";
+    if any(L_1, n -> zero n) then error "Please remove zeros from N";
     R := ring L_2_0;
     return new CGBTriple from {
         "triple" => L,
@@ -144,12 +144,12 @@ isConsistent (List, List) := (E, N) -> (
 
 isConsistentRabinowitsch = method(); -- isConsistent, using the Rabinowitsch trick
 isConsistentRabinowitsch (List, List) := (E, N) -> (
-    if isEmpty (E|N) then(return false);
+    if isEmpty (E|N) then return false;
     if isEmpty E then(
-        if zero first N then error("Please remove zeros from N");
+        if zero first N then error "Please remove zeros from N";
         return true;
     );
-    if isEmpty N then(return false);
+    if isEmpty N then return false;
     -*
     R := ring E_0;
     u := local u;
@@ -220,7 +220,7 @@ CGBMain = method(
     }
 ); -- Initialises CGBMainRec
 
-CGBMain List := o -> (F) -> (
+CGBMain List := o -> F -> (
     R := ring first F;
     KU := coefficientRing R;
     S := first entries eliminateVariables(F, CGBDataFromRings R);
@@ -241,7 +241,7 @@ CGBMain (List, List) := o -> (F, S) -> (
     if o.CheckAssumption then (
         -- V(S) is contained in V(<F> cap k[U]) <=> (S, <F> cap k[U]) is inconsistent
         if isConsistentRabinowitsch(S', first entries eliminateVariables(F, cgbData)) then
-            error("V(S) is not contained in V(ideal F cap k[U]); pass CheckAssumption => false to skip this check");
+            error "V(S) is not contained in V(ideal F cap k[U]); pass CheckAssumption => false to skip this check";
     );
     cgs := CGBMainRec(F, S', {}, cgbData,
         ReduceStrata => o.ReduceStrata,
@@ -280,21 +280,21 @@ CGBMainRec (List, List, List, CGBData) := o -> (F, S, memo, cgbData) -> (
     if o.Verbose then (
         print("Computing CGB for F = " | toString F | " and S = " | toString S);
     );
-    if 1 % (ideal S) == 0 then (
+    if 1 % ideal S == 0 then (
         return {}
     );
     l := first gens RExt;
     A := apply(F, i -> l * RtoRExt i);
     B := apply(S, i -> (l-1) * RtoRExt i);
-    G := (entries gens gb(ideal join(A, B)))_0; -- isn't G in RExt? why do we substitute it in the line below? Let's clean it up without a sub
+    G := (entries gens gb ideal join(A, B))_0; -- isn't G in RExt? why do we substitute it in the line below? Let's clean it up without a sub
 
     n := numgens R;
-    pruneG := select(G, g -> (
-        (first first exponents(leadMonomial sub(g, RExt))) > 0) and
-        any(exponents(sub(leadCoefficient RExttoRFlatl g, RFlat)), i -> any(i_(toList(0..(n-1))), i -> i > 0)));
+    pruneG := select(G, g ->
+        first first exponents leadMonomial sub(g, RExt) > 0 and
+        any(exponents sub(leadCoefficient RExttoRFlatl g, RFlat), i -> any(i_(toList(0..n-1)), i -> i > 0)));
     pruneG = apply(pruneG, g -> leadCoefficient RExttoRExt' g);
     h := lcm(pruneG | {1_KU});
-    for i in 0..(#(factor h)-1) do (
+    for i in 0..#(factor h) - 1 do (
         if isConstant (factor h)#i#0 then(
             h = h//(factor h)#i#0;
         )
@@ -333,7 +333,7 @@ CGBMainRec (List, List, List, CGBData) := o -> (F, S, memo, cgbData) -> (
     if o.ReduceStrata then (
         diffset := {};
         for hi in H do (
-            diffset = {({hi}, 1_(KU))};
+            diffset = {({hi}, 1_KU)};
             for t in memo do (
                 diffset = diffConstructiblebyLocallyClosed(diffset, (t#0, first t#1), Strategy => o.Strategy);
                 if isEmpty diffset then (
@@ -431,7 +431,7 @@ eliminateVariables (List, CGBData) := (F, cgbData) -> (
     RtoRFlat := cgbData#"RtoRFlat";
     Gflat := gens gb ideal apply(F, f -> RtoRFlat f);
     variableBlocks := select(ringOrder R, orderEntry -> first orderEntry =!= Weights);
-    (cgbData#"RFlattoKU") selectInSubring(#variableBlocks, Gflat)
+    cgbData#"RFlattoKU" selectInSubring(#variableBlocks, Gflat)
 )
 
 
@@ -478,7 +478,7 @@ totalListProduct (List, List) := (A, B) -> (
 -- J. of Symbolic Computation issue 49, 2013
 --------------------------------------------------
 MDBasis = method();
-MDBasis List := (G) -> (
+MDBasis List := G -> (
     F := G;
     if length F == 0 then (
         return {}
@@ -549,7 +549,7 @@ PGBMain CGBTriple := T -> (
     KUtoR := cgbData#"KUtoR";
     RtoRFlat := cgbData#"RtoRFlat";
     -- print(E, length N);
-    if not(consistencyCheckAllTogether(E, N)) then (
+    if not consistencyCheckAllTogether(E, N) then (
         return {} -- The domain is empty
     );
     -- Compute the GB of union(E, F), but viewing the parameters as variables
@@ -569,7 +569,7 @@ PGBMain CGBTriple := T -> (
         l := lift(RFlattoR g, KU, Verify => false);
         -- lift() with Verify=>false returns Null when the lift is not possible
         -- i.e. when the polynomial contains something other than parametetrs
-        if instance(l, Nothing) then (continue);
+        if instance(l, Nothing) then continue;
         l
     );
     -- By convention, an empty list for a GB means that the
@@ -580,7 +580,7 @@ PGBMain CGBTriple := T -> (
     if length Gr == 0 then (
         Gr = {0_KU};
     );
-    productList := unique(totalListProduct(Gr, N)); -- The list obtained by multiplying every element in Gr with every element in N
+    productList := unique totalListProduct(Gr, N); -- The list obtained by multiplying every element in Gr with every element in N
     if length productList == 0 then (
         productList = {0_KU};
     );
@@ -588,38 +588,38 @@ PGBMain CGBTriple := T -> (
     if consistencyCheckAllTogether (E, productList) then (
         PGB = {{E, productList, {1_R}}};
     );
-    if not(consistencyCheckAllTogether(Gr, N)) then (
+    if not consistencyCheckAllTogether(Gr, N) then (
         return PGB
     );
     -- Elements of GB that do not only contain parameters
     Gr' := new Set from (KUtoR \ Gr);
     listDiff := select(RFlattoR \ G, g -> not Gr'#?g);
     Gm := MDBasis listDiff;
-    H := unique flatten apply(Gm, g -> listOfFactors(leadCoefficient(sub(g, R))));
+    H := unique flatten apply(Gm, g -> listOfFactors leadCoefficient sub(g, R));
     h := squareFreePart lcm(H | {1_KU});
-    productList = unique(apply(totalListProduct(N, {sub(h, KU)}), i -> squareFreePart i));
+    productList = unique apply(totalListProduct(N, {sub(h, KU)}), i -> squareFreePart i);
     if consistencyCheckAllTogether(Gr, productList) then (
         PGB = unique(PGB | {{Gr, productList, if length Gm == 0 then {0_R} else Gm}});
     );
 
-    for i in 0..(length(H)-1) do (
+    for i in 0..length H - 1 do (
         -- Both CCheck and ICheck require E to be a Groebner basis of <E>!
         E' := first entries gens gb ideal unique(Gr | {H_i});
         if length E' == 0 then (
             E' = {0_KU};
         );
         if i == 0 then (
-            PGB = unique(PGB | PGBMain(CGBFromTriple({
+            PGB = unique(PGB | PGBMain CGBFromTriple {
             E',
             N,
             listDiff}
-            )))
+            )
         ) else (
-        PGB = unique(PGB | PGBMain(CGBFromTriple({
+        PGB = unique(PGB | PGBMain CGBFromTriple {
             E',
-            unique(totalListProduct(N, {squareFreePart(product(H_{0..(i-1)}))})),
+            unique totalListProduct(N, {squareFreePart product H_{0..i-1}}),
             listDiff}
-        ))));
+        ));
     );
 
     return PGB
@@ -629,10 +629,10 @@ PGBMain CGBTriple := T -> (
 -- lists of 3-tuples (3 element lists) or something else?
 
 PGBMain List := F -> (
-    if #F == 0 then error("List must be non-empty");
+    if #F == 0 then error "List must be non-empty";
     R := ring first F;
     U := coefficientRing R;
-    PGBMain(CGBFromTriple({{0_U}, {1_U}, F}))
+    PGBMain CGBFromTriple {{0_U}, {1_U}, F}
 )
 
 
@@ -668,12 +668,12 @@ CCheck (List, RingElement) := (E, f) -> (
     U := gens R;
     supports := apply(select(E, g -> g != 0), g -> (
         e := first exponents leadMonomial g;
-        select(0..(#e-1), i -> e_i != 0)
+        select(0..#e-1, i -> e_i != 0)
     ));
 
     V := {};
 
-    for i from 0 to (#U - 1) do (
+    for i from 0 to #U - 1 do (
         candidate := V | {i};
 
         if not any(supports, S -> all(S, j -> member(j, candidate))) then (
@@ -735,7 +735,7 @@ ICheck (List, RingElement) := o -> (E, f) -> (
     if o.Loops === infinity then (
         return not isConsistentRabinowitsch(E, {squareFreePart f}); -- certifies inconsistency/consistency
     );
-    Q := (ring f) / ideal E;
+    Q := ring f / ideal E;
     if zero promote(f, Q) then (
         return true; -- certifies inconsistency
     );
@@ -779,7 +779,7 @@ consistencyCheckAllTogether = method(
 );
 
 consistencyCheckAllTogether (List, RingElement) := o -> (E, f) -> (
-    if (f % ideal E) == 0 then (
+    if f % ideal E == 0 then (
         -- print "inconsistent: direct ideal membership check was used";
         return false; -- inconsistent
     );
@@ -819,8 +819,8 @@ consistencyCheckAllTogether (List, List) := o -> (E, N) -> (
         );
     ) else (
         KU := ring E_0;
-        if ideal E == ideal(0_KU) or ideal N == ideal(0_KU) then (
-            if ideal N == ideal(0_KU) then return false;
+        if ideal E == ideal 0_KU or ideal N == ideal 0_KU then (
+            if ideal N == ideal 0_KU then return false;
             return true);
     );
     undecided := false;
@@ -905,7 +905,7 @@ doc ///
     a method that computes a Comprehensive Groebner System
   Usage
     CGBMain(F,S)
-    CGBMain(F)
+    CGBMain F
   Inputs
     F :List
        a list of polynomials in a ring $R = k[U][X]$
@@ -1116,7 +1116,7 @@ doc ///
   Headline
     a method for computing a minimal Disckson Basis
   Usage
-    MDBais(F)
+    MDBasis F
   Inputs
     F: List
       a list of polynomials in a ring $R = k[U][X]$
@@ -1271,7 +1271,7 @@ fTest = aTest*xTest + bTest*yTest;
 expected1 = aTest*xTest + bTest*yTest;
 expected2 = aTest^2*xTest + aTest*bTest*yTest;
 
-result = CGB({fTest});
+result = CGB {fTest};
 
 assert(#result == 2);
 assert(result#0 == expected1 or result#1 == expected1);
@@ -1476,7 +1476,7 @@ TEST /// -* Testing MDBasis on {a*x^2 - y, a*y^2 - 1, a*x - 1, (a + 1)*x - y, (a
 U = U = QQ[a, MonomialOrder => Lex];
 R = U[x, y, MonomialOrder => Lex];
 G = {a*x^2 - y, a*y^2 - 1, a*x - 1, (a + 1)*x - y, (a + 1)*y - a}
-MDBasis(G)
+MDBasis G
 ///
 
 -----------------------------------------------
@@ -1486,7 +1486,7 @@ TEST /// -* Testing MDBasis on {a*x*y + b*x, b*x^2*y + c*z, a*b*x + a*x*y + z, a
 U = QQ[a, b, c, MonomialOrder => Lex];
 R = U[x, y, z, MonomialOrder => Lex];
 G = {a*x*y + b*x, b*x^2*y + c*z, a*b*x + a*x*y + z, a*y + z, c*x + c*z^2}
-assert(MDBasis(G) == {a*y + z, c*x + c*z^2})
+assert(MDBasis G == {a*y + z, c*x + c*z^2})
 ///
 
 
@@ -1502,7 +1502,7 @@ TEST /// -* Testing PGBMain on {a*x-, b*y-a, c*x^2-y, c*y^2-x} *-
 U := QQ[a, b, c, MonomialOrder => GRevLex]
 R := U[x,y,z, MonomialOrder => GRevLex]
 G := {a*x-b, b*y-a, c*x^2-y, c*y^2-x}
-L := PGBMain(CGBFromTriple({{0_U}, {1_U}, G}))
+L := PGBMain CGBFromTriple {{0_U}, {1_U}, G}
 U' = ring first first first L
 R' = ring first last first L
 ExpResult = set{
@@ -1544,7 +1544,7 @@ U = QQ[a,b];
 assert CCheck({0_U, a}, b)
 assert consistencyCheckAllTogether({0_U, a}, {1_U})
 R = U[x,y];
-L = PGBMain CGBFromTriple({{0_U, a}, {1_U}, {a*x+b*y}});
+L = PGBMain CGBFromTriple {{0_U, a}, {1_U}, {a*x+b*y}};
 assert(set apply(L, t -> apply(t, set)) === set {
     {set {a}, set {b}, set {b*y}},
     {set {b, a}, set {1_U}, set {0_R}}})

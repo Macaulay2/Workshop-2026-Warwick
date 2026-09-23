@@ -10,7 +10,7 @@ U = QQ[a,b]
 R = U[x,y,z, MonomialOrder => GRevLex]
 F = {x^3 - a, y^4 - b, x+y-z}
 G = CGBMain(F, {});
-L = PGBMain(CGBFromTriple({{0_U}, {1_U}, F}))
+L = PGBMain CGBFromTriple {{0_U}, {1_U}, F}
 
 netList for g in G list {g_0, factor g_1}
 netList L
@@ -184,13 +184,13 @@ elapsedTime GG = CGBMain(F, {});
 --Examples from Game Theory
 U = QQ[a_{1,1}..a_{2,2}]
 R = U[p_{1,1}..p_{2,2}]
-M1 = matrix({
+M1 = matrix {
     {p_{1,1}+p_{1,2}, a_{1,1}*p_{1,1}+ a_{1,2}*p_{1,2}}, 
-    {p_{2,1}+ p_{2,2}, a_{2,1}*p_{2,1}+ a_{2,2}*p_{2,2}}})
+    {p_{2,1}+ p_{2,2}, a_{2,1}*p_{2,1}+ a_{2,2}*p_{2,2}}}
 
-M2 = matrix({
+M2 = matrix {
     {p_{1,1}+p_{2,1}, a_{1,1}*p_{1,1}+ a_{2,1}*p_{2,1}}, 
-    {p_{1,2}+ p_{2,2}, a_{1,2}*p_{1,2}+ a_{2,2}*p_{2,2}}})
+    {p_{1,2}+ p_{2,2}, a_{1,2}*p_{1,2}+ a_{2,2}*p_{2,2}}}
 
 F = {det M1, det M2};
 L = CGBMain(F, ReduceStrata => true);
@@ -199,13 +199,13 @@ netList for l in L list {l_0, l_1};
 U = QQ[a_{1,1}..a_{2,2}, b_{1,1}..b_{2,2}]
 R = U[p_{1,1}..p_{2,2}]
 
-M1 = matrix({
+M1 = matrix {
     {p_{1,1}+p_{1,2}, a_{1,1}*p_{1,1}+ a_{1,2}*p_{1,2}}, 
-    {p_{2,1}+ p_{2,2}, a_{2,1}*p_{2,1}+ a_{2,2}*p_{2,2}}})
+    {p_{2,1}+ p_{2,2}, a_{2,1}*p_{2,1}+ a_{2,2}*p_{2,2}}}
 
-M2 = matrix({
+M2 = matrix {
     {p_{1,1}+p_{2,1}, b_{1,1}*p_{1,1}+ b_{2,1}*p_{2,1}}, 
-    {p_{1,2}+ p_{2,2}, b_{1,2}*p_{1,2}+ b_{2,2}*p_{2,2}}})
+    {p_{1,2}+ p_{2,2}, b_{1,2}*p_{1,2}+ b_{2,2}*p_{2,2}}}
 
 F = {det M1, det M2} -- Defining equations for the Sphon variety of a 2x2 game with payoff matrices A= (a_{i, j}) and B = (b_{i,j})
 
@@ -227,7 +227,7 @@ U = QQ[a,b,c, MonomialOrder => Lex]
 R = U[x,y, MonomialOrder => Lex]
 
 F={a*x-b,b*y-a,c*x^2-y,c*y^2-x}
-T = CGBFromTriple({{0_U}, {1_U}, F})
+T = CGBFromTriple {{0_U}, {1_U}, F}
 L= PGBMain T
 netList oo
 
@@ -316,7 +316,7 @@ R = U[x,y, MonomialOrder => GRevLex];
 P3P= {(1 - a)*y^2 - a*x^2 - p*y + a*r*x*y +1,
      (1 - b)*x^2 - b*y^2 - q*x + b*r*x*y +1};
 
-T = CGBFromTriple({{0_U}, {1_U}, P3P});
+T = CGBFromTriple {{0_U}, {1_U}, P3P};
 elapsedTime L= PGBMain T;
 
 
