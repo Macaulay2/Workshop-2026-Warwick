@@ -786,16 +786,8 @@ consistencyCheckAllTogether (List, RingElement) := o -> (E, f) -> (
 
 -- Cannot have ideal E = (0) or ideal F = (0)
 consistencyCheckAllTogether (List, List) := o -> (E, N) -> (
-    if length E == 0 then (
-        if length N == 0 then (
-            return false
-        );
-    ) else (
-        KU := ring E_0;
-        if ideal E == ideal 0_KU or ideal N == ideal 0_KU then (
-            if ideal N == ideal 0_KU then return false;
-            return true);
-    );
+    if all(N, zero) then return false;
+    if all(E, zero) then return true;
     undecided := false;
     for f in N do (
         check := consistencyCheckAllTogether(E, f, Loops => o.Loops);
