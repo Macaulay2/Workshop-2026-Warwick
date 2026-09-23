@@ -59,10 +59,10 @@ ringOrder PolynomialRing := List => R -> (
     ))
 );
 
-CGBFromTriple = method(); --Constructor for a CGBTriple starting from
-                          --a list {E, F, G} where V(E)\V(F) is the
-                          --parametric strata and G is the set of
-                          --polynomial to be studied on it.
+CGBFromTriple = method(); -- Constructor for a CGBTriple starting from
+                          -- a list {E, F, G} where V(E)\V(F) is the
+                          -- parametric strata and G is the set of
+                          -- polynomial to be studied on it.
 
 CGBFromTriple List := CGBTriple => (L) -> (
     if length L != 3 then error("expected a triple {E, N, F} of three lists");
@@ -175,10 +175,10 @@ rabinowitschMap = R -> (
 )
 
 
---R=QQ[x,y]
---E={x+y}
---N={y^2}
---isConsistentRabinowitsch(E,N)
+-- R=QQ[x,y]
+-- E={x+y}
+-- N={y^2}
+-- isConsistentRabinowitsch(E,N)
 
 
 diffLocallyClosed = method(
@@ -471,10 +471,10 @@ totalListProduct (List, List) := (A, B) -> (
 
 
 --------------------------------------------------
--- Implementing definition 4.1 of 
--- "An efficient algorithm for computing a 
--- comprehensive Gröbner system of a parametric 
--- polynomial system", D. Kapur Y. Sun D. Wang, 
+-- Implementing definition 4.1 of
+-- "An efficient algorithm for computing a
+-- comprehensive Gröbner system of a parametric
+-- polynomial system", D. Kapur Y. Sun D. Wang,
 -- J. of Symbolic Computation issue 49, 2013
 --------------------------------------------------
 MDBasis = method();
@@ -494,29 +494,29 @@ MDBasis List := (G) -> (
     -- if there are still ties, order by the keys (chosen purely arbitrarily) after them
     F = sort(F, g -> (lc := leadCoefficient g; (- sharedCount lc, simpler lc, #terms lc, first degree lc, toString g)));
     Basis := {first F};
-    F = delete(first F, F); 
-    for g in F do ( --loop through elements of G
-        --print("Deleting ", g, "from ", F);
-        F = delete(g, F); 
-        toAdd := true; --At the end of the loop, if LT_x(g) is not already implied 
-                       --by elements in Basis, we should add g to our Basis
+    F = delete(first F, F);
+    for g in F do ( -- loop through elements of G
+        -- print("Deleting ", g, "from ", F);
+        F = delete(g, F);
+        toAdd := true; -- At the end of the loop, if LT_x(g) is not already implied
+                       -- by elements in Basis, we should add g to our Basis
         for f in Basis do (
-            --print(f, Basis);
+            -- print(f, Basis);
             LTg := leadMonomial g;
             LTf := leadMonomial f;
             if LTg % LTf == 0 then (
-                toAdd = false; --LTg is already in Basis, exit the loop and do not add g to Basis
+                toAdd = false; -- LTg is already in Basis, exit the loop and do not add g to Basis
                 break
-            )  
-            else if LTf % LTg == 0 then ( --LTg divides something in Basis, so it can replace it
-                --print("Deliting ", f, " from ", Basis, " and adding ", g );
+            )
+            else if LTf % LTg == 0 then ( -- LTg divides something in Basis, so it can replace it
+                -- print("Deliting ", f, " from ", Basis, " and adding ", g );
                 Basis = unique(delete(f, Basis) | {g});
-                toAdd = false; --avoid adding g multiple times
-                continue --might happen that LTg divides other leading terms in Basis
+                toAdd = false; -- avoid adding g multiple times
+                continue -- might happen that LTg divides other leading terms in Basis
             );
         );
         if toAdd then ( -- LTg is not implied by anything in Basis
-            Basis |=  {g};
+            Basis |= {g};
         );
     );
     return Basis
@@ -524,35 +524,35 @@ MDBasis List := (G) -> (
 
 
 --------------------------------------------------
---Implementing algorithm in section 4.1 of 
---"An efficient algorithm for computing a 
---comprehensive Gröbner system of a parametric 
---polynomial system", D.Kapur Y. Sun D. Wang, 
---J. of Symbolic Computation issue 49, 2013
+-- Implementing algorithm in section 4.1 of
+-- "An efficient algorithm for computing a
+-- comprehensive Gröbner system of a parametric
+-- polynomial system", D.Kapur Y. Sun D. Wang,
+-- J. of Symbolic Computation issue 49, 2013
 --------------------------------------------------
 PGBMain = method();
 PGBMain CGBTriple := T -> (
     {E, N, F} := T#"triple";
     cgbData := T#"cgbData";
-    R:=cgbData#"R";
-    RExt:=cgbData#"RExt"; 
-    RFlat:=cgbData#"RFlat";
-    RExt':=cgbData#"RExt'";
-    KU:=cgbData#"KU";
-    RFlatl:=cgbData#"RFlatl";
-    RtoRExt:=cgbData#"RtoRExt";
-    RExttoRFlatl:=cgbData#"RExttoRFlatl";
-    RExttoRExt':=cgbData#"RExttoRExt'";
-    RExttoR:=cgbData#"RExttoR";
-    KUtoRFlat:=cgbData#"KUtoRFlat";
-    RFlattoR:=cgbData#"RFlattoR";
-    KUtoR:=cgbData#"KUtoR";
-    RtoRFlat:=cgbData#"RtoRFlat";
-    --print(E, length N);
+    R := cgbData#"R";
+    RExt := cgbData#"RExt";
+    RFlat := cgbData#"RFlat";
+    RExt' := cgbData#"RExt'";
+    KU := cgbData#"KU";
+    RFlatl := cgbData#"RFlatl";
+    RtoRExt := cgbData#"RtoRExt";
+    RExttoRFlatl := cgbData#"RExttoRFlatl";
+    RExttoRExt' := cgbData#"RExttoRExt'";
+    RExttoR := cgbData#"RExttoR";
+    KUtoRFlat := cgbData#"KUtoRFlat";
+    RFlattoR := cgbData#"RFlattoR";
+    KUtoR := cgbData#"KUtoR";
+    RtoRFlat := cgbData#"RtoRFlat";
+    -- print(E, length N);
     if not(consistencyCheckAllTogether(E, N)) then (
-        return {} --The domain is empty
+        return {} -- The domain is empty
     );
-    --Compute the GB of union(E, F), but viewing the parameters as variables
+    -- Compute the GB of union(E, F), but viewing the parameters as variables
 
     -- TODO : how can we translate the following parts to work with matrices:
     -- i.e., if we have
@@ -563,24 +563,24 @@ PGBMain CGBTriple := T -> (
     -- question 2: is this something that should be converted to work with matrices or is list okay?
     G := first entries gens gb ideal ((KUtoRFlat \ E) | (RtoRFlat \ F));
     if member(sub(1, RFlat), G) then (
-        return {{E, N, {promote(1, R)}}} --Trivial case where the vanishing set is empty
+        return {{E, N, {promote(1, R)}}} -- Trivial case where the vanishing set is empty
     );
-    Gr := for g in G list ( --The polynomials in G that only contain the parameters
-        l := lift(RFlattoR g, KU, Verify =>false);
-        --lift() with Verify=>false returns Null when the lift is not possible
-        --i.e. when the polynomial contains something other than parametetrs
+    Gr := for g in G list ( -- The polynomials in G that only contain the parameters
+        l := lift(RFlattoR g, KU, Verify => false);
+        -- lift() with Verify=>false returns Null when the lift is not possible
+        -- i.e. when the polynomial contains something other than parametetrs
         if instance(l, Nothing) then (continue);
         l
     );
-    -- By convention, an empty list for a GB means that the 
-    -- corresponding vanishing set is the whole space, 
+    -- By convention, an empty list for a GB means that the
+    -- corresponding vanishing set is the whole space,
     -- which is equivalent to only containing the 0 element.
-    -- To keep track of the original rings down the line and in the output, 
+    -- To keep track of the original rings down the line and in the output,
     -- we never return an empty GB.
     if length Gr == 0 then (
-        Gr = {0_KU}; 
+        Gr = {0_KU};
     );
-    productList := unique(totalListProduct(Gr, N)); --The list obtained by multiplying every element in Gr with every element in N
+    productList := unique(totalListProduct(Gr, N)); -- The list obtained by multiplying every element in Gr with every element in N
     if length productList == 0 then (
         productList = {0_KU};
     );
@@ -591,7 +591,7 @@ PGBMain CGBTriple := T -> (
     if not(consistencyCheckAllTogether(Gr, N)) then (
         return PGB
     );
-    --Elements of GB that do not only contain parameters
+    -- Elements of GB that do not only contain parameters
     Gr' := new Set from (KUtoR \ Gr);
     listDiff := select(RFlattoR \ G, g -> not Gr'#?g);
     Gm := MDBasis listDiff;
@@ -611,18 +611,18 @@ PGBMain CGBTriple := T -> (
         if i == 0 then (
             PGB = unique(PGB | PGBMain(CGBFromTriple({
             E',
-            N, 
+            N,
             listDiff}
             )))
         ) else (
         PGB = unique(PGB | PGBMain(CGBFromTriple({
             E',
-            unique(totalListProduct(N, {squareFreePart(product(H_{0..(i-1)}))})), 
+            unique(totalListProduct(N, {squareFreePart(product(H_{0..(i-1)}))})),
             listDiff}
         ))));
     );
 
-    return PGB  
+    return PGB
 );
 
 -- TODO: homogenise the output of CGBMain and PGBMain, e.g. should they both output
@@ -633,15 +633,15 @@ PGBMain List := F -> (
     R := ring first F;
     U := coefficientRing R;
     PGBMain(CGBFromTriple({{0_U}, {1_U}, F}))
-    )
+)
 
 
 
 -----------------------------
---zeroDimCheck if for those
---cases in which <E> is
---zero dimensional.
---It uses RealRoots.
+-- zeroDimCheck if for those
+-- cases in which <E> is
+-- zero dimensional.
+-- It uses RealRoots.
 -----------------------------
 
 zeroDimCheck = method();
@@ -651,15 +651,15 @@ zeroDimCheck (List, RingElement) := (E, f) -> (
     d := first degree pf;
     lambda := first gens ring pf;
     if pf == lambda^d then
-        false --inconsistent
+        false -- inconsistent
     else
-        true --consistent
+        true -- consistent
 );
 
 -----------------------------
---CCheck if for those
---cases in which <E> is
---of positive dimensional.
+-- CCheck if for those
+-- cases in which <E> is
+-- of positive dimensional.
 -----------------------------
 
 CCheck = method();
@@ -680,7 +680,7 @@ CCheck (List, RingElement) := (E, f) -> (
             V = candidate;
         );
     );
-    alpha := apply(numgens R, i -> random(-100,100));
+    alpha := apply(numgens R, i -> random(-100, 100));
 
 
     -*
@@ -698,7 +698,7 @@ CCheck (List, RingElement) := (E, f) -> (
     ));
     *-
 
-    phi := map(R,R,for i from 0 to numgens R-1 list if member(i, V) then alpha_i else R_i);
+    phi := map(R, R, for i from 0 to numgens R-1 list if member(i, V) then alpha_i else R_i);
 
     spE := gb (ideal apply(E, g -> phi g) + ideal(for i in V list R_i));
     -- the above is a little different from KSW where they restrict to a smaller ring
@@ -714,7 +714,6 @@ CCheck (List, RingElement) := (E, f) -> (
         return true; -- certifies consistency
     );
     return false -- unknown consistency (i.e., it could still be consistent)
-  
 );
 
 
@@ -765,12 +764,12 @@ ICheck (List, RingElement) := o -> (E, f) -> (
 );
 
 ----------------------------------------
---THE FOLLOWING PUTS TOGETHER ZERODIMCHECK
---CCHECK AND ICHECK
---1)check whether f is already in <E>
---2)determine the dimension of <E>
---3) zeroDimCheck or CCheck
---4) if CCheck is not enough, do ICheck
+-- THE FOLLOWING PUTS TOGETHER ZERODIMCHECK
+-- CCHECK AND ICHECK
+-- 1)check whether f is already in <E>
+-- 2)determine the dimension of <E>
+-- 3) zeroDimCheck or CCheck
+-- 4) if CCheck is not enough, do ICheck
 ----------------------------------------
 
 consistencyCheckAllTogether = method(
@@ -789,15 +788,15 @@ consistencyCheckAllTogether (List, RingElement) := o -> (E, f) -> (
 
     if d == 0 then (
         -- print "zeroDimCheck was used";
-        return zeroDimCheck(E,f);
+        return zeroDimCheck(E, f);
     );
 
-    if CCheck(E,f) then (
+    if CCheck(E, f) then (
         -- print "consistent: CCheck was used";
         return true; -- consistent
     );
 
-    if ICheck(E,f, Loops => o.Loops) then (
+    if ICheck(E, f, Loops => o.Loops) then (
         -- print "inconsistent: ICheck was used";
         return false; -- inconsistent
     );
@@ -815,14 +814,14 @@ consistencyCheckAllTogether (List, RingElement) := o -> (E, f) -> (
 -- Cannot have ideal E = (0) or ideal F = (0)
 consistencyCheckAllTogether (List, List) := o -> (E, N) -> (
     if length E == 0 then (
-      if length N == 0 then (
-        return false
-      );
+        if length N == 0 then (
+            return false
+        );
     ) else (
-      KU := ring E_0;
-      if ideal E == ideal(0_KU) or ideal N == ideal(0_KU) then (
-        if ideal N == ideal(0_KU) then return false;
-        return true);
+        KU := ring E_0;
+        if ideal E == ideal(0_KU) or ideal N == ideal(0_KU) then (
+            if ideal N == ideal(0_KU) then return false;
+            return true);
     );
     undecided := false;
     for f in N do (
