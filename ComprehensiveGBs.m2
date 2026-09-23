@@ -723,12 +723,12 @@ ICheck (List, RingElement) := o -> (E, f) -> (
     );
     -- we do the computation in the quotient ring R/<E>
     -- this avoids extra costs when doing s := p^2 in the main loop
+    if o.Loops === infinity then (
+        return not isConsistentRabinowitsch(E, {squareFreePart f}); -- certifies inconsistency/consistency
+    );
     Q := (ring f) / ideal E;
     if zero promote(f, Q) then (
         return true; -- certifies inconsistency
-    );
-    if o.Loops === infinity then (
-        return not isConsistentRabinowitsch(E, {squareFreePart f}); -- certifies inconsistency/consistency
     );
     factors := listOfFactors f;
     promoted := apply(factors, g -> promote(g, Q));
