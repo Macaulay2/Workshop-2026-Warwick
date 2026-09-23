@@ -389,45 +389,45 @@ CGB(List) := o -> F -> (
 )
 
 
-eliminateVariables=method()
-eliminateVariables(List):=F->(
-    R:=ring first F;
-    n:=numgens(R);
-    C:=coefficientRing R;
-    m:=numgens C;
-    x:=local x;
-    u:=local u;
-    K:=coefficientRing C;
-    S:=K[x_1..x_n,u_1..u_m, MonomialOrder => ringOrder R | ringOrder C];
-    U:=gens C;
-    X:=gens R;
-    l1:=for i from 0 to m-1 list U_i=>S_(i+n);
-    l2:=for j from 0 to n-1 list X_j=>S_j;
-    F':=apply(F,h->sub(h,l1|l2));
-    F'gbgens:=gens gb(ideal(F'));
+eliminateVariables = method()
+eliminateVariables(List) := F -> (
+    R := ring first F;
+    n := numgens(R);
+    C := coefficientRing R;
+    m := numgens C;
+    x := local x;
+    u := local u;
+    K := coefficientRing C;
+    S := K[x_1..x_n, u_1..u_m, MonomialOrder => ringOrder R | ringOrder C];
+    U := gens C;
+    X := gens R;
+    l1 := for i from 0 to m-1 list U_i => S_(i+n);
+    l2 := for j from 0 to n-1 list X_j => S_j;
+    F' := apply(F, h -> sub(h, l1|l2));
+    F'gbgens := gens gb(ideal(F'));
     variableBlocks := select(ringOrder R, orderEntry -> first orderEntry =!= Weights);
-    S':=selectInSubring(#variableBlocks,F'gbgens);
-    mm:=map(C,ring S',
+    S' := selectInSubring(#variableBlocks, F'gbgens);
+    mm := map(C, ring S',
         toList(n:0)|gens C
     );
     mm(S')
 )
 
 
-cgbOnGraph=method()
-cgbOnGraph(List,ZZ):=(G,d)->(
-    V:=sort G_0;
-    E:=G_1;
-    x:=local x;
-    w:=local w;
-    S:=QQ[toSequence apply(E, l -> w_l)];
-    R:=S[x_(V_0,1)..x_(V_(#V-1),d)];
-    F:=for i in E list(sum(1..d,k->(R_(d*(i_0-V_0)+k-1)-R_(d*(i_1-V_0)+k-1))^2)-S_(position(E, j -> j === i)));
+cgbOnGraph = method()
+cgbOnGraph(List, ZZ) := (G, d) -> (
+    V := sort G_0;
+    E := G_1;
+    x := local x;
+    w := local w;
+    S := QQ[toSequence apply(E, l -> w_l)];
+    R := S[x_(V_0, 1)..x_(V_(#V-1), d)];
+    F := for i in E list(sum(1..d, k -> (R_(d*(i_0-V_0)+k-1)-R_(d*(i_1-V_0)+k-1))^2)-S_(position(E, j -> j === i)));
     (F, CGBMain F)
 )
 
---Given two lists A and B return the list
---{a*b s.t. a in A and b in B}
+-- Given two lists A and B return the list
+-- {a*b s.t. a in A and b in B}
 totalListProduct = method();
 totalListProduct (List, List) := (A, B) -> (
     if length A == 0 then (
