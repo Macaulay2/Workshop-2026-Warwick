@@ -31,10 +31,9 @@ export {
     "CheckAssumption"
 } -- functions, objects to export
 
-protect CGBMainTriples
+-- TODO: decide if this name should change (is Loops too common of a word) - e.g. ICheckLoops
 protect Loops
 
--* Code section *-
 
 CGBTriple = new Type of HashTable
 
@@ -554,6 +553,14 @@ PGBMain (CGBTriple) := T -> (
         return {} --The domain is empty
     );
     --Compute the GB of union(E, F), but viewing the parameters as variables
+
+    -- TODO : how can we translate the following parts to work with matrices:
+    -- i.e., if we have
+    -- G := gens gb ideal ...
+    -- ...
+    -- Gr := [what should go here?]
+    -- question: is there a clean way to check which elements of a matrix can lift?
+    -- question 2: is this something that should be converted to work with matrices or is list okay?
     G := first entries gens gb ideal ((KUtoRFlat \ E) | (RtoRFlat \ F));
     if member(sub(1, RFlat), G) then (
         return {{E, N, {promote(1, R)}}} --Trivial case where the vanishing set is empty
