@@ -739,24 +739,24 @@ consistencyCheckAllTogether = method(
 
 consistencyCheckAllTogether (List, RingElement) := o -> (E, f) -> (
     if (f % ideal E) == 0 then (
-        print "inconsistent: direct ideal membership check was used";
+        -- print "inconsistent: direct ideal membership check was used";
         return false; -- inconsistent
     );
 
     d := dim ideal E;
 
     if d == 0 then (
-        print "zeroDimCheck was used";
+        -- print "zeroDimCheck was used";
         return zeroDimCheck(E,f);
     );
 
     if CCheck(E,f) then (
-        print "consistent: CCheck was used";
+        -- print "consistent: CCheck was used";
         return true; -- consistent
     );
 
     if ICheck(E,f, Loops => o.Loops) then (
-        print "inconsistent: ICheck was used";
+        -- print "inconsistent: ICheck was used";
         return false; -- inconsistent
     );
 
@@ -766,7 +766,7 @@ consistencyCheckAllTogether (List, RingElement) := o -> (E, f) -> (
         return true; -- consistent
     );
 
-    print "General check was used";
+    -- print "General check was used";
     return null; -- temporary
 );
 
