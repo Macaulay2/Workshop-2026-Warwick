@@ -23,9 +23,9 @@ export {
     "CGBMain",
     "CGB",
     "cgbOnGraph",
-    "ReduceStrata", 
-    "CGBFromTriple", 
-    "PGBMain", 
+    "ReduceStrata",
+    "CGBFromTriple",
+    "PGBMain",
     "MDBasis",
     "Depth",
     "CheckAssumption"
@@ -42,13 +42,13 @@ protect coefficientsRing  --Probably needs to be changed
                           --b/c too similar to coefficientRing
 protect totalRing
 protect flattenedRing
-protect triple            --Probably needs to be changed b/c 
+protect triple            --Probably needs to be changed b/c
                           --too generic?
 
 ringOrder = method(); -- returns the monomial order of a polynomial ring
 ringOrder PolynomialRing := List => R -> (
     order := select(toList (options R).MonomialOrder, orderEntry -> not member(first orderEntry, {MonomialSize, Position}));
-    n := numgens R; 
+    n := numgens R;
     apply(order, orderEntry -> (
         if first orderEntry === Weights then (
             -- For U = QQ[a]; R = U[x,y,z, MonomialOrder => {Lex => 1, GLex}];
@@ -64,8 +64,8 @@ ringOrder PolynomialRing := List => R -> (
 );
 
 CGBFromTriple = method(); --Constructor for a CGBTriple starting from
-                          --a list {E, F, G} where V(E)\V(F) is the 
-                          --parametric strata and G is the set of 
+                          --a list {E, F, G} where V(E)\V(F) is the
+                          --parametric strata and G is the set of
                           --polynomial to be studied on it.
 
 CGBFromTriple List := CGBTriple => (L) -> (
@@ -147,7 +147,7 @@ isConsistentRabinowitsch = method(); -- isConsistent, using the Rabinowitsch tri
 isConsistentRabinowitsch (List, List) :=(E,N) -> (
     if isEmpty (E|N) then(return false);
     if isEmpty E then(
-        if zero first N then error("Please remove zeros from N"); 
+        if zero first N then error("Please remove zeros from N");
         return true;
     );
     if isEmpty N then(return false);
@@ -173,7 +173,7 @@ diffLC (Sequence, Sequence) := opts -> (A, B) -> (
     result := {(A#0 | {B#1}, A#1)} | apply(B#0, p -> (A#0, A#1 * p));
     if opts.Strategy == "radical" then (
         select(result, t -> isConsistent(t#0, {t#1}))
-    ) 
+    )
     else if opts.Strategy == "Rabinowitsch" then (
         select(result, t -> isConsistentRabinowitsch(t#0, {t#1}))
     )
@@ -384,7 +384,7 @@ CGB(List):= o -> F->(
     for i in G do (
         result=result|(i_2);
     );
-    
+
     unique result
 )
 
@@ -408,7 +408,7 @@ eliminateVariables(List):=F->(
     variableBlocks := select(ringOrder R, orderEntry -> first orderEntry =!= Weights);
     S':=selectInSubring(#variableBlocks,F'gbgens);
     mm:=map(C,ring S',
-        toList(n:0)|gens C   
+        toList(n:0)|gens C
     );
     mm(S')
 )
