@@ -859,7 +859,7 @@ doc ///
     Text
       This package provides the implementations of two differnt algorithms for computing a comprehensive Gröbner system and a
       comprehensive Gröbner basis of a parametric ideal. In the following we refer to Section 2 of @HREF("#ref1","[1]")@.
-      
+
       Let $k$ be a field, $R$ be the polynomial ring $k[U]$ in the parameters $U=\{u_1,\ldots,u_m\}$, and $R[X]$ be the polynomial ring
       over $R$ in the variables $X=\{x_1,\ldots,x_n\}$ and $X\cap U=\emptyset$.
       Call $L$ the algebraic closure of $k$. Given $a \in L^m$, the specialization homomorphism of $R$ induced by $a$ is
@@ -881,16 +881,13 @@ doc ///
       Given $S$ a basis of the elimination ideal of $(F)\cap k[U]$, a comprehenvive Gröbner basis $\mathcal{B}$ for $F\subseteq R[X]$
       is the union of all the sets $G_i$ in a comprehensive Gröbner system $\mathcal{G}$ for F on $S$. Notice that, $(\sigma_a(F))=(1)$
       for any $a \in L^m \setminus V(S)$. Therefore, $\mathcal{G} \cup \{(\emptyset,S,S)\}$ is a comprehensive Gröbner system for $F$.
-      
-    
+
       The function @TO "CGBMain"@ is the implementation of Algorithm CGBMain of @HREF("#ref2","[2]")@.
 
       Instead the function @TO "PGBMain"@ corresponds to the Algorithm PGBMain of @HREF("#ref1","[1]")@.
-      
   References
       @LABEL("[1]","id" => "ref1")@ Deepak Kapur, Yao Sun, and Dingkang Wang. 2013. An efficient algorithm for computing a comprehensive Gr\"obner system of a parametric polynomial system. In Journal of Symbolic Computation, 49, 27-44.
       @LABEL("[2]","id" => "ref2")@ Akira Suzuki and Yosuke Sato. 2006. A simple algorithm to compute comprehensive Gröbner bases using Gröbner bases. In Proceedings of the 2006 international symposium on Symbolic and algebraic computation (ISSAC '06). Association for Computing Machinery, New York, NY, USA, 326–331. https://doi.org/10.1145/1145768.1145821
-    
 ///
 
 
@@ -1058,7 +1055,7 @@ doc ///
   Key
     Verbose
   Headline
-    a record of CGBMain iterations 
+    a record of CGBMain iterations
   Description
     Text
       Setting Verbose to True will print whatever $F$ and $S$ that CGBMainRec is currently working on:
@@ -1102,7 +1099,7 @@ doc ///
       (F,GG)=cgbOnGraph({{1,2,3},{(1,2),(2,3),(3,1)}},1);
       netList F
       GG_0
-    
+
       --cgbOnGraph({{1,2,3,4},{(1,2),(1,3),(1,4),(2,3),(2,4)}},1)
 
   Caveat
@@ -1129,7 +1126,7 @@ doc ///
   Description
     Text
       Following the Definition 4.1 of @HREF("#ref1","[1]")@, given a sequence F of polynomials in $k[U][X]$, MDBasis(F) returns the minimal Dickson basis of F.
-      -- do we want to make the defition explicit? 
+      -- do we want to make the defition explicit?
   References
     @LABEL("[1]","id" => "ref1")@ Deepak Kapur, Yao Sun, and Dingkang Wang. 2013. An efficient algorithm for computing a comprehensive Gr\"obner system of a parametric polynomial system. In Journal of Symbolic Computation, 49, 27-44.
   SeeAlso
@@ -1230,7 +1227,7 @@ assert(ringOrder RRevLex === {RevLex => 4});
 ///
 
 
-TEST /// 
+TEST ///
 -* Testing  CGBMain on a*x+b*y *-
 
 Ptest = QQ[a,b];
@@ -1244,7 +1241,7 @@ bP = params#1;
 
 aR = promote (aP , Rtest);
 bR = promote (bP , Rtest);
-   
+
 xR = variables#0;
 yR = variables#1;
 
@@ -1264,7 +1261,7 @@ assert member(expected3, resultTest);
 ///
 
 
-TEST /// 
+TEST ///
 -* Testing  CGB on a*x+b*y  *-
 PTest = QQ[aTest,bTest];
 RTest = PTest[xTest,yTest, MonomialOrder => Lex];
@@ -1282,7 +1279,7 @@ assert(result#0 == expected1 or result#1 == expected2);
 ///
 
 
-TEST /// 
+TEST ///
 -* Testing cgbOnGraph  on  E = {(1,2)}, V = {1,2} *-
 
 E = {(1,2)};
@@ -1316,7 +1313,7 @@ assert(GG == expectedGG);
 ///
 
 
-TEST /// 
+TEST ///
 -* Testing  CGBMain on a*x+b*y  with Verbose option *-
 Ptest = QQ[a,b];
 Rtest = Ptest[x,y, MonomialOrder => Lex];
@@ -1329,7 +1326,7 @@ bP = params#1;
 
 aR = promote (aP , Rtest);
 bR = promote (bP , Rtest);
-   
+
 xR = variables#0;
 yR = variables#1;
 
@@ -1350,7 +1347,7 @@ assert member(expected3, resultTest);
 ///
 
 
-TEST /// 
+TEST ///
 -* Testing  CGB on a*x+b*y  with Verbose option  *-
 PTest = QQ[aTest,bTest];
 RTest = PTest[xTest,yTest, MonomialOrder => Lex];
@@ -1369,7 +1366,7 @@ assert(result#0 == expected1 or result#1 == expected2);
 ///
 
 
-TEST /// 
+TEST ///
 -*Testing  CGB on a*x+b*y  with Strategy => "radical" option  *-
 PTest = QQ[aTest,bTest];
 RTest = PTest[xTest,yTest, MonomialOrder => Lex];
@@ -1388,7 +1385,7 @@ assert(result#0 == expected1 or result#1 == expected2);
 
 
 
-TEST /// 
+TEST ///
 -* Testing  CGB on a*x+b*y  with Strategy => "radical" option *-
 
 Ptest = QQ[a,b];
@@ -1402,7 +1399,7 @@ bP = params#1;
 
 aR = promote (aP , Rtest);
 bR = promote (bP , Rtest);
-   
+
 xR = variables#0;
 yR = variables#1;
 
@@ -1422,7 +1419,7 @@ assert member(expected3, resultTest);
 ///
 
 
-TEST /// 
+TEST ///
 -* Testing  CGBMain on a*x+b*y  with ReduceStrata => true option *-
 Ptest = QQ[a,b];
 Rtest = Ptest[x,y, MonomialOrder => Lex];
@@ -1435,7 +1432,7 @@ bP = params#1;
 
 aR = promote (aP , Rtest);
 bR = promote (bP , Rtest);
-   
+
 xR = variables#0;
 yR = variables#1;
 
@@ -1454,7 +1451,7 @@ assert member(expected3, resultTest);
 
 ///
 
-TEST /// 
+TEST ///
 -* Testing  CGBMain on a*x+b*y  with ReduceStrata => true option *-
 PTest = QQ[aTest,bTest];
 RTest = PTest[xTest,yTest, MonomialOrder => Lex];
@@ -1473,7 +1470,7 @@ assert(result#0 == expected2 or result#1 == expected2);
 ///
 
 -----------------------------
---TEST for MDBasis
+-- TEST for MDBasis
 -----------------------------
 TEST /// -* Testing MDBasis on {a*x^2 - y, a*y^2 - 1, a*x - 1, (a + 1)*x - y, (a + 1)*y - a} *-
 U = U = QQ[a, MonomialOrder => Lex];
@@ -1483,7 +1480,7 @@ MDBasis(G)
 ///
 
 -----------------------------------------------
---TEST for MDBasis (KSW, Section 6)
+-- TEST for MDBasis (KSW, Section 6)
 -----------------------------------------------
 TEST /// -* Testing MDBasis on {a*x*y + b*x, b*x^2*y + c*z, a*b*x + a*x*y + z, a*y + z, c*x + c*z^2} *-
 U = QQ[a, b, c, MonomialOrder => Lex];
@@ -1494,11 +1491,11 @@ assert(MDBasis(G) == {a*y + z, c*x + c*z^2})
 
 
 ------------------------------------------------
---TEST for PGBMain
--- From Example 6.1 of 
--- "An efficient algorithm for computing a 
--- comprehensive Gröbner system of a parametric 
--- polynomial system", D. Kapur Y. Sun D. Wang, 
+-- TEST for PGBMain
+-- From Example 6.1 of
+-- "An efficient algorithm for computing a
+-- comprehensive Gröbner system of a parametric
+-- polynomial system", D. Kapur Y. Sun D. Wang,
 -- J. of Symbolic Computation issue 49, 2013
 ------------------------------------------------
 TEST /// -* Testing PGBMain on {a*x-, b*y-a, c*x^2-y, c*y^2-x} *-
@@ -1566,7 +1563,7 @@ assert(set G === set {a_R - b_R, b*x - 1, b^2*x - b})
 ///
 
 
-end--
+end --
 
 
 
@@ -1617,4 +1614,3 @@ doc ///
      SeeAlso
 
      ///
-
