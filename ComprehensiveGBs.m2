@@ -1430,6 +1430,16 @@ G = {a*x^2 - y, a*y^2 - 1, a*x - 1, (a + 1)*x - y, (a + 1)*y - a}
 MDBasis(G)
 ///
 
+-----------------------------------------------
+--TEST for MDBasis (KSW, Section 6)
+-----------------------------------------------
+TEST /// -* Testing MDBasis on {a*x*y + b*x, b*x^2*y + c*z, a*b*x + a*x*y + z, a*y + z, c*x + c*z^2} *-
+U = QQ[a, b, c, MonomialOrder => Lex];
+R = U[x, y, z, MonomialOrder => Lex];
+G = {a*x*y + b*x, b*x^2*y + c*z, a*b*x + a*x*y + z, a*y + z, c*x + c*z^2}
+assert(MDBasis(G) == {a*y + z, c*x + c*z^2})
+///
+
 
 ------------------------------------------------
 --TEST for PGBMain
