@@ -314,11 +314,6 @@ CGBMainRec (List, List, List, CGBData) := o -> (F, S, memo, cgbData) -> (
     -- H := pruneG; -- (takes too long to terminate if we do not factor h)
     -- H := unique apply(pruneG, g -> squareFreePart g); -- (takes a bit longer to terminate)
 
-    if o.Depth == 0 then (
-        -- TODO add a return statement for both ReduceStrata / non ReduceStrata
-
-    );
-
     H := listOfFactors h;
     if o.ReduceStrata then (
         diffset := {};
