@@ -383,6 +383,8 @@ profileSummary
 
 *-
 
+-- TODO: check if the normalisation is necessary for the case where ReduceStrata => true
+
 CGB = method( Options => {
     ReduceStrata => false,
     Strategy => "Rabinowitsch",
@@ -440,6 +442,9 @@ eliminateVariables(List, CGBData) := (F, cgbData) -> (
     (cgbData#"RFlattoKU") selectInSubring(#variableBlocks, Gflat)
 )
 
+
+-- TODO: what should we do with cgbOnGraph? Maybe adding a doc page with some experiments and
+-- examples?
 
 cgbOnGraph = method()
 cgbOnGraph(List, ZZ) := (G, d) -> (
@@ -711,6 +716,8 @@ CCheck (List, RingElement) := (E, f) -> (
 
 
 
+-- TODO: check for improvement on ICheck, what should be the default value for Loops?
+-- For example, Loops => 5 takes a very long time
 ICheck = method(
     Options => {
         Loops => infinity
