@@ -121,13 +121,13 @@ CGBDataFromRings Ring := CGBData => R -> (
 
 
 listOfFactors = method() -- returns the list of factors of a ring element
-listOfFactors (RingElement) := (h) -> (
+listOfFactors RingElement := h -> (
     hfac := factor h;
     select(apply(#hfac, i -> hfac#i#0), t -> not isConstant t)
 );
 
 squareFreePart = method() -- returns the square free part of a ring element
-squareFreePart (RingElement) := (h) -> (
+squareFreePart RingElement := h -> (
     if zero h then return h;
     R := ring h;
     f := product listOfFactors h;
@@ -402,7 +402,7 @@ CGB List := o -> F -> (
 
 
 eliminateVariables = method()
-eliminateVariables(List) := F -> (
+eliminateVariables List := F -> (
     R := ring first F;
     n := numgens(R);
     C := coefficientRing R;
@@ -426,7 +426,7 @@ eliminateVariables(List) := F -> (
 )
 
 -- try passing the cgbData instead
-eliminateVariables(List, CGBData) := (F, cgbData) -> (
+eliminateVariables (List, CGBData) := (F, cgbData) -> (
     R := cgbData#"R";
     RtoRFlat := cgbData#"RtoRFlat";
     Gflat := gens gb ideal apply(F, f -> RtoRFlat f);
@@ -439,7 +439,7 @@ eliminateVariables(List, CGBData) := (F, cgbData) -> (
 -- examples?
 
 cgbOnGraph = method()
-cgbOnGraph(List, ZZ) := (G, d) -> (
+cgbOnGraph (List, ZZ) := (G, d) -> (
     V := sort G_0;
     E := G_1;
     x := local x;
