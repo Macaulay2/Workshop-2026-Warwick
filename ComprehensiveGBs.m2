@@ -144,20 +144,7 @@ isConsistent (List, List) := (E, N) -> (
 
 isConsistentRabinowitsch = method(); -- isConsistent, using the Rabinowitsch trick
 isConsistentRabinowitsch (List, List) := (E, N) -> (
-    if isEmpty (E|N) then return false;
-    if isEmpty E then(
-        if zero first N then error "Please remove zeros from N";
-        return true;
-    );
-    if isEmpty N then return false;
-    -*
-    R := ring E_0;
-    u := local u;
-    y := local y;
-    S := (baseRing R)[u_1..u_(numgens R), y];
-    M := map(S, R, take(gens S, numgens R));
-    any(N, f -> not isMember(1, ideal((M \ E)|{(M(f)*last(gens S)-1)})))
-    *-
+    if isEmpty E then return not all(N, zero);
     M := rabinowitschMap ring E_0;
     y := last gens target M;
     any(N, f -> not isMember(1, ideal((M \ E) | {M f * y - 1})))
