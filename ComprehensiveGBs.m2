@@ -1495,6 +1495,25 @@ assert( (new Set from for r in L list for p in r list set p) == ExpResult )
 ///
 
 
+----------------------------------
+-- TEST for consistency checks
+-- Zeros in E should not break the consistency checks
+----------------------------------
+
+TEST ///
+debug ComprehensiveGBs
+U = QQ[a,b];
+assert CCheck({0_U, a}, b)
+assert consistencyCheckAllTogether({0_U, a}, {1_U})
+R = U[x,y];
+L = PGBMain CGBFromTriple({{0_U, a}, {1_U}, {a*x+b*y}});
+assert(set apply(L, t -> apply(t, set)) === set {
+    {set {a}, set {b}, set {b*y}},
+    {set {b, a}, set {1_U}, set {0_R}}})
+///
+
+
+
 end--
 
 
