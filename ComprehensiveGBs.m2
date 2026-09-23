@@ -478,7 +478,7 @@ totalListProduct (List, List) := (A, B) -> (
 -- J. of Symbolic Computation issue 49, 2013
 --------------------------------------------------
 MDBasis = method();
-MDBasis (List) := (G) -> (
+MDBasis List := (G) -> (
     F := G;
     if length F == 0 then (
         return {}
@@ -502,8 +502,8 @@ MDBasis (List) := (G) -> (
                        --by elements in Basis, we should add g to our Basis
         for f in Basis do (
             --print(f, Basis);
-            LTg := leadMonomial(g);
-            LTf := leadMonomial(f);
+            LTg := leadMonomial g;
+            LTf := leadMonomial f;
             if LTg % LTf == 0 then (
                 toAdd = false; --LTg is already in Basis, exit the loop and do not add g to Basis
                 break
@@ -531,7 +531,7 @@ MDBasis (List) := (G) -> (
 --J. of Symbolic Computation issue 49, 2013
 --------------------------------------------------
 PGBMain = method();
-PGBMain (CGBTriple) := T -> (
+PGBMain CGBTriple := T -> (
     {E, N, F} := T#"triple";
     cgbData := T#"cgbData";
     R:=cgbData#"R";
@@ -566,7 +566,7 @@ PGBMain (CGBTriple) := T -> (
         return {{E, N, {promote(1, R)}}} --Trivial case where the vanishing set is empty
     );
     Gr := for g in G list ( --The polynomials in G that only contain the parameters
-        l := lift(RFlattoR(g), KU, Verify =>false);
+        l := lift(RFlattoR g, KU, Verify =>false);
         --lift() with Verify=>false returns Null when the lift is not possible
         --i.e. when the polynomial contains something other than parametetrs
         if instance(l, Nothing) then (continue);
@@ -581,7 +581,7 @@ PGBMain (CGBTriple) := T -> (
         Gr = {0_KU}; 
     );
     productList := unique(totalListProduct(Gr, N)); --The list obtained by multiplying every element in Gr with every element in N
-    if length(productList) == 0 then (
+    if length productList == 0 then (
         productList = {0_KU};
     );
     PGB := {};
@@ -594,10 +594,10 @@ PGBMain (CGBTriple) := T -> (
     --Elements of GB that do not only contain parameters
     Gr' := new Set from (KUtoR \ Gr);
     listDiff := select(RFlattoR \ G, g -> not Gr'#?g);
-    Gm := MDBasis(listDiff);
+    Gm := MDBasis listDiff;
     H := unique flatten apply(Gm, g -> listOfFactors(leadCoefficient(sub(g, R))));
     h := squareFreePart lcm(H | {1_KU});
-    productList = unique(apply(totalListProduct(N, {sub(h, KU)}), i -> squareFreePart(i)));
+    productList = unique(apply(totalListProduct(N, {sub(h, KU)}), i -> squareFreePart i));
     if consistencyCheckAllTogether(Gr, productList) then (
         PGB = unique(PGB | {{Gr, productList, if length Gm == 0 then {0_R} else Gm}});
     );
@@ -667,7 +667,7 @@ CCheck (List, RingElement) := (E, f) -> (
     R := ring f;
     U := gens R;
     supports := apply(select(E, g -> g != 0), g -> (
-        e := first exponents(leadMonomial g);
+        e := first exponents leadMonomial g;
         select(0..(#e-1), i -> e_i != 0)
     ));
 
@@ -700,17 +700,17 @@ CCheck (List, RingElement) := (E, f) -> (
 
     phi := map(R,R,for i from 0 to numgens R-1 list if member(i, V) then alpha_i else R_i);
 
-    spE := gb (ideal apply(E, g -> phi(g)) + ideal(for i in V list R_i));
+    spE := gb (ideal apply(E, g -> phi g) + ideal(for i in V list R_i));
     -- the above is a little different from KSW where they restrict to a smaller ring
     -- and check that spE is zero dimensional there
     -- Here we add in the variables in order to avoid constructing a new polynomial ring
     -- and hopefully the GB computation is just as fast
 
-    fAlpha := phi(f);
+    fAlpha := phi f;
     -- fAlpha = sub(fAlpha, newR); -- shouldn't need this
     GspE := flatten entries gens spE;
 
-    if dim( ideal(GspE)) == 0 and zeroDimCheck(GspE, fAlpha) then (
+    if dim ideal GspE == 0 and zeroDimCheck(GspE, fAlpha) then (
         return true; -- certifies consistency
     );
     return false -- unknown consistency (i.e., it could still be consistent)
