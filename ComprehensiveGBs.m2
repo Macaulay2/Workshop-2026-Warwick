@@ -397,7 +397,7 @@ CGB List := o -> F -> (
     -- of the leading coefficient is 1 (to remove duplicates)
     normalForm := g -> (1 / leadCoefficient leadCoefficient g) * g;
     result := apply(s, f -> promote(f, R)) | flatten apply(G, t -> t#2);
-    unique apply(select(result, g -> g != 0), normalForm)
+    unique (normalForm \ select(result, g -> g != 0))
 )
 
 
@@ -429,7 +429,7 @@ eliminateVariables List := F -> (
 eliminateVariables (List, CGBData) := (F, cgbData) -> (
     R := cgbData#"R";
     RtoRFlat := cgbData#"RtoRFlat";
-    Gflat := gens gb ideal apply(F, f -> RtoRFlat f);
+    Gflat := gens gb ideal (RtoRFlat \ F);
     variableBlocks := select(ringOrder R, orderEntry -> first orderEntry =!= Weights);
     cgbData#"RFlattoKU" selectInSubring(#variableBlocks, Gflat)
 )
@@ -486,7 +486,7 @@ MDBasis List := G -> (
     -- Section 7.1, first heuristic
     simpler := lc -> max({0} | apply(listOfFactors lc, f -> first degree f));
     -- Section 7.1, second heuristic
-    lpps := apply(G, leadMonomial);
+    lpps := leadMonomial \ G;
     minimal := select(G, g -> not any(lpps, m -> m != leadMonomial g and (leadMonomial g) % m == 0));
     freq := tally apply(minimal, g -> toString leadCoefficient g);
     sharedCount := lc -> if freq#?(toString lc) then freq#(toString lc) else 0;
@@ -597,7 +597,7 @@ PGBMain CGBTriple := T -> (
     Gm := MDBasis listDiff;
     H := unique flatten apply(Gm, g -> listOfFactors leadCoefficient sub(g, R));
     h := squareFreePart lcm(H | {1_KU});
-    productList = unique apply(totalListProduct(N, {sub(h, KU)}), i -> squareFreePart i);
+    productList = unique (squareFreePart \ totalListProduct(N, {sub(h, KU)}));
     if consistencyCheckAllTogether(Gr, productList) then (
         PGB = unique(PGB | {{Gr, productList, if length Gm == 0 then {0_R} else Gm}});
     );
@@ -700,7 +700,7 @@ CCheck (List, RingElement) := (E, f) -> (
 
     phi := map(R, R, for i from 0 to numgens R-1 list if member(i, V) then alpha_i else R_i);
 
-    spE := gb (ideal apply(E, g -> phi g) + ideal(for i in V list R_i));
+    spE := gb (ideal (phi \ E) + ideal(for i in V list R_i));
     -- the above is a little different from KSW where they restrict to a smaller ring
     -- and check that spE is zero dimensional there
     -- Here we add in the variables in order to avoid constructing a new polynomial ring
@@ -1545,7 +1545,7 @@ assert CCheck({0_U, a}, b)
 assert consistencyCheckAllTogether({0_U, a}, {1_U})
 R = U[x,y];
 L = PGBMain CGBFromTriple {{0_U, a}, {1_U}, {a*x+b*y}};
-assert(set apply(L, t -> apply(t, set)) === set {
+assert(set apply(L, t -> set \ t) === set {
     {set {a}, set {b}, set {b*y}},
     {set {b, a}, set {1_U}, set {0_R}}})
 ///
