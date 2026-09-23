@@ -151,13 +151,31 @@ isConsistentRabinowitsch (List, List) := (E, N) -> (
         return true;
     );
     if isEmpty N then(return false);
+    -*
     R := ring E_0;
     u := local u;
     y := local y;
     S := (baseRing R)[u_1..u_(numgens R), y];
     M := map(S, R, take(gens S, numgens R));
     any(N, f -> not isMember(1, ideal((M \ E)|{(M(f)*last(gens S)-1)})))
+    *-
+    M := rabinowitschMap ring E_0;
+    y := last gens target M;
+    any(N, f -> not isMember(1, ideal((M \ E) | {M(f) * y - 1})))
 )
+
+-- cache the map R -> R[y] used by the Rabinowitsch trick in R.cache
+rabinowitschMap = R -> (
+    if not R.cache#?"rabinowitschMap" then (
+        u := local u;
+        y := local y;
+        S := (baseRing R)[u_1..u_(numgens R), y];
+        R.cache#"rabinowitschMap" = map(S, R, drop(gens S, -1));
+    );
+    R.cache#"rabinowitschMap"
+)
+
+
 --R=QQ[x,y]
 --E={x+y}
 --N={y^2}
