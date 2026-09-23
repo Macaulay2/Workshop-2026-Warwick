@@ -12,12 +12,12 @@ newPackage(
         { Name => "Agustina Cagliero", Email => "mariaagustina.cagliero@kuleuven.be", HomePage => "https://sites.google.com/view/mariaagustinacagliero/"},
         { Name => "Giulia Gaggero", Email => "gaggerog@mcmaster.ca", HomePage => ""},
         { Name => "Woody Cohen", Email => "2597103@swansea.ac.uk", HomePage => ""}
-        },
+    },
     Keywords => {""},
     AuxiliaryFiles => false,
-    PackageImports => {"MinimalPrimes","RealRoots"},
+    PackageImports => {"MinimalPrimes", "RealRoots"},
     DebuggingMode => true
-    )
+)
 
 export {
     "CGBMain",
@@ -29,7 +29,7 @@ export {
     "MDBasis",
     "Depth",
     "CheckAssumption"
-    } -- functions, objects to export
+} -- functions, objects to export
 
 protect CGBMainTriples
 protect Loops
@@ -94,9 +94,9 @@ CGBDataFromRings Ring := CGBData => (R) -> (
     RExt' := KU[l, x_1..x_n, MonomialOrder => {Lex => 1} | ringOrder R];
     RFlatl := RFlat[l];
     RtoRExt := map(RExt, R, drop(gens RExt, 1));
-    RExttoRFlatl:= map(RFlatl,RExt, gens RFlatl | gens coefficientRing RFlatl);
-    RExttoRExt':= map(RExt',RExt, gens RExt'| gens coefficientRing RExt');
-    RExttoR:= map(R, RExt, {1} | gens R | gens coefficientRing R);
+    RExttoRFlatl := map(RFlatl, RExt, gens RFlatl | gens coefficientRing RFlatl);
+    RExttoRExt' := map(RExt', RExt, gens RExt'| gens coefficientRing RExt');
+    RExttoR := map(R, RExt, {1} | gens R | gens coefficientRing R);
     KUtoRFlat := map(RFlat, KU, take(gens RFlat, -#gens KU));
     RFlattoR := map(R, RFlat, gens R | gens coefficientRing R);
     KUtoR := map(R, KU, gens coefficientRing R);
@@ -144,7 +144,7 @@ isConsistent (List, List) := (E, N) -> (
 );
 
 isConsistentRabinowitsch = method(); -- isConsistent, using the Rabinowitsch trick
-isConsistentRabinowitsch (List, List) :=(E,N) -> (
+isConsistentRabinowitsch (List, List) := (E, N) -> (
     if isEmpty (E|N) then(return false);
     if isEmpty E then(
         if zero first N then error("Please remove zeros from N");
@@ -275,8 +275,8 @@ CGBMainRec (List, List, List, CGBData) := o -> (F, S, memo, cgbData) -> (
 
     n := numgens R;
     pruneG := select(G, g -> (
-        (first first exponents(leadMonomial sub(g,RExt))) > 0) and
-        any(exponents(sub(leadCoefficient RExttoRFlatl(g),RFlat)), i -> any(i_(toList(0..(n-1))), i -> i > 0)));
+        (first first exponents(leadMonomial sub(g, RExt))) > 0) and
+        any(exponents(sub(leadCoefficient RExttoRFlatl(g), RFlat)), i -> any(i_(toList(0..(n-1))), i -> i > 0)));
     pruneG = apply(pruneG, g -> leadCoefficient RExttoRExt'(g));
     h := lcm(pruneG | {1_KU});
     for i in 0..(#(factor h)-1) do (
@@ -365,16 +365,16 @@ profileSummary
 
 *-
 
-CGB=method( Options => {
+CGB = method( Options => {
     ReduceStrata => false,
     Strategy => "Rabinowitsch",
     Verbose => false,
     Depth => -1
 })
-CGB(List):= o -> F->(
-    s:=first entries eliminateVariables(F);
-    result:=s;
-    G:=CGBMain(F,s,
+CGB(List) := o -> F -> (
+    s := first entries eliminateVariables(F);
+    result := s;
+    G := CGBMain(F, s,
         ReduceStrata => o.ReduceStrata,
         Strategy => o.Strategy,
         Verbose => o.Verbose,
@@ -382,7 +382,7 @@ CGB(List):= o -> F->(
         CheckAssumption => false
     );
     for i in G do (
-        result=result|(i_2);
+        result = result|(i_2);
     );
 
     unique result
