@@ -38,6 +38,10 @@ protect Loops
 
 CGBTriple = new Type of HashTable
 
+-- store all the maps and rings of a CGB computation in a object
+CGBData = new Type of HashTable
+
+
 protect coefficientsRing  --Probably needs to be changed
                           --b/c too similar to coefficientRing
 protect totalRing
@@ -81,7 +85,8 @@ CGBFromTriple List := CGBTriple => (L) -> (
 
 CGBDataFromRings = method();
 
-CGBDataFromRings Ring := CGBData => (R) -> (
+CGBDataFromRings Ring := CGBData => R -> (
+    if R.cache#?"cgbData" then return R.cache#"cgbData";
     KU := coefficientRing R;
     K := coefficientRing KU;
     n := numgens R;
@@ -101,8 +106,9 @@ CGBDataFromRings Ring := CGBData => (R) -> (
     RFlattoR := map(R, RFlat, gens R | gens coefficientRing R);
     KUtoR := map(R, KU, gens coefficientRing R);
     RtoRFlat := map(RFlat, R, gens RFlat);
+    RFlattoKU := map(KU, RFlat, toList(n : 0_KU) | gens KU); -- used by eleminateVariables
 
-    new CGBData from {
+    R.cache#"cgbData" = new CGBData from {
         "R"             => R,
         "RExt"          => RExt,
         "RFlat"         => RFlat,
@@ -116,7 +122,8 @@ CGBDataFromRings Ring := CGBData => (R) -> (
         "KUtoRFlat"     => KUtoRFlat,
         "RFlattoR"      => RFlattoR,
         "KUtoR"         => KUtoR,
-        "RtoRFlat"      => RtoRFlat
+        "RtoRFlat"      => RtoRFlat,
+        "RFlattoKU"     => RFlattoKU
     }
 );
 
@@ -210,8 +217,6 @@ diffConstructiblebyLocallyClosed (List, Sequence) := opts -> (C, LC) -> (
 );
 
 
--- store all the maps and rings of a CGB computation in a object
-CGBData = new Type of HashTable
 
 CGBMain = method(
     Options => {
@@ -226,7 +231,7 @@ CGBMain = method(
 CGBMain (List) := o -> (F) -> (
     R := ring first F;
     KU := coefficientRing R;
-    S := first entries eliminateVariables F;
+    S := first entries eliminateVariables(F, CGBDataFromRings R);
     cgs := CGBMain(F, S, o ++ {CheckAssumption => false});
     if #S == 0 then return cgs;
     {({0_KU}, S, {1_R})} | cgs
@@ -240,12 +245,12 @@ CGBMain (List, List) := o -> (F, S) -> (
             error("S must consist of polynomials in the parameters; found " | toString s);
         lift(s', KU)
     ));
+    cgbData := CGBDataFromRings R;
     if o.CheckAssumption then (
         -- V(S) is contained in V(<F> cap k[U]) <=> (S, <F> cap k[U]) is inconsistent
-        if isConsistentRabinowitsch(S', first entries eliminateVariables F) then
+        if isConsistentRabinowitsch(S', first entries eliminateVariables(F, cgbData)) then
             error("V(S) is not contained in V(ideal F cap k[U]); pass CheckAssumption => false to skip this check");
     );
-    cgbData := CGBDataFromRings R;
     cgs := CGBMainRec(F, S', {}, cgbData,
         ReduceStrata => o.ReduceStrata,
         Strategy => o.Strategy,
@@ -386,7 +391,7 @@ CGB = method( Options => {
 })
 CGB List := o -> F -> (
     R := ring first F;
-    s := first entries eliminateVariables(F);
+    s := first entries eliminateVariables(F, CGBDataFromRings R);
     G := CGBMain(F, s,
         ReduceStrata => o.ReduceStrata,
         Strategy => o.Strategy,
@@ -424,6 +429,15 @@ eliminateVariables(List) := F -> (
         toList(n:0)|gens C
     );
     mm(S')
+)
+
+-- try passing the cgbData instead
+eliminateVariables(List, CGBData) := (F, cgbData) -> (
+    R := cgbData#"R";
+    RtoRFlat := cgbData#"RtoRFlat";
+    Gflat := gens gb ideal apply(F, f -> RtoRFlat f);
+    variableBlocks := select(ringOrder R, orderEntry -> first orderEntry =!= Weights);
+    (cgbData#"RFlattoKU") selectInSubring(#variableBlocks, Gflat)
 )
 
 
