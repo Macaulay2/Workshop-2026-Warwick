@@ -72,7 +72,7 @@ CGBFromTriple List := CGBTriple => (L) -> (
     R := ring L_2_0;
     return new CGBTriple from {
         "triple" => L,
-        "cgbData" => CGBDataFromRings(R)};
+        "cgbData" => CGBDataFromRings R};
 );
 
 CGBDataFromRings = method();
@@ -160,7 +160,7 @@ isConsistentRabinowitsch (List, List) := (E, N) -> (
     *-
     M := rabinowitschMap ring E_0;
     y := last gens target M;
-    any(N, f -> not isMember(1, ideal((M \ E) | {M(f) * y - 1})))
+    any(N, f -> not isMember(1, ideal((M \ E) | {M f * y - 1})))
 )
 
 -- cache the map R -> R[y] used by the Rabinowitsch trick in R.cache
@@ -220,7 +220,7 @@ CGBMain = method(
     }
 ); -- Initialises CGBMainRec
 
-CGBMain (List) := o -> (F) -> (
+CGBMain List := o -> (F) -> (
     R := ring first F;
     KU := coefficientRing R;
     S := first entries eliminateVariables(F, CGBDataFromRings R);
@@ -284,15 +284,15 @@ CGBMainRec (List, List, List, CGBData) := o -> (F, S, memo, cgbData) -> (
         return {}
     );
     l := first gens RExt;
-    A := apply(F, i -> l * RtoRExt(i));
-    B := apply(S, i -> (l-1) * RtoRExt(i));
+    A := apply(F, i -> l * RtoRExt i);
+    B := apply(S, i -> (l-1) * RtoRExt i);
     G := (entries gens gb(ideal join(A, B)))_0; -- isn't G in RExt? why do we substitute it in the line below? Let's clean it up without a sub
 
     n := numgens R;
     pruneG := select(G, g -> (
         (first first exponents(leadMonomial sub(g, RExt))) > 0) and
-        any(exponents(sub(leadCoefficient RExttoRFlatl(g), RFlat)), i -> any(i_(toList(0..(n-1))), i -> i > 0)));
-    pruneG = apply(pruneG, g -> leadCoefficient RExttoRExt'(g));
+        any(exponents(sub(leadCoefficient RExttoRFlatl g, RFlat)), i -> any(i_(toList(0..(n-1))), i -> i > 0)));
+    pruneG = apply(pruneG, g -> leadCoefficient RExttoRExt' g);
     h := lcm(pruneG | {1_KU});
     for i in 0..(#(factor h)-1) do (
         if isConstant (factor h)#i#0 then(
@@ -304,7 +304,7 @@ CGBMainRec (List, List, List, CGBData) := o -> (F, S, memo, cgbData) -> (
         memo = memo | {
             (S, {h},
                 for g in G list (
-                    g' := RExttoR(g);
+                    g' := RExttoR g;
                     if zero g' then continue;
                     g')
             )
@@ -318,7 +318,7 @@ CGBMainRec (List, List, List, CGBData) := o -> (F, S, memo, cgbData) -> (
             return {
                 (S, {h},
                     for g in G list (
-                        g' := RExttoR(g);
+                        g' := RExttoR g;
                         if zero g' then continue;
                         g')
                 )
@@ -352,7 +352,7 @@ CGBMainRec (List, List, List, CGBData) := o -> (F, S, memo, cgbData) -> (
         return {
             (S, {h},
                 for g in G list (
-                    g' := RExttoR(g);
+                    g' := RExttoR g;
                     if zero g' then continue;
                     g')
             )
@@ -404,7 +404,7 @@ CGB List := o -> F -> (
 eliminateVariables = method()
 eliminateVariables List := F -> (
     R := ring first F;
-    n := numgens(R);
+    n := numgens R;
     C := coefficientRing R;
     m := numgens C;
     x := local x;
@@ -416,13 +416,13 @@ eliminateVariables List := F -> (
     l1 := for i from 0 to m-1 list U_i => S_(i+n);
     l2 := for j from 0 to n-1 list X_j => S_j;
     F' := apply(F, h -> sub(h, l1|l2));
-    F'gbgens := gens gb(ideal(F'));
+    F'gbgens := gens gb ideal F';
     variableBlocks := select(ringOrder R, orderEntry -> first orderEntry =!= Weights);
     S' := selectInSubring(#variableBlocks, F'gbgens);
     mm := map(C, ring S',
         toList(n:0)|gens C
     );
-    mm(S')
+    mm S'
 )
 
 -- try passing the cgbData instead
