@@ -366,9 +366,9 @@ CGB = method( Options => {
     Verbose => false,
     Depth => -1
 })
-CGB(List) := o -> F -> (
+CGB List := o -> F -> (
+    R := ring first F;
     s := first entries eliminateVariables(F);
-    result := s;
     G := CGBMain(F, s,
         ReduceStrata => o.ReduceStrata,
         Strategy => o.Strategy,
@@ -376,11 +376,11 @@ CGB(List) := o -> F -> (
         Depth => o.Depth,
         CheckAssumption => false
     );
-    for i in G do (
-        result = result|(i_2);
-    );
-
-    unique result
+    -- scale each g so that the leading coefficient
+    -- of the leading coefficient is 1 (to remove duplicates)
+    normalForm := g -> (1 / leadCoefficient leadCoefficient g) * g;
+    result := apply(s, f -> promote(f, R)) | flatten apply(G, t -> t#2);
+    unique apply(select(result, g -> g != 0), normalForm)
 )
 
 
@@ -1512,6 +1512,17 @@ assert(set apply(L, t -> apply(t, set)) === set {
     {set {b, a}, set {1_U}, set {0_R}}})
 ///
 
+------------------------------
+-- TEST CGB returns elements of R only without duplication
+------------------------------
+TEST ///
+U = QQ[a,b];
+R = U[x,y];
+G = CGB {a*x - 1, b*x - 1};
+assert all(G, g -> ring g === R)
+assert(#G == 3)
+assert(set G === set {a_R - b_R, b*x - 1, b^2*x - b})
+///
 
 
 end--
