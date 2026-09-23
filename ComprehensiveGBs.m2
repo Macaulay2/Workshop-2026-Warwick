@@ -699,6 +699,8 @@ ICheck (List, RingElement) := o -> (E, f) -> (
     if zero f then (
         return true; -- certifies inconsistency
     );
+    -- we do the computation in the quotient ring R/<E>
+    -- this avoids extra costs when doing s := p^2 in the main loop
     Q := (ring f) / ideal E;
     if zero promote(f, Q) then (
         return true; -- certifies inconsistency
@@ -708,6 +710,8 @@ ICheck (List, RingElement) := o -> (E, f) -> (
     );
     factors := listOfFactors f;
     promoted := apply(factors, g -> promote(g, Q));
+    -- before performing ICheck on the input f, we first perform ICheck on the factors of f
+    -- this is a not-too-expensive heuristic, but it proves very helpful for S5 and P3P when Loops is set to 4
     candidates := if #factors == 0 then {promote(f, Q)}
         else if #factors == 1 then promoted
         else sort(promoted, z -> #terms z) | {promote(product factors, Q)};
