@@ -276,7 +276,7 @@ CGBMainRec (List, List, List, CGBData) := o -> (F, S, memo, cgbData) -> (
     n := numgens R;
     pruneIndices := positions(first entries RExttoRFlatl G, g ->
         leadMonomial g != 1 and
-        any(exponents leadCoefficient g, i -> any(take(i, n), k -> k > 0)));
+        any(support leadCoefficient g, v -> index v < n));
     pruneG := leadCoefficient \ first entries RExttoRExt' G_pruneIndices;
     h := lcm(pruneG | {1_KU});
     for i in 0..#(factor h) - 1 do (
