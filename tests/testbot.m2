@@ -12,8 +12,10 @@
 -- Terminate each directory name with a "/".
 
 -- Edit the following lines to preload and check your package 
-needsPackage ("TestPackage", FileName => "tests/TestPackage.m2")
-check TestPackage
+-- needsPackage ("TestPackage", FileName => "tests/TestPackage.m2")
+-- check TestPackage
+needsPackage ("ComprehensiveGBs", FileName => "ComprehensiveGBs.m2")
+check ComprehensiveGBs
 
 -- and/or run a series of examples either with
 load "tests/example.m2"
