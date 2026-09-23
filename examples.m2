@@ -157,8 +157,8 @@ F = {f,g}
 G = CGBMain(F, {});
 
 
---SS example 5 (40s)
-R = QQ[a,b][x,y,z,s, MonomialOrder => Lex]
+--SS example 5 (30s)
+R = QQ[a,b, MonomialOrder => Lex][x,y,z,s, MonomialOrder => Lex]
 f=(x-a)^2+b*y^2+b
 F = {f-z,x^2+y^2+z^2-s,x+z*diff(x, f),y+z*diff(y, f)}
 elapsedTime G = CGBMain(F, {});
