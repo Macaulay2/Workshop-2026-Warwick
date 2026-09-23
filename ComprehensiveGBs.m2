@@ -419,15 +419,7 @@ cgbOnGraph (List, ZZ) := (G, d) -> (
 -- Given two lists A and B return the list
 -- {a*b s.t. a in A and b in B}
 totalListProduct = method();
-totalListProduct (List, List) := (A, B) -> (
-    if length A == 0 then (
-        return B
-    );
-    if length B == 0 then (
-        return A
-    );
-    return flatten table(A, B, times)
-);
+totalListProduct (List, List) := (A, B) -> flatten table(A, B, times);
 
 
 --------------------------------------------------
