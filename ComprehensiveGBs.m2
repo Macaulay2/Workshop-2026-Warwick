@@ -271,15 +271,13 @@ CGBMainRec (List, List, List, CGBData) := o -> (F, S, memo, cgbData) -> (
         return {}
     );
     l := first gens RExt;
-    A := apply(F, i -> l * RtoRExt i);
-    B := apply(S, i -> (l-1) * RtoRExt i);
-    G := first entries gens gb ideal join(A, B); -- isn't G in RExt? why do we substitute it in the line below? Let's clean it up without a sub
+    G := gens gb ideal (l * RtoRExt matrix {F} | (l-1) * RtoRExt promote(matrix {S}, R));
 
     n := numgens R;
-    pruneG := select(G, g ->
-        first first exponents leadMonomial sub(g, RExt) > 0 and
-        any(exponents sub(leadCoefficient RExttoRFlatl g, RFlat), i -> any(take(i, n), j -> j > 0)));
-    pruneG = apply(pruneG, g -> leadCoefficient RExttoRExt' g);
+    pruneIndices := positions(first entries RExttoRFlatl G, g ->
+        leadMonomial g != 1 and
+        any(exponents leadCoefficient g, i -> any(take(i, n), k -> k > 0)));
+    pruneG := leadCoefficient \ first entries RExttoRExt' G_pruneIndices;
     h := lcm(pruneG | {1_KU});
     for i in 0..#(factor h) - 1 do (
         if isConstant (factor h)#i#0 then(
@@ -288,14 +286,14 @@ CGBMainRec (List, List, List, CGBData) := o -> (F, S, memo, cgbData) -> (
     );
 
     if o.ReduceStrata then (
-        memo |= {(S, {h}, select(RExttoR \ G, g -> g != 0))};
+        memo |= {(S, {h}, first entries compress RExttoR G)};
     );
 
     if pruneG == {} then (
         if o.ReduceStrata then (
             return memo
         ) else (
-            return {(S, {h}, select(RExttoR \ G, g -> g != 0))}
+            return {(S, {h}, first entries compress RExttoR G)}
         )
     );
 
@@ -322,7 +320,7 @@ CGBMainRec (List, List, List, CGBData) := o -> (F, S, memo, cgbData) -> (
         );
         return memo
     ) else (
-        return {(S, {h}, select(RExttoR \ G, g -> g != 0))} | if o.Depth == 0 then {} else flatten apply(H, hi -> CGBMainRec(F, append(S, hi), memo, cgbData, o ++ {Depth => o.Depth -1}))
+        return {(S, {h}, first entries compress RExttoR G)} | if o.Depth == 0 then {} else flatten apply(H, hi -> CGBMainRec(F, append(S, hi), memo, cgbData, o ++ {Depth => o.Depth -1}))
     );
 );
 
