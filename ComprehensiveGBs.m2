@@ -625,6 +625,9 @@ PGBMain (CGBTriple) := T -> (
     return PGB  
 );
 
+-- TODO: homogenise the output of CGBMain and PGBMain, e.g. should they both output
+-- lists of 3-tuples (3 element lists) or something else?
+
 PGBMain List := F -> (
     if #F == 0 then error("List must be non-empty");
     R := ring first F;
