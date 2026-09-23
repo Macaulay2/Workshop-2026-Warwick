@@ -164,12 +164,12 @@ isConsistentRabinowitsch (List, List) := (E, N) -> (
 --isConsistentRabinowitsch(E,N)
 
 
-diffLC = method(
+diffLocallyClosed = method(
     Options => {
         Strategy => "Rabinowitsch" -- "radical" or "Rabinowitsch"
     }
 );
-diffLC (Sequence, Sequence) := opts -> (A, B) -> (
+diffLocallyClosed (Sequence, Sequence) := opts -> (A, B) -> (
     result := {(A#0 | {B#1}, A#1)} | apply(B#0, p -> (A#0, A#1 * p));
     if opts.Strategy == "radical" then (
         select(result, t -> isConsistent(t#0, {t#1}))
@@ -178,17 +178,17 @@ diffLC (Sequence, Sequence) := opts -> (A, B) -> (
         select(result, t -> isConsistentRabinowitsch(t#0, {t#1}))
     )
     else (
-        error "Unknown strategy for diffLC"
+        error "Unknown strategy for diffLocallyClosed"
     )
 );
 
-diffConstructibleByLC = method(
+diffConstructiblebyLocallyClosed = method(
     Options => {
         Strategy => "radical"
     }
 );
-diffConstructibleByLC (List, Sequence) := opts -> (C, LC) -> (
-    flatten apply(C, t -> diffLC(t, LC, opts))
+diffConstructiblebyLocallyClosed (List, Sequence) := opts -> (C, LC) -> (
+    flatten apply(C, t -> diffLocallyClosed(t, LC, opts))
 );
 
 
@@ -325,7 +325,7 @@ CGBMainRec (List, List, List, CGBData) := o -> (F, S, memo, cgbData) -> (
         for hi in H do (
             diffset = {({hi}, 1_(KU))};
             for t in memo do (
-                diffset = diffConstructibleByLC(diffset, (t#0, first t#1), Strategy => o.Strategy);
+                diffset = diffConstructiblebyLocallyClosed(diffset, (t#0, first t#1), Strategy => o.Strategy);
                 if isEmpty diffset then (
                     break
                 );
