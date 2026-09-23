@@ -42,13 +42,6 @@ CGBTriple = new Type of HashTable
 CGBData = new Type of HashTable
 
 
-protect coefficientsRing  --Probably needs to be changed
-                          --b/c too similar to coefficientRing
-protect totalRing
-protect flattenedRing
-protect triple            --Probably needs to be changed b/c
-                          --too generic?
-
 ringOrder = method(); -- returns the monomial order of a polynomial ring
 ringOrder PolynomialRing := List => R -> (
     order := select(toList (options R).MonomialOrder, orderEntry -> not member(first orderEntry, {MonomialSize, Position}));
