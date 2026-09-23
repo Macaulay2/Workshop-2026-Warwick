@@ -898,57 +898,105 @@ doc ///
     S :List
        a list of polynomials in a ring $RU = k[U]$
     CheckAssumption=>Boolean
+       check that $V(S)\subseteq V(\langle F\rangle\cap k[U])$
     ReduceStrata=>Boolean
+       ignore strata that have already been computed
     Strategy=>String
+       "radical" or "Rabinowitsch" for checking membership in the radical
     Verbose=>Boolean
+       print polynomial lists during computation
     Depth=>ZZ
+       maximum recursion depth
   Outputs
     G :List
-      of Sequences of the form (E,N,G), where G is a Gröbner basis on the set $V(E)\setminus V(N)$
+      of Sequences of the form (E,N,G), where G is a Gröbner basis on the set
+      $V(E)\setminus V(N)$
   Description
     Text
-      Implementation of the Algorithm proposed by Suzuki and Sato. Given a tower polynomial ring $R = k[U][X]$ for $U$ a set of parameters and $X$ a set of variables, $F\subset R$ an ideal of variables and parameters, and $S\subset k[U]$ an ideal satisfying $V(S)\subseteq V(\langle F\rangle\cap k[U])$, CGBMain takes $F$ and $S$ as inputs and returns a comprehensive Groebner system on $V(S)$.
-      The function itself passes $F$ and $S$ to CGBMainRec after initialising various objects.
-      As above, the ring must be initialised as a tower ring:
+      Implementation of the Algorithm proposed by Suzuki and Sato. Given a
+      tower polynomial ring $R = k[U][X]$ for $U$ a set of parameters and
+      $X$ a set of variables, $F\subset R$ an ideal of variables and
+      parameters, and $S\subset k[U]$ an ideal satisfying $V(S)\subseteq
+      V(\langle F\rangle\cap k[U])$, CGBMain takes $F$ and $S$ as inputs
+      and returns a comprehensive Groebner system on $V(S)$. The function
+      itself passes $F$ and $S$ to CGBMainRec after initialising various
+      objects. As above, the ring must be initialised as a tower ring:
     Example
       R1 = QQ[a,b][x,y]
     Text
-      Here $X = \{x,y\}$ and $U = \{a,b\}$. If we wanted to find a comprehensive Groebner system over $\mathb{Q}^2$ for $F = \langle ax+by\rangle$, we input the following:
+      Here $X = \{x,y\}$ and $U = \{a,b\}$. If we wanted to find a
+      comprehensive Groebner system over $\mathb{Q}^2$ for
+      $F = \langle ax+by\rangle$, we input the following:
     Example
       F1 = {a*x+b*y}
       S1 = {}
       CGBMain(F1,S1)
     Text
-      CGBMain has several options: ReduceStrata, Strategy, and Verbose. ReduceStrata is an option to ignore computations on strata which have already been considered. This value is set to false by default. For smaller examples, changing this to true can reduce computation times, as for the following example. It will also give more easily parseable results.
+      CGBMain has several options: ReduceStrata, Strategy, Verbose, and
+      Depth.
+
+      ReduceStrata is an option to ignore computations on strata which
+      have already been considered. This value is set to false by default.
+      For smaller examples, changing this to true can reduce computation
+      times, as for the following example. It will also give more easily
+      parsable results.
     Example
       R2 = QQ[a,b][x,y,z];
       F2 = {x^2-a,y^3-b,x+y-z};
       S2 = {};
     Text
-      The value is false by default as this is not true in general - for the example below (which will not be computed to save time, though the reader may verify if they desire) the option being false has an execution time of less than a minute. Setting ReduceStrata to true increases this execution time significantly (a rough estimate for time has not been found, as the computation takes so long).
+      The option is false by default as the speed-up is not always
+      guaranteed. For the example below, which will not be computed to save
+      time, the reader may verify the option being false has an execution
+      time of less than a minute. Setting ReduceStrata to true increases
+      this execution time significantly, in fact, we could not get the
+      computation to terminate.
     Example
       R3 = QQ[a,b][x,y,z,s, MonomialOrder => Lex];
       f=(x-a)^2+b*y^2+b;
       F3 = {f-z,x^2+y^2+z^2-s,x+z*diff(x, f),y+z*diff(y, f)}
     Text
-      Strategy is an option that depends on ReduceStrata, and has two valid inputs, being "radical" and "Rabinowitsch" - other inputs will return an error. The former reduces strata by directly computing radicals of ideals, and the latter utilises the Rabinowitsch trick. The latter is, in general, considerably faster.
-      Setting Verbose to True will print whatever $F$ and $S$ that CGBMainRec is currently working on:
+      The option @TO "Strategy"@ depends on @TO "ReduceStrata"@, and has
+      two valid values: "radical" and "Rabinowitsch". The former reduces
+      strata by directly computing radicals of ideals, and the latter
+      utilises the Rabinowitsch trick. The latter is, in general,
+      considerably faster.
+
+      Setting @TO "Verbose"@ to @TT "true"@ will display the current
+      polynomial lists $F$ and $S$ in the internal computation.
     Example
       CGBMain(F1,S1,Verbose=>true)
     Text
-      CGBMain can take in one or two lists as inputs.
-      When $S$ is not specified, the function returns a comprehensive Gröbner system on the whole parameter space,
-      by computing a basis $\{s_1,\dots,s_r\}$ of the elimination ideal $\langle F\rangle\cap k[U]$, passing that basis as $S$ to CGBMain,
-      and prepending the extra segment $(\{0\}, \{s_1,\dots,s_r\}, \{1\})$ to the output.
-      When $S$ is specified, the function returns a comprehensive Groebner system on $V(S)$, under the assumption that
-      $V(S)\subseteq V(\langle F\rangle\cap k[U])$. That assumption is verified before the computation starts, and an error is raised when it fails.
-      If the assumption is known to be true, the option CheckAssumption can be set to false to skip the verification step.
+      The option @TO "Depth"@ sets a bound for the recusion depth of the
+      algorithm. For instance setting it to zero will return one the
+      generic stratum.
+    Example
+      for i from 0 to 3 do print (i, netList CGBMain(F1, S1, Depth => i))
+    Text
+      When the function is about to recuse, the
+      value of the depth option is checked, if the value is zero then
+      the function stop there. Otherwise, the function decrements the
+      depth and recuses. The default value for the depth is minus one,
+      which means the depth will never reach zero on recusion.
+
+
+      @TO "CGBMain"@ can take in one or two lists as inputs.
+      When $S$ is not specified, the function returns a comprehensive
+      Gröbner system on the whole parameter space, by computing a basis
+      $\{s_1,\dots,s_r\}$ of the elimination ideal
+      $\langle F\rangle\cap k[U]$, passing that basis as $S$ to CGBMain,
+      and prepending the extra segment $(\{0\}, \{s_1,\dots,s_r\}, \{1\})$
+      to the output. When $S$ is specified, the function returns a
+      comprehensive Groebner system on $V(S)$, under the assumption that
+      $V(S)\subseteq V(\langle F\rangle\cap k[U])$. That assumption is
+      verified before the computation starts, and an error is raised
+      when it fails. If the assumption is known to be true, the option
+      CheckAssumption can be set to false to skip the verification step.
   SeeAlso
     CGB
     ReduceStrata
     Strategy
     Verbose
-    Depth
   ///
 
 doc ///
@@ -1007,17 +1055,6 @@ doc ///
 ///
 
 
-doc ///
-  Key
-    Depth
-  Headline
-    not sure of what it is 
-  Description
-   
-  SeeAlso
-    CGBMain    
-///
-  
 doc ///
   Key
     cgbOnGraph
@@ -1139,7 +1176,6 @@ doc ///
     ReduceStrata
     Strategy
     Verbose
-    Depth
   ///
 
 
