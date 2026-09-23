@@ -1423,7 +1423,7 @@ assert(result#0 == expected2 or result#1 == expected2);
 -----------------------------
 --TEST for MDBasis
 -----------------------------
-TEST /// -* Testing MDBasis on {a*x^2 − y, a*y^2 − 1, a*x − 1, (a + 1)*x − y, (a + 1)*y − a} *-
+TEST /// -* Testing MDBasis on {a*x^2 - y, a*y^2 - 1, a*x - 1, (a + 1)*x - y, (a + 1)*y - a} *-
 U = U = QQ[a, MonomialOrder => Lex];
 R = U[x, y, MonomialOrder => Lex];
 G = {a*x^2 - y, a*y^2 - 1, a*x - 1, (a + 1)*x - y, (a + 1)*y - a}
