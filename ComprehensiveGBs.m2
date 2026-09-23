@@ -1137,9 +1137,13 @@ doc ///
     F :List
        a list of polynomials in a ring $R = k[U][X]$
     ReduceStrata=>Boolean
+       ignore strata that have already been computed
     Strategy=>String
+       "radical" or "Rabinowitsch" for checking membership in the radical
     Verbose=>Boolean
+       print polynomial lists during computation
     Depth=>ZZ
+       maximum recursion depth
   Outputs
     G :List
       of polynomials forming a comprehensive Gröbner basis of $\langle F\rangle$
