@@ -228,11 +228,7 @@ CGBMain (List, List) := o -> (F, S) -> (
       error("V(S) is not contained in V(ideal F cap k[U]); pass CheckAssumption => false to skip this check");
   );
   cgbData := CGBDataFromRings R;
-  RingsandThings := apply({
-    "R", "RExt", "RFlat", "RExt'", "KU", "RFlatl", "RtoRExt", "RExttoRFlatl",
-    "RExttoRExt'", "RExttoR", "KUtoRFlat", "RFlattoR", "KUtoR", "RtoRFlat"
-  }, k -> cgbData#k);
-  cgs := CGBMainRec(F, S', {}, RingsandThings,
+  cgs := CGBMainRec(F, S', {}, cgbData,
     ReduceStrata => o.ReduceStrata,
     Strategy => o.Strategy,
     Verbose => o.Verbose,
@@ -249,21 +245,21 @@ CGBMainRec = method(
         Depth => -1
         }
     );
-CGBMainRec (List, List, List, List) := o -> (F, S, memo, RingsandThings) -> (
-  R := RingsandThings_0;
-  RExt := RingsandThings_1;
-  RFlat := RingsandThings_2;
-  RExt' := RingsandThings_3;
-  KU := RingsandThings_4;
-  RFlatl := RingsandThings_5;
-  RtoRExt := RingsandThings_6;
-  RExttoRFlatl := RingsandThings_7;
-  RExttoRExt' := RingsandThings_8;
-  RExttoR := RingsandThings_9;
-  KUtoRFlat := RingsandThings_10;
-  RFlattoR := RingsandThings_11;
-  KUtoR := RingsandThings_12;
-  RtoRFlat := RingsandThings_13;
+CGBMainRec (List, List, List, CGBData) := o -> (F, S, memo, cgbData) -> (
+  R := cgbData#"R";
+  RExt := cgbData#"RExt";
+  RFlat := cgbData#"RFlat";
+  RExt' := cgbData#"RExt'";
+  KU := cgbData#"KU";
+  RFlatl := cgbData#"RFlatl";
+  RtoRExt := cgbData#"RtoRExt";
+  RExttoRFlatl := cgbData#"RExttoRFlatl";
+  RExttoRExt' := cgbData#"RExttoRExt'";
+  RExttoR := cgbData#"RExttoR";
+  KUtoRFlat := cgbData#"KUtoRFlat";
+  RFlattoR := cgbData#"RFlattoR";
+  KUtoR := cgbData#"KUtoR";
+  RtoRFlat := cgbData#"RtoRFlat";
 
   S = first entries gens gb ideal S;
   if o.Verbose then (
@@ -338,7 +334,7 @@ CGBMainRec (List, List, List, List) := o -> (F, S, memo, RingsandThings) -> (
               continue;
               );
           if o.Depth != 0 then (
-              memo = CGBMainRec(F, append(S, hi), memo, RingsandThings, o ++ {Depth => o.Depth -1});
+              memo = CGBMainRec(F, append(S, hi), memo, cgbData, o ++ {Depth => o.Depth -1});
               )
           );
       return memo
@@ -350,7 +346,7 @@ CGBMainRec (List, List, List, List) := o -> (F, S, memo, RingsandThings) -> (
                   if zero g' then continue;
                   g')
               )
-          } | if o.Depth == 0 then {} else flatten apply(H, hi -> CGBMainRec(F, append(S, hi), memo, RingsandThings, o ++ {Depth => o.Depth -1}))
+          } | if o.Depth == 0 then {} else flatten apply(H, hi -> CGBMainRec(F, append(S, hi), memo, cgbData, o ++ {Depth => o.Depth -1}))
       );
   );
 
