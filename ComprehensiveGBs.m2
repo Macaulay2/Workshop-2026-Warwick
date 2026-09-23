@@ -854,29 +854,6 @@ doc ///
 ///
 
 
-
-doc ///
-  Key
-    "OlliesDocPage"
-  Headline
-    A small example
-  Description
-    Text 
-      Description of the page you can insert some code snippets too:
-      Here is a ring $R = \QQ[a,b][x,y]$ with a Lex monomial order ..
-    Example
-      R = QQ[a,b][x,y, MonomialOrder => Lex]
-      F = {a*x + b*y}
-      CGBMain(F, {})
-    Text
-      Amazing!
-      A link to the package: @TO "ComprehensiveGBs"@.
-      Sometimes we talk about @TT "true"@ things.
-      
-  SeeAlso
-    ComprehensiveGBs
-///
-
 doc ///
   Key
     CGBMain
