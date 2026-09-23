@@ -123,7 +123,7 @@ CGBDataFromRings Ring := CGBData => R -> (
 listOfFactors = method() -- returns the list of factors of a ring element
 listOfFactors RingElement := h -> (
     hfac := factor h;
-    select(apply(#hfac, i -> hfac#i#0), t -> not isConstant t)
+    select(first \ toList hfac, t -> not isConstant t)
 );
 
 squareFreePart = method() -- returns the square free part of a ring element
@@ -286,12 +286,12 @@ CGBMainRec (List, List, List, CGBData) := o -> (F, S, memo, cgbData) -> (
     l := first gens RExt;
     A := apply(F, i -> l * RtoRExt i);
     B := apply(S, i -> (l-1) * RtoRExt i);
-    G := (entries gens gb ideal join(A, B))_0; -- isn't G in RExt? why do we substitute it in the line below? Let's clean it up without a sub
+    G := first entries gens gb ideal join(A, B); -- isn't G in RExt? why do we substitute it in the line below? Let's clean it up without a sub
 
     n := numgens R;
     pruneG := select(G, g ->
         first first exponents leadMonomial sub(g, RExt) > 0 and
-        any(exponents sub(leadCoefficient RExttoRFlatl g, RFlat), i -> any(i_(toList(0..n-1)), i -> i > 0)));
+        any(exponents sub(leadCoefficient RExttoRFlatl g, RFlat), i -> any(take(i, n), j -> j > 0)));
     pruneG = apply(pruneG, g -> leadCoefficient RExttoRExt' g);
     h := lcm(pruneG | {1_KU});
     for i in 0..#(factor h) - 1 do (
@@ -301,28 +301,14 @@ CGBMainRec (List, List, List, CGBData) := o -> (F, S, memo, cgbData) -> (
     );
 
     if o.ReduceStrata then (
-        memo = memo | {
-            (S, {h},
-                for g in G list (
-                    g' := RExttoR g;
-                    if zero g' then continue;
-                    g')
-            )
-        };
+        memo |= {(S, {h}, select(RExttoR \ G, g -> g != 0))};
     );
 
     if pruneG == {} then (
         if o.ReduceStrata then (
             return memo
         ) else (
-            return {
-                (S, {h},
-                    for g in G list (
-                        g' := RExttoR g;
-                        if zero g' then continue;
-                        g')
-                )
-            }
+            return {(S, {h}, select(RExttoR \ G, g -> g != 0))}
         )
     );
 
@@ -349,14 +335,7 @@ CGBMainRec (List, List, List, CGBData) := o -> (F, S, memo, cgbData) -> (
         );
         return memo
     ) else (
-        return {
-            (S, {h},
-                for g in G list (
-                    g' := RExttoR g;
-                    if zero g' then continue;
-                    g')
-            )
-        } | if o.Depth == 0 then {} else flatten apply(H, hi -> CGBMainRec(F, append(S, hi), memo, cgbData, o ++ {Depth => o.Depth -1}))
+        return {(S, {h}, select(RExttoR \ G, g -> g != 0))} | if o.Depth == 0 then {} else flatten apply(H, hi -> CGBMainRec(F, append(S, hi), memo, cgbData, o ++ {Depth => o.Depth -1}))
     );
 );
 
@@ -460,13 +439,7 @@ totalListProduct (List, List) := (A, B) -> (
     if length B == 0 then (
         return A
     );
-    return flatten(
-        for a in A list(
-            for b in B list (
-                a*b
-            )
-        )
-    )
+    return flatten table(A, B, times)
 );
 
 
@@ -489,7 +462,7 @@ MDBasis List := G -> (
     lpps := leadMonomial \ G;
     minimal := select(G, g -> not any(lpps, m -> m != leadMonomial g and (leadMonomial g) % m == 0));
     freq := tally apply(minimal, g -> toString leadCoefficient g);
-    sharedCount := lc -> if freq#?(toString lc) then freq#(toString lc) else 0;
+    sharedCount := lc -> freq_(toString lc);
     -- order the input by those two heuristics;
     -- if there are still ties, order by the keys (chosen purely arbitrarily) after them
     F = sort(F, g -> (lc := leadCoefficient g; (- sharedCount lc, simpler lc, #terms lc, first degree lc, toString g)));
@@ -569,7 +542,7 @@ PGBMain CGBTriple := T -> (
         l := lift(RFlattoR g, KU, Verify => false);
         -- lift() with Verify=>false returns Null when the lift is not possible
         -- i.e. when the polynomial contains something other than parametetrs
-        if instance(l, Nothing) then continue;
+        if l === null then continue;
         l
     );
     -- By convention, an empty list for a GB means that the
@@ -668,7 +641,7 @@ CCheck (List, RingElement) := (E, f) -> (
     U := gens R;
     supports := apply(select(E, g -> g != 0), g -> (
         e := first exponents leadMonomial g;
-        select(0..#e-1, i -> e_i != 0)
+        positions(e, k -> k != 0)
     ));
 
     V := {};
@@ -700,7 +673,7 @@ CCheck (List, RingElement) := (E, f) -> (
 
     phi := map(R, R, for i from 0 to numgens R-1 list if member(i, V) then alpha_i else R_i);
 
-    spE := gb (ideal (phi \ E) + ideal(for i in V list R_i));
+    spE := gb (ideal (phi \ E) + ideal (gens R)_V);
     -- the above is a little different from KSW where they restrict to a smaller ring
     -- and check that spE is zero dimensional there
     -- Here we add in the variables in order to avoid constructing a new polynomial ring
@@ -831,7 +804,7 @@ consistencyCheckAllTogether (List, List) := o -> (E, N) -> (
             return true;
         );
 
-        if instance(check, Nothing) then (
+        if check === null then (
             undecided = true;
         );
     );
@@ -1528,7 +1501,7 @@ ExpResult = set{
     }
 }
 
-assert( (new Set from for r in L list for p in r list set p) == ExpResult )
+assert( (set apply(L, r -> set \ r)) == ExpResult )
 
 ///
 
