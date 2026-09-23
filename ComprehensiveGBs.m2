@@ -626,8 +626,7 @@ CCheck = method();
 CCheck (List, RingElement) := (E, f) -> (
     R := ring f;
     U := gens R;
-    supports := apply(E, g -> (
-        if g == 0 then continue;
+    supports := apply(select(E, g -> g != 0), g -> (
         e := first exponents(leadMonomial g);
         select(0..(#e-1), i -> e_i != 0)
     ));
