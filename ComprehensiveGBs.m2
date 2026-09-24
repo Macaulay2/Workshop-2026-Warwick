@@ -279,11 +279,8 @@ CGBMainRec (List, List, List, CGBData) := o -> (F, S, memo, cgbData) -> (
         any(support leadCoefficient g, v -> index v < n));
     pruneG := leadCoefficient \ first entries RExttoRExt' G_pruneIndices;
     h := lcm(pruneG | {1_KU});
-    for i in 0..#(factor h) - 1 do (
-        if isConstant (factor h)#i#0 then(
-            h = h//(factor h)#i#0;
-        )
-    );
+    hfac := select(toList factor h, p -> not isConstant p#0);
+    h = product({1_KU} | apply(hfac, value));
 
     if o.ReduceStrata then (
         memo |= {(S, {h}, first entries compress RExttoR G)};
@@ -300,7 +297,7 @@ CGBMainRec (List, List, List, CGBData) := o -> (F, S, memo, cgbData) -> (
     -- H := pruneG; -- (takes too long to terminate if we do not factor h)
     -- H := unique apply(pruneG, g -> squareFreePart g); -- (takes a bit longer to terminate)
 
-    H := listOfFactors h;
+    H := first \ hfac;
     if o.ReduceStrata then (
         diffset := {};
         for hi in H do (
