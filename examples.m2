@@ -22,11 +22,9 @@ G = CGBMain(F, {}, ReduceStrata => true);
 netList for g in G list {g_0, factor g_1}
 
 
--- For this, at each step we have to check ideal membership 
--- (i.e. do all leading coefficients of the GB vanish on the strata?), 
--- and using the Rabinowitsch trick can make everything faster                                      -- (i.e. to check f in <E>, test 1 in <E, y*f-1>)
-print("Radical :", benchmark "G = CGBMain(F, {}, ReduceStrata => true, Strategy => \"radical\", Verbose => false)")
-print("Rabinowitsch:", benchmark "G = CGBMain(F, {}, ReduceStrata => true, Strategy => \"Rabinowitsch\", Verbose => false)")
+-- For this, at each step we split V(S + h_i) into irreducible components,
+-- and skip those already covered by the strata computed so far.
+print("ReduceStrata:", benchmark "G = CGBMain(F, {}, ReduceStrata => true, Verbose => false)")
 -- And we were more careful with cacheing rings.
 
 -- Dulcis in fundu: we have some DOCUMENTATION!
@@ -96,11 +94,6 @@ elapsedTime G = CGBMain(F, {}, Verbose => false);
 elapsedTime G = CGBMain(F, {}, ReduceStrata => true, Verbose => true);
 #G
 
-elapsedTime G = CGBMain(F, {}, ReduceStrata => true, Strategy => "Rabinowitsch", Verbose => false);
-benchmark "G = CGBMain(F, {}, ReduceStrata => true, Strategy => \"radical\", Verbose => false)"
-
-#G
-
 
 G_1
 G_2
@@ -145,7 +138,7 @@ R = QQ[a,b,c,d][x_1,x_2,y_1,y_2,s, MonomialOrder => Lex]
 f=a*x_1^2+b*y_1
 g=c*y_2^2+d*x_2
 F = {f,g,(x_1-x_2)^2+(y_1-y_2)^2-s,diff_(x_1) f * diff_(y_2) g -diff_(y_1) f * diff_(x_2) g, diff_(x_1) f * (y_1-y_2) - diff_(y_1) f * (x_1-x_2)}
-elapsedTime G = CGBMain(F, {}, Strategy =);
+elapsedTime G = CGBMain(F, {});
  -- 1255.88s elapsed
 #G --=1637
 
@@ -168,7 +161,7 @@ netList for j from 0 to 9 list (G_j)_{0,1}
 
 
 
--- SS Example 6:
+-- SS Example 6 (3 minutes):
 
 R = QQ[a,b][x, y, z, s, MonomialOrder => Lex]
 f = (x - a)^2 + a*y^2 + b
@@ -178,7 +171,7 @@ F = {
     x + diff(x, f)*z,
     y + diff(y, f)*z
     }
-elapsedTime GG = CGBMain(F, {});
+elapsedTime GG = CGBMain(F, {}, ReduceStrata => true);
 #GG
 
 --Examples from Game Theory

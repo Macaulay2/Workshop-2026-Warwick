@@ -136,13 +136,7 @@ squareFreePart RingElement := h -> (
 
 
 
-isConsistent = method(); -- returns whether or not rad(E) intersect N is empty
-isConsistent (List, List) := (E, N) -> (
-    I := radical ideal E;
-    any(N, p -> not isMember(p, I))
-);
-
-isConsistentRabinowitsch = method(); -- isConsistent, using the Rabinowitsch trick
+isConsistentRabinowitsch = method(); -- returns whether or not rad(E) intersect N is empty, using the Rabinowitsch trick
 isConsistentRabinowitsch (List, List) := (E, N) -> (
     if isEmpty E then return not all(N, zero);
     M := rabinowitschMap ring E_0;
@@ -168,31 +162,11 @@ rabinowitschMap = R -> (
 -- isConsistentRabinowitsch(E,N)
 
 
-diffLocallyClosed = method(
-    Options => {
-        Strategy => "Rabinowitsch" -- "radical" or "Rabinowitsch"
-    }
-);
-diffLocallyClosed (Sequence, Sequence) := opts -> (A, B) -> (
-    result := {(A#0 | {B#1}, A#1)} | apply(B#0, p -> (A#0, A#1 * p));
-    if opts.Strategy == "radical" then (
-        select(result, t -> isConsistent(t#0, {t#1}))
-    )
-    else if opts.Strategy == "Rabinowitsch" then (
-        select(result, t -> isConsistentRabinowitsch(t#0, {t#1}))
-    )
-    else (
-        error "Unknown strategy for diffLocallyClosed"
-    )
-);
-
-diffConstructiblebyLocallyClosed = method(
-    Options => {
-        Strategy => "radical"
-    }
-);
-diffConstructiblebyLocallyClosed (List, Sequence) := opts -> (C, LC) -> (
-    flatten apply(C, t -> diffLocallyClosed(t, LC, opts))
+isCoveredPrime = method(); -- returns whether V(P) is covered by the strata in memo, with P being a prime ideal
+isCoveredPrime (Ideal, List) := (P, memo) -> (
+    j := position(memo, t -> all(t#0, s -> s % P == 0) and any(t#1, n -> n % P != 0));
+    if j === null then return false;
+    all(decompose(P + ideal (memo#j)#1), Q -> isCoveredPrime(Q, memo))
 );
 
 
@@ -200,7 +174,6 @@ diffConstructiblebyLocallyClosed (List, Sequence) := opts -> (C, LC) -> (
 CGBMain = method(
     Options => {
         ReduceStrata => false,
-        Strategy => "Rabinowitsch",
         Verbose => false,
         Depth => -1,
         CheckAssumption => true
@@ -232,7 +205,6 @@ CGBMain (List, List) := o -> (F, S) -> (
     );
     cgs := CGBMainRec(F, S', {}, cgbData,
         ReduceStrata => o.ReduceStrata,
-        Strategy => o.Strategy,
         Verbose => o.Verbose,
         Depth => o.Depth
     );
@@ -242,7 +214,6 @@ CGBMain (List, List) := o -> (F, S) -> (
 CGBMainRec = method(
     Options => {
         ReduceStrata => false,
-        Strategy => "Rabinowitsch",
         Verbose => false,
         Depth => -1
     }
@@ -299,20 +270,11 @@ CGBMainRec (List, List, List, CGBData) := o -> (F, S, memo, cgbData) -> (
 
     H := first \ hfac;
     if o.ReduceStrata then (
-        diffset := {};
         for hi in H do (
-            diffset = {({hi}, 1_KU)};
-            for t in memo do (
-                diffset = diffConstructiblebyLocallyClosed(diffset, (t#0, first t#1), Strategy => o.Strategy);
-                if isEmpty diffset then (
-                    break
-                );
-            );
-            if isEmpty diffset then (
-                continue;
-            );
-            if o.Depth != 0 then (
-                memo = CGBMainRec(F, append(S, hi), memo, cgbData, o ++ {Depth => o.Depth -1});
+            for P in decompose ideal append(S, hi) do (
+                if o.Depth != 0 and not isCoveredPrime(P, memo) then (
+                    memo = CGBMainRec(F, first entries gens gb P, memo, cgbData, o ++ {Depth => o.Depth -1});
+                )
             )
         );
         return memo
@@ -340,7 +302,6 @@ profileSummary
 
 CGB = method( Options => {
     ReduceStrata => false,
-    Strategy => "Rabinowitsch",
     Verbose => false,
     Depth => -1
 })
@@ -349,7 +310,6 @@ CGB List := o -> F -> (
     s := first entries eliminateVariables(F, CGBDataFromRings R);
     G := CGBMain(F, s,
         ReduceStrata => o.ReduceStrata,
-        Strategy => o.Strategy,
         Verbose => o.Verbose,
         Depth => o.Depth,
         CheckAssumption => false
@@ -835,7 +795,6 @@ doc ///
     CGBMain
     (CGBMain, List, List)
     (CGBMain, List)
-    [CGBMain, Strategy]
     [CGBMain, Verbose]
     [CGBMain, ReduceStrata]
     [CGBMain, Depth]
@@ -854,8 +813,6 @@ doc ///
        check that $V(S)\subseteq V(\langle F\rangle\cap k[U])$
     ReduceStrata=>Boolean
        ignore strata that have already been computed
-    Strategy=>String
-       "radical" or "Rabinowitsch" for checking membership in the radical
     Verbose=>Boolean
        print polynomial lists during computation
     Depth=>ZZ
@@ -885,8 +842,7 @@ doc ///
       S1 = {}
       CGBMain(F1,S1)
     Text
-      CGBMain has several options: ReduceStrata, Strategy, Verbose, and
-      Depth.
+      CGBMain has several options: ReduceStrata, Verbose, and Depth.
 
       ReduceStrata is an option to ignore computations on strata which
       have already been considered. This value is set to false by default.
@@ -898,23 +854,6 @@ doc ///
       F2 = {x^2-a,y^3-b,x+y-z};
       S2 = {};
     Text
-      The option is false by default as the speed-up is not always
-      guaranteed. For the example below, which will not be computed to save
-      time, the reader may verify the option being false has an execution
-      time of less than a minute. Setting ReduceStrata to true increases
-      this execution time significantly, in fact, we could not get the
-      computation to terminate.
-    Example
-      R3 = QQ[a,b][x,y,z,s, MonomialOrder => Lex];
-      f=(x-a)^2+b*y^2+b;
-      F3 = {f-z,x^2+y^2+z^2-s,x+z*diff(x, f),y+z*diff(y, f)}
-    Text
-      The option @TO "Strategy"@ depends on @TO "ReduceStrata"@, and has
-      two valid values: "radical" and "Rabinowitsch". The former reduces
-      strata by directly computing radicals of ideals, and the latter
-      utilises the Rabinowitsch trick. The latter is, in general,
-      considerably faster.
-
       Setting @TO "Verbose"@ to @TT "true"@ will display the current
       polynomial lists $F$ and $S$ in the internal computation.
     Example
@@ -948,7 +887,6 @@ doc ///
   SeeAlso
     CGB
     ReduceStrata
-    Strategy
     Verbose
   ///
 
@@ -964,30 +902,8 @@ doc ///
       R2 = QQ[a,b][x,y,z];
       F2 = {x^2-a,y^3-b,x+y-z};
       S2 = {};
-    Text
-      The value is false by default as this is not true in general - for the example below (which will not be computed to save time, though the reader may verify if they desire) the option being false has an execution time of less than a minute. Setting ReduceStrata to true increases this execution time significantly (a rough estimate for time has not been found, as the computation takes so long).
-    Example
-      R3 = QQ[a,b][x,y,z,s, MonomialOrder => Lex];
-      f=(x-a)^2+b*y^2+b;
-      F3 = {f-z,x^2+y^2+z^2-s,x+z*diff(x, f),y+z*diff(y, f)}
   SeeAlso
     CGBMain
-///
-
-doc ///
-  Key
-    "CGB Strategy"
-  Headline
-    how to compute the radical in @TO "ReduceStrata"@
-  Description
-    Text
-      Strategy is an option that depends on @TO "ReduceStrata"@. It is for cheking if a pair $(E,N) \subseteq k[U]$ is consistent, i.e., if $V(E)\backslash V(N)$ is not empty. In order to do that the radical of ideal(E) has to be computed, see Section 5 of @HREF("ref1","1")@ for details.
-      Strategy has two valid inputs, being "radical" and "Rabinowitsch" - other inputs will return an error. The former reduces strata by directly computing radicals of ideals, and the latter utilises the Rabinowitsch trick. The latter is, in general, considerably faster.
-  References
-    @LABEL("[1]","id" => "ref1")@ Deepak Kapur, Yao Sun, and Dingkang Wang. 2013. An efficient algorithm for computing a comprehensive Gr\"obner system of a parametric polynomial system. In Journal of Symbolic Computation, 49, 27-44.
-  SeeAlso
-    CGBMain
-    ReduceStrata
 ///
 
 doc ///
@@ -1078,7 +994,6 @@ doc ///
   Key
     "CGB"
     (CGB, List)
-    [CGB, Strategy]
     [CGB, Verbose]
     [CGB, ReduceStrata]
     [CGB, Depth]
@@ -1091,8 +1006,6 @@ doc ///
        a list of polynomials in a ring $R = k[U][X]$
     ReduceStrata=>Boolean
        ignore strata that have already been computed
-    Strategy=>String
-       "radical" or "Rabinowitsch" for checking membership in the radical
     Verbose=>Boolean
        print polynomial lists during computation
     Depth=>ZZ
@@ -1113,25 +1026,17 @@ doc ///
       F1 = {a*x+b*y}
       CGB F1
     Text
-      CGB has several options: ReduceStrata, Strategy, and Verbose. ReduceStrata is an option to ignore computations on strata which have already been considered. This value is set to false by default. For smaller examples, changing this to true can reduce computation times, as for the following example. It will also give more easily parseable results.
+      CGB has several options: ReduceStrata and Verbose. ReduceStrata is an option to ignore computations on strata which have already been considered. This value is set to false by default. For smaller examples, changing this to true can reduce computation times, as for the following example. It will also give more easily parseable results.
     Example
       R2 = QQ[a,b][x,y,z];
       F2 = {x^2-a,y^3-b,x+y-z};
     Text
-      The value is false by default as this is not true in general - for the example below (which will not be computed to save time, though the reader may verify if they desire) the option being false has an execution time of less than a minute. Setting ReduceStrata to true increases this execution time significantly (a rough estimate for time has not been found, as the computation takes so long).
-    Example
-      R3 = QQ[a,b][x,y,z,s, MonomialOrder => Lex];
-      f=(x-a)^2+b*y^2+b;
-      F3 = {f-z,x^2+y^2+z^2-s,x+z*diff(x, f),y+z*diff(y, f)}
-    Text
-      Strategy is an option that depends on ReduceStrata, and has two valid inputs, being "radical" and "Rabinowitsch" - other inputs will return an error. The former reduces strata by directly computing radicals of ideals, and the latter utilises the Rabinowitsch trick. The latter is, in general, considerably faster.
       Setting Verbose to True will print whatever $F$ and $S$ that CGBMainRec is currently working on:
     Example
       CGB(F1,Verbose=>true)
   SeeAlso
     CGBMain
     ReduceStrata
-    Strategy
     Verbose
   ///
 
@@ -1301,59 +1206,6 @@ result = CGB({fTest}, Verbose=> true);
 assert(#result == 2);
 assert(result#0 == expected1 or result#1 == expected1);
 assert(result#0 == expected1 or result#1 == expected2);
-
-///
-
-
-TEST ///
--*Testing  CGB on a*x+b*y  with Strategy => "radical" option  *-
-PTest = QQ[aTest,bTest];
-RTest = PTest[xTest,yTest, MonomialOrder => Lex];
-
-fTest = aTest*xTest + bTest*yTest;
-
-expected1 = aTest*xTest + bTest*yTest;
-expected2 = aTest^2*xTest + aTest*bTest*yTest;
-
-result = CGB({fTest}, Strategy=> "radical");
-
-assert(#result == 2);
-assert(result#0 == expected1 or result#1 == expected1);
-assert(result#0 == expected1 or result#1 == expected2);
-///
-
-
-
-TEST ///
--* Testing  CGB on a*x+b*y  with Strategy => "radical" option *-
-
-Ptest = QQ[a,b];
-Rtest = Ptest[x,y, MonomialOrder => Lex];
-
-params = gens Ptest;
-variables = gens Rtest
-
-aP = params#0;
-bP = params#1;
-
-aR = promote (aP , Rtest);
-bR = promote (bP , Rtest);
-
-xR = variables#0;
-yR = variables#1;
-
-
-resultTest = CGBMain({aR*xR + bR*yR}, {}, Strategy => "radical");
-
-expected1 = ({0_Ptest}, {aP}, {aR*xR + bR*yR});
-expected2 = ({aP}, {bP}, {aR^2*xR + aR*bR*yR, aR*xR + bR*yR});
-expected3 = ({bP, aP}, {1_Ptest}, {aR*xR + bR*yR});
-
-assert(#resultTest == 3);
-
-assert member(expected1, resultTest);
-assert member(expected2, resultTest);
-assert member(expected3, resultTest);
 
 ///
 
