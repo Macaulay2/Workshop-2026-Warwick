@@ -19,6 +19,6 @@ instead of: G := first entries gens(gb (ideal(apply((E | F), e -> sub(e, RFlat))
 in this way, we can replace the sub with the map KUtoRFlat only on the elements of E, 
 the elements of F belong to K[U,X], which is not exactly RFlat, but this is related to my question 1)
 
-3) What is the difference between the following two papers?
- * An efficient method for computing comprehensive Gröbner bases-- Kapur-Sun-Wang (Kapur, D.; Sun, Y.; Wang, D. An efficient method for computing comprehensive Gröbner bases. J. Symb. Comput. 2013, 52, 124–142, https://doi.org/10.1016/j.jsc.2012.05.015.)
- * 
+3) What is the difference between the following two papers? I think I have been using both without noticing the difference and when doing the references, I noticed. One of them does not have the section of ICheck, CCheck, ZeroDimCheck.
+ * An efficient method for computing comprehensive Gröbner bases--(Kapur, D.; Sun, Y.; Wang, D. An efficient method for computing comprehensive Gröbner bases. J. Symb. Comput. 2013, 52, 124–142, https://doi.org/10.1016/j.jsc.2012.05.015.)
+ * An efficient algorithm for computing a comprehensive Gröbner system of a parametric polynomial system-- (An efficient algorithm for computing a comprehensive Gröbner system of a parametric polynomial system, Journal of Symbolic Computation, 2013, Deepak Kapur and Yao Sun and Dingkang Wang)
