@@ -129,9 +129,11 @@ netList for i in GG list i_{0,1} --showing only the segment's parameters
 R = QQ[A,B][X,Y,Z, MonomialOrder => Lex]
 F = {X^4-A,Y^5-B,X+Y-Z}
 elapsedTime G = CGBMain(F, {});
--- 236.631s elapsed
-#G --=230
-
+-- 25.3401s elapsed
+#G -- 230
+elapsedTime G = CGBMain(F, {}, ReduceStrata => true);
+-- 1.56596s elapsed
+#G -- 15
 
 --SS example 3
 R = QQ[a,b,c,d][x_1,x_2,y_1,y_2,s, MonomialOrder => Lex]
@@ -139,8 +141,11 @@ f=a*x_1^2+b*y_1
 g=c*y_2^2+d*x_2
 F = {f,g,(x_1-x_2)^2+(y_1-y_2)^2-s,diff_(x_1) f * diff_(y_2) g -diff_(y_1) f * diff_(x_2) g, diff_(x_1) f * (y_1-y_2) - diff_(y_1) f * (x_1-x_2)}
 elapsedTime G = CGBMain(F, {});
- -- 1255.88s elapsed
-#G --=1637
+-- 39.6449s elapsed
+#G -- 1515
+elapsedTime G = CGBMain(F, {}, ReduceStrata => true);
+-- 5.2563s elapsed
+#G -- 25
 
 --SS example 4
 R = QQ[a,b,c,e][x_1,x_2,y_1,y_2, MonomialOrder => Lex]
@@ -150,18 +155,21 @@ F = {f,g}
 G = CGBMain(F, {});
 
 
---SS example 5 (30s)
+--SS example 5
 R = QQ[a,b, MonomialOrder => Lex][x,y,z,s, MonomialOrder => Lex]
 f=(x-a)^2+b*y^2+b
 F = {f-z,x^2+y^2+z^2-s,x+z*diff(x, f),y+z*diff(y, f)}
 elapsedTime G = CGBMain(F, {});
-#G
+-- 22.1721s elapsed
+#G -- 96
+elapsedTime G = CGBMain(F, {}, ReduceStrata => true);
+-- 11.337s elapsed
+#G -- 35
 netList for j from 0 to 9 list (G_j)_{0,1}
 
 
 
-
--- SS Example 6 (3 minutes):
+-- SS Example 6:
 
 R = QQ[a,b][x, y, z, s, MonomialOrder => Lex]
 f = (x - a)^2 + a*y^2 + b
@@ -172,7 +180,8 @@ F = {
     y + diff(y, f)*z
     }
 elapsedTime GG = CGBMain(F, {}, ReduceStrata => true);
-#GG
+-- 100.895s elapsed
+#GG -- 25
 
 --Examples from Game Theory
 U = QQ[a_{1,1}..a_{2,2}]
