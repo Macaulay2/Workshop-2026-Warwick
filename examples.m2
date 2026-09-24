@@ -9,7 +9,7 @@ installPackage "ComprehensiveGBs"
 U = QQ[a,b]
 R = U[x,y,z, MonomialOrder => GRevLex]
 F = {x^3 - a, y^4 - b, x+y-z}
-G = CGBMain(F, {});
+G = CGBMain F;
 L = PGBMain CGBFromTriple {{0_U}, {1_U}, F}
 
 netList for g in G list {g_0, factor \ g_1}
@@ -18,13 +18,13 @@ netList L
 -- A *LOT* of redundant strata (where the CGB identically vanishes).. 
 
 -- So we added strata reduction!
-G = CGBMain(F, {}, ReduceStrata => true);
+G = CGBMain(F, ReduceStrata => true);
 netList for g in G list {g_0, factor \ g_1}
 
 
 -- For this, at each step we split V(S + h_i) into irreducible components,
 -- and skip those already covered by the strata computed so far.
--- print("ReduceStrata:", benchmark "G = CGBMain(F, {}, ReduceStrata => true, Verbose => false)")
+-- print("ReduceStrata:", benchmark "G = CGBMain(F, ReduceStrata => true, Verbose => false)")
 -- And we were more careful with cacheing rings.
 
 -- Dulcis in fundu: we have some DOCUMENTATION!
@@ -35,29 +35,29 @@ end
 
 R = QQ[a,b][x,y,z, MonomialOrder => Lex]
 F = {x^3 - a, y^4 - b, x+y-z}
-G = CGBMain(F, {}, ReduceStrata => true);
+G = CGBMain(F, ReduceStrata => true);
 netList for g in G list {g_0, factor \ g_1}
 
 -- strata reduction
-G = CGBMain(F, {}, ReduceStrata => true);
+G = CGBMain(F, ReduceStrata => true);
 netList for g in G list {g_0, factor \ g_1}
 
 -- Some options for Depth
-G0 = CGBMain(F, {}, Depth => 0);
+G0 = CGBMain(F, Depth => 0);
 netList for g in G0 list {g_0, factor \ g_1}
-G0' = CGBMain(F, {}, Depth => 0, ReduceStrata => true);
+G0' = CGBMain(F, Depth => 0, ReduceStrata => true);
 netList for g in G0' list {g_0, factor \ g_1}
 
 
-G1 = CGBMain(F, {}, Depth => 1);
+G1 = CGBMain(F, Depth => 1);
 netList for g in G1 list {g_0, factor \ g_1}
-G1' = CGBMain(F, {}, Depth => 1, ReduceStrata => true);
+G1' = CGBMain(F, Depth => 1, ReduceStrata => true);
 netList for g in G1' list {g_0, factor \ g_1}
 
 
-G2 = CGBMain(F, {}, Depth => 2);
+G2 = CGBMain(F, Depth => 2);
 netList for g in G2 list {g_0, factor \ g_1}
-G2' = CGBMain(F, {}, Depth => 2, ReduceStrata => true);
+G2' = CGBMain(F, Depth => 2, ReduceStrata => true);
 netList for g in G2' list {g_0, factor \ g_1}
 
 
@@ -79,7 +79,7 @@ viewHelp ComprehensiveGBs
 --basic example, one polynomial
 R = QQ[a,b][x,y, MonomialOrder => Lex]
 F = {a*x + b*y}
-CGBMain(F, {})
+CGBMain F
 CGB F
 
 
@@ -88,10 +88,10 @@ CGB F
 --example 9
 R = QQ[a,b][x,y,z, MonomialOrder => Lex]
 F = {x^3 - a, y^4 - b, x+y-z}
-elapsedTime G = CGBMain(F, {}, Verbose => false);
+elapsedTime G = CGBMain(F, Verbose => false);
 #G
 
-elapsedTime G = CGBMain(F, {}, ReduceStrata => true, Verbose => true);
+elapsedTime G = CGBMain(F, ReduceStrata => true, Verbose => true);
 #G
 
 
@@ -128,10 +128,10 @@ netList for i in GG list i_{0,1} --showing only the segment's parameters
 --SS example 2
 R = QQ[A,B][X,Y,Z, MonomialOrder => Lex]
 F = {X^4-A,Y^5-B,X+Y-Z}
-elapsedTime G = CGBMain(F, {});
+elapsedTime G = CGBMain F;
 -- 25.3401s elapsed
 #G -- 230
-elapsedTime G = CGBMain(F, {}, ReduceStrata => true);
+elapsedTime G = CGBMain(F, ReduceStrata => true);
 -- 1.56596s elapsed
 #G -- 15
 
@@ -140,10 +140,10 @@ R = QQ[a,b,c,d][x_1,x_2,y_1,y_2,s, MonomialOrder => Lex]
 f=a*x_1^2+b*y_1
 g=c*y_2^2+d*x_2
 F = {f,g,(x_1-x_2)^2+(y_1-y_2)^2-s,diff_(x_1) f * diff_(y_2) g -diff_(y_1) f * diff_(x_2) g, diff_(x_1) f * (y_1-y_2) - diff_(y_1) f * (x_1-x_2)}
-elapsedTime G = CGBMain(F, {});
+elapsedTime G = CGBMain F;
 -- 39.6449s elapsed
 #G -- 1515
-elapsedTime G = CGBMain(F, {}, ReduceStrata => true);
+elapsedTime G = CGBMain(F, ReduceStrata => true);
 -- 5.2563s elapsed
 #G -- 25
 
@@ -152,17 +152,17 @@ R = QQ[a,b,c,e][x_1,x_2,y_1,y_2, MonomialOrder => Lex]
 f=x_1^2+y_1^2+a
 g=y_2-b*x_2^2+c
 F = {f,g}
-G = CGBMain(F, {});
+G = CGBMain F;
 
 
 --SS example 5
 R = QQ[a,b, MonomialOrder => Lex][x,y,z,s, MonomialOrder => Lex]
 f=(x-a)^2+b*y^2+b
 F = {f-z,x^2+y^2+z^2-s,x+z*diff(x, f),y+z*diff(y, f)}
-elapsedTime G = CGBMain(F, {});
+elapsedTime G = CGBMain F;
 -- 22.1721s elapsed
 #G -- 96
-elapsedTime G = CGBMain(F, {}, ReduceStrata => true);
+elapsedTime G = CGBMain(F, ReduceStrata => true);
 -- 11.337s elapsed
 #G -- 35
 netList for j from 0 to 9 list (G_j)_{0,1}
@@ -179,7 +179,7 @@ F = {
     x + diff(x, f)*z,
     y + diff(y, f)*z
     }
-elapsedTime GG = CGBMain(F, {}, ReduceStrata => true);
+elapsedTime GG = CGBMain(F, ReduceStrata => true);
 -- 100.895s elapsed
 #GG -- 25
 
