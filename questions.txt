@@ -1,6 +1,6 @@
 I will type here some questions so that I don't forget and I also do not send many emails.
 
-1) at the moment the map RtoRExt is: RtoRExt := map(RExt, R, drop(gens RExt, 1)) where 
+1)[DONE] at the moment the map RtoRExt is: RtoRExt := map(RExt, R, drop(gens RExt, 1)) where 
 RExt := K[getSymbol "l", X, U, MonomialOrder => {Lex => 1} | ringOrder R | ringOrder KU] and
 R= K[U][X]
 is the image of this map correct or is it mapping the X's to the U's?
@@ -12,9 +12,13 @@ RExt = QQ[l,x,y,z,a,b, MonomialOrder => {Lex=>1, Lex=>3, Lex=>2}];
 RtoRExt = map(RExt, R, drop(gens RExt, 1));
 RtoRExt f
 
-2) I am changing the subs from PGBMain to maps, but I do not want to change directly in case there is something in the code I am not understanding (this is Angelo's code), I would suggest the following change:
+2) [DONE] I am changing the subs from PGBMain to maps, but I do not want to change directly in case there is something in the code I am not understanding (this is Angelo's code), I would suggest the following change:
 a := apply(E, e -> KUtoRFlat(e));
 G := first entries gens(gb (ideal(a|F)));
 instead of: G := first entries gens(gb (ideal(apply((E | F), e -> sub(e, RFlat)))));
 in this way, we can replace the sub with the map KUtoRFlat only on the elements of E, 
 the elements of F belong to K[U,X], which is not exactly RFlat, but this is related to my question 1)
+
+3) What is the difference between the following two papers?
+ * An efficient method for computing comprehensive Gröbner bases-- Kapur-Sun-Wang (Kapur, D.; Sun, Y.; Wang, D. An efficient method for computing comprehensive Gröbner bases. J. Symb. Comput. 2013, 52, 124–142, https://doi.org/10.1016/j.jsc.2012.05.015.)
+ * 
