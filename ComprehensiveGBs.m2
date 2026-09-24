@@ -186,7 +186,7 @@ CGBMain List := o -> F -> (
     S := first entries eliminateVariables(F, CGBDataFromRings R);
     cgs := CGBMain(F, S, o ++ {CheckAssumption => false});
     if #S == 0 then return cgs;
-    {({0_KU}, S, {1_R})} | cgs
+    {({0_KU}, S, apply(S, s -> promote(s, R)))} | cgs
 )
 CGBMain (List, List) := o -> (F, S) -> (
     R := ring first F;
@@ -877,7 +877,8 @@ doc ///
       Gröbner system on the whole parameter space, by computing a basis
       $\{s_1,\dots,s_r\}$ of the elimination ideal
       $\langle F\rangle\cap k[U]$, passing that basis as $S$ to CGBMain,
-      and prepending the extra segment $(\{0\}, \{s_1,\dots,s_r\}, \{1\})$
+      and prepending the extra segment
+      $(\{0\}, \{s_1,\dots,s_r\}, \{s_1,\dots,s_r\})$
       to the output. When $S$ is specified, the function returns a
       comprehensive Groebner system on $V(S)$, under the assumption that
       $V(S)\subseteq V(\langle F\rangle\cap k[U])$. That assumption is
