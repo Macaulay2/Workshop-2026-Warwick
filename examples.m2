@@ -12,19 +12,19 @@ F = {x^3 - a, y^4 - b, x+y-z}
 G = CGBMain(F, {});
 L = PGBMain CGBFromTriple {{0_U}, {1_U}, F}
 
-netList for g in G list {g_0, factor g_1}
+netList for g in G list {g_0, factor \ g_1}
 netList L
 
 -- A *LOT* of redundant strata (where the CGB identically vanishes).. 
 
 -- So we added strata reduction!
 G = CGBMain(F, {}, ReduceStrata => true);
-netList for g in G list {g_0, factor g_1}
+netList for g in G list {g_0, factor \ g_1}
 
 
 -- For this, at each step we split V(S + h_i) into irreducible components,
 -- and skip those already covered by the strata computed so far.
-print("ReduceStrata:", benchmark "G = CGBMain(F, {}, ReduceStrata => true, Verbose => false)")
+-- print("ReduceStrata:", benchmark "G = CGBMain(F, {}, ReduceStrata => true, Verbose => false)")
 -- And we were more careful with cacheing rings.
 
 -- Dulcis in fundu: we have some DOCUMENTATION!
@@ -36,29 +36,29 @@ end
 R = QQ[a,b][x,y,z, MonomialOrder => Lex]
 F = {x^3 - a, y^4 - b, x+y-z}
 G = CGBMain(F, {}, ReduceStrata => true);
-netList for g in G list {g_0, factor g_1}
+netList for g in G list {g_0, factor \ g_1}
 
 -- strata reduction
 G = CGBMain(F, {}, ReduceStrata => true);
-netList for g in G list {g_0, factor g_1}
+netList for g in G list {g_0, factor \ g_1}
 
 -- Some options for Depth
 G0 = CGBMain(F, {}, Depth => 0);
-netList for g in G0 list {g_0, factor g_1}
+netList for g in G0 list {g_0, factor \ g_1}
 G0' = CGBMain(F, {}, Depth => 0, ReduceStrata => true);
-netList for g in G0' list {g_0, factor g_1}
+netList for g in G0' list {g_0, factor \ g_1}
 
 
 G1 = CGBMain(F, {}, Depth => 1);
-netList for g in G1 list {g_0, factor g_1}
+netList for g in G1 list {g_0, factor \ g_1}
 G1' = CGBMain(F, {}, Depth => 1, ReduceStrata => true);
-netList for g in G1' list {g_0, factor g_1}
+netList for g in G1' list {g_0, factor \ g_1}
 
 
 G2 = CGBMain(F, {}, Depth => 2);
-netList for g in G2 list {g_0, factor g_1}
+netList for g in G2 list {g_0, factor \ g_1}
 G2' = CGBMain(F, {}, Depth => 2, ReduceStrata => true);
-netList for g in G2' list {g_0, factor g_1}
+netList for g in G2' list {g_0, factor \ g_1}
 
 
 
@@ -101,7 +101,7 @@ G_3
 debug ComprehensiveGBs
 
 -- list of strata
-netList for g in G list {g_0, factor g_1}
+netList for g in G list {g_0, factor \ g_1}
 
 
 --example on graph=triangle
