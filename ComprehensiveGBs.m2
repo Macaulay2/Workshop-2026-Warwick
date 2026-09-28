@@ -756,7 +756,7 @@ doc ///
     a package for computing Comprehensive Groebner Bases (CGBs).
   Description
     Text
-      This package provides the implementations of two differnt algorithms for computing a comprehensive Gröbner system and a
+      This package provides the implementations of two different algorithms for computing a comprehensive Gröbner system and a
       comprehensive Gröbner basis of a parametric ideal. In the following we refer to Section 2 of @HREF("#ref1","[1]")@.
 
       Let $k$ be a field, $R$ be the polynomial ring $k[U]$ in the parameters $U=\{u_1,\ldots,u_m\}$, and $R[X]$ be the polynomial ring
@@ -859,17 +859,17 @@ doc ///
     Example
       CGBMain(F1,S1,Verbose=>true)
     Text
-      The option @TO "Depth"@ sets a bound for the recusion depth of the
-      algorithm. For instance setting it to zero will return one the
+      The option @TO "Depth"@ sets a bound for the recursion depth of the
+      algorithm. For instance setting it to zero will return one of the
       generic stratum.
     Example
       for i from 0 to 3 do print (i, netList CGBMain(F1, S1, Depth => i))
     Text
-      When the function is about to recuse, the
+      When the function is about to recurse, the
       value of the depth option is checked, if the value is zero then
-      the function stop there. Otherwise, the function decrements the
-      depth and recuses. The default value for the depth is minus one,
-      which means the depth will never reach zero on recusion.
+      the function stops there. Otherwise, the function decrements the
+      depth and recurses. The default value for the depth is minus one,
+      which means the depth will never reach zero on recursion.
 
 
       @TO "CGBMain"@ can take in one or two lists as inputs.
@@ -930,7 +930,7 @@ doc ///
     cgbOnGraph
     (cgbOnGraph,List,ZZ)
   Headline
-    A method for creating parametrised polynomial systems from a graph and calculating a Comprehensive Groebner basis for them.
+    A method for creating parametrized polynomial systems from a graph and calculating a Comprehensive Groebner basis for them.
   Usage
     (F, GG) = cgbOnGraph(G,d)
   Inputs
@@ -946,7 +946,7 @@ doc ///
   Description
     Text
       Let $G=(V,E)$ be graph and fix a positive integer $d$.
-      Consider the paramaterised polynomial systems $F=\{f_e\}_{e\in E}\subseteq K[\lambda_e\:e\in E][x_{v,k}:v\in V,1\leq k \leq d]$,
+      Consider the paramaterized polynomial systems $F=\{f_e\}_{e\in E}\subseteq K[\lambda_e\:e\in E][x_{v,k}:v\in V,1\leq k \leq d]$,
       where $K\in \{\mathbb{C},\mathbb{R}\}$ and
       \[   f_{ij}=\sum_{k=1}^{d}(x_{i,k}-x_{j,k})^2  -\lambda_{ij} \].
       cgbOnGraph returns the polynomial systems $F$ and a Combrehensive Groebner Basis of $F$
