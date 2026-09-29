@@ -3842,9 +3842,245 @@ doc ///
 	(isWellDefined, SimplicialMap)
 
 *-
+-----------------------------------------------------------
+-- Documentation for everything related to maps (29/9/2026)
+-----------------------------------------------------------
+doc ///
+    Key
+        isInjective(ToricVectorBundleMap)
+    Headline
+        test whether a map of toric vector bundles is injective
+    Usage
+        isInjective f
+    Inputs
+        f : ToricVectorBundleMap
+    Outputs
+        : Boolean
+            whether f is injective
+    Description
+        Text
+        Determines whether the map @TT "f"@ is injective as a map of
+        toric vector bundles.
 
+        The method first checks that @TT "f"@ is well defined and that
+        its underlying map of modules is injective. It then checks the
+        dimensions of the filtered pieces of the source and target for
+        every ray of the underlying toric variety.
 
+        Returns @TT "true"@ if all these conditions are satisfied, and
+        @TT "false"@ otherwise.
+    Example
+        X = toricProjectiveSpace 2;
+        E = trivialBundle(X, 1);
+        F = trivialBundle(X, 2);
+        f = map(F, E, matrix(ring E,{{1}}));
+        assert(not isInjective f)
+    SeeAlso
+        kernel(ToricVectorBundleMap)
+        ToricVectorBundle
+///
 
+doc ///
+    Key
+        isSurjective(ToricVectorBundleMap)
+    Headline
+        test whether a map of toric vector bundles is surjective
+    Usage
+        isSurjective f
+    Inputs
+        f : ToricVectorBundleMap
+    Outputs
+        : Boolean
+            whether f is surjective
+    Description
+        Text
+        Determines whether the map @TT "f"@ is surjective as a map of
+        toric vector bundles.
+
+        The method first checks that @TT "f"@ is well defined and that
+        its underlying map of modules is surjective. It then checks the
+        dimensions of the filtered pieces of the source and target for
+        every ray of the underlying toric variety.
+
+        Returns @TT "true"@ if all these conditions are satisfied, and
+        @TT "false"@ otherwise.
+    Example
+        X = toricProjectiveSpace 2;
+        E = trivialBundle(X, 2);
+        F = trivialBundle(X, 1);
+        f = map(F, E, matrix(ring E,{{1,0}}));
+        assert(isSurjective f)
+    SeeAlso
+        image(ToricVectorBundleMap)
+        cokernel(ToricVectorBundleMap)
+        ToricVectorBundle
+///
+
+doc ///
+    Key
+        image(ToricVectorBundleMap)
+    Headline
+        image of a map of toric vector bundles
+    Usage
+        image f
+    Inputs
+        f : ToricVectorBundleMap
+    Outputs
+        : ToricVectorBundle
+            the image toric vector bundle of f
+    Description
+        Text
+        Given a map @TT "f : E_1 -> E_2"@ of toric vector bundles,
+        computes the image of @TT "f"@ as a toric vector bundle on
+        the same toric variety.
+
+        The image is computed by taking the images of the filtered
+        pieces of @TT "E_1"@ under the underlying module map of
+        @TT "f"@. The resulting filtration data is refined using an
+        adapted basis and used to construct the image toric vector
+        bundle.
+    Example
+        X = toricProjectiveSpace 2;
+        E = trivialBundle(X, 1);
+        F = trivialBundle(X, 2);
+        f = map(E, F, matrix(ring E,{{1,0}}));
+        image f
+    SeeAlso
+        isSurjective(ToricVectorBundleMap)
+        isWellDefined(ToricVectorBundleMap)
+        ToricVectorBundle
+///
+
+doc ///
+    Key
+        kernel(ToricVectorBundleMap)
+    Headline
+        kernel of a map of toric vector bundles
+    Usage
+        kernel f
+    Inputs
+        f : ToricVectorBundleMap
+    Outputs
+        : ToricVectorBundle
+            the kernel toric vector bundle of f
+    Description
+        Text
+        Given a map @TT "f : E_1 -> E_2"@ of toric vector bundles,
+        computes the kernel of @TT "f"@ as a toric vector bundle on
+        the same toric variety.
+
+        The kernel is computed from the kernel of the underlying module
+        map together with the induced filtrations on the kernel for
+        each ray of the toric variety. The resulting filtration data
+        is refined using an adapted basis before constructing the
+        toric vector bundle.
+    Example
+        X = toricProjectiveSpace 2;
+        E = trivialBundle(X, 2);
+        F = trivialBundle(X, 1);
+        f = map(F, E, matrix(ring E,{{1,0}}));
+        kernel f;
+    SeeAlso
+        isInjective(ToricVectorBundleMap)
+        isWellDefined(ToricVectorBundleMap)
+        ToricVectorBundle
+///
+
+doc ///
+    Key
+        cokernel(ToricVectorBundleMap)
+    Headline
+        cokernel of a map of toric vector bundles
+    Usage
+        cokernel f
+    Inputs
+        f : ToricVectorBundleMap
+    Outputs
+        : ToricVectorBundle
+            the cokernel toric vector bundle of f
+    Description
+        Text
+        Given a map @TT "f : E_1 -> E_2"@ of toric vector bundles,
+        computes the cokernel of @TT "f"@ as a toric vector bundle
+        on the same toric variety.
+
+        The cokernel is computed from the cokernel of the underlying
+        module map together with the filtered pieces associated to the
+        rays of the toric variety. The resulting filtration data is
+        adapted to produce a toric vector bundle.
+    Example
+        X = toricProjectiveSpace 2;
+        E = trivialBundle(X, 2);
+        F = trivialBundle(X, 1);
+        f = map(F, E, matrix(ring E,{{1,0}}));
+        cokernel f;
+    SeeAlso
+        isSurjective(ToricVectorBundleMap)
+        isWellDefined(ToricVectorBundleMap)
+        ToricVectorBundle
+///
+
+doc ///
+    Key
+        ToricVectorBundleMap ++ ToricVectorBundleMap
+    Headline
+        direct sum of maps of toric vector bundles
+    Usage
+        f ++ g
+    Inputs
+        f : ToricVectorBundleMap
+        g : ToricVectorBundleMap
+    Outputs
+        : ToricVectorBundleMap
+            the direct sum of the maps f and g
+    Description
+        Text
+        Given two maps of toric vector bundles @TT "f"@ and @TT "g"@ with the same 
+        source and target respectively, returns the map that is the 
+        direct sum of @TT "f"@ and @TT "g"@. Its source and target is the same 
+        as that of @TT "f"@ and @TT "g"@, and its underlying map is the direct sum 
+        of map of vector spaces. 
+    Example
+        X = toricProjectiveSpace 2;
+        E = trivialBundle(X, 1);
+        F = trivialBundle(X, 1);
+        f = map(F, E, matrix(ring E,{{1}}));
+        g = map(F, E, matrix(ring E,{{2}}));
+        f ++ g;
+    SeeAlso
+        ToricVectorBundleMap
+///
+
+doc ///
+    Key
+        ToricVectorBundleMap ** ToricVectorBundleMap
+    Headline
+        tensor product of maps of toric vector bundles
+    Usage
+        f ** g
+    Inputs
+        f : ToricVectorBundleMap
+        g : ToricVectorBundleMap
+    Outputs
+        : ToricVectorBundleMap
+            the tensor product of the maps f and g
+    Description
+        Text
+        Given two maps of toric vector bundles @TT "f"@ and @TT "g"@ with the same 
+        source and target respectively, returns the map that is the 
+        tensor product of @TT "f"@ and @TT "g"@. Its source and target is the same 
+        as that of @TT "f"@ and @TT "g"@, and its underlying map is the tensor 
+        product of map of vector spaces. 
+    Example
+        X = toricProjectiveSpace 2;
+        E = trivialBundle(X, 1);
+        F = trivialBundle(X, 1);
+        f = map(F, E, matrix(ring E,{{1}}));
+        g = map(F, E, matrix(ring E,{{2}}));
+        f ** g;
+    SeeAlso
+        ToricVectorBundleMap
+///
 -------------------------------------------
 -- TESTS
 -------------------------------------------
