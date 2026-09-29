@@ -114,7 +114,7 @@ export {
     "charts",
     "cocycleCheck",
     "regCheck",
-    "weilToCartierKaneyama", 
+    "lineBundleKaneyama", 
     "hirzebruchFan",
     "pp1ProductFan", 
     "projectiveSpaceFan",
@@ -4518,7 +4518,8 @@ assert(lcm(D1,D5) == D7)
 
 ///
 
-
+load "KaneyamaTests.m2"
+-*
 -------------------------------------------
 -- TESTS for the Kaneyama bundles
 -------------------------------------------
@@ -4538,28 +4539,8 @@ assert(rank T == 2)
 assert(T#"dimension of the variety" == 2)
 ///
 
+
 -- Test n+2
--- Checking addBaseChange and cocycleCheck
-TEST ///
-T = toricVectorBundleKaneyama(2,pp1ProductFan 2)
-T1 = addBaseChange(T,{matrix{{1,2},{0,1}},matrix{{1,0},{3,1}},matrix{{1,-2},{0,1}},matrix{{1,0},{-3,1}}})
-assert cocycleCheck T1 --TODO : cocycleCheck doesn't exist, combined with regCheck in isWellDefined
-T1 = addBaseChange(T,{matrix{{1,2},{0,1}},matrix{{1,0},{3,1}},matrix{{1,-2},{0,1}},matrix{{1,0},{-2,1}}})
-assert not cocycleCheck T1
-///
-
--- Test n+3
--- Checking regCheck
-TEST ///
-T = toricVectorBundleKaneyama(2,pp1ProductFan 2)
-assert regCheck T --TODO : regCheck doesn't exist, combined with cocycleCheck in isWellDefined
-T1 = addDegrees(T,{matrix{{1,2},{3,1}},matrix{{-1,0},{3,1}},matrix{{1,2},{-3,-1}},matrix{{-1,0},{-3,-1}}})
-assert not regCheck T1
-T1 = addDegrees(T,{matrix{{-1,0},{-3,-1}},matrix{{-1,0},{3,1}},matrix{{1,2},{-3,-1}},matrix{{1,2},{3,1}}})
-assert regCheck T1
-///
-
--- Test n+4
 -- Checking isWellDefined TODO : I think this was intended for Klyachko type originally
 TEST ///
 T = toricVectorBundle(2,pp1ProductFan 2)
@@ -4571,7 +4552,7 @@ T = addFiltration(T,L)
 assert not isWellDefined T
 ///
 
--- Test n+5
+-- Test n+3
 -- Checking tangentBundle for Kaneyama
 TEST ///
 T = tangentBundleKaneyama(pp1ProductFan 2)
@@ -4586,7 +4567,7 @@ assert(rank T == 3)
 assert(T#"dimension of the variety" == 3)
 ///
 
--- Test n+6
+-- Test n+4
 -- Checking cotangentBundle for Kaneyama
 TEST ///
 T = cotangentBundleKaneyama(hirzebruchFan 3)
@@ -4601,7 +4582,7 @@ assert(rank T == 3)
 assert(T#"dimension of the variety" == 3)
 ///
 
--- Test n+7
+-- Test n+5
 -- Checking deltaE for Kaneyama
 TEST ///
 T = toricVectorBundleKaneyama(3,projectiveSpaceFan 2)
@@ -4612,7 +4593,7 @@ T = cotangentBundleKaneyama(pp1ProductFan 3)
 assert(deltaEKaneyama T == convexHull matrix {{-1,1,-1,1,-1,1,-1,1},{-1,-1,1,1,-1,-1,1,1},{-1,-1,-1,-1,1,1,1,1}})
 ///
 
--- Test n+8
+-- Test n+6
 -- Checking cohomology for Kaneyama
 TEST ///
 T = toricVectorBundleKaneyama(2,pp1ProductFan 2)
@@ -4634,7 +4615,7 @@ assert(cohomology(3,T,matrix{{0},{0},{0}}) == (ring T)^0)
 ///
 
 
--- Test n+9
+-- Test n+7
 -- Checking weilToCartier
 TEST ///
 T = weilToCartierKaneyama({1,4,3,2},projectiveSpaceFan 3)
@@ -4650,10 +4631,10 @@ assert(T#"baseTable" === hashTable {matrix{{-1},{-1},{-1}} => matrix{{1_QQ}},mat
 assert(rank T == 1)
 assert(T#"dimension of the variety" == 3)
 *-
-
+-*
 ///
 
--- Test n+10
+-- Test n+8
 -- Checking directSum for Kaneyama
 TEST ///
 T1 = tangentBundleKaneyama(projectiveSpaceFan 3)
@@ -4673,7 +4654,7 @@ assert(rank T == 4)
 assert(T#"dimension of the variety" == 2)
 ///
 
--- Test n+11
+-- Test n+9
 -- Checking dual for Kaneyama
 TEST ///
 T = dual weilToCartierKaneyama({1,4,3,2},projectiveSpaceFan 3)
@@ -4689,7 +4670,7 @@ assert(rank T == 4)
 assert(T#"dimension of the variety" == 3)
 ///
 
--- Test n+12
+-- Test n+10
 -- Checking tensor for Kaneyama
 TEST ///
 T1 = tangentBundleKaneyama(pp1ProductFan 2)
@@ -4709,7 +4690,7 @@ assert(rank T == 4)
 assert(T#"dimension of the variety" == 2)
 ///
 
--- Test n+13
+-- Test n+11
 -- Checking symmetricPower for Kaneyama
 TEST ///
 T = tangentBundleKaneyama(projectiveSpaceFan 3)
@@ -4720,7 +4701,7 @@ assert(rank T == 6)
 assert(T#"dimension of the variety" == 3)
 ///
 
--- Test n+14
+-- Test n+12
 -- Checking exteriorPower for Kaneyama -- did we get rid of this?
 TEST ///
 T = cotangentBundleKaneyama(hirzebruch 3)
@@ -4737,7 +4718,7 @@ assert(rank T == 3)
 assert(T#"dimension of the variety" == 3)
 ///
 
--- Test n+15
+-- Test n+13
 -- Checking eulerChi for Kaneyama
 TEST ///
 T = tangentBundleKaneyama(hirzebruchFan 3)
@@ -4746,7 +4727,7 @@ assert(eulerChiKaneyama(u,T) == 2)
 assert(eulerChiKaneyama T == 6)
 ///
 
--- Test n+16
+-- Test n+14
 -- Checking cartierIndex
 TEST ///
 C=posHull matrix {{1,2},{2,1}}
@@ -4759,7 +4740,7 @@ assert(cartierIndex({3,3,3},F) == 1)
 
 
 -- ADDING NEW TESTS JUNE/JULY 2026
--- Test n+17
+-- Test n+15
 -- Checking isWellDefined (Kaneyama) (combining the tests for cocycleCheck and regCheck)--TODO: FIX THIS
 TEST ///
 T = toricVectorBundleKaneyama(2,pp1ProductFan 2)
@@ -4772,6 +4753,21 @@ assert not isWellDefined T1 -- fails because of cocycleCheck
 --tests for regCheck
 T1 = addDegrees(T,{matrix{{1,2},{3,1}},matrix{{-1,0},{3,1}},matrix{{1,2},{-3,-1}},matrix{{-1,0},{-3,-1}}})
 assert not isWellDefined T1 -- fails because of regCheck
+T1 = addDegrees(T,{matrix{{-1,0},{-3,-1}},matrix{{-1,0},{3,1}},matrix{{1,2},{-3,-1}},matrix{{1,2},{3,1}}})
+assert regCheck T1
+///
+*-
+
+-- Test ??
+-- Checking isWellDefined TODO : I think this was intended for Klyachko type originally
+TEST ///
+T = toricVectorBundle(2,pp1ProductFan 2)
+T1 = addBase(T,{matrix{{1,2},{3,1}},matrix{{-1,0},{3,1}},matrix{{1,2},{-3,-1}},matrix{{-1,0},{-3,-1}}})
+assert isWellDefined T1
+T = toricVectorBundle(1,normalFan crossPolytope 3)
+L = apply({2,1,1,2,2,1,1,2}, i -> matrix {{i}});
+T = addFiltration(T,L)
+assert not isWellDefined T
 ///
 
 end
