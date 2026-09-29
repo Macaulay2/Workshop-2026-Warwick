@@ -107,13 +107,10 @@ export {
     -- Misc
     "displayFiltrations",
     -- Kaneyama (old code)
-    "addBase", 
-    "addBaseChange", 
+    "addBaseChange",
     "addDegrees",
     "cartierIndex",
     "charts",
-    "cocycleCheck",
-    "regCheck",
     "weilToCartierKaneyama", 
     "hirzebruchFan",
     "pp1ProductFan", 
@@ -126,8 +123,9 @@ load "Kaneyama.m2"
 -- These are cached keywords as part of:
 -- cechComplex
 protect cech
--- cocycleCheck
+-- isWellDefined for Kaneyama bundles
 protect cocycle
+protect regularityCondition
 -- areIsomorphic
 protect iso
 -- cohomology
@@ -1595,21 +1593,28 @@ doc ///
             to the projection map $\pi \colon \mathcal{E} \rightarrow X$ and $T_X$ acts linearly on
             the fibres of $\mathcal{E}$.
         Text
-            There are several ways to describe a toric vector bundle. The first is via Klyachko's
-            description: a toric vector bundle corresponds to a collection of filtrations of the fibre
-            over the torus-fixed point, one for each ray of the base toric variety, satisfying a
-            compatibility condition. This is the main type @TO ToricVectorBundle@. The second is via
-            Kaneyama's description of the transition functions of the bundle on the torus-fixed affine
-            open cover, which is the type @TO ToricVectorBundleKaneyama@. Third is via Weil decorations
-            as introduced by Altmann, Hochenegger, and Witt: which is a stratification of the torus-fixed
-            fibre of $\mathcal{E}$ by torus-fixed divisors. It corresponds to a polymatroid, which is how
-            the data is stored in this package.
-        Text
-            Here is an example of the main type, Klyachko's description:
+            There are several ways to describe a toric vector bundle. The primary method that this package
+            employs is via Klyachko's description: a toric vector bundle corresponds to a collection of
+            filtrations of the fibre over the torus identity (which is a vector space $E$), one for each
+            ray of the base toric variety, satisfying a compatibility condition. This is the main type @TO ToricVectorBundle@.
         Example
             X = hirzebruchSurface 2;
             TX = tangentBundle X;
             displayFiltrations TX
+        Text
+            The package also provides various translations into other presentations. For instance, Altmann,
+            Hochenegger, and Witt showed that toric vector bundles correspond to stratifications of $E$ by torus-fixed divisors;
+            see @HREF("https://arxiv.org/abs/2412.03476", "Toric sheaves and polyhedra")@ for more details.
+        Example
+            W = weilDecoration TX;
+            netList strata W
+        Text
+            Another translation provided is to modules over the Cox ring. Since toric vector bundles are
+            coherent sheaves, they may be represented by a finitely generated multigraded module. We provide
+            a presentation of such a module.
+        Example
+            M = klyachkoToModule TX
+            displayFiltrations moduleToKlyachko(X, M)
     References
         For mathematical background see @UL { {"Tamafumi Kaneyama,",EM "On equivariant
         vector bundles on an almost homogeneous variety", ", Nagoya Math. J. 57, 1975."},
@@ -1627,24 +1632,67 @@ doc ///
     SeeAlso
         "NormalToricVarieties"
 ///
--*
+
 doc ///
     Key
-        ToricVectorBundle
+        ToricVectorBundleKlyachko
     Headline
-        the class of all toric vector bundles
+        the class of all toric vector bundles in Klyachko's description
     Description
         Text
-            In @TO ToricVectorBundles@ an equivariant vector bundle on some toric variety is given
-            as an object of class @TT "ToricVectorBundle"@ which can be given in two
-            descriptions:@UL { {"By a collection of vector spaces with filtration for each ray of the underlying fan, ",TO ToricVectorBundleKlyachko,"."}, {"By a set of degree vectors for each maximal cone and a transition matrix for each pair of maximal cones of the underlying fan, ",TO ToricVectorBundleKaneyama,"."} }@
+            Klyachko gave a complete characterization of toric vector bundles, which is summarized by
+            the following theorem:
         Text
-            For more detailed descriptions see the corresponding pages of the two subtypes.
+            @TT "The category of toric vector bundles on the toric variety "@$X$@TT " is equivalent 
+            to the category of finite dimensional "@$k$@TT"-vector spaces "@$E$@TT" with collections 
+            of decreasing filtrations "@$\{E^{\rho}(i)| i \in{} \mathbb{Z}\}$@TT", indexed by rays in 
+            "@$\rho \in \Sigma_X(1)$@TT", satisfying the following compatibility condition: For each 
+            maximal "@$\sigma \in \Sigma_X$@TT" there is a decomposition "@$E = \oplus_{u \in{} M_\sigma} E_u$@TT" 
+            such that "@$E^{\rho}(i) = \sum_{(u,v_\rho) \leq i} E_u$@TT" for every ray "@$\rho \in{} \sigma$@TT" 
+            and every "@$i \in{} \mathbb{Z}$.
+        Text
+            In this implementation, the data of the filtrations is stored using a matrix which describes
+            a basis for $E$, together with a list of indices indicating the largest positions where the $i$th
+            column of the matrix appears in the filtration of $E$. For instance, consider the tangent bundle
+            on $\mathbb{P}^2$.
+        Example
+            X = toricProjectiveSpace 2;
+            TX = tangentBundle X;
+            displayFiltrations TX
+        Text
+            Focusing on the filtration corresponding to the ray @TO {-1, -1}@, the basis chosen is
+            $\begin{bsmallmatrix} -1 & -1 \\ -1 & 0 \end{bsmallmatrix}$. The first column,
+            $\begin{bsmallmatrix} -1 \\ -1 \end{bsmallmatrix}$, lies in the column space of all of the matrices
+            until index 1. The second column $\begin{bsmallmatrix} -1 \\ 0 \end{bsmallmatrix}$ appears in
+            the column space of all of the matrices until index 0. Hence we record these largest positions.
+        Example
+            F = filtrations TX
+            (filtrationJumps TX)_0 == {1,0}
+        Text
+            An individual filtered piece may be recovered using @TO filteredPiece(ToricVectorBundle,List,ZZ)@.
+        Example
+            filteredPiece(TX,{-1,-1},1)
+        Text
+            The user need not input filtrations which satisfy the compatibility conditions. To verify that the
+            compatibility conditions are satisfied, one runs @TO isLocallyFree@. For instance, we can break
+            the compatibilty of the tangent bundle by simply changing one of the filtered pieces.
+        Example
+            TX' = toricVectorBundle(X, filtrationMatrices TX, {{0,0},{1,0},{1,0}});
+            displayFiltrations TX'
+            isLocallyFree TX'
     SeeAlso
-        ToricVectorBundleKlyachko
+        toricVectorBundle
+        displayFiltrations
+        filtrations
+        details
+        filteredPiece
+        weilDecoration
+        klyachkoToModule
+        moduleToKlyachko
         ToricVectorBundleKaneyama
 ///
 
+-*
 doc ///
     Key
         ToricVectorBundleKaneyama
@@ -1708,100 +1756,6 @@ doc ///
         have coefficients in @TO QQ@.
     SeeAlso
         ToricVectorBundleKlyachko
-        ToricVectorBundle
-///
-
-doc ///
-    Key
-        ToricVectorBundleKlyachko
-    Headline
-        the class of all toric vector bundles in Klyachko's description
-    Description
-        Text
-            A toric vector bundle on a toric variety $X$ is a locally free sheaf $E$ together with
-            an action of the torus $T$ on the geometric vector bundle $V(E)$ such that the
-            projection to the base $X$ is equivariant, and the action of $T$ on the fibers is
-            linear. There also is an induced action of $T$ on the local sections
-            $s \in{} \Gamma(U,E)$ given by $(t*s)(x) = t^{ -1}(s(t x))$ . This implies that a
-            regular section $x^u \in{} \Gamma(X,O_X)$ for an element $u$ in the character lattice
-            $M$ also has weight $u$. Other choices for the induced action are possible. In fact, the
-            upper one is different from Klyachko's in his original description where
-            $x^u \in{} \Gamma(X,O_X)$ has weight $-u$. We denote by $E_0$ the fiber over the unit
-            $t_0 \in{} T$, and by $U_\sigma \subset X$ the open affine torus invariant subset
-            associated with the cone $\sigma$. The primitive generator of the ray $\rho$ in the fan
-            $\Sigma$ is denoted by $v_\rho$. Evaluating local homogeneous sections
-            $\Gamma(U_{\rho},E)_u$ of weight $u$ at $t_0$ provides us with an embedding of these
-            finite dimensional vector spaces into $E_0$. One can show that the upper choice of the
-            induced torus action implies that the image of $\Gamma(U_\rho,E)_{u_1}$ is contained in
-            the image of $\Gamma(U_\rho,E)_{u_2}$ if and only if the pairing
-            $(u_1-u_2,v_\rho) \leq 0$. Furthermore one observes that the image only depends on the
-            class of the weight $u$ in the quotient lattice $M_\rho := M/M^\rho$, where $M^\rho$
-            denotes the intersection of $M$ with the vector space perpendicular to the ray $\rho$.
-            Since $M_\rho \cong \mathbb{Z}$ we denote the image of $\Gamma(U_\rho,E)_u$ in $E_0$ by
-            $E^\rho(i)$ with $i = (u,v_\rho)$. Each ray $\rho \in{} \Sigma$ thus gives rise to an
-            increasing filtration $\{E^\rho(i)\}$ of $E_0$. Since $E_0$ is finite dimensional there
-            is only a finite set of integers $i$ for which a jump occurs, i.e., $E^\rho(i)$ strictly
-            contains $E^\rho(i-1)$. At all other steps the filtration remains constant. Apart from
-            that, each open affine subset $U_\sigma$ for $\sigma \in{} \Sigma$ induces a direct sum
-            decomposition of $E_0 = \oplus_{u \in{} M_\sigma}E^\sigma_u$ such that
-            $E^\rho(i) = \sum_{(u,v_\rho) \leq i} E^\sigma_u$ for each $\rho \in{} \sigma$ and
-            $i \in{} \mathbb{Z}$. Observe that the lattice $M_\sigma$ is defined analogously to the
-            lattice $M_\rho$, i.e., it is the quotient lattice $M/M^\sigma$ where $M^\sigma$ denotes
-            the intersection of $M$ with the vector space perpendicular to the cone $\sigma$.
-        Text
-            With the notation and conventions introduced above it is now possible to state the
-            fundamental theorem of Klyachko which completely describes toric vector bundles in
-            linear algebraic terms:
-        Text
-            @TT "The category of toric vector bundles on the toric variety "@$X$@TT " is equivalent to the category of finite dimensional "@$k$@TT"-vector spaces "@$E_0$@TT" with collections of increasing filtrations "@$\{E^{\rho}(i)| i \in{} \mathbb{Z}\}$@TT", indexed by the rays of "@$\Sigma$@TT", satisfying the following compatibility condition: For each cone "@$\sigma \in{} \Sigma$@TT" there is a decomposition "@$E_0 = \oplus_{u \in{} M_\sigma} E_u$@TT" such that "@$E^{\rho}(i) = \sum_{(u,v_\rho) \leq i} E_u$@TT" for every ray "@$\rho \in{} \sigma$@TT" and every "@$i \in{} \mathbb{Z}$.
-        Text
-            In contrast to the implementation of Kaneyama's description this one works for every
-            toric variety $X$ i.e., there are no restrictions on the fan $\Sigma$. For each ray
-            $\rho$ of the fan $\Sigma$ there are two matrices comprising the necessary filtration
-            data. The first one is an invertible matrix $A(\rho) \in{} $ GL(@TT "k"@,@TO QQ@) whose
-            columns contain a basis of the vector space $E_0$ which is associated to the filtration
-            corresponding to the ray $\rho$. The second one is a ",TT "1 x k"," integer matrix, the
-            so called filtration matrix. It determines at which step an element of the basis given
-            in the first matrix actually contributes to a certain subspace in the filtration, i.e.,
-            if the j-th entry of the filtration matrix is i then the j-th basis vector appears at
-            the i-th step in the filtration. Hence $E^{\rho}(i)$ is generated by all basis vectors
-            listed in $A(\rho)$ whose corresponding entry in the filtration matrix is less or equal
-            to $E_0$.
-        Text
-            To link up to the description of Kaneyama we will also discuss the example of the
-            cotangent bundle $\mathbf{\Omega}_X$ of $X = \mathbb{P}^2$. Recall that $X$ can be given
-            by the complete fan with rays $\rho_1 = (1,0)$, $\rho_2 = (0,1)$, and
-            $\rho_3 = (-1,-1)$. There are three maximal cones, namely $\sigma_1$ spanned by
-            $\rho_1,\rho_2$, $\sigma_2$ spanned by $\rho_2,\rho_3$, and $\sigma_3$ spanned by
-            $\rho_3,\rho_1$. Each of them corresponds to a torus invariant affine chart
-            $U_{\sigma_i}$. It follows that the $k[\sigma_1^v \cap M]$-module
-            $\Gamma(U_{\sigma_1},\Omega_X)$ is generated by $dx := d(x^{[1,0]})$, and
-            $dy := d(x^{[0,1]})$, and analogously for the remaining charts. We now fix a basis of
-            $\Omega_0$ by evaluating the sections $dx,dy$ at the unit $t_0$. This gives rise to
-            filtrations $\Omega^\rho(i)$. We only consider the example $\rho = \rho_3$. The
-            filtrations for the two other rays can be found by analogous calculations. Now,
-            $k[U_{\rho_3}] = k[x^{-1},x^{-1}y,xy^{-1}]$. Then, $\Gamma(U_{\rho_3},\Omega_X)$ is
-            generated as a $k[U_{\rho_3}]$-module by $-x^{-2}dx, -x^{-2}ydx + x^{-1}dy$. Thus,
-            $\Gamma(U_{\rho_3},\Omega_X)_{[1,0]} = 0$, $\Gamma(U_{\rho_3},\Omega_X)_{[0,0]}$ is
-            generated by $xy^{-1}(-x^{-2}ydx + x^{-1}dy)$, and
-            $\Gamma(U_{\rho_3},\Omega_X)_{[-1,0]}$ is two-dimensional. Since $[1,0], [0,0]$, and
-            $[-1,0]$ pair with $v_{\rho_3}=(-1,-1)$ to respectively $-1, 0$, and $1$, the filtration
-            $\Omega^{\rho_3}(i)$ jumps at $1$ and $0$ with corresponding basis vectors $(0,-1)$ and
-            $(-1,1)$. Since $\Omega_X$ already is a vector bundle we do not have to check the
-            compatibility conditions.
-        Text
-            An instance of class ToricVectorBundleKlyachko, when displayed or printed, gives an
-            overview of the characteristics of the bundle:
-        Example
-            E = cotangentBundle(projectiveSpaceFan 2)
-        Text
-            To see all relevant details of a bundle use @TO details@. The data described above are
-            stored in a single hash table. In the example from above, the keys are the rays of the
-            fan, and each of them comes with a base matrix and a filtration matrix:
-        Example
-            details E
-    SeeAlso
-        ToricVectorBundleKaneyama
         ToricVectorBundle
 ///
 
@@ -3551,299 +3505,7 @@ doc ///
 	(isWellDefined, SimplicialMap)
 ///
 
-doc ///
-    Key
-        (source, SimplicialMap)
-    Headline
-        get the source of the map
-    Usage
-    	X = source f
-    Inputs
-    	f : SimplicialMap
-    Outputs
-    	X : SimplicialComplex
-    	    that is the source of the map f
-    Description
-        Text
-	    Given a map $f \colon \Delta \to \Gamma$, this method returns the
-	    abstract simplicial complex $\Delta$.  The source is one of the
-	    defining attributes of a simplicial map
-	Text
-	    For the identity map, the source and target are equal.
-	Example
-            S = ZZ[x_0..x_5];
-	    Δ = simplicialComplex monomialIdeal(x_0*x_5, x_1*x_4, x_2*x_3)
-    	    id_Δ
-	    source id_Δ
-	    assert(source id_Δ === Δ)
-	    assert(source id_Δ === target id_Δ)
-	Text
-    	    The next map projects an octahedron onto a square.
-	Example
-	    R = ZZ[y_0..y_3];
-	    Γ = simplicialComplex monomialIdeal(y_1*y_2)
-	    f = map(Γ, Δ, {y_0,y_0,y_1,y_2,y_3,y_3})
-	    assert isWellDefined f
-	    source f
-	    assert(source f === Δ)  
-	    peek f  
-    SeeAlso
-        "Working with simplicial maps"
-        (target, SimplicialMap)    
-        (matrix, SimplicialMap)    		
-	(isWellDefined, SimplicialMap)
-        (map, SimplicialComplex, SimplicialComplex, Matrix)	
-///
-
-doc ///
-    Key
-	(target, SimplicialMap)
-    Headline 
-    	get the target of the map
-    Usage
-    	Y = target f
-    Inputs
-    	f : SimplicialMap
-    Outputs
-    	Y : SimplicialComplex
-    	    that is the target of the map f	
-    Description	    
-        Text
-	    Given a map $f \colon \Delta \to \Gamma$, this method returns the
-	    abstract simplicial complex $\Gamma$.  The target is one of the
-	    defining attributes of a simplicial map
-	Text
-	    For the identity map, the source and target are equal.
-	Example
-            S = ZZ[x_0..x_5];
-	    Δ = simplicialComplex monomialIdeal(x_0*x_5, x_1*x_4, x_2*x_3)
-    	    id_Δ 
-	    source id_Δ
-	    assert(target id_Δ === Δ)
-	    assert(target id_Δ === source id_Δ)
-	Text
-    	    The next map projects an octahedron onto a square.
-	Example
-	    R = ZZ[y_0..y_3];
-	    Γ = simplicialComplex monomialIdeal(y_1*y_2)
-	    f = map(Γ, Δ, {y_0,y_0,y_1,y_2,y_3,y_3})
-	    assert isWellDefined f
-	    target f
-	    assert(target f === Γ)
-	    peek f
-    SeeAlso
-        "Working with simplicial maps"    
-        (source, SimplicialMap)    
-        (matrix, SimplicialMap)    		
-	(isWellDefined, SimplicialMap)
-        (map, SimplicialComplex, SimplicialComplex, Matrix)
-///
-
-doc ///
-    Key
-        (map, SimplicialMap)
-    Headline
-        the underlying ring map associated to a simplicial map
-    Usage
-    	phi = map f
-    Inputs
-    	f : SimplicialMap
-	: Degree
-	    ignored
-	: DegreeLift
-	    ignored
-	: DegreeMap
-	    ignored
-    Outputs
-        phi : RingMap
-	    a map from the ring of the source of $f$ to the 
-	    ring of the target of $f$.
-    Description
-        Text
-            Every simplicial map sends the vertices of the source of $f$
-	    to the vertices of the target of $f$. Consequently, this 
-	    determines a ring map between the ring of the source of $f$ 
-	    and the ring of the target of $f$.
-        Example
-            S = ZZ/101[a,b,c,d];
-	    Δ = simplexComplex(3,S)
-	    f = map(Δ,Δ,matrix{{a,b,c,d}})
-	    map f	
-    SeeAlso
-        "Working with simplicial maps"
-	(map, SimplicialComplex,SimplicialComplex, RingMap)
-	(source, SimplicialMap)
-        (target, SimplicialMap)
-        (matrix, SimplicialMap)
-	(isWellDefined, SimplicialMap)
-///	  
-
-doc ///
-    Key
-	(matrix, SimplicialMap)
-    Headline 
-    	get the underlying map of rings
-    Usage
-    	g = matrix f
-    Inputs
-    	f : SimplicialMap
-	Degree =>
-	    unused
-    Outputs
-    	g : Matrix
-            having one row
-    Description	    
-        Text
-    	    A simplicial map is a map $f \colon \Delta \to \Gamma$ such that
-    	    for any face $F \subset \Delta$, the image $f(F)$ is contained in
-    	    a face of $\Gamma$.  Since an abstract simplicial complex is, in
-    	    this package, represented by its Stanley–Reisner ideal in a
-    	    polynomial ring, the simplicial map $f$ corresponds to a ring map
-    	    from the ring of $\Delta$ to the ring of $\Gamma$.  The ring map
-    	    is described by a matrix having one row; the entry in the $i$-th
-    	    column is the image in the ring of $\Gamma$ of the $i$-th variable
-    	    in the ring $\Delta$.  This method returns this matrix.
-	Text
-	    For the identity map, the matrix of variables in the ambient
-	    polynomial ring.
-	Example
-            S = ZZ[x_0..x_5];
-	    Δ = simplicialComplex monomialIdeal(x_0*x_5, x_1*x_4, x_2*x_3)
-    	    id_Δ 
-	    matrix id_Δ
-	    assert(matrix id_Δ === vars S)
-	Text
-    	    The next map projects an octahedron onto a square.
-	Example
-	    R = ZZ[y_0..y_3];
-	    Γ = simplicialComplex monomialIdeal(y_1*y_2)
-	    f = map(Γ, Δ, {y_0,y_0,y_1,y_2,y_3,y_3})
-    	    matrix f
-	Text
-	    This matrix is simply extracted from the underlying map of rings.
-	Example
-	    code(matrix, SimplicialMap)
-    SeeAlso
-        "Working with simplicial maps"    
-        (source, SimplicialMap)    
-        (target, SimplicialMap)    		
-	(isWellDefined, SimplicialMap)
-        (map, SimplicialComplex, SimplicialComplex, Matrix)
-///
-
-undocumented {
-    (expression, SimplicialMap), 
-    (toString, SimplicialMap), 
-    (texMath, SimplicialMap)
-    }
-
-doc ///
-    Key
-        (net, SimplicialMap)
-    Headline
-        make a symbolic representation for a map of abstract simplicial complexes
-    Usage
-        net f
-    Inputs
-        f : SimplicialMap
-    Outputs
-        : Net
-	    a symbolic representation used for printing
-    Description
-        Text
-	    The net of map $f \colon \Delta \to \Gamma$ between abstract
-	    simplicial complexes is a list of variables in the ring of
-	    $\Gamma$.  This list determines a ring map from the ring of
-	    $\Delta$ to the ring of $\Gamma$ by sending the $i$-th variable
-	    in the ring of $\Delta$ to the $i$-th monomial on the list.
-    	Text
-	    The identity map $\operatorname{id} \colon \Delta \to \Delta$
-	    corresponds to list of variables in the ring of $\Delta$.
-        Example
-            S = ZZ[x_0..x_5];
-	    Δ = simplicialComplex monomialIdeal(x_0*x_5, x_1*x_4, x_2*x_3)
-    	    id_Δ
-	    net id_Δ
-	    matrix id_Δ
-	Text
-    	    The next example does not come from the identity map.
-	Example
-	    S' = ZZ[y_0..y_3];
-	    Γ = simplicialComplex monomialIdeal(y_1*y_2)
-	    f = map(Γ, Δ, {y_0,y_0,y_1,y_2,y_3,y_3})
-	    assert isWellDefined f
-	    net f
-	    matrix f
-    SeeAlso
-        "Working with simplicial maps"
-        (matrix, SimplicialMap)
-	(net, SimplicialComplex)	
-///	  
-
-doc ///
-    Key
-        (map, SimplicialComplex, SimplicialComplex, Matrix)
-	(map, SimplicialComplex, SimplicialComplex, List)
-        (map, SimplicialComplex, SimplicialComplex, RingMap)
-	(map, SimplicialComplex, Matrix)
-	(map, SimplicialComplex, List)
-	(map, SimplicialComplex, RingMap)	
-    Headline
-        create a simplicial map between simplicial complexes
-    Usage
-    	f = map(E,D,M)
-	f = map(D,M)
-    Inputs
-    	Delta : SimplicialComplex
-	    the @TO2((source,SimplicialMap), "source")@ of the simplicial complex
-	Gamma : SimplicialComplex
-	    the @TO2((target,SimplicialMap), "target")@ of the simplicial map.
-	M : Matrix
-	    @TO2(List,"list")@, or @TO2(RingMap,"ring map")@.
-	: Degree
-	    ignored
-	: DegreeLift
-            ignored
-	: DegreeMap
-	    ignored
-    Outputs
-    	f : SimplicialMap
-    Description
-        Text
-	    A simplicial map $f: \Delta \to \Gamma$ is a function that sends the
-	    vertices of $\Delta$ to vertices of $\Gamma$, with the added condition that
-	    if $\{ v_1, v_2,..,v_k \} \in \Delta$, then $\{ f(v_1), f(v_2), ..., 
-	    f(v_n) \} \in \Gamma$. If no target is specified, it is assumed that the
-	    target is the simplicial complex whose faces are $f(F)$ for all faces $F 
-	    \in \Delta$. As a first example, let's look at the identity map on a
-	    3-simplex.
-	Example
-	    S = QQ[a,b,c,d];
-            Δ = simplexComplex(3,S);
-	    f = map(Δ,Δ, id_S)
-	    matrix f
-	    map f
-	Text
-	    Here is a slightly more interesting example.
-	Example
-	    R = QQ[s,t,u,v,w];
-	    Γ = simplicialComplex{s*t*u,u*v*w};
-	    g = map(Δ,Γ, {a,b,c,d,d})
-	    source g
-	    target g
-	    image g
-    SeeAlso
-        "Working with simplicial maps"
-	(source, SimplicialMap)
-        (target, SimplicialMap)
-	(image, SimplicialMap)    
-        (matrix, SimplicialMap)
-	(map, SimplicialMap)    		
-	(isWellDefined, SimplicialMap)
-
 *-
-
-
 
 -------------------------------------------
 -- TESTS
