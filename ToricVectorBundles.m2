@@ -4774,6 +4774,497 @@ T1 = addDegrees(T,{matrix{{1,2},{3,1}},matrix{{-1,0},{3,1}},matrix{{1,2},{-3,-1}
 assert not isWellDefined T1 -- fails because of regCheck
 ///
 
+
+---------------------------------------------------------------------------
+-- TESTS for PositivityToricBundles
+---------------------------------------------------------------------------
+-- We test against the examples from [RJS]
+-- CAVEAT: 1) The data is copied from [RJS], but many signs are different,
+--         as [RJS] and ToricVectorBundle (and therefore PositivityToricBundles)
+--         follow different sign conventions.
+--         2) When setting up the vector bundles using ToricVectorBundles,
+--         I have no direct influence on the (internal) order of rays.
+--         Fortunately, it seems that the order is always chosen in the same way.
+--         If this changes at some point in the future, all tests will fail.
+
+-- Test 0
+TEST ///
+-- This is [RJS, Example 3.7]
+-- auxiliary methods
+X = toricProjectiveSpace 1 ** toricProjectiveSpace 1
+V = trivialBundle(X,3);
+rays V
+-- output: {{-1, 0}, {1, 0}, {0, -1}, {0, 1}}
+
+Vbasis = { 
+ matrix{{1_QQ,1,0},{0,0,1},{1,0,0}},   -- for (-1,0)
+ matrix{{1_QQ,1,0},{1,0,0},{0,0,1}}, -- for (1,0)
+ matrix{{0_QQ,0,1},{1,0,0},{0,1,0}},   -- for (0,-1)
+ matrix{{0_QQ,0,1},{1,0,0},{0,1,0}}   -- for (0,1)
+ };
+Vfiltration = {
+ {-1,0,1},   -- for (-1,0)
+ {-1,0,1},  -- for (1,0)
+ {-2,-1,0},  -- for (0,-1)
+ {-2,-1,0}  -- for (0,1)
+ };
+V = toricVectorBundle(X, Vbasis, -1*Vfiltration) 
+
+p = parliament V;
+assert( 
+  set apply(values p, q -> set entries transpose lift(vertices q,ZZ)) ===
+  set { set {{-1,0}}, set {}, set {{0,0}}, set {{1,0}}  } );
+
+
+c = toricChernCharacter V;
+assert(
+  set apply(values c, l -> set entries transpose fold(l, (i,j) -> i|j)) ===
+  set { set {{-1,0},{0,-2},{1,-1}},
+        set {{1,0},{-1,-2},{0,-1}},
+        set {{1,0},{-1,2},{0,1}},
+        set {{0,2},{-1,0},{1,1}} } );
+///
+
+-- Test 1
+TEST ///
+-- This is [RJS, Example 3.8] for d=2
+X = toricProjectiveSpace 2
+V = tangentBundle X
+
+
+p = parliament V;
+assert( 
+  set apply(values p, q -> set entries transpose lift(vertices q,ZZ)) ===
+  set { set {{0,0},{-1,1},{-1,0}},
+        set {{0,0},{1,-1},{0,-1}}, 
+        set {{0,0},{1,0},{0,1}} } );
+
+
+c = toricChernCharacter V;
+assert(
+  set apply(values c, l -> set entries transpose fold(l, (i,j) -> i|j)) ===
+  set { set {{1,0},{1,-1}},
+        set {{-1,1},{0,1}},
+        set {{-1,0},{0,-1}} } );
+
+assert(isGloballyGenerated V);
+assert(isVeryAmple V);
+
+assert(isNef V);
+assert(isAmple V);
+///
+
+
+
+-- Test 2
+TEST ///
+-- This is [RJS, Example 3.8] for d=3
+X = toricProjectiveSpace 3;
+V = tangentBundle(X);
+
+
+p = parliament V;
+assert( 
+  set apply(values p, q -> set entries transpose lift(vertices q,ZZ)) ===
+  set { set {{0,0,0},{-1,0,1},{-1,1,0},{-1,0,0}},
+        set {{0,0,0},{1,-1,0},{0,-1,1},{0,-1,0}}, 
+        set {{0,0,0},{1,0,-1},{0,1,-1},{0,0,-1}}, 
+        set {{0,0,0},{1,0,0},{0,1,0},{0,0,1}} } );
+
+
+c = toricChernCharacter V;
+assert(
+  set apply(values c, l -> set entries transpose fold(l, (i,j) -> i|j)) ===
+  set { set {{1,0,0},{1,-1,0},{1,0,-1}},
+        set {{0,1,0},{-1,1,0},{0,1,-1}},
+        set {{0,0,1},{-1,0,1},{0,-1,1}},
+        set {{-1,0,0},{0,-1,0},{0,0,-1}} } );
+
+assert(isGloballyGenerated V);
+assert(isVeryAmple V);
+
+assert(isNef V);
+assert(isAmple V);
+///
+
+-- Test 3
+TEST ///
+-- This is [RJS, Example 4.2] 
+-- auxiliary methods
+X = toricProjectiveSpace 2
+Vbasis = { 
+ matrix{{1,0,0},{-1,1,0},{0,-1,1}},  -- for (-1,-1)
+ matrix{{1,0,0},{0,1,0},{0,0,1}},  -- for (1,0)
+ matrix{{0,0,1},{0,1,0},{1,0,0}}    -- for (0,1)
+ }
+
+Vfiltration = {
+ matrix{{-3,-2,1}},  -- for (-1,-1)
+ matrix{{-4,0,1}}, -- for (1,0)
+ matrix{{-3,0,2}}   -- for (0,1)
+}
+Vfiltration = -flatten (Vfiltration/entries)
+V = toricVectorBundle(X, Vbasis, Vfiltration)
+
+
+p = parliament V;
+assert( 
+  set apply(values p, q -> set entries transpose lift(vertices q,ZZ)) ===
+  set { set {{-3,2},{-4,2},{-4,3}},
+        set {{1,2},{0,2},{0,3}},
+        set {},
+        set {{2,0},{1,0},{1,1}},
+        set {{2,-3},{1,-3},{1,-2}} } );
+
+
+c = toricChernCharacter V;
+assert(
+  set apply(values c, l -> set entries transpose fold(l, (i,j) -> i|j)) ===
+  set { set {{1,2},{2,0},{2,-3}},
+        set {{-4,3},{0,3},{1,1}},
+        set {{-4,2},{0,0},{1,-3}} } );
+
+assert(not isGloballyGenerated V);
+assert(not isVeryAmple V);
+
+assert(isNef V);
+assert(isAmple V);
+///
+
+
+
+-- Test 4
+TEST ///
+-- This is [RJS, Example 4.4] 
+-- auxiliary methods
+
+X = hirzebruchSurface 1
+Vbasis = { 
+ matrix{{1,0},{0,1}},  -- for (1,0)
+ matrix{{1,0},{0,1}},   -- for (0,1)
+ matrix{{0,1},{1,0}},   -- for (-1,1)
+ matrix{{1,1},{1,0}}   -- for (0,-1)
+}
+
+Vfiltration = {
+ matrix{{-4,2}},  -- for (1,0)
+ matrix{{-3,-2}},  -- for (0,1)
+ matrix{{-5,0}},   -- for (-1,1)
+ matrix{{-3,1}}   -- for (0,-1)
+}
+Vfiltration = -flatten (Vfiltration/entries)
+V = toricVectorBundle(X, Vbasis, Vfiltration)
+
+p = parliament V;
+assert( 
+  set apply(values p, q -> set entries transpose lift(vertices q,ZZ)) ===
+  set { set {{-1,-1},{-3,-3},{-4,-3},{-4,-1}},
+        set {{3,3},{2,2},{2,3}},
+        set {{4,-1},{3,-2},{2,-2},{2,-1}} } );
+
+c = toricChernCharacter V;
+assert(
+  set apply(values c, l -> set entries transpose fold(l, (i,j) -> i|j)) ===
+  set { set {{2,-2},{-4,-3}},
+        set {{3,-2},{-3,-3}},
+        set {{4,-1},{3,3}},
+        set {{2,3},{-4,-1}} } );
+
+assert(isGloballyGenerated V);
+assert(isVeryAmple V);
+
+assert(isNef V);
+assert(isAmple V);
+///
+
+
+-- Test 5
+TEST ///
+-- This is [RJS, Example 6.4] 
+-- auxiliary methods
+X = toricProjectiveSpace 2
+
+Vbasis = { 
+ matrix{{1,0,0},{-1,1,0},{0,-1,1}},  -- for (-1,-1)
+ matrix{{1,0,0},{0,1,0},{0,0,1}},  -- for (1,0)
+ matrix{{0,0,1},{0,1,0},{1,0,0}}    -- for (0,1)
+ }; 
+
+Vfiltration = {
+ matrix{{-4,-3,-1}}, -- for (-1,-1)
+ matrix{{-2,1,2}},  -- for (1,0)
+ matrix{{-2,0,2}}   -- for (0,1)
+ };
+
+Vfiltration = -flatten (Vfiltration/entries)
+V = toricVectorBundle(X, Vbasis, Vfiltration)
+
+p = parliament V;
+assert( 
+  set apply(values p, q -> set entries transpose lift(vertices q,ZZ)) ===
+  set { set {{-1,2},{-2,2},{-2,3}},
+        set {{2,2},{1,2},{1,3}},
+        set {{1,0}},
+        set {{3,0},{2,0},{2,1}},
+        set {{3,-2},{2,-2},{2,-1}} } );
+
+c = toricChernCharacter V;
+assert(
+  set apply(values c, l -> set entries transpose fold(l, (i,j) -> i|j)) ===
+  set { set {{2,2},{3,0},{3,-2}},
+        set {{-2,3},{1,3},{2,1}},
+        set {{-2,2},{1,0},{2,-2}} } );
+
+assert(isGloballyGenerated V);
+assert(not isVeryAmple V);
+
+assert(isNef V);
+assert(isAmple V);
+///
+
+
+-- TODO : Redo this test 
+
+-- Test 6
+TEST ///
+-- Test with a randomized vector bundle on 3-dim variety
+
+r = 2 + random 4
+F = toricProjectiveSpace 1 ** hirzebruchSurface r
+E = randomDeformation tangentBundle F
+while not isLocallyWeil E do (
+ E = randomDeformation(tangentBundle F,4)
+)
+
+--applyValues(filtration E, entries)
+--applyValues(base E, entries)
+
+gs = groundSet E
+p = parliament E;
+par = unique entries transpose fold(flatten apply(values p, latticePoints), (i,j) -> i|j)
+
+c = toricChernCharacter E
+
+degs = unique degrees HH^0 E
+
+assert( set par === set degs )
+-*
+cList  = apply(values c, l-> fold(l,(i,j)->i|j))
+ wList = findWeights E
+
+assert( #cList == #wList )
+
+-- assumes that both lists have equal length
+areEqualListsModPerm = (L1,L2) -> (
+  if #L1 == 0 then return true; --implicit: #L2==0
+  pos := positions(L2, l-> l==L1#0);
+  if #pos == 0 then return false;
+  return areEqualListsModPerm(drop(L1,{0,0}),drop(L2,{pos#0,pos#0}))
+)
+
+getColumns := mat -> toList apply( 0..<numgens source mat, i->mat_i )
+
+foundList = for i in 0 ..< #cList list (
+ found := -1;
+ for j in 0 ..< #wList do (
+  cChars := getColumns cList_i;
+  for k in 0 ..< #(wList_j) do (
+   wChars := getColumns (wList_j)_k;
+   if areEqualListsModPerm(cChars,wChars) then (
+    found = j;
+    break;
+   )
+  )
+ );
+ found
+)
+
+assert(all(foundList, i->i>=0))
+*-
+///
+
+-*
+
+-- TODO : Redo this test
+
+-- Test 7
+TEST ///
+-- Test with a randomized vector bundle of rank 3 on hirzebruch
+
+r = 0 + random 5
+
+X = hirzebruchSurface r
+
+rk=3
+
+while true do (
+ FiltMat = for i to 3 list matrix {{random(QQ^rk,QQ^rk)}};
+ if min apply(FiltMat, rank) == rk then break
+)
+FiltMat
+FiltStep = for i to 3 list sort toList apply(0..<rk, i-> random(-5,5))
+apply(FiltMat,entries)
+apply(FiltStep,entries)
+
+E = toricVectorBundle(X, FiltMat, FiltStep)
+
+cB = compatibleBases E
+
+tCC = toricChernCharacter E
+--assert( class tCC === HashTable)
+
+cList = apply(values tCC,  l-> fold(l,(i,j)->i|j))
+
+wList = findWeights E
+
+assert(#cList == #wList)
+
+getColumns := mat -> toList apply( 0..<numgens source mat, i->mat_i )
+
+-- assumes that both lists have equal length
+areEqualListsModPerm = (L1,L2) -> (
+  if #L1 == 0 then return true; --implicit: #L2==0
+  pos := positions(L2, l-> l==L1#0);
+  if #pos == 0 then return false;
+  return areEqualListsModPerm(drop(L1,{0,0}),drop(L2,{pos#0,pos#0}))
+)
+
+foundList = for i in 0 ..< #cList list (
+ found := -1;
+ for j in 0 ..< #wList do (
+  cChars := getColumns cList_i;
+  for k in 0 ..< #(wList_j) do (
+   wChars := getColumns (wList_j)_k;
+   if areEqualListsModPerm(cChars,wChars) then (
+    found = j;
+    break;
+   )
+  )
+ );
+ found
+)
+
+assert(all(foundList, i->i>=0))
+
+///
+
+
+
+
+-- TODO : Redo this test
+
+-- Test 8
+TEST ///
+-- Test with a randomized vector bundle of rank 4 on hirzebruch
+
+r = 0 + random 3
+
+X = hirzebruchSurface r
+
+rk=4
+
+while true do (
+ FiltMat = for i to 3 list matrix {{random(ZZ^rk,ZZ^rk)}};
+ if min apply(FiltMat, rank) == rk then break
+)
+FiltMat
+FiltStep = for i to 3 list sort toList apply(0..<rk, i-> random(-5,5))
+apply(FiltMat,entries)
+apply(FiltStep,entries)
+
+E = toricVectorBundle(rk, X, FiltMat, FiltStep)
+
+cB = compatibleBases E
+
+tCC = toricChernCharacter E
+
+cList = apply(values tCC,  l-> fold(l,(i,j)->i|j))
+wList = findWeights E
+
+assert(#cList == #wList)
+
+getColumns := mat -> toList apply( 0..<numgens source mat, i->mat_i )
+
+-- assumes that both lists have equal length
+areEqualListsModPerm = (L1,L2) -> (
+  if #L1 == 0 then return true; --implicit: #L2==0
+  pos := positions(L2, l-> l==L1#0);
+  if #pos == 0 then return false;
+  return areEqualListsModPerm(drop(L1,{0,0}),drop(L2,{pos#0,pos#0}))
+)
+
+foundList = for i in 0 ..< #cList list (
+ found := -1;
+ for j in 0 ..< #wList do (
+  cChars := getColumns cList_i;
+  for k in 0 ..< #(wList_j) do (
+   wChars := getColumns (wList_j)_k;
+   if areEqualListsModPerm(cChars,wChars) then (
+    found = j;
+    break;
+   )
+  )
+ );
+ found
+)
+
+assert(all(foundList, i->i>=0))
+///
+
+-- Test 9
+TEST ///
+-- Test whether the filtration steps obtained from the toric Chern character are correct
+-- Such a test would have failed before version 1.8, 
+-- because of a bug in the internal method flags:
+-- the method made an assumption on the form how the filtration steps are ordered 
+-- in the bundles generated by the package ToricVectorBundles. 
+-- Usually true, this assumption does not apply, if the bundle arises 
+-- by using the method dual of ToricVectorBundles (e.g. cotangent bundles).
+
+X = toricProjectiveSpace 2
+E = dual tangentBundle X
+
+getCols = mat -> toList apply( 0..<numgens source mat, i->mat_i )
+
+filtE = hashTable apply(rays E, rho -> rho =>filtrationJumps(E, rho));
+
+filtFromTCC = applyPairs( toricChernCharacter E, (cone,us) -> 
+ cone => (
+  filtRay := for ray in getCols cone list sort apply(us, u -> ( (transpose matrix ray)*u)_(0,0))
+ )
+);
+
+applyPairs(filtFromTCC, (cone, filts) -> (
+  cone => for ray in getCols cone do
+           assert isMember( sort filtE#(flatten transpose entries matrix ray), filts)
+ )
+)
+///
+
+*-
+
+-- TODO: check if we still want the function and see how to test it
+
+
+-*
+-- Test 10
+TEST ///
+-- the methods dual, tensor (and maybe others?) from ToricVectorBundles
+-- may produce a ToricVectorBundle whose matrices containing the filtration steps
+-- have not ascending entries.
+-- The method wellformedBundleFiltrations (added in version 1.9) ensures ascending entries.
+-- The following test fails when omitting this method.
+X = toricProjectiveSpace 2
+T = tangentBundle X
+E = wellformedBundleFiltrations( T ** (dual T))
+F = wellformedBundleFiltrations((dual T) ** T)
+
+origin = matrix map(ZZ^2,ZZ^1,0)
+
+assert( all(values toricChernCharacter E, L -> isMember(origin, L)) )
+assert( all(values toricChernCharacter F, L -> isMember(origin, L)) )
+///
+*-
 end
 
 
