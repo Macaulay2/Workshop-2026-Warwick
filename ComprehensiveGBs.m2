@@ -469,7 +469,7 @@ PGBMain CGBTriple := T -> (
     -- question: is there a clean way to check which elements of a matrix can lift?
     -- question 2: is this something that should be converted to work with matrices or is list okay?
     G := first entries gens gb ideal ((KUtoRFlat \ E) | (RtoRFlat \ F));
-    if member(sub(1, RFlat), G) then (
+    if member(promote(1, Rflat), G) then (
         return {{E, N, {promote(1, R)}}} -- Trivial case where the vanishing set is empty
     );
     Gr := for g in G list ( -- The polynomials in G that only contain the parameters
@@ -484,16 +484,16 @@ PGBMain CGBTriple := T -> (
     -- which is equivalent to only containing the 0 element.
     -- To keep track of the original rings down the line and in the output,
     -- we never return an empty GB.
-    if length Gr == 0 then (
-        Gr = {0_KU};
+    if zero length Gr then (
+        Gr = {promote(0, KU)};
     );
     productList := unique totalListProduct(Gr, N); -- The list obtained by multiplying every element in Gr with every element in N
-    if length productList == 0 then (
-        productList = {0_KU};
+    if zero length productList then (
+        productList = {promote(0, KU)};
     );
     PGB := {};
     if consistencyCheckAllTogether (E, productList) then (
-        PGB = {{E, productList, {1_R}}};
+        PGB = {{E, productList, {promote(1, R)}}};
     );
     if not consistencyCheckAllTogether(Gr, N) then (
         return PGB
@@ -536,7 +536,7 @@ PGBMain CGBTriple := T -> (
 -- lists of 3-tuples (3 element lists) or something else?
 
 PGBMain List := F -> (
-    if #F == 0 then error "List must be non-empty";
+    if zero #F then error "List must be non-empty";
     R := ring first F;
     U := coefficientRing R;
     PGBMain CGBFromTriple {{0_U}, {1_U}, F}
@@ -617,7 +617,7 @@ CCheck (List, RingElement) := (E, f) -> (
     -- fAlpha = sub(fAlpha, newR); -- shouldn't need this
     GspE := flatten entries gens spE;
 
-    if dim ideal GspE == 0 and zeroDimCheck(GspE, fAlpha) then (
+    if zero dim ideal GspE and zeroDimCheck(GspE, fAlpha) then (
         return true; -- certifies consistency
     );
     return false -- unknown consistency (i.e., it could still be consistent)
@@ -647,10 +647,10 @@ ICheck (List, RingElement) := o -> (E, f) -> (
         return true; -- certifies inconsistency
     );
     factors := listOfFactors f;
-    promoted := apply(factors, g -> promote(g, Q));
+    promoted := factors / (g -> promote(g, Q));
     -- before performing ICheck on the input f, we first perform ICheck on the factors of f
     -- this is a not-too-expensive heuristic, but it proves very helpful for S5 and P3P when Loops is set to 4
-    candidates := if #factors == 0 then {promote(f, Q)}
+    candidates := if zero #factors then {promote(f, Q)}
         else if #factors == 1 then promoted
         else sort(promoted, z -> #terms z) | {promote(product factors, Q)};
     for p in candidates do (
@@ -686,14 +686,14 @@ consistencyCheckAllTogether = method(
 );
 
 consistencyCheckAllTogether (List, RingElement) := o -> (E, f) -> (
-    if f % ideal E == 0 then (
+    if zero (f % ideal E) then (
         -- print "inconsistent: direct ideal membership check was used";
         return false; -- inconsistent
     );
 
     d := dim ideal E;
 
-    if d == 0 then (
+    if zero d then (
         -- print "zeroDimCheck was used";
         return zeroDimCheck(E, f);
     );
