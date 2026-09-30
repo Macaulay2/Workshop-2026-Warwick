@@ -536,7 +536,7 @@ PGBMain CGBTriple := T -> (
 -- lists of 3-tuples (3 element lists) or something else?
 
 PGBMain List := F -> (
-    if zero(#F) then error "List must be non-empty";
+    if zero length F then error "List must be non-empty";
     R := ring first F;
     U := coefficientRing R;
     PGBMain CGBFromTriple {{0_U}, {1_U}, F}
@@ -650,7 +650,7 @@ ICheck (List, RingElement) := o -> (E, f) -> (
     promoted := factors / (g -> promote(g, Q));
     -- before performing ICheck on the input f, we first perform ICheck on the factors of f
     -- this is a not-too-expensive heuristic, but it proves very helpful for S5 and P3P when Loops is set to 4
-    candidates := if zero(#factors) then {promote(f, Q)}
+    candidates := if zero length factors then {promote(f, Q)}
         else if #factors == 1 then promoted
         else sort(promoted, z -> #terms z) | {promote(product factors, Q)};
     for p in candidates do (
