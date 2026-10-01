@@ -22,3 +22,12 @@ the elements of F belong to K[U,X], which is not exactly RFlat, but this is rela
 3) What is the difference between the following two papers? I think I have been using both without noticing the difference and when doing the references, I noticed. One of them does not have the section of ICheck, CCheck, ZeroDimCheck.
  * An efficient method for computing comprehensive Gröbner bases--(Kapur, D.; Sun, Y.; Wang, D. An efficient method for computing comprehensive Gröbner bases. J. Symb. Comput. 2013, 52, 124–142, https://doi.org/10.1016/j.jsc.2012.05.015.)
  * An efficient algorithm for computing a comprehensive Gröbner system of a parametric polynomial system-- (An efficient algorithm for computing a comprehensive Gröbner system of a parametric polynomial system, Journal of Symbolic Computation, 2013, Deepak Kapur and Yao Sun and Dingkang Wang)
+
+
+Ollie: The first paper, with the simple title: `An efficient method for computing comprehensive Gröbner bases` submitted Oct. 2011 is the more modern paper despite having the same year at the other paper.
+> `An efficient method for computing comprehensive Gröbner bases` - this is the exapnded version of the paper:
+`Computing comprehensive Gröbner systems and comprehensive
+Gröbner bases simultaneously` which was presented in ISSAC'2011
+
+> `An efficient algorithm for computing a comprehensive
+Gröbner system of a parametric polynomial system` submitted Dec. 2010 is expanded version of the paper `A new algorithm for computing comprehensive Gröbner systems` which was presented in ISSAC'2010
