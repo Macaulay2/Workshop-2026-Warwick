@@ -246,15 +246,16 @@ CGBMainRec (List, List, List, CGBData) := o -> (F, S, memo, cgbData) -> (
     hfac := select(toList factor h, p -> not isConstant p#0);
     h = product({1_KU} | apply(hfac, value));
 
+    branch := (S, {h}, first entries compress RExttoR G);
     if o.ReduceStrata then (
-        memo |= {(S, {h}, first entries compress RExttoR G)};
+        memo |= {branch};
     );
 
     if pruneG == {} then (
         if o.ReduceStrata then (
             return memo
         ) else (
-            return {(S, {h}, first entries compress RExttoR G)}
+            return {branch}
         )
     );
 
@@ -263,16 +264,18 @@ CGBMainRec (List, List, List, CGBData) := o -> (F, S, memo, cgbData) -> (
 
     H := first \ hfac;
     if o.ReduceStrata then (
-        for hi in H do (
-            for P in decompose ideal append(S, hi) do (
-                if o.Depth != 0 and not isCoveredPrime(P, memo) then (
-                    memo = CGBMainRec(F, first entries gens gb P, memo, cgbData, o ++ {Depth => o.Depth -1});
+        if o.Depth != 0 then (
+            for hi in H do (
+                for P in decompose ideal append(S, hi) do (
+                    if not isCoveredPrime(P, memo) then (
+                        memo = CGBMainRec(F, first entries gens gb P, memo, cgbData, o ++ {Depth => o.Depth -1});
+                        )
+                    )
                 )
-            )
-        );
+            );
         return memo
     ) else (
-        return {(S, {h}, first entries compress RExttoR G)} | if o.Depth == 0 then {} else flatten apply(H, hi -> CGBMainRec(F, append(S, hi), memo, cgbData, o ++ {Depth => o.Depth -1}))
+        return {branch} | if o.Depth == 0 then {} else flatten apply(H, hi -> CGBMainRec(F, append(S, hi), memo, cgbData, o ++ {Depth => o.Depth -1}))
     );
 );
 
