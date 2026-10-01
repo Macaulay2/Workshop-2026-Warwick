@@ -221,18 +221,11 @@ CGBMainRec = method(
 CGBMainRec (List, List, List, CGBData) := o -> (F, S, memo, cgbData) -> (
     R := cgbData#"R";
     RExt := cgbData#"RExt";
-    RFlat := cgbData#"RFlat";
-    RExt' := cgbData#"RExt'";
     KU := cgbData#"KU";
-    RFlatl := cgbData#"RFlatl";
     RtoRExt := cgbData#"RtoRExt";
     RExttoRFlatl := cgbData#"RExttoRFlatl";
     RExttoRExt' := cgbData#"RExttoRExt'";
     RExttoR := cgbData#"RExttoR";
-    KUtoRFlat := cgbData#"KUtoRFlat";
-    RFlattoR := cgbData#"RFlattoR";
-    KUtoR := cgbData#"KUtoR";
-    RtoRFlat := cgbData#"RtoRFlat";
 
     S = first entries gens gb ideal S;
     if o.Verbose then (
@@ -346,7 +339,7 @@ eliminateVariables List := F -> (
     mm S'
 )
 
--- try passing the cgbData instead
+-- pass cgbData instead
 eliminateVariables (List, CGBData) := (F, cgbData) -> (
     R := cgbData#"R";
     RtoRFlat := cgbData#"RtoRFlat";
