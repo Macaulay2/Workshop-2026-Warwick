@@ -281,7 +281,7 @@ E5 = {(x_1 - a)^2 + (y_1 - 1)^2 - a^2 - 1,
 
 --Examples from KSW (they took the ones from
 --Nabeshima and made them more complex)
-U = QQ[a,b,c,d, MonomialOrder => Lex]
+U = QQ[a,b,c,d, MonomialOrder => GRevLex] -- (Ollie: Computations finish now with GRevLex - is this order problematic?)
 R = U[x,y,z,w, MonomialOrder => GRevLex]
 
 S1= {a*x^4 + c*x^2 + y,
@@ -310,6 +310,22 @@ S5= {a*x^2 + b*y*z + c*z*w,
      (x-z)^2 + (y-w)^2,
      2*d*x*w - 2*b*y*z}
 
+T1 = CGBFromTriple {{0_U}, {1_U}, S1};
+T2 = CGBFromTriple {{0_U}, {1_U}, S2};
+T3 = CGBFromTriple {{0_U}, {1_U}, S3};
+T4 = CGBFromTriple {{0_U}, {1_U}, S4};
+T5 = CGBFromTriple {{0_U}, {1_U}, S5};
+
+elapsedTime PGBMain T1; -- 0.26s
+elapsedTime CGB(S1, ReduceStrata => false); -- <0.1s
+
+elapsedTime PGBMain T2; -- 67.06s to 80.12s
+elapsedTime PGBMain T3; --  2.63s
+elapsedTime PGBMain T4; --  1.24s
+elapsedTime PGBMain T5; --  1.74s
+
+
+
 -- Example from KSW: "the famous P3P problem
 --from computer vision."
 U = QQ[p, q, r, a, b, MonomialOrder => Lex];
@@ -319,7 +335,7 @@ P3P= {(1 - a)*y^2 - a*x^2 - p*y + a*r*x*y +1,
      (1 - b)*x^2 - b*y^2 - q*x + b*r*x*y +1};
 
 T = CGBFromTriple {{0_U}, {1_U}, P3P};
-elapsedTime L=  profile PGBMain T;
+elapsedTime L= PGBMain T; -- 2.00s
 
 
 -- in KSW the P3P takes around 2.5s with KSW and 1+hour
