@@ -380,19 +380,49 @@ totalListProduct (List, List) := (A, B) -> flatten table(A, B, times);
 --------------------------------------------------
 MDBasis = method();
 MDBasis List := G -> (
-    F := G;
-    if length F == 0 then (
-        return {}
-    );
-    -- Section 7.1, first heuristic
-    simpler := lc -> max({0} | apply(listOfFactors lc, f -> first degree f));
-    -- Section 7.1, second heuristic
+    if #G == 0 then return {};
     lpps := leadMonomial \ G;
-    minimal := select(G, g -> not any(lpps, m -> m != leadMonomial g and (leadMonomial g) % m == 0));
-    freq := tally apply(minimal, g -> toString leadCoefficient g);
-    sharedCount := lc -> freq_(toString lc);
+    minimal := select(G, g -> not any(lpps, m -> m != leadMonomial g and leadMonomial g % m == 0));
+    -- Section 7.1, first heuristic (prefer leading coefficients with low degree factors)
+    simpler := lc -> max({0} | apply(listOfFactors lc, f -> first degree f));
+    -- Section 7.1, second heuristic (prefer leading coefficients shared by many candidates)
+    freq := tally apply(minimal, leadCoefficient);
     -- order the input by those two heuristics;
     -- if there are still ties, order by the keys (chosen purely arbitrarily) after them
+    candidates := sort(minimal, g -> (lc := leadCoefficient g; (- freq_lc, simpler lc, #terms lc, first degree lc, toString g)));
+    -- keep the first candidate for each leading monomial
+    seen := new MutableHashTable;
+    select(candidates, g -> (
+        m := leadMonomial g;
+        if seen#?m then false else seen#m = true)
+    )
+)
+-*
+Notes: new implementation of MDBasis:
+
+Recall that a MDBasis keeps exactly one polynomial for each leading monomial that is minimal under divisibility.
+The previous version has a loop to do this: it adds polynomials one at a time, and later additions replace
+earlier ones where the leading monomial is divisible by the new one.
+
+For each element in the resulting list, it ...
+>> has a minimal leading monomial, because the others were replaced or skipped once a divisor turns up,
+>> is the first polynomial with that leading monomial in the heuristic order, because later ones with the same leading monomial are skipped,
+>> appears in the heuristic order, because everything else in the resulting list just appears once, i.e., it's never removed and moved.
+
+Since we already compute `minimal` for the second heuristic, we sort the list and keep the first polynomial of each leading monomial
+
+Previous version of MDBasis is below in case we need it again.
+*-
+
+
+
+-*
+MDBasis = method();
+MDBasis List := G -> (
+    if #G == 0 then return {};
+    lpps := leadMonomial \ G;
+    minimal := select(G, g -> not any(lpps, m -> m != leadMonomial g and leadMonomial g % m == 0));
+    F := G;
     F = sort(F, g -> (lc := leadCoefficient g; (- sharedCount lc, simpler lc, #terms lc, first degree lc, toString g)));
     Basis := {first F};
     F = delete(first F, F);
@@ -423,6 +453,7 @@ MDBasis List := G -> (
     return Basis
 );
 
+*-
 
 --------------------------------------------------
 -- Implementing algorithm in section 4.1 of
@@ -1306,7 +1337,7 @@ ExpResult = set{
     }
 }
 
-assert( (set apply(L, r -> set \ r)) == ExpResult )
+assert((set apply(L, r -> set \ r)) == ExpResult )
 
 ///
 

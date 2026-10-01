@@ -319,7 +319,7 @@ P3P= {(1 - a)*y^2 - a*x^2 - p*y + a*r*x*y +1,
      (1 - b)*x^2 - b*y^2 - q*x + b*r*x*y +1};
 
 T = CGBFromTriple {{0_U}, {1_U}, P3P};
-elapsedTime L= profile PGBMain T;
+elapsedTime L=  profile PGBMain T;
 
 
 -- in KSW the P3P takes around 2.5s with KSW and 1+hour
