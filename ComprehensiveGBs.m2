@@ -488,30 +488,30 @@ PGBMain CGBTriple := T -> (
     productList = unique (squareFreePart \ totalListProduct(N, {h}));
     if consistencyCheckAllTogether(Gr, productList) then (
         PGB = unique(PGB | {{Gr, productList, if length Gm == 0 then {0_R} else Gm}});
-    );
-
+        );
     for i in 0..length H - 1 do (
         -- Both CCheck and ICheck require E to be a Groebner basis of <E>!
         E' := first entries gens gb ideal unique(Gr | {H_i});
         if length E' == 0 then (
             E' = {0_KU};
-        );
+            );
         if i == 0 then (
             PGB = unique(PGB | PGBMain CGBFromTriple {
-            E',
-            N,
-            listDiff}
+                    E',
+                    N,
+                    listDiff}
+                )
             )
-        ) else (
-        PGB = unique(PGB | PGBMain CGBFromTriple {
-            E',
-            unique totalListProduct(N, {squareFreePart product H_{0..i-1}}),
-            listDiff}
-        ));
-    );
-
+        else (
+            PGB = unique(PGB | PGBMain CGBFromTriple {
+                    E',
+                    unique totalListProduct(N, {squareFreePart product H_{0..i-1}}),
+                    listDiff}
+                )
+            );
+        );
     return PGB
-);
+    );
 
 -- TODO: homogenise the output of CGBMain and PGBMain, e.g. should they both output
 -- lists of 3-tuples (3 element lists) or something else?
