@@ -431,20 +431,12 @@ PGBMain CGBTriple := T -> (
     {E, N, F} := T#"triple";
     cgbData := T#"cgbData";
     R := cgbData#"R";
-    RExt := cgbData#"RExt";
     RFlat := cgbData#"RFlat";
-    RExt' := cgbData#"RExt'";
     KU := cgbData#"KU";
-    RFlatl := cgbData#"RFlatl";
-    RtoRExt := cgbData#"RtoRExt";
-    RExttoRFlatl := cgbData#"RExttoRFlatl";
-    RExttoRExt' := cgbData#"RExttoRExt'";
-    RExttoR := cgbData#"RExttoR";
     KUtoRFlat := cgbData#"KUtoRFlat";
     RFlattoR := cgbData#"RFlattoR";
     KUtoR := cgbData#"KUtoR";
     RtoRFlat := cgbData#"RtoRFlat";
-    -- print(E, length N);
     if not consistencyCheckAllTogether(E, N) then (
         return {} -- The domain is empty
     );
