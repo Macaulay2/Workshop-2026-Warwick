@@ -483,9 +483,9 @@ PGBMain CGBTriple := T -> (
     Gr' := new Set from (KUtoR \ Gr);
     listDiff := select(RFlattoR \ G, g -> not Gr'#?g);
     Gm := MDBasis listDiff;
-    H := unique flatten apply(Gm, g -> listOfFactors leadCoefficient sub(g, R));
+    H := unique flatten apply(Gm, g -> listOfFactors leadCoefficient g);
     h := squareFreePart lcm(H | {1_KU});
-    productList = unique (squareFreePart \ totalListProduct(N, {sub(h, KU)}));
+    productList = unique (squareFreePart \ totalListProduct(N, {h}));
     if consistencyCheckAllTogether(Gr, productList) then (
         PGB = unique(PGB | {{Gr, productList, if length Gm == 0 then {0_R} else Gm}});
     );
