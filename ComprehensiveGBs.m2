@@ -451,7 +451,7 @@ PGBMain CGBTriple := T -> (
     -- question 2: is this something that should be converted to work with matrices or is list okay?
     G := first entries gens gb ideal ((KUtoRFlat \ E) | (RtoRFlat \ F));
     if member(promote(1, RFlat), G) then (
-        return {{E, N, {promote(1, R)}}} -- Trivial case where the vanishing set is empty
+        return {{E, N, {1_R}}} -- Trivial case where the vanishing set is empty
     );
     Gr := for g in G list ( -- The polynomials in G that only contain the parameters
         l := lift(RFlattoR g, KU, Verify => false);
