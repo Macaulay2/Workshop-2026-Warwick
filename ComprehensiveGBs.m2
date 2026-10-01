@@ -226,7 +226,6 @@ CGBMainRec (List, List, List, CGBData) := o -> (F, S, memo, cgbData) -> (
     RExttoRFlatl := cgbData#"RExttoRFlatl";
     RExttoRExt' := cgbData#"RExttoRExt'";
     RExttoR := cgbData#"RExttoR";
-
     S = first entries gens gb ideal S;
     if o.Verbose then (
         print("Computing CGB for F = " | toString F | " and S = " | toString S);
@@ -245,12 +244,10 @@ CGBMainRec (List, List, List, CGBData) := o -> (F, S, memo, cgbData) -> (
     h := lcm(pruneG | {1_KU});
     hfac := select(toList factor h, p -> not isConstant p#0);
     h = product({1_KU} | apply(hfac, value));
-
     branch := (S, {h}, first entries compress RExttoR G);
     if o.ReduceStrata then (
         memo |= {branch};
     );
-
     if pruneG == {} then (
         if o.ReduceStrata then (
             return memo
@@ -258,10 +255,6 @@ CGBMainRec (List, List, List, CGBData) := o -> (F, S, memo, cgbData) -> (
             return {branch}
         )
     );
-
-    -- H := pruneG; -- (takes too long to terminate if we do not factor h)
-    -- H := unique apply(pruneG, g -> squareFreePart g); -- (takes a bit longer to terminate)
-
     H := first \ hfac;
     if o.ReduceStrata then (
         if o.Depth != 0 then (
