@@ -234,7 +234,12 @@ CGBMainRec (List, List, List, CGBData) := o -> (F, S, memo, cgbData) -> (
         return {}
     );
     l := first gens RExt;
-    G := gens gb ideal (l * RtoRExt matrix {F} | (l-1) * RtoRExt promote(matrix {S}, R));
+
+    -- G := gens gb ideal (l * RtoRExt matrix {F} | (l-1) * RtoRExt promote(matrix {S}, R));
+    -- The list-based version turns out to be a little faster
+    G := gens gb ideal join(
+        apply(F, f -> l * RtoRExt f),
+        apply(S, s -> (l-1) * RtoRExt s));
 
     n := numgens R;
     pruneIndices := positions(first entries RExttoRFlatl G, g ->
