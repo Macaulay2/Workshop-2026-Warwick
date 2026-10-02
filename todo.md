@@ -93,7 +93,7 @@ Notice that in the generic stratum, there is an element `b*c^2-b` in the SS-CGB 
 does not appear in second column. Investigate the line that defines and modifies `pruneG` [line 191-2],
 there may be a mistake with the implementation or the write up on the line that defines $\{h_1, \dots, h_\ell\} := \dots$.
 
-Answer (Weijia): The input $S=\lbrace\rbrace$ does not satisfy the hypothesis of Theorem 3.3, i.e., $V(S)\subseteq V(\langle F\rangle\cap k[U])$. I've added a systematic check for this in `CGBMain`. Instead,
+Answer (Weijia): The input $S=\lbrace\rbrace$ does not satisfy the hypothesis of Theorem 3.3, i.e., $V(S)\subseteq V(\langle F\rangle\cap k[U])$. I've added a systematic check for this in `CGBMain`, so that the snippet above will now throw an error message. Instead,
 
 ```macaulay2
 LL = apply(CGBMain(F, ReduceStrata => true), e -> toList e)
