@@ -107,14 +107,11 @@ export {
     -- Misc
     "displayFiltrations",
     -- Kaneyama (old code)
-    "addBase", 
-    "addBaseChange", 
+    "addBaseChange",
     "addDegrees",
     "cartierIndex",
     "charts",
-    "cocycleCheck",
-    "regCheck",
-    "weilToCartierKaneyama", 
+    "lineBundleKaneyama", 
     "hirzebruchFan",
     "pp1ProductFan", 
     "projectiveSpaceFan",
@@ -126,8 +123,9 @@ load "Kaneyama.m2"
 -- These are cached keywords as part of:
 -- cechComplex
 protect cech
--- cocycleCheck
+-- isWellDefined for Kaneyama bundles
 protect cocycle
+protect regularityCondition
 -- areIsomorphic
 protect iso
 -- cohomology
@@ -1607,21 +1605,28 @@ doc ///
             to the projection map $\pi \colon \mathcal{E} \rightarrow X$ and $T_X$ acts linearly on
             the fibres of $\mathcal{E}$.
         Text
-            There are several ways to describe a toric vector bundle. The first is via Klyachko's
-            description: a toric vector bundle corresponds to a collection of filtrations of the fibre
-            over the torus-fixed point, one for each ray of the base toric variety, satisfying a
-            compatibility condition. This is the main type @TO ToricVectorBundle@. The second is via
-            Kaneyama's description of the transition functions of the bundle on the torus-fixed affine
-            open cover, which is the type @TO ToricVectorBundleKaneyama@. Third is via Weil decorations
-            as introduced by Altmann, Hochenegger, and Witt: which is a stratification of the torus-fixed
-            fibre of $\mathcal{E}$ by torus-fixed divisors. It corresponds to a polymatroid, which is how
-            the data is stored in this package.
-        Text
-            Here is an example of the main type, Klyachko's description:
+            There are several ways to describe a toric vector bundle. The primary method that this package
+            employs is via Klyachko's description: a toric vector bundle corresponds to a collection of
+            filtrations of the fibre over the torus identity (which is a vector space $E$), one for each
+            ray of the base toric variety, satisfying a compatibility condition. This is the main type @TO ToricVectorBundle@.
         Example
             X = hirzebruchSurface 2;
             TX = tangentBundle X;
             displayFiltrations TX
+        Text
+            The package also provides various translations into other presentations. For instance, Altmann,
+            Hochenegger, and Witt showed that toric vector bundles correspond to stratifications of $E$ by torus-fixed divisors;
+            see @HREF("https://arxiv.org/abs/2412.03476", "Toric sheaves and polyhedra")@ for more details.
+        Example
+            W = weilDecoration TX;
+            netList strata W
+        Text
+            Another translation provided is to modules over the Cox ring. Since toric vector bundles are
+            coherent sheaves, they may be represented by a finitely generated multigraded module. We provide
+            a presentation of such a module.
+        Example
+            M = klyachkoToModule TX
+            displayFiltrations moduleToKlyachko(X, M)
     References
         For mathematical background see @UL { {"Tamafumi Kaneyama,",EM "On equivariant
         vector bundles on an almost homogeneous variety", ", Nagoya Math. J. 57, 1975."},
@@ -1639,24 +1644,67 @@ doc ///
     SeeAlso
         "NormalToricVarieties"
 ///
--*
+
 doc ///
     Key
-        ToricVectorBundle
+        ToricVectorBundleKlyachko
     Headline
-        the class of all toric vector bundles
+        the class of all toric vector bundles in Klyachko's description
     Description
         Text
-            In @TO ToricVectorBundles@ an equivariant vector bundle on some toric variety is given
-            as an object of class @TT "ToricVectorBundle"@ which can be given in two
-            descriptions:@UL { {"By a collection of vector spaces with filtration for each ray of the underlying fan, ",TO ToricVectorBundle,"."}, {"By a set of degree vectors for each maximal cone and a transition matrix for each pair of maximal cones of the underlying fan, ",TO ToricVectorBundleKaneyama,"."} }@
+            Klyachko gave a complete characterization of toric vector bundles, which is summarized by
+            the following theorem:
         Text
-            For more detailed descriptions see the corresponding pages of the two subtypes.
+            @TT "The category of toric vector bundles on the toric variety "@$X$@TT " is equivalent 
+            to the category of finite dimensional "@$k$@TT"-vector spaces "@$E$@TT" with collections 
+            of decreasing filtrations "@$\{E^{\rho}(i)| i \in{} \mathbb{Z}\}$@TT", indexed by rays in 
+            "@$\rho \in \Sigma_X(1)$@TT", satisfying the following compatibility condition: For each 
+            maximal "@$\sigma \in \Sigma_X$@TT" there is a decomposition "@$E = \oplus_{u \in{} M_\sigma} E_u$@TT" 
+            such that "@$E^{\rho}(i) = \sum_{(u,v_\rho) \leq i} E_u$@TT" for every ray "@$\rho \in{} \sigma$@TT" 
+            and every "@$i \in{} \mathbb{Z}$.
+        Text
+            In this implementation, the data of the filtrations is stored using a matrix which describes
+            a basis for $E$, together with a list of indices indicating the largest positions where the $i$th
+            column of the matrix appears in the filtration of $E$. For instance, consider the tangent bundle
+            on $\mathbb{P}^2$.
+        Example
+            X = toricProjectiveSpace 2;
+            TX = tangentBundle X;
+            displayFiltrations TX
+        Text
+            Focusing on the filtration corresponding to the ray @TO {-1, -1}@, the basis chosen is
+            $\begin{bsmallmatrix} -1 & -1 \\ -1 & 0 \end{bsmallmatrix}$. The first column,
+            $\begin{bsmallmatrix} -1 \\ -1 \end{bsmallmatrix}$, lies in the column space of all of the matrices
+            until index 1. The second column $\begin{bsmallmatrix} -1 \\ 0 \end{bsmallmatrix}$ appears in
+            the column space of all of the matrices until index 0. Hence we record these largest positions.
+        Example
+            F = filtrations TX
+            (filtrationJumps TX)_0 == {1,0}
+        Text
+            An individual filtered piece may be recovered using @TO filteredPiece(ToricVectorBundle,List,ZZ)@.
+        Example
+            filteredPiece(TX,{-1,-1},1)
+        Text
+            The user need not input filtrations which satisfy the compatibility conditions. To verify that the
+            compatibility conditions are satisfied, one runs @TO isLocallyFree@. For instance, we can break
+            the compatibilty of the tangent bundle by simply changing one of the filtered pieces.
+        Example
+            TX' = toricVectorBundle(X, filtrationMatrices TX, {{0,0},{1,0},{1,0}});
+            displayFiltrations TX'
+            isLocallyFree TX'
     SeeAlso
-        ToricVectorBundle
+        toricVectorBundle
+        displayFiltrations
+        filtrations
+        details
+        filteredPiece
+        weilDecoration
+        klyachkoToModule
+        moduleToKlyachko
         ToricVectorBundleKaneyama
 ///
 
+-*
 doc ///
     Key
         ToricVectorBundleKaneyama
@@ -1720,100 +1768,6 @@ doc ///
         have coefficients in @TO QQ@.
     SeeAlso
         ToricVectorBundle
-        ToricVectorBundle
-///
-
-doc ///
-    Key
-        ToricVectorBundle
-    Headline
-        the class of all toric vector bundles in Klyachko's description
-    Description
-        Text
-            A toric vector bundle on a toric variety $X$ is a locally free sheaf $E$ together with
-            an action of the torus $T$ on the geometric vector bundle $V(E)$ such that the
-            projection to the base $X$ is equivariant, and the action of $T$ on the fibers is
-            linear. There also is an induced action of $T$ on the local sections
-            $s \in{} \Gamma(U,E)$ given by $(t*s)(x) = t^{ -1}(s(t x))$ . This implies that a
-            regular section $x^u \in{} \Gamma(X,O_X)$ for an element $u$ in the character lattice
-            $M$ also has weight $u$. Other choices for the induced action are possible. In fact, the
-            upper one is different from Klyachko's in his original description where
-            $x^u \in{} \Gamma(X,O_X)$ has weight $-u$. We denote by $E_0$ the fiber over the unit
-            $t_0 \in{} T$, and by $U_\sigma \subset X$ the open affine torus invariant subset
-            associated with the cone $\sigma$. The primitive generator of the ray $\rho$ in the fan
-            $\Sigma$ is denoted by $v_\rho$. Evaluating local homogeneous sections
-            $\Gamma(U_{\rho},E)_u$ of weight $u$ at $t_0$ provides us with an embedding of these
-            finite dimensional vector spaces into $E_0$. One can show that the upper choice of the
-            induced torus action implies that the image of $\Gamma(U_\rho,E)_{u_1}$ is contained in
-            the image of $\Gamma(U_\rho,E)_{u_2}$ if and only if the pairing
-            $(u_1-u_2,v_\rho) \leq 0$. Furthermore one observes that the image only depends on the
-            class of the weight $u$ in the quotient lattice $M_\rho := M/M^\rho$, where $M^\rho$
-            denotes the intersection of $M$ with the vector space perpendicular to the ray $\rho$.
-            Since $M_\rho \cong \mathbb{Z}$ we denote the image of $\Gamma(U_\rho,E)_u$ in $E_0$ by
-            $E^\rho(i)$ with $i = (u,v_\rho)$. Each ray $\rho \in{} \Sigma$ thus gives rise to an
-            increasing filtration $\{E^\rho(i)\}$ of $E_0$. Since $E_0$ is finite dimensional there
-            is only a finite set of integers $i$ for which a jump occurs, i.e., $E^\rho(i)$ strictly
-            contains $E^\rho(i-1)$. At all other steps the filtration remains constant. Apart from
-            that, each open affine subset $U_\sigma$ for $\sigma \in{} \Sigma$ induces a direct sum
-            decomposition of $E_0 = \oplus_{u \in{} M_\sigma}E^\sigma_u$ such that
-            $E^\rho(i) = \sum_{(u,v_\rho) \leq i} E^\sigma_u$ for each $\rho \in{} \sigma$ and
-            $i \in{} \mathbb{Z}$. Observe that the lattice $M_\sigma$ is defined analogously to the
-            lattice $M_\rho$, i.e., it is the quotient lattice $M/M^\sigma$ where $M^\sigma$ denotes
-            the intersection of $M$ with the vector space perpendicular to the cone $\sigma$.
-        Text
-            With the notation and conventions introduced above it is now possible to state the
-            fundamental theorem of Klyachko which completely describes toric vector bundles in
-            linear algebraic terms:
-        Text
-            @TT "The category of toric vector bundles on the toric variety "@$X$@TT " is equivalent to the category of finite dimensional "@$k$@TT"-vector spaces "@$E_0$@TT" with collections of increasing filtrations "@$\{E^{\rho}(i)| i \in{} \mathbb{Z}\}$@TT", indexed by the rays of "@$\Sigma$@TT", satisfying the following compatibility condition: For each cone "@$\sigma \in{} \Sigma$@TT" there is a decomposition "@$E_0 = \oplus_{u \in{} M_\sigma} E_u$@TT" such that "@$E^{\rho}(i) = \sum_{(u,v_\rho) \leq i} E_u$@TT" for every ray "@$\rho \in{} \sigma$@TT" and every "@$i \in{} \mathbb{Z}$.
-        Text
-            In contrast to the implementation of Kaneyama's description this one works for every
-            toric variety $X$ i.e., there are no restrictions on the fan $\Sigma$. For each ray
-            $\rho$ of the fan $\Sigma$ there are two matrices comprising the necessary filtration
-            data. The first one is an invertible matrix $A(\rho) \in{} $ GL(@TT "k"@,@TO QQ@) whose
-            columns contain a basis of the vector space $E_0$ which is associated to the filtration
-            corresponding to the ray $\rho$. The second one is a ",TT "1 x k"," integer matrix, the
-            so called filtration matrix. It determines at which step an element of the basis given
-            in the first matrix actually contributes to a certain subspace in the filtration, i.e.,
-            if the j-th entry of the filtration matrix is i then the j-th basis vector appears at
-            the i-th step in the filtration. Hence $E^{\rho}(i)$ is generated by all basis vectors
-            listed in $A(\rho)$ whose corresponding entry in the filtration matrix is less or equal
-            to $E_0$.
-        Text
-            To link up to the description of Kaneyama we will also discuss the example of the
-            cotangent bundle $\mathbf{\Omega}_X$ of $X = \mathbb{P}^2$. Recall that $X$ can be given
-            by the complete fan with rays $\rho_1 = (1,0)$, $\rho_2 = (0,1)$, and
-            $\rho_3 = (-1,-1)$. There are three maximal cones, namely $\sigma_1$ spanned by
-            $\rho_1,\rho_2$, $\sigma_2$ spanned by $\rho_2,\rho_3$, and $\sigma_3$ spanned by
-            $\rho_3,\rho_1$. Each of them corresponds to a torus invariant affine chart
-            $U_{\sigma_i}$. It follows that the $k[\sigma_1^v \cap M]$-module
-            $\Gamma(U_{\sigma_1},\Omega_X)$ is generated by $dx := d(x^{[1,0]})$, and
-            $dy := d(x^{[0,1]})$, and analogously for the remaining charts. We now fix a basis of
-            $\Omega_0$ by evaluating the sections $dx,dy$ at the unit $t_0$. This gives rise to
-            filtrations $\Omega^\rho(i)$. We only consider the example $\rho = \rho_3$. The
-            filtrations for the two other rays can be found by analogous calculations. Now,
-            $k[U_{\rho_3}] = k[x^{-1},x^{-1}y,xy^{-1}]$. Then, $\Gamma(U_{\rho_3},\Omega_X)$ is
-            generated as a $k[U_{\rho_3}]$-module by $-x^{-2}dx, -x^{-2}ydx + x^{-1}dy$. Thus,
-            $\Gamma(U_{\rho_3},\Omega_X)_{[1,0]} = 0$, $\Gamma(U_{\rho_3},\Omega_X)_{[0,0]}$ is
-            generated by $xy^{-1}(-x^{-2}ydx + x^{-1}dy)$, and
-            $\Gamma(U_{\rho_3},\Omega_X)_{[-1,0]}$ is two-dimensional. Since $[1,0], [0,0]$, and
-            $[-1,0]$ pair with $v_{\rho_3}=(-1,-1)$ to respectively $-1, 0$, and $1$, the filtration
-            $\Omega^{\rho_3}(i)$ jumps at $1$ and $0$ with corresponding basis vectors $(0,-1)$ and
-            $(-1,1)$. Since $\Omega_X$ already is a vector bundle we do not have to check the
-            compatibility conditions.
-        Text
-            An instance of class ToricVectorBundle, when displayed or printed, gives an
-            overview of the characteristics of the bundle:
-        Example
-            E = cotangentBundle(projectiveSpaceFan 2)
-        Text
-            To see all relevant details of a bundle use @TO details@. The data described above are
-            stored in a single hash table. In the example from above, the keys are the rays of the
-            fan, and each of them comes with a base matrix and a filtration matrix:
-        Example
-            details E
-    SeeAlso
-        ToricVectorBundleKaneyama
         ToricVectorBundle
 ///
 
@@ -3578,7 +3532,6 @@ doc ///
         Text
         Determines whether the map @TT "f"@ is injective as a map of
         toric vector bundles.
-
         The method first checks that @TT "f"@ is well defined and that
         its underlying map of modules is injective. It then checks the
         dimensions of the filtered pieces of the source and target for
@@ -4471,48 +4424,9 @@ assert(lcm(D1,D5) == D7)
 
 ///
 
+load "KaneyamaTests.m2"
 
--------------------------------------------
--- TESTS for the Kaneyama bundles
--------------------------------------------
--- Test n+1
-TEST ///
-T = toricVectorBundleKaneyama(2,pp1ProductFan 2)
-assert(T#"baseChangeTable" === hashTable {(0,1) => map(QQ^2,QQ^2,1),(0,2) => map(QQ^2,QQ^2,1),(1,3) => map(QQ^2,QQ^2,1),(2,3) => map(QQ^2,QQ^2,1)})
-assert(T#"degreeTable" === hashTable apply(facesAsCones(0,pp1ProductFan 2), C -> (rays C, linealitySpace C) => map(ZZ^2,ZZ^2,0)))
-assert(rank T == 2)
-assert(T#"dimension of the variety" == 2)
-L1 = {matrix {{1,0},{0,1}},matrix{{0,1},{1,0}},matrix{{-1,0},{-1,1}}}
-L2 = {matrix {{-1,0},{0,-1}},matrix{{0,1},{1,0}},matrix{{0,-1},{-1,0}}}
-T = toricVectorBundleKaneyama(2,projectiveSpaceFan 2,L1,L2)
-assert(T#"baseChangeTable" === hashTable {(0,1) => matrix {{-1/1,0},{0,-1}},(0,2) => matrix{{0/1,1},{1,0}},(1,2) => matrix{{0/1,-1},{-1,0}}})
-assert(T#"degreeTable" === hashTable {(matrix {{1,-1},{0,-1}}, map(ZZ^2,0,0)) => matrix{{-1,0},{-1,1}}, (matrix {{1,0},{0,1}}, map(ZZ^2,0,0)) => matrix{{0,1},{1,0}}, (matrix {{-1,0},{-1,1}}, map(ZZ^2,0,0)) => matrix{{1,0},{0,1}}})
-assert(rank T == 2)
-assert(T#"dimension of the variety" == 2)
-///
-
--- Test n+2
--- Checking addBaseChange and cocycleCheck
-TEST ///
-T = toricVectorBundleKaneyama(2,pp1ProductFan 2)
-T1 = addBaseChange(T,{matrix{{1,2},{0,1}},matrix{{1,0},{3,1}},matrix{{1,-2},{0,1}},matrix{{1,0},{-3,1}}})
-assert cocycleCheck T1 --TODO : cocycleCheck doesn't exist, combined with regCheck in isWellDefined
-T1 = addBaseChange(T,{matrix{{1,2},{0,1}},matrix{{1,0},{3,1}},matrix{{1,-2},{0,1}},matrix{{1,0},{-2,1}}})
-assert not cocycleCheck T1
-///
-
--- Test n+3
--- Checking regCheck
-TEST ///
-T = toricVectorBundleKaneyama(2,pp1ProductFan 2)
-assert regCheck T --TODO : regCheck doesn't exist, combined with cocycleCheck in isWellDefined
-T1 = addDegrees(T,{matrix{{1,2},{3,1}},matrix{{-1,0},{3,1}},matrix{{1,2},{-3,-1}},matrix{{-1,0},{-3,-1}}})
-assert not regCheck T1
-T1 = addDegrees(T,{matrix{{-1,0},{-3,-1}},matrix{{-1,0},{3,1}},matrix{{1,2},{-3,-1}},matrix{{1,2},{3,1}}})
-assert regCheck T1
-///
-
--- Test n+4
+-- Test ??
 -- Checking isWellDefined TODO : I think this was intended for Klyachko type originally
 TEST ///
 T = toricVectorBundle(2,pp1ProductFan 2)
@@ -4522,209 +4436,6 @@ T = toricVectorBundle(1,normalFan crossPolytope 3)
 L = apply({2,1,1,2,2,1,1,2}, i -> matrix {{i}});
 T = addFiltration(T,L)
 assert not isWellDefined T
-///
-
--- Test n+5
--- Checking tangentBundle for Kaneyama
-TEST ///
-T = tangentBundleKaneyama(pp1ProductFan 2)
-assert(T#"baseChangeTable" === hashTable {(0,1) => map(QQ^2,QQ^2,{{1, 0}, {0, -1}}), (0,2) => map(QQ^2,QQ^2,{{-1, 0}, {0, 1}}), (1,3) => map(QQ^2,QQ^2,{{-1, 0}, {0, 1}}), (2,3) => map(QQ^2,QQ^2,{{1, 0}, {0, -1}})})
-assert(T#"degreeTable" === hashTable {(matrix {{-1,0},{0,1}}, map(ZZ^2,0,0)) => matrix{{1,0},{0,-1}},(matrix {{-1,0},{0,-1}}, map(ZZ^2,0,0)) => matrix{{1,0},{0,1}},(matrix {{1,0},{0,1}}, map(ZZ^2,0,0)) => matrix{{-1,0},{0,-1}}, (matrix {{1,0},{0,-1}}, map(ZZ^2,0,0)) => matrix{{-1,0},{0,1}}})
-assert(rank T == 2)
-assert(T#"dimension of the variety" == 2)
-T = tangentBundleKaneyama(projectiveSpaceFan 3)
-assert(T#"baseChangeTable" === hashTable {(0,1) => map(QQ^3,QQ^3,{{1, -1, 0}, {0, -1, 0}, {0, -1, 1}}), (0,2) => map(QQ^3,QQ^3,{{-1, 0, 0}, {-1, 1, 0}, {-1, 0, 1}}), (1,2) => map(QQ^3,QQ^3,{{-1, 1, 0}, {-1, 0, 0}, {-1, 0, 1}}), (0,3) => map(QQ^3,QQ^3,{{1, 0, -1}, {0, 0, -1}, {0, 1, -1}}), (1,3) => map(QQ^3,QQ^3,{{1, 0, -1}, {0, 1, -1}, {0, 0, -1}}), (2,3) => map(QQ^3,QQ^3,{{0, 0, -1}, {1, 0, -1}, {0, 1, -1}})})
-assert(T#"degreeTable" === hashTable {(matrix {{1,0,0},{0,1,0},{0,0,1}}, map(ZZ^3,0,0)) => matrix{{-1,0,0},{0,-1,0},{0,0,-1}},(matrix {{1,0,-1},{0,1,-1},{0,0,-1}}, map(ZZ^3,0,0)) => matrix{{0,-1,0},{0,0,-1},{1,1,1}},(matrix {{0,-1,0},{1,-1,0},{0,-1,1}}, map(ZZ^3,0,0)) => matrix{{1,1,1},{0,-1,0},{0,0,-1}}, (matrix {{1,-1,0},{0,-1,0},{0,-1,1}}, map(ZZ^3,0,0)) => matrix{{0,-1,0},{1,1,1},{0,0,-1}}})
-assert(rank T == 3)
-assert(T#"dimension of the variety" == 3)
-///
-
--- Test n+6
--- Checking cotangentBundle for Kaneyama
-TEST ///
-T = cotangentBundleKaneyama(hirzebruchFan 3)
-assert(T#"baseChangeTable" === hashTable {(0,1) => map(QQ^2,QQ^2,{{1, 0}, {0, -1}}), (0,2) => map(QQ^2,QQ^2,{{-1, 3}, {0, 1}}), (1,3) => map(QQ^2,QQ^2,{{-1, -3}, {0, 1}}), (2,3) => map(QQ^2,QQ^2,{{1, 0}, {0, -1}})})
-assert(T#"degreeTable" === hashTable {(matrix {{1,0},{0,-1}}, map(ZZ^2,0,0)) => matrix{{1,0},{0,-1}},(matrix {{1,0},{0,1}}, map(ZZ^2,0,0)) => matrix{{1,0},{0,1}},(matrix {{0,-1},{1,3}}, map(ZZ^2,0,0)) => matrix{{-1,3},{0,1}}, (matrix {{0,-1},{-1,3}}, map(ZZ^2,0,0)) => matrix{{-1,-3},{0,-1}}})
-assert(rank T == 2)
-assert(T#"dimension of the variety" == 2)
-T = cotangentBundleKaneyama(pp1ProductFan 3)
-assert(T#"baseChangeTable" === hashTable {(2,6) => matrix{{-1_QQ,0,0},{0,1,0},{0,0,1}}, (4,5) => matrix{{1_QQ,0,0},{0,1,0},{0,0,-1}}, (4,6) => matrix{{1_QQ,0,0},{0,-1,0},{0,0,1}}, (3,7) => matrix{{-1_QQ,0,0},{0,1,0},{0,0,1}}, (5,7) => matrix{{1_QQ,0,0},{0,-1,0},{0,0,1}}, (6,7) => matrix{{1_QQ,0,0},{0,1,0},{0,0,-1}}, (0,1) => matrix{{1_QQ,0,0},{0,1,0},{0,0,-1}}, (0,2) => matrix{{1_QQ,0,0},{0,-1,0},{0,0,1}}, (1,3) => matrix{{1_QQ,0,0},{0,-1,0},{0,0,1}}, (0,4) => matrix{{-1_QQ,0,0},{0,1,0},{0,0,1}}, (2,3) => matrix{{1_QQ,0,0},{0,1,0},{0,0,-1}}, (1,5) => matrix{{-1_QQ,0,0},{0,1,0},{0,0,1}}})
-assert(T#"degreeTable" === hashTable {(matrix {{1,0,0},{0,1,0},{0,0,1}}, map(ZZ^3,0,0)) => matrix{{1,0,0},{0,1,0},{0,0,1}},(matrix {{-1,0,0},{0,1,0},{0,0,1}}, map(ZZ^3,0,0)) => matrix{{-1,0,0},{0,1,0},{0,0,1}},(matrix {{1,0,0},{0,-1,0},{0,0,1}}, map(ZZ^3,0,0)) => matrix{{1,0,0},{0,-1,0},{0,0,1}},(matrix {{1,0,0},{0,1,0},{0,0,-1}}, map(ZZ^3,0,0)) => matrix{{1,0,0},{0,1,0},{0,0,-1}},(matrix {{-1,0,0},{0,-1,0},{0,0,1}}, map(ZZ^3,0,0)) => matrix{{-1,0,0},{0,-1,0},{0,0,1}},(matrix {{-1,0,0},{0,1,0},{0,0,-1}}, map(ZZ^3,0,0)) => matrix{{-1,0,0},{0,1,0},{0,0,-1}},(matrix {{1,0,0},{0,-1,0},{0,0,-1}}, map(ZZ^3,0,0)) => matrix{{1,0,0},{0,-1,0},{0,0,-1}},(matrix {{-1,0,0},{0,-1,0},{0,0,-1}}, map(ZZ^3,0,0)) => matrix{{-1,0,0},{0,-1,0},{0,0,-1}}})
-assert(rank T == 3)
-assert(T#"dimension of the variety" == 3)
-///
-
--- Test n+7
--- Checking deltaE for Kaneyama
-TEST ///
-T = toricVectorBundleKaneyama(3,projectiveSpaceFan 2)
-assert(deltaEKaneyama T == convexHull matrix{{0},{0}})
-T = tangentBundleKaneyama(projectiveSpaceFan 2)
-assert(deltaEKaneyama T == convexHull matrix {{-1,2,-1},{-1,-1,2}})
-T = cotangentBundleKaneyama(pp1ProductFan 3)
-assert(deltaEKaneyama T == convexHull matrix {{-1,1,-1,1,-1,1,-1,1},{-1,-1,1,1,-1,-1,1,1},{-1,-1,-1,-1,1,1,1,1}})
-///
-
--- Test n+8
--- Checking cohomology for Kaneyama
-TEST ///
-T = toricVectorBundleKaneyama(2,pp1ProductFan 2)
-assert(sort degrees cohomology(0,T,matrix{{0},{0}}) == sort degrees (ring T)^{{0,0},{0,0}})
-assert(sort degrees cohomology(0,T) == sort degrees (ring T)^{{0,0},{0,0}})
-assert(sort degrees cohomology(1,T) == sort degrees (ring T)^0)
-assert(sort degrees cohomology(2,T) == sort degrees (ring T)^0)
-T1 = tangentBundleKaneyama(pp1ProductFan 2)
-assert(sort degrees cohomology(0,T1,matrix{{0},{0}}) == sort degrees (ring T1)^{{0,0},{0,0}})
-assert(sort degrees cohomology(0,T1,matrix{{1},{1}}) == sort degrees (ring T1)^0)
-assert(sort degrees cohomology(0,T1) == sort degrees (ring T1)^{{1,0},{0,1},{0,0},{0,0},{0,-1},{-1,0}})
-assert(sort degrees cohomology(1,T1) == sort degrees (ring T1)^0)
-assert(sort degrees cohomology(2,T1) == sort degrees (ring T1)^0)
-T = tangentBundleKaneyama(hirzebruchFan 3 * projectiveSpaceFan 1)
-assert(cohomology(0,T,{matrix {{2},{1},{0}}, matrix{{3},{1},{0}}}) == {(ring T)^{{-2,-1,0}},(ring T)^{{-3,-1,0}}})
-assert(cohomology(1,T,{matrix {{-2},{-1},{0}}, matrix{{-1},{-1},{0}}}) == {(ring T)^{{2, 1, 0}},(ring T)^{{1, 1, 0}}})
-assert(cohomology(2,T,matrix{{0},{0},{0}}) == (ring T)^0)
-assert(cohomology(3,T,matrix{{0},{0},{0}}) == (ring T)^0)
-///
-
-
--- Test n+9
--- Checking weilToCartier
-TEST ///
-T = weilToCartierKaneyama({1,4,3,2},projectiveSpaceFan 3)
-assert(T#"baseChangeTable" === hashTable {(0,1) => map(QQ^1,QQ^1,1),(0,2) => map(QQ^1,QQ^1,1),(0,3) => map(QQ^1,QQ^1,1),(1,2) => map(QQ^1,QQ^1,1),(1,3) => map(QQ^1,QQ^1,1),(2,3) => map(QQ^1,QQ^1,1)})
-assert(T#"degreeTable" === hashTable {(matrix {{1,0,-1},{0,1,-1},{0,0,-1}}, map(ZZ^3,0,0)) => matrix{{-2},{-3},{6}},(matrix {{0,-1,0},{1,-1,0},{0,-1,1}}, map(ZZ^3,0,0)) => matrix{{8},{-3},{-4}},(matrix {{1,-1,0},{0,-1,0},{0,-1,1}}, map(ZZ^3,0,0)) => matrix{{-2},{7},{-4}}, (map(ZZ^3,ZZ^3,1), map(ZZ^3,0,0)) => matrix{{-2},{-3},{-4}}})
-assert(rank T == 1)
-assert(T#"dimension of the variety" == 3)
--*
-T = weilToCartier({1,4,3,2},projectiveSpaceFan 3) --no weilToCartier for Klyachko?
-assert(T#"ring" === QQ)
-assert(T#"filtrationMatricesTable" === hashTable {matrix{{-1},{-1},{-1}} => matrix{{-1}},matrix{{0},{0},{1}} => matrix{{-4}},matrix{{0},{1},{0}} => matrix{{-3}}, matrix{{1},{0},{0}} => matrix{{-2}}})
-assert(T#"baseTable" === hashTable {matrix{{-1},{-1},{-1}} => matrix{{1_QQ}},matrix{{0},{0},{1}} => matrix{{1_QQ}},matrix{{0},{1},{0}} => matrix{{1_QQ}}, matrix{{1},{0},{0}} => matrix{{1_QQ}}})
-assert(rank T == 1)
-assert(T#"dimension of the variety" == 3)
-*-
-
-///
-
--- Test n+10
--- Checking directSum for Kaneyama
-TEST ///
-T1 = tangentBundleKaneyama(projectiveSpaceFan 3)
-T2 = weilToCartierKaneyama({1,7,5,3},projectiveSpaceFan 3)
-T = T1 ++ T2
-assert(T#"baseChangeTable" === hashTable {(0,1) => matrix{{1_QQ,-1,0,0},{0,-1,0,0},{0,-1,1,0},{0,0,0,1}}, (0,2) => matrix{{-1_QQ,0,0,0},{-1,1,0,0},{-1,0,1,0},{0,0,0,1}}, (1,2) => matrix{{-1_QQ,1,0,0},{-1,0,0,0},{-1,0,1,0},{0,0,0,1}}, (0,3) => matrix{{1_QQ,0,-1,0},{0,0,-1,0},{0,1,-1,0},{0,0,0,1}}, (1,3) => matrix{{1_QQ,0,-1,0},{0,1,-1,0},{0,0,-1,0},{0,0,0,1}}, (2,3) => matrix{{0_QQ,0,-1,0},{1,0,-1,0},{0,1,-1,0},{0,0,0,1}}})
-assert(T#"degreeTable" === hashTable {(matrix {{1,0,-1},{0,1,-1},{0,0,-1}}, map(ZZ^3,0,0)) => matrix{{0,-1,0,-3},{0,0,-1,-5},{1,1,1,9}},(matrix {{0,-1,0},{1,-1,0},{0,-1,1}}, map(ZZ^3,0,0)) => matrix{{1,1,1,13},{0,-1,0,-5},{0,0,-1,-7}},(matrix {{1,-1,0},{0,-1,0},{0,-1,1}}, map(ZZ^3,0,0)) => matrix{{0,-1,0,-3},{1,1,1,11},{0,0,-1,-7}}, (map(ZZ^3,ZZ^3,1),map(ZZ^3,0,0)) => matrix{{-1,0,0,-3},{0,-1,0,-5},{0,0,-1,-7}}})
-assert(rank T == 4)
-assert(T#"dimension of the variety" == 3)
-assert(T == directSum {T1,T2})
-T1 = cotangentBundleKaneyama(hirzebruchFan 3)
-T2 = tangentBundleKaneyama(hirzebruchFan 3)
-T = T1 ++ T2
-assert(T#"baseChangeTable" === hashTable {(0,1) => matrix{{1_QQ,0,0,0},{0,-1,0,0},{0,0,1,0},{0,0,0,-1}}, (0,2) => matrix{{-1_QQ,3,0,0},{0,1,0,0},{0,0,-1,0},{0,0,3,1}}, (1,3) => matrix{{-1_QQ,-3,0,0},{0,1,0,0},{0,0,-1,0},{0,0,-3,1}}, (2,3) => matrix{{1_QQ,0,0,0},{0,-1,0,0},{0,0,1,0},{0,0,0,-1}}})
-assert(T#"degreeTable" === hashTable {(matrix {{1,0},{0,-1}}, map(ZZ^2,0,0)) => matrix{{1,0,-1,0},{0,-1,0,1}}, (matrix {{0,-1},{1,3}}, map(ZZ^2,0,0)) => matrix{{-1,3,1,-3},{0,1,0,-1}}, (matrix {{1,0},{0,1}}, map(ZZ^2,0,0)) => matrix{{1,0,-1,0},{0,1,0,-1}}, (matrix {{0,-1},{-1,3}}, map(ZZ^2,0,0)) => matrix {{-1,-3,1,3},{0,-1,0,1}}})
-assert(rank T == 4)
-assert(T#"dimension of the variety" == 2)
-///
-
--- Test n+11
--- Checking dual for Kaneyama
-TEST ///
-T = dual weilToCartierKaneyama({1,4,3,2},projectiveSpaceFan 3)
-assert(T#"baseChangeTable" === hashTable{(0,1) => matrix{{1_QQ}},(0,2) => matrix{{1_QQ}}, (0,3) => matrix{{1_QQ}}, (1,2) => matrix{{1_QQ}},(1,3) => matrix{{1_QQ}},(2,3) => matrix{{1_QQ}}})
-assert(T#"degreeTable" === hashTable{(matrix {{1,0,-1},{0,1,-1},{0,0,-1}}, map(ZZ^3,0,0)) => matrix{{2},{3},{-6}},(matrix {{0,-1,0},{1,-1,0},{0,-1,1}}, map(ZZ^3,0,0)) => matrix{{-8},{3},{4}},(matrix {{1,-1,0},{0,-1,0},{0,-1,1}}, map(ZZ^3,0,0)) => matrix{{2},{-7},{4}}, (map(ZZ^3,ZZ^3,1), map(ZZ^3,0,0)) => matrix{{2},{3},{4}}})
-assert(rank T == 1)
-assert(T#"dimension of the variety" == 3)
-T1 = tangentBundleKaneyama(projectiveSpaceFan 3)
-T = dual(T1 ++ T)
-assert(T#"baseChangeTable" === hashTable{(0,2) => matrix{{-1_QQ,-1,-1,0},{0,1,0,0},{0,0,1,0},{0,0,0,1}},(0,1) => matrix{{1_QQ,0,0,0},{-1,-1,-1,0},{0,0,1,0},{0,0,0,1}}, (0,3) => matrix{{1_QQ,0,0,0},{-1,-1,-1,0},{0,1,0,0},{0,0,0,1}}, (1,2) => matrix{{0_QQ,1,0,0},{-1,-1,-1,0},{0,0,1,0},{0,0,0,1}},(1,3) => matrix{{1_QQ,0,0,0},{0,1,0,0},{-1,-1,-1,0},{0,0,0,1}},(2,3) => matrix{{-1_QQ,-1,-1,0},{1,0,0,0},{0,1,0,0},{0,0,0,1}}})
-assert(T#"degreeTable" === hashTable{(matrix {{1,0,-1},{0,1,-1},{0,0,-1}}, map(ZZ^3,0,0)) => matrix{{0,1,0,-2},{0,0,1,-3},{-1,-1,-1,6}},(matrix {{0,-1,0},{1,-1,0},{0,-1,1}}, map(ZZ^3,0,0)) => matrix{{-1,-1,-1,8},{0,1,0,-3},{0,0,1,-4}},(matrix {{1,-1,0},{0,-1,0},{0,-1,1}}, map(ZZ^3,0,0)) => matrix{{0,1,0,-2},{-1,-1,-1,7},{0,0,1,-4}}, (map(ZZ^3,ZZ^3,1), map(ZZ^3,0,0)) => matrix{{1,0,0,-2},{0,1,0,-3},{0,0,1,-4}}})
-assert(rank T == 4)
-assert(T#"dimension of the variety" == 3)
-///
-
--- Test n+12
--- Checking tensor for Kaneyama
-TEST ///
-T1 = tangentBundleKaneyama(pp1ProductFan 2)
-T2 = cotangentBundleKaneyama(pp1ProductFan 2)
-T = T1 ** T2
-assert(T#"baseChangeTable" === hashTable{(0,2) => matrix{{1_QQ,0,0,0},{0,-1,0,0},{0,0,-1,0},{0,0,0,1}},(0,1) => matrix{{1_QQ,0,0,0},{0,-1,0,0},{0,0,-1,0},{0,0,0,1}}, (1,3) => matrix{{1_QQ,0,0,0},{0,-1,0,0},{0,0,-1,0},{0,0,0,1}}, (2,3) => matrix{{1_QQ,0,0,0},{0,-1,0,0},{0,0,-1,0},{0,0,0,1}}})
-assert(T#"degreeTable" === hashTable{(matrix {{-1,0},{0,1}}, map(ZZ^2,0,0)) => matrix{{0,-1,1,0},{0,-1,1,0}},(matrix {{-1,0},{0,-1}}, map(ZZ^2,0,0)) => matrix{{0,-1,1,0},{0,1,-1,0}},(matrix {{1,0},{0,-1}}, map(ZZ^2,0,0)) => matrix{{0,1,-1,0},{0,1,-1,0}}, (map(ZZ^2,ZZ^2,1), map(ZZ^2,0,0)) => matrix{{0,1,-1,0},{0,-1,1,0}}})
-assert(rank T == 4)
-assert(T#"dimension of the variety" == 2)
-T1 = tangentBundleKaneyama(hirzebruchFan 2)
-T2 = weilToCartierKaneyama({5,1,7,3},hirzebruchFan 2)
-T2 = T2 ++ T2
-T = T1 ** T2
-assert(T#"baseChangeTable" === hashTable{(0,1) => matrix{{1_QQ,0,0,0},{0,-1,0,0},{0,0,1,0},{0,0,0,-1}},(0,2) => matrix{{-1_QQ,0,0,0},{2,1,0,0},{0,0,-1,0},{0,0,2,1}}, (1,3) => matrix{{-1_QQ,0,0,0},{-2,1,0,0},{0,0,-1,0},{0,0,-2,1}}, (2,3) => matrix{{1_QQ,0,0,0},{0,-1,0,0},{0,0,1,0},{0,0,0,-1}}})
-assert(T#"degreeTable" === hashTable{(matrix {{1,0},{0,1}}, map(ZZ^2,0,0)) => matrix{{-4,-3,-4,-3},{-1,-2,-1,-2}},(matrix {{1,0},{0,-1}}, map(ZZ^2,0,0)) => matrix{{-4,-3,-4,-3},{5,6,5,6}},(matrix {{0,-1},{-1,2}}, map(ZZ^2,0,0)) => matrix{{18,19,18,19},{5,6,5,6}},(matrix {{0,-1},{1,2}}, map(ZZ^2,0,0)) => matrix{{6,3,6,3},{-1,-2,-1,-2}}})
-assert(rank T == 4)
-assert(T#"dimension of the variety" == 2)
-///
-
--- Test n+13
--- Checking symmetricPower for Kaneyama
-TEST ///
-T = tangentBundleKaneyama(projectiveSpaceFan 3)
-T = symmetricPower(2,T)
-assert(T#"baseChangeTable" === hashTable{(0,1) => matrix{{1_QQ,-1,0,1,0,0},{0,-1,0,2,0,0},{0,-1,1,2,-1,0},{0,0,0,1,0,0},{0,0,0,2,-1,0},{0,0,0,1,-1,1}},(0,2) => matrix{{1_QQ,0,0,0,0,0},{2,-1,0,0,0,0},{2,0,-1,0,0,0},{1,-1,0,1,0,0},{2,-1,-1,0,1,0},{1,0,-1,0,0,1}}, (0,3) => matrix{{1_QQ,0,-1,0,0,1},{0,0,-1,0,0,2},{0,1,-1,0,-1,2},{0,0,0,0,0,1},{0,0,0,0,-1,2},{0,0,0,1,-1,1}}, (1,2) => matrix{{1_QQ,-1,0,1,0,0},{2,-1,0,0,0,0},{2,-1,-1,0,1,0},{1,0,0,0,0,0},{2,0,-1,0,0,0},{1,0,-1,0,0,1}}, (1,3) => matrix{{1_QQ,0,-1,0,0,1},{0,1,-1,0,-1,2},{0,0,-1,0,0,2},{0,0,0,1,-1,1},{0,0,0,0,-1,2},{0,0,0,0,0,1}},(2,3) => matrix{{0_QQ,0,0,0,0,1},{0,0,-1,0,0,2},{0,0,0,0,-1,2},{1,0,-1,0,0,1},{0,1,-1,0,-1,2},{0,0,0,1,-1,1}}})
-assert(T#"degreeTable" === hashTable{(matrix {{1,-1,0},{0,-1,0},{0,-1,1}}, map(ZZ^3,0,0)) => matrix{{0,-1,0,-2,-1,0},{2,2,2,2,2,2},{0,0,-1,0,-1,-2}},(matrix {{1,0,0},{0,1,0},{0,0,1}}, map(ZZ^3,0,0)) => matrix{{-2,-1,-1,0,0,0},{0,-1,0,-2,-1,0},{0,0,-1,0,-1,-2}},(matrix {{1,0,-1},{0,1,-1},{0,0,-1}}, map(ZZ^3,0,0)) => matrix{{0,-1,0,-2,-1,0},{0,0,-1,0,-1,-2},{2,2,2,2,2,2}},(matrix {{0,-1,0},{1,-1,0},{0,-1,1}}, map(ZZ^3,0,0)) => matrix{{2,2,2,2,2,2},{0,-1,0,-2,-1,0},{0,0,-1,0,-1,-2}}})
-assert(rank T == 6)
-assert(T#"dimension of the variety" == 3)
-///
-
--- Test n+14
--- Checking exteriorPower for Kaneyama -- did we get rid of this?
-TEST ///
-T = cotangentBundleKaneyama(hirzebruch 3)
-T = exteriorPower(2,T)
-assert(T#"baseChangeTable" === hashTable{(0,1) => matrix{{-1_QQ}}, (0,2) => matrix{{-1_QQ}}, (1,3) => matrix{{-1_QQ}}, (2,3) => matrix{{-1_QQ}}})
-assert(T#"degreeTable" === hashTable{(matrix {{1,0},{0,1}}, map(ZZ^2,0,0)) => matrix{{1},{1}},(matrix {{1,0},{0,-1}}, map(ZZ^2,0,0)) => matrix{{1},{-1}},(matrix {{0,-1},{1,3}}, map(ZZ^2,0,0)) => matrix {{2},{1}},(matrix {{0,-1},{-1,3}}, map(ZZ^2,0,0)) => matrix {{-4},{-1}}})
-assert(rank T == 1)
-assert(T#"dimension of the variety" == 2)
-T = tangentBundleKaneyama(projectiveSpaceFan 3)
-T = exteriorPower(2,T)
-assert(T#"baseChangeTable" === hashTable{(0,1) => matrix{{-1_QQ,0,0},{-1,1,-1},{0,0,-1}}, (0,2) => matrix{{-1_QQ,0,0},{0,-1,0},{1,-1,1}}, (0,3) => matrix{{0_QQ,-1,0},{1,-1,1},{0,0,1}}, (1,2) => matrix{{1_QQ,0,0},{1,-1,1},{0,-1,0}}, (1,3) => matrix{{1_QQ,-1,1},{0,-1,0},{0,0,-1}}, (2,3) => matrix{{0_QQ,1,0},{0,0,1},{1,-1,1}}})
-assert(T#"degreeTable" === hashTable{(matrix {{1,-1,0},{0,-1,0},{0,-1,1}}, map(ZZ^3,0,0)) => matrix{{-1,0,-1},{2,2,2},{0,-1,-1}},(matrix {{1,0,0},{0,1,0},{0,0,1}}, map(ZZ^3,0,0)) => matrix{{-1,-1,0},{-1,0,-1},{0,-1,-1}},(matrix {{1,0,-1},{0,1,-1},{0,0,-1}}, map(ZZ^3,0,0)) => matrix{{-1,0,-1},{0,-1,-1},{2,2,2}},(matrix {{0,-1,0},{1,-1,0},{0,-1,1}}, map(ZZ^3,0,0)) => matrix{{2,2,2},{-1,0,-1},{0,-1,-1}}})
-assert(rank T == 3)
-assert(T#"dimension of the variety" == 3)
-///
-
--- Test n+15
--- Checking eulerChi for Kaneyama
-TEST ///
-T = tangentBundleKaneyama(hirzebruchFan 3)
-u = matrix {{0},{0}}
-assert(eulerChiKaneyama(u,T) == 2)
-assert(eulerChiKaneyama T == 6)
-///
-
--- Test n+16
--- Checking cartierIndex
-TEST ///
-C=posHull matrix {{1,2},{2,1}}
-C1=posHull matrix {{1,-1},{2,-1}}
-C2=posHull matrix {{2,-1},{1,-1}}
-F=fan{C,C1,C2}
-assert(cartierIndex({1,1,1},F) == 3)
-assert(cartierIndex({3,3,3},F) == 1)
-///
-
-
--- ADDING NEW TESTS JUNE/JULY 2026
--- Test n+17
--- Checking isWellDefined (Kaneyama) (combining the tests for cocycleCheck and regCheck)--TODO: FIX THIS
-TEST ///
-T = toricVectorBundleKaneyama(2,pp1ProductFan 2)
-assert isWellDefined T
---tests for cocycleCheck
-T1 = addBaseChange(T,{matrix{{1,2},{0,1}},matrix{{1,0},{3,1}},matrix{{1,-2},{0,1}},matrix{{1,0},{-3,1}}})
-assert isWellDefined T1
-T1 = addBaseChange(T,{matrix{{1,2},{0,1}},matrix{{1,0},{3,1}},matrix{{1,-2},{0,1}},matrix{{1,0},{-2,1}}})
-assert not isWellDefined T1 -- fails because of cocycleCheck
---tests for regCheck
-T1 = addDegrees(T,{matrix{{1,2},{3,1}},matrix{{-1,0},{3,1}},matrix{{1,2},{-3,-1}},matrix{{-1,0},{-3,-1}}})
-assert not isWellDefined T1 -- fails because of regCheck
 ///
 
 
