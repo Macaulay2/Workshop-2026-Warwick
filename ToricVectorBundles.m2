@@ -1647,7 +1647,7 @@ doc ///
 
 doc ///
     Key
-        ToricVectorBundleKlyachko
+        ToricVectorBundle
     Headline
         the class of all toric vector bundles in Klyachko's description
     Description
@@ -2298,10 +2298,11 @@ doc ///
             this polytope. If the underlying toric variety is not complete then an error is
             returned.
         Example
-            E = toricVectorBundle(2,pp1ProductFan 2)
+            X = toricProjectiveSpace 1 ** toricProjectiveSpace 1
+            E = trivialBundle(X,2)
             P = deltaE E
             vertices P
-            E1 = tangentBundle projectiveSpaceFan 2
+            E1 = tangentBundle X
             P1 = deltaE E1
             vertices P1
     SeeAlso
