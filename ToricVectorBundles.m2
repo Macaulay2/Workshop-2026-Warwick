@@ -3739,6 +3739,47 @@ doc ///
     SeeAlso
         ToricVectorBundleMap
 ///
+
+
+-------------------------------------------
+-- documentation for Weil decorations 
+-------------------------------------------
+doc ///
+    Key
+        WeilDecoration
+    Headline
+        the class of all Weil decorations
+    Description
+        Text
+            A Weil decoration of a toric vector bundle, in the sense of Altmann, Hochenegger and Witt.
+        Text
+            Consider a toric variety $X$ and a toric vector bundle $E$ on $X$,
+            A Weil deocration is a map $\mathcal{D}\colon E_0\to \operatorname{Div}\cup\{\infinity\}$, where $E_0$ denotes the fibre at the origin, such that 
+            $1.$ $\mathcal{D}(e) = (\infinity)$ if and only if $e = 0$, and $\mathcal{D}|_{E_0\{0}}$ factorises over the projectivisation \mathbb{P}(E_0)$ of $E_0$.
+            $2.$  for all $e, e'\in E_0$, the inequality $\mathcal{D}(e+e')\geq \mathcal{D}(e)\wedge\mathcal{D}(e')$ holds true.
+        Text
+            The map $\mathcal{D}$ is constant on the strata $E_{\geq D}:=\{e\in E_0|\mathcal{\D}(e)\geq D\}$. Indeed, it sends $e$ to the largest 
+            torus-invariant Weil divisor $D$ with e in $E_{>= D}$. 
+        Text
+            The Weil decoration map is stored as a hash table that associates to a stratum closure the divisor decorating it. 
+            The $0$-subspace decorated by $(\infinity)$ is omitted for convenience.
+        Example
+            M = toricProjectiveSpace 2;
+            V = tangentBundle;
+            W = weilDecoration V;
+            netList strata W
+    SeeAlso
+        weilDecoration
+        net (WeilDecoration)
+        variety (WeilDecoration)
+        rank (WeilDecoration)
+        strata (WeilDecoration)
+        weilDecorationDivisors
+        weilToKlyachko
+
+///
+
+
 -------------------------------------------
 -- TESTS
 -------------------------------------------
