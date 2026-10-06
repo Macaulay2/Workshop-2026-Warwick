@@ -1057,6 +1057,9 @@ cokernel (ToricVectorBundleMap) := f ->(
     L:= apply(Xrays,  p ->
         apply(steps, i ->(
                 -- TO DO: fix this
+                -- This will give the data for the cokerenel but where the ambien matrix need not be square
+                -- We later need to get an square matrix out of it by "selecting a subset of the columns" (using adaptedBasis) or using some other method 
+                -- The choices made here (and below) interact with how isIsomorphic works etc
                 amb := module (ring E2) ^ (rank E2);
                 f1 := image map(amb, , sub(M * filteredPiece(E1,p,i),RX));
                 f2 := image map(amb, , sub(filteredPiece(E2,p,i),RX));
@@ -1672,7 +1675,7 @@ doc ///
             TX = tangentBundle X;
             displayFiltrations TX
         Text
-            Focusing on the filtration corresponding to the ray @TO {-1, -1}@, the basis chosen is
+            Focusing on the filtration corresponding to the ray  {-1, -1}, the basis chosen is
             $\begin{bsmallmatrix} -1 & -1 \\ -1 & 0 \end{bsmallmatrix}$. The first column,
             $\begin{bsmallmatrix} -1 \\ -1 \end{bsmallmatrix}$, lies in the column space of all of the matrices
             until index 1. The second column $\begin{bsmallmatrix} -1 \\ 0 \end{bsmallmatrix}$ appears in
