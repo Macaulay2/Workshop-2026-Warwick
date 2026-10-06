@@ -187,7 +187,7 @@ addDegrees (ToricVectorBundleKaneyama,List) := (tvb,L) -> (
 --           the regularity check automatically
 
 isWellDefined ToricVectorBundleKaneyama := Boolean => ( tvb -> (
-        return (regularityCondition(tvb) and cocycleCondition(tvb))
+        return (regCheck(tvb) and cocycleCheck(tvb))
          				  
 ))
 
@@ -692,8 +692,8 @@ cechComplexKaneyama (ZZ,ToricVectorBundleKaneyama,Matrix) := (k,tvb,u) -> (
 --     	     are inserted by hand. Those generated for example by tangentBundle fulfill the 
 --     	     conditions automatically.
 
-regularityCondition = method(TypicalValue => Boolean)
-regularityCondition ToricVectorBundleKaneyama := (cacheValue symbol regularityCondition)( tvb -> (
+regCheck = method(TypicalValue => Boolean)
+regCheck ToricVectorBundleKaneyama := (cacheValue symbol regularityCondition)( tvb -> (
      	  -- Extracting the necessary data
      	  tCT := customConeSort keys tvb#"topConeTable";
      	  c1T := tvb#"codim1Table";
@@ -725,8 +725,8 @@ regularityCondition ToricVectorBundleKaneyama := (cacheValue symbol regularityCo
 -- PURPOSE : Checking if the ToricVectorBundleKaneyama fulfills the cocycle condition
 --   INPUT : 'tvb',  a ToricVectorBundleKaneyama 
 --  OUTPUT : 'true' or 'false' 
-cocycleCondition = method(TypicalValue => Boolean)
-cocycleCondition ToricVectorBundleKaneyama := (cacheValue symbol cocycleCondition)( tvb -> (
+cocycleCheck = method(TypicalValue => Boolean)
+cocycleCheck ToricVectorBundleKaneyama := (cacheValue symbol cocycleCondition)( tvb -> (
      	  -- Extracting data out of tvb
      	  n := tvb#"dimension of the variety";
      	  k := tvb#"rank of the vector bundle";
