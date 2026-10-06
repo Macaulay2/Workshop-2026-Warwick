@@ -1241,17 +1241,10 @@ weilDecorationDivisors List := weilDecorationList -> (
 -- The code that follows take a module, assuming that it defines a toric vector bundle and returns its Klyachko description. 
 
 
+--Auxiliary fucntion for moduleToKlyachko
 
-moduleToKlyachko = method(Options => {Strategy => "image"})
--- A: presentation of the module we are sheafifying that is fine-graded
-
-moduleToKlyachko (NormalToricVariety, Matrix):= opts -> (X,A) -> (
-    -- Obtain the ToricVectorBundleMap associated to the presentation
-  S := ring A;
-  n := numgens S;
-  if S =!= ring X then (error("The module is not defined over the Cox ring of the toric variety"););
-  if  all( flatten entries A , p -> # terms p <= 1) != true then( error("The presentation matrix is not equivariant"););
-  -- TODO: This correction should be the twist that we are introuducing when assuming MS#0 is {0,...,0}, but it is not working
+fineGr = (S,A,n) -> (
+-- TODO: This correction should be the twist that we are introuducing when assuming MS#0 is {0,...,0}, but it is not working
    -- correction := flatten entries ( matrix(rays X) *( transpose matrix{(degrees source A)_0}));
   -- Source degrees
   p := numColumns (A);
@@ -1299,17 +1292,39 @@ moduleToKlyachko (NormalToricVariety, Matrix):= opts -> (X,A) -> (
   tdegs := - apply(q , i -> NS#i );
   R := newRing( S, Degrees => entries id_(ZZ^(n)));
   Anew := map(R^tdegs,R^sdegs,sub(A, R) );
+  
+
+)
+
+
+
+
+
+
+moduleToKlyachko = method(Options => {Strategy => "image"})
+-- A: presentation of the module we are sheafifying that is fine-graded
+
+moduleToKlyachko (NormalToricVariety, Matrix):= opts -> (X,A) -> (
+    -- Obtain the ToricVectorBundleMap associated to the presentation
+  S := ring A;
+  n := numgens S;
+  if  all( flatten entries A , p -> # terms p <= 1) != true then( error("The presentation matrix is not equivariant"););
+
+  if not( isHomogeneous A and degrees ring A == entries id_(ZZ^(n)) )then(
+    if ring A === ring X then(
+    A = fineGr (S,A,n);)else (error("The module is not defined over the Cox ring of the toric variety"););
+    S = newRing( S, Degrees => entries id_(ZZ^(n)));
+  );
     s0:= trivialBundle(X,0) ;
-    sdegs2:= degrees source Anew;
-    tdegs2 := degrees target Anew;
+    sdegs2:= degrees source A;
+    tdegs2 := degrees target A;
     sour2 := fold(directSum,s0,  apply(sdegs2, l -> (if l != splice{n:0} then( lineBundle(X, -l ))else(trivialBundle (X,1)) )) );
     t0:= trivialBundle( X,0);
     targ2 := fold(directSum,s0,  apply(tdegs2, l -> (if l != splice{n:0} then( lineBundle(X, -l ))else(trivialBundle (X,1)) )) );
-    -- TODO check that this is in fact the map that we want
     -- The map evaluates the variables to be 1 which should give the map at the fiber over the identity point
-    phi := map( coefficientRing R, R, toList(n:1));
+    phi := map( coefficientRing S, S, toList(n:1));
     -- Avoids problems with the image of the map being a module for instance
-    Anew =   matrix entries Anew; 
+    Anew :=   matrix entries A; 
     f:= map( targ2 , sour2, phi**Anew);
     f
 )
@@ -1318,14 +1333,8 @@ moduleToKlyachko (NormalToricVariety, Matrix):= opts -> (X,A) -> (
 
 -- M = image matrix...
 moduleToKlyachko (NormalToricVariety, Module):= opts -> (X,M) -> (
-    -- Obtain the ToricVectorBundleMap associated to the presentation
-
-  if opts#Strategy == "image" then( 
-    M = gens M;
- return image moduleToKlyachko(X, M);)else(
  M = presentation M;
  return coker moduleToKlyachko(X, M);
- );
 )
 -- The code that follows take a toric vector bundle with Klyachko description and returns a module over the Cox ring of the toric variety, M, such that the sheafification of M is the starting vector bundle.
 -- Note that different modules can have the same associated sheaf. 
@@ -1338,10 +1347,12 @@ klyachkoToModule ToricVectorBundle := E -> (
     X := variety E;
     -- Cox ring of the toric variety
     S := ring X;
-    r := rank E;
-    FFF := ring E;
     raysX := rays E;
     n := #raysX;
+    -- Fine graded ring and base change map
+    R := newRing( S, Degrees => entries id_(ZZ^(n)));
+    phibase := map (R,S, gens R);
+    r := rank E;
     picd := degreeLength S;
     if r == 0 then return S^0;
     -- Twist E so every filtration jump is >= 0, since a jump becomes a monomial 
@@ -1354,21 +1365,22 @@ klyachkoToModule ToricVectorBundle := E -> (
     mj := min flatten filtJumps;
     Mj := max flatten filtJumps;
     -- This is an overkill and porbably makes things slower
+    -- Create all the indices to consider
     cands := apply( toList fold( (i,j) -> i**j, (n : set toList(mj..Mj))),i -> toList deepSplice i);
+    --correction := apply(offsets, i -> splice{n:i});
     aux := apply(cands , L -> ( 
         monL:= product( apply( n,  i -> (S_i)^(-L_i) ));
        EL := toSequence apply(#L , i ->image (filteredPiece(E', raysX_i, L_i)*monL) );
-       gens intersect EL )
+       EL = phibase**( gens intersect EL);
+       --map( R^{r: offsets},R^{ numcols EL : -L - offsets} , EL)
+       map( R^r,, EL)
+       
+       
+        )
     );
-    Mat := fold((i,j)-> i|j, aux );
+    (trim image fold((i,j)-> i|j, aux ))**R^{-offsets}
 
-
-    A := map(S^r, , Mat);  -- source degrees inferred automatically
-    Mtwisted := image A;
-    -- Undo the twist at the module level: shift the grading back by the class of the divisor sum(offsets_j * D_j) that the twist above added.
     
-    w := apply(picd, g -> sum(n, j ->  offsets_j*((degree S_j)_g -1)));
-    Mtwisted**S^{w}
     
 )
 
