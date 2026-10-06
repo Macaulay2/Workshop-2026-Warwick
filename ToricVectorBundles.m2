@@ -16,7 +16,7 @@ newPackage("ToricVectorBundles",
         {Name => "Nathan Ilten",
          HomePage => "https://www.sfu.ca/~nilten/",
          Email => "nilten@sfu.ca"},
-        {Name => "Julia McLellan",
+        {Name => "Julia McClellan",
          Email => "julia.mcclellan@queensu.ca"},
         {Name => "Marco Fava",
          HomePage => "https://sites.google.com/view/marco-fava/home-page",
@@ -124,7 +124,7 @@ load "Kaneyama.m2"
 -- cechComplex
 protect cech
 -- isWellDefined for Kaneyama bundles
-protect cocycle
+protect cocycleCondition
 protect regularityCondition
 -- areIsomorphic
 protect iso
