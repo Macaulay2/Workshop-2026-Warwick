@@ -422,7 +422,7 @@ areIsomorphic (ToricVectorBundle,ToricVectorBundle) := Boolean => (T1,T2) -> (
             for s in subs do(
                 M1s := M1_s;
                 M2s := M2_s;
-                if det M1s =!= 0 and det M2s =!= 0 and not any( seen , x -> x== (M1s, M2s )) then(
+                if not any( seen , x -> x== (M1s, M2s )) and det M1s =!= 0 and det M2s =!= 0 then(
                 seen= append(seen, (M1s, M2s));
                 f = map(T2,T1,M2_s*inverse M1_s);
                 areTVBsIso = ((isWellDefined f) and (isInjective f) and (isSurjective f));
@@ -440,6 +440,7 @@ areIsomorphic (ToricVectorBundle,ToricVectorBundle) := Boolean => (T1,T2) -> (
         areTVBsIso
         )
     )
+
 
 isomorphism (ToricVectorBundle,ToricVectorBundle) := Boolean => o -> (T1,T2) -> (
     if not areIsomorphic(T1,T2) then error("The bundles are not isomorphic");
@@ -937,6 +938,35 @@ isSurjective (ToricVectorBundleMap) := f -> (
         );
     return true
     )
+
+
+
+-- As are isomorphic may not find the isomorphism with the implemented strategy,
+-- the following method checks if a map is an isomorphism and if it is stores it.
+
+isIsomorphism ToricVectorBundleMap := Boolean =>  f ->(
+
+    T1 := source f;
+    T2 := target f;
+    if T1.cache.?iso and T1.cache.iso#? T2 then ( if map f == map T1.cache.iso#T2 then return true; );
+
+    areTVBsIso := ((isWellDefined f) and (isInjective f) and (isSurjective f));
+     if areTVBsIso then (
+    if not T1.cache.?iso then (
+        T1.cache.iso = new MutableHashTable;
+        );
+    if not T2.cache.?iso then (
+        T2.cache.iso = new MutableHashTable;
+        );
+            T1.cache.iso#T2 = f;
+            finv := map(T1,T2,(map f)^-1);
+            T2.cache.iso#T1 = finv;
+            );
+    
+    areTVBsIso
+    
+)
+
 
 
 -- Auxiliary fucntion for computing the jumps that happened in a list of matrices in a filtration
