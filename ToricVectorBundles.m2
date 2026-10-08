@@ -357,6 +357,7 @@ symmetricPower (ToricVectorBundle, ZZ) := (TVB, l) -> (
     )
 
 -- Helper function for areIsomorphic
+
 linearMapFromMatrices = (A1, A2) -> (
     auxMat := A ->(
         basisIndices := {0};
@@ -402,22 +403,34 @@ areIsomorphic (ToricVectorBundle,ToricVectorBundle) := Boolean => (T1,T2) -> (
     if T1.cache.iso#?T2 then return true;    
     if not T1.cache.iso#?T2 then (
         -- first try the identity map
-        f := map(T2,T1, matrix id_((ring T1)^(rank T1)));
+        isoMatrix := matrix id_((ring T1)^(rank T1));
+        f := map(T2,T1, isoMatrix);
         areTVBsIso := ((isWellDefined f) and (isInjective f) and (isSurjective f));
         if not areTVBsIso then (
             -- attempt to find an isomorphism
             n:= rank T1;
             aux1 := flatten apply( jumps, j -> apply(rays T1, rho -> filteredPiece(T1, rho, j) ) );
-            aux1 =  flatten apply(toList(1..n), i -> select(aux1, M -> numcols M == i ) );
             aux2 := flatten apply( jumps, j -> apply(rays T2, rho ->filteredPiece(T2, rho, j) ) );
-            aux2 =  flatten apply(toList(1..n), i -> select(aux2, M -> numcols M == i ) );
             -- When doing the fold the zero columns are automatically removed    
-            M1 := fold((i,j) -> i|j, aux1);
-            M2 := fold((i,j) -> i|j, aux2);
-            isoMatrix := linearMapFromMatrices(M1,M2);
-            -- if isoMatrix === {} then return false;
-            f = map(T2,T1,isoMatrix^-1);
-            areTVBsIso = ((isWellDefined f) and (isInjective f) and (isSurjective f));
+            M1 := fold((i,j) -> i|j, flatten apply(toList(1..n), i -> select(aux1, M -> numcols M == i ) ));
+            M2 := fold((i,j) -> i|j, flatten apply(toList(1..n), i -> select(aux2, M -> numcols M == i ) ));
+            
+            -- Try several maps possible isomorphisms:
+            subs:= subsets( numcols M1 ,n);
+            seen := {};
+            
+            for s in subs do(
+                M1s := M1_s;
+                M2s := M2_s;
+                if det M1s =!= 0 and det M2s =!= 0 and not any( seen , x -> x== (M1s, M2s )) then(
+                seen= append(seen, (M1s, M2s));
+                f = map(T2,T1,M2_s*inverse M1_s);
+                areTVBsIso = ((isWellDefined f) and (isInjective f) and (isSurjective f));
+                if areTVBsIso then break
+                );
+                if areTVBsIso then break
+            );
+            
             );
         if areTVBsIso then (
             T1.cache.iso#T2 = f;
