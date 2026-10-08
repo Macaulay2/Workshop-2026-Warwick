@@ -356,33 +356,6 @@ symmetricPower (ToricVectorBundle, ZZ) := (TVB, l) -> (
         )
     )
 
--- Helper function for areIsomorphic
-
-linearMapFromMatrices = (A1, A2) -> (
-    auxMat := A ->(
-        basisIndices := {0};
-        currentRank := 1;
-        candidateIndices :={};
-        candidate := {};
-        newRank := 0;
-        for i from 1 to numColumns A - 1 do (
-            candidateIndices = append(basisIndices, i);
-            candidate = A_basisIndices; -- columns selected so far
-            candidate = candidate | matrix A_i;
-            newRank = rank candidate;
-            if newRank > currentRank then (
-                basisIndices = candidateIndices;
-                currentRank = newRank;
-            );
-        );
-      A_basisIndices
-    );
-    -- We are guaranteed that the colums chosen will be the same
-    M1 := auxMat(A1);
-    M2 := auxMat(A2);
-    -- Define the unique linear map on the basis
-    M1 * inverse M2
-    )
 
 ToricVectorBundle == ToricVectorBundle := (T1,T2) -> (areIsomorphic(T1,T2))
 areIsomorphic = method()
@@ -422,9 +395,9 @@ areIsomorphic (ToricVectorBundle,ToricVectorBundle) := Boolean => (T1,T2) -> (
             for s in subs do(
                 M1s := M1_s;
                 M2s := M2_s;
-                if not any( seen , x -> x== (M1s, M2s )) and det M1s =!= 0 and det M2s =!= 0 then(
-                seen= append(seen, (M1s, M2s));
-                f = map(T2,T1,M2_s*inverse M1_s);
+                if not any( seen , x -> x== (M1s, M2s )) and det M1s =!= 0_(ring T1) and det M2s =!= 0_(ring T2)  then(
+                seen = append(seen, (M1s, M2s));
+                f = map(T2,T1,M2s* (inverse M1s) );
                 areTVBsIso = ((isWellDefined f) and (isInjective f) and (isSurjective f));
                 if areTVBsIso then break
                 );
@@ -951,7 +924,7 @@ isIsomorphism ToricVectorBundleMap := Boolean =>  f ->(
     if T1.cache.?iso and T1.cache.iso#? T2 then ( if map f == map T1.cache.iso#T2 then return true; );
 
     areTVBsIso := ((isWellDefined f) and (isInjective f) and (isSurjective f));
-     if areTVBsIso then (
+    if areTVBsIso then (
     if not T1.cache.?iso then (
         T1.cache.iso = new MutableHashTable;
         );
