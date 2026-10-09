@@ -106,6 +106,15 @@ should give the desired result, comparable to the output of `PGBMain(T)`.
 
 11. [Angie] This example does not work, understand why
 
+
+12. Add a Depth options to PGBMain
+
+
+13. Have a look at using debugLevel instead of Verbose
+    perhaps the different levels could give different levels of output
+    E.g. debug level 1+ is very light, one line per recusions
+    and debug level 2+ starts printing more of the branching / loops
+
 ```macaulay2
 U = QQ[p, q, r, a, b, MonomialOrder => Lex]
 R = U[x,y, MonomialOrder => GRevLex]
