@@ -282,7 +282,7 @@ E5 = {(x_1 - a)^2 + (y_1 - 1)^2 - a^2 - 1,
 --Examples from KSW (they took the ones from
 --Nabeshima and made them more complex)
 U = QQ[a,b,c,d, MonomialOrder => GRevLex] -- (Ollie: Computations finish now with GRevLex - is this order problematic?)
-R = U[x,y,z,w, MonomialOrder => GRevLex]
+R = U[x,y,z,w, MonomialOrder => Lex]
 
 S1= {a*x^4 + c*x^2 + y,
      b*x^3 + x^2 + 2,

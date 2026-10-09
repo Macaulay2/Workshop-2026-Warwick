@@ -144,6 +144,8 @@ assert(not ICheck(E, f, Loops => infinity)) -- Loops => 5 is very slow!!!
 
 2. Speed testing across all the different algorithms
 
+3. Look into implementing the CGSMainMod in the KSW_JSC_2013.pdf paper (newer KSW paper)
+
 # DONE
 
 8. ** Lorenzo ** In TestAudit package, what does a 'Silenced Test' mean? (fixed, ScoreReport: 100 out of 100)
