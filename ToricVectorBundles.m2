@@ -329,7 +329,7 @@ symmetricPower (ToricVectorBundle, ZZ) := (TVB, l) -> (
         error("expected nonnegative exponent");
         )
     else if l == 0 then (
-        trivialBundle(variety TVB, 0)
+        trivialBundle(variety TVB, 1)
         )
     else (
         R := rays variety TVB;
