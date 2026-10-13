@@ -1262,7 +1262,17 @@ weilDecorationDivisors List := weilDecorationList -> (
 
 --Auxiliary fucntion for moduleToKlyachko
 
-fineGr = (S,A,n) -> (
+fineGr = (X,A,n) -> (
+    S:= ring X;
+    -- Define a section of the Weil to Cl map
+  D := fromWDivToCl X;
+  (Dsnf, U, V) := smithNormalForm D;
+   J := matrix table(numColumns D, numRows D, (i,j) ->
+        if i == j then 1 else 0
+    );
+  L := V * J * U;
+
+
   -- Source degrees
   p := numColumns (A);
   MS := new MutableHashTable from apply(p , j -> {j,{}});
@@ -1272,7 +1282,7 @@ fineGr = (S,A,n) -> (
   aux := apply(entries A, i -> apply( i, j -> exponents j));
   jnew := 0;
   inew := 0; 
- MS#0 = toList(n:0); 
+ MS#0 = flatten entries (L* matrix {(degrees source A )_0});
 -- Track lists of degrees instead of cloning the MutableHashTables
   oldMS := apply(p, j -> MS#j);
   oldNS := apply(q, i -> NS#i);
@@ -1282,9 +1292,9 @@ fineGr = (S,A,n) -> (
   while isMember({}, values MS) or isMember({}, values NS) do(
       if oldMS == currentMS and oldNS == currentNS then(
           jnew = min apply(p, j -> if MS#j == {} then( j)else( infinity) );
-          if jnew != infinity then( MS#jnew= toList(n:0); )else(
+          if jnew != infinity then( MS#jnew= flatten entries (L* matrix {(degrees source A )_jnew}); )else(
           inew = min apply(q, i -> if NS#i == {} then( i)else( infinity) );
-          if inew != infinity then( NS#inew= toList(n:0); );
+          if inew != infinity then( NS#inew= flatten entries (L* matrix {(degrees source A )_inew}); );
           );
           
       );
@@ -1329,7 +1339,7 @@ moduleToKlyachko (NormalToricVariety, Matrix):= opts -> (X,A) -> (
 
   if not( isHomogeneous A and degrees ring A == entries id_(ZZ^(n)) )then(
     if ring A === ring X then(
-    A = fineGr (S,A,n);)else (error("The module is not defined over the Cox ring of the toric variety"););
+    A = fineGr (X,A,n);)else (error("The module is not defined over the Cox ring of the toric variety"););
     S = newRing( S, Degrees => entries id_(ZZ^(n)));
   );
     s0:= trivialBundle(X,0) ;
