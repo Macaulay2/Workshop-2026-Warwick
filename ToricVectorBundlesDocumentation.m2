@@ -673,7 +673,120 @@ doc ///
         cotangentBundle
 ///
 
+doc ///
+    Key
+        (exteriorPower, ToricVectorBundle, ZZ)
+    Headline
+        exterior power of a toric vector bundle
+    Usage
+        exteriorPower(E, l)
+    Inputs
+        E : ToricVectorBundle
+        l : ZZ
+            a nonnegative integer
+    Outputs
+        : ToricVectorBundle
+            the l-th exterior power of E
+    Description
+        Text
+        Computes the @TT "l"@-th exterior power of the toric vector
+        bundle @TT "E"@.
 
+        For each ray of the underlying toric variety, the filtration
+        matrix of the result is formed from the @TT "l"@ by @TT "l"@
+        minors of the filtration matrix of @TT "E"@, with rows and
+        columns indexed by the @TT "l"@-element subsets of the basis.
+        The filtration jumps are the sums of the corresponding jumps
+        of @TT "E"@.
+    Example
+        X = toricProjectiveSpace 2;
+        E = trivialBundle(X, 3);
+        assert(rank exteriorPower(E, 2) == 3)
+        assert(rank exteriorPower(E, 0) == 1)
+        assert(rank exteriorPower(E, 4) == 0)
+    SeeAlso
+        (symmetricPower, ToricVectorBundle, ZZ)
+        ToricVectorBundle
+///
+
+doc ///
+    Key
+        (symmetricPower, ToricVectorBundle, ZZ)
+    Headline
+        symmetric power of a toric vector bundle
+    Usage
+        symmetricPower(E, l)
+    Inputs
+        E : ToricVectorBundle
+        l : ZZ
+            a nonnegative integer
+    Outputs
+        : ToricVectorBundle
+            the l-th symmetric power of E
+    Description
+        Text
+        Computes the @TT "l"@-th symmetric power of the toric vector
+        bundle @TT "E"@.
+
+        For each ray of the underlying toric variety, the filtration
+        matrix of the result has rows and columns indexed by the
+        multisets of size @TT "l"@ in the basis of @TT "E"@. Each entry
+        is obtained by summing, over all orderings of the row multiset,
+        the products of the corresponding entries of the filtration
+        matrix of @TT "E"@. The filtration jumps are the sums of the
+        corresponding jumps of @TT "E"@.
+    Example
+        X = toricProjectiveSpace 2;
+        E = trivialBundle(X, 3);
+        assert(rank symmetricPower(E, 2) == 6)
+        assert(rank symmetricPower(E, 1) == 3)
+        assert(rank symmetricPower(E, 0) == 1)
+    SeeAlso
+        (exteriorPower, ToricVectorBundle, ZZ)
+        ToricVectorBundle
+///
+
+doc ///
+    Key
+        (tensor, ToricVectorBundle, ToricVectorBundle)
+        (symbol **, ToricVectorBundle, ToricVectorBundle)
+    Headline
+        tensor product of toric vector bundles
+    Usage
+        tensor(E, F)
+        E ** F
+    Inputs
+        E : ToricVectorBundle
+        F : ToricVectorBundle
+    Outputs
+        : ToricVectorBundle
+            the tensor product of E and F
+    Description
+        Text
+        Computes the tensor product of the toric vector bundles
+        @TT "E"@ and @TT "F"@, which must be defined over the same
+        toric variety.
+
+        For each ray of the underlying toric variety, the filtration
+        matrix of the result is the tensor product of the filtration
+        matrices of @TT "E"@ and @TT "F"@. The filtration jump for the
+        basis vector @TT "e_i ** f_j"@ is the sum of the jump for
+        @TT "e_i"@ in @TT "E"@ and the jump for @TT "f_j"@ in @TT "F"@.
+
+    Example
+        X = toricProjectiveSpace 2;
+        E = trivialBundle(X, 2);
+        F = trivialBundle(X, 3);
+        assert(rank tensor(E, F) == 6)
+        assert(rank (E ** F) == 6)
+    SeeAlso
+        (symbol **, ToricVectorBundleMap, ToricVectorBundleMap)
+        (exteriorPower, ToricVectorBundle, ZZ)
+        (symmetricPower, ToricVectorBundle, ZZ)
+        ToricVectorBundle
+///
+
+-- TODO compare with the one above
 doc ///
     Key
         (exteriorPower,ZZ,ToricVectorBundle)
@@ -744,6 +857,8 @@ doc ///
         isGeneral
 ///
 
+
+-- TODO compare with the one above
 doc ///
     Key
         (symbol **,ToricVectorBundle,ToricVectorBundle)
@@ -811,6 +926,8 @@ doc ///
         (symmetricPower,ZZ,ToricVectorBundle)
 ///
 
+
+-- TODO compare with the one above
 doc ///
     Key
         (symmetricPower,ZZ,ToricVectorBundle)
@@ -872,6 +989,7 @@ doc ///
         cotangentBundle
 ///
 
+-- TODO compare with the one above
 doc ///
     Key
         (tensor,ToricVectorBundle,ToricVectorBundle)
@@ -2680,116 +2798,4 @@ doc ///
 --New
 ----------------
 
-doc ///
-    Key
-        (exteriorPower, ToricVectorBundle, ZZ)
-    Headline
-        exterior power of a toric vector bundle
-    Usage
-        exteriorPower(E, l)
-    Inputs
-        E : ToricVectorBundle
-        l : ZZ
-            a nonnegative integer
-    Outputs
-        : ToricVectorBundle
-            the l-th exterior power of E
-    Description
-        Text
-        Computes the @TT "l"@-th exterior power of the toric vector
-        bundle @TT "E"@.
-
-        For each ray of the underlying toric variety, the filtration
-        matrix of the result is formed from the @TT "l"@ by @TT "l"@
-        minors of the filtration matrix of @TT "E"@, with rows and
-        columns indexed by the @TT "l"@-element subsets of the basis.
-        The filtration jumps are the sums of the corresponding jumps
-        of @TT "E"@.
-    Example
-        X = toricProjectiveSpace 2;
-        E = trivialBundle(X, 3);
-        assert(rank exteriorPower(E, 2) == 3)
-        assert(rank exteriorPower(E, 0) == 1)
-        assert(rank exteriorPower(E, 4) == 0)
-    SeeAlso
-        (symmetricPower, ToricVectorBundle, ZZ)
-        ToricVectorBundle
-///
-
-doc ///
-    Key
-        (symmetricPower, ToricVectorBundle, ZZ)
-    Headline
-        symmetric power of a toric vector bundle
-    Usage
-        symmetricPower(E, l)
-    Inputs
-        E : ToricVectorBundle
-        l : ZZ
-            a nonnegative integer
-    Outputs
-        : ToricVectorBundle
-            the l-th symmetric power of E
-    Description
-        Text
-        Computes the @TT "l"@-th symmetric power of the toric vector
-        bundle @TT "E"@.
-
-        For each ray of the underlying toric variety, the filtration
-        matrix of the result has rows and columns indexed by the
-        multisets of size @TT "l"@ in the basis of @TT "E"@. Each entry
-        is obtained by summing, over all orderings of the row multiset,
-        the products of the corresponding entries of the filtration
-        matrix of @TT "E"@. The filtration jumps are the sums of the
-        corresponding jumps of @TT "E"@.
-    Example
-        X = toricProjectiveSpace 2;
-        E = trivialBundle(X, 3);
-        assert(rank symmetricPower(E, 2) == 6)
-        assert(rank symmetricPower(E, 1) == 3)
-        assert(rank symmetricPower(E, 0) == 1)
-    SeeAlso
-        (exteriorPower, ToricVectorBundle, ZZ)
-        ToricVectorBundle
-///
-
-doc ///
-    Key
-        (tensor, ToricVectorBundle, ToricVectorBundle)
-        (symbol **, ToricVectorBundle, ToricVectorBundle)
-    Headline
-        tensor product of toric vector bundles
-    Usage
-        tensor(E, F)
-        E ** F
-    Inputs
-        E : ToricVectorBundle
-        F : ToricVectorBundle
-    Outputs
-        : ToricVectorBundle
-            the tensor product of E and F
-    Description
-        Text
-        Computes the tensor product of the toric vector bundles
-        @TT "E"@ and @TT "F"@, which must be defined over the same
-        toric variety.
-
-        For each ray of the underlying toric variety, the filtration
-        matrix of the result is the tensor product of the filtration
-        matrices of @TT "E"@ and @TT "F"@. The filtration jump for the
-        basis vector @TT "e_i ** f_j"@ is the sum of the jump for
-        @TT "e_i"@ in @TT "E"@ and the jump for @TT "f_j"@ in @TT "F"@.
-
-    Example
-        X = toricProjectiveSpace 2;
-        E = trivialBundle(X, 2);
-        F = trivialBundle(X, 3);
-        assert(rank tensor(E, F) == 6)
-        assert(rank (E ** F) == 6)
-    SeeAlso
-        (symbol **, ToricVectorBundleMap, ToricVectorBundleMap)
-        (exteriorPower, ToricVectorBundle, ZZ)
-        (symmetricPower, ToricVectorBundle, ZZ)
-        ToricVectorBundle
-///
 
