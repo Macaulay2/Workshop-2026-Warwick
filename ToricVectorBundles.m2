@@ -1263,8 +1263,6 @@ weilDecorationDivisors List := weilDecorationList -> (
 --Auxiliary fucntion for moduleToKlyachko
 
 fineGr = (S,A,n) -> (
--- TODO: This correction should be the twist that we are introuducing when assuming MS#0 is {0,...,0}, but it is not working
-   -- correction := flatten entries ( matrix(rays X) *( transpose matrix{(degrees source A)_0}));
   -- Source degrees
   p := numColumns (A);
   MS := new MutableHashTable from apply(p , j -> {j,{}});
@@ -1603,6 +1601,12 @@ expression ToricVectorBundle := E -> (
 net ToricVectorBundle := E -> (
     "ToricVectorBundle of rank " | net rank E | " on " | net variety E
     )
+
+-------------------------------------------
+-- DOCUMENTATION
+-------------------------------------------
+
+load "ToricVectorBundlesDocumentation.m2"
 
 
 -------------------------------------------
