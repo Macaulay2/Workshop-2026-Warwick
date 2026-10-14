@@ -1318,7 +1318,7 @@ fineGr = (X,A,n) -> (
   sdegs := - apply(p , j -> MS#j );
   tdegs := - apply(q , i -> NS#i );
   R := newRing( S, Degrees => entries id_(ZZ^(n)));
-  Anew := map(R^tdegs,R^sdegs,sub(A, R) );
+  map(R^tdegs,R^sdegs,sub(A, R) )
   
 
 )
@@ -1340,7 +1340,8 @@ moduleToKlyachko (NormalToricVariety, Matrix):= opts -> (X,A) -> (
   if not( isHomogeneous A and degrees ring A == entries id_(ZZ^(n)) )then(
     if ring A === ring X then(
     A = fineGr (X,A,n);)else (error("The module is not defined over the Cox ring of the toric variety"););
-    S = newRing( S, Degrees => entries id_(ZZ^(n)));
+    S = ring A;
+    print A;
   );
     s0:= trivialBundle(X,0) ;
     sdegs2:= degrees source A;
@@ -1360,8 +1361,7 @@ moduleToKlyachko (NormalToricVariety, Matrix):= opts -> (X,A) -> (
 
 -- M = image matrix...
 moduleToKlyachko (NormalToricVariety, Module):= opts -> (X,M) -> (
- M = presentation M;
- return coker moduleToKlyachko(X, M);
+ return coker moduleToKlyachko(X,  presentation M);
 )
 -- The code that follows take a toric vector bundle with Klyachko description and returns a module over the Cox ring of the toric variety, M, such that the sheafification of M is the starting vector bundle.
 -- Note that different modules can have the same associated sheaf. 
