@@ -531,9 +531,6 @@ CCheck (List, RingElement) := (E, f) -> (
 );
 
 
-
--- TODO: check for improvement on ICheck, what should be the default value for ICheckLoops?
--- For example, ICheckLoops => 5 takes a very long time
 ICheck = method(
     Options => {
         ICheckLoops => infinity
@@ -626,7 +623,7 @@ consistencyCheckAllTogether (List, RingElement) := o -> (E, f) -> (
     if debugLevel > 0 then (
        print "General check was used";
        );
-    return null; -- temporary
+    return null;
 );
 
 -- Note that we cannot have ideal E = (0) or ideal F = (0)
@@ -874,28 +871,52 @@ doc ///
 
 doc ///
   Key
-   MDBasis
+    MDBasis
+    (MDBasis, List)
   Headline
-    a method for computing a minimal Disckson Basis
+    a method for computing a minimal Dickson basis
   Usage
-    MDBasis F
+    MDBasis G
   Inputs
-    F: List
-      a list of polynomials in a ring $R = k[U][X]$
+    G :List
+      of polynomials in a ring $R = k[U][X]$
   Outputs
-    G: List
-      the minimal Dickson basis of F
+    :List
+      a minimal Dickson basis of G
   Description
     Text
-      Following the Definition 4.1 of @HREF("#ref1","[1]")@, given a sequence F of polynomials
-      in $k[U][X]$, MDBasis(F) returns the minimal Dickson basis of F.
-      -- do we want to make the defition explicit?
+      Following Definition 4.1 of @HREF("#ref1","[1]")@, a subset $F$ of $G$ is a minimal Dickson
+      basis of $G$ if
+    Text
+      @UL {
+          {"for every $g \\in G$ there is some $f \\in F$ such that the leading power product of $g$
+          is a multiple of the leading power product of $f$, and"},
+          {"for any two distinct $f_1, f_2 \\in F$, neither leading power product is a multiple of
+          the other."}
+          }@
+    Text
+      In other words, $F$ has one polynomial for each leading power product of $G$
+      that is minimal under divisibility. The leading power products are taken with respect to the
+      variables $X$ only, so the leading coefficients are polynomials in the parameters $U$.
+      We use a minimal Dickson basis in @TO "PGBMain"@ to determine how the
+      parameter space splits.
+    Example
+      U = QQ[a, MonomialOrder => Lex];
+      R = U[x, y, MonomialOrder => Lex];
+      G = {a*x^2 - y, a*y^2 - 1, a*x - 1, (a + 1)*x - y, (a + 1)*y - a};
+      MDBasis G
+    Text
+      The minimal leading power products here are $x$ and $y$. A minimal Dickson basis is not
+      unique: both $a x - 1$ and $(a+1) x - y$ have leading power product $x$. Following the
+      heuristics of Section 7.1 of @HREF("#ref1","[1]")@, MDBasis prefers polynomials whose leading
+      coefficient is shared by many of the candidates, and then those whose leading coefficient
+      has irreducible factors of low degree. Here $a + 1$ is the leading coefficient of both
+      $(a+1) x - y$ and $(a+1) y - a$, so $(a+1) x - y$ is chosen over $a x - 1$.
   References
     @LABEL("[1]","id" => "ref1")@ Deepak Kapur, Yao Sun, and Dingkang Wang. 2013. An efficient
     algorithm for computing a comprehensive Gr\"obner system of a parametric polynomial system.
     In Journal of Symbolic Computation, 49, 27-44.
   SeeAlso
-    ComprehensiveGBs
     PGBMain
 ///
 
