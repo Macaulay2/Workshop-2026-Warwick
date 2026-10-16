@@ -55,6 +55,7 @@ ringOrder PolynomialRing := List => R -> (
             -- {Lex => 1, GLex} unexpectedly expands to {Lex => 1, Weights => {1,1,1}, Lex => 2}.
             -- The bug is confirmed and will be fixed in future versions of Macaulay2: https://github.com/Macaulay2/M2/pull/4673
             -- Anyway, we ignore the unused weights as a hotfix for now.
+            -- Update: This has been fixed in the next version so we can remove the fix [do this just before pull request]
             Weights => take(last orderEntry, min(n, #last orderEntry))
         ) else (
             n = n - if instance(last orderEntry, ZZ) then last orderEntry else #last orderEntry;
