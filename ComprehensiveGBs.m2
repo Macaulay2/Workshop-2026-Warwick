@@ -1032,6 +1032,7 @@ doc ///
   Key
     PGBMain
     (PGBMain, List)
+    (PGBMain, CGBTriple)
     [PGBMain, Depth]
   Headline
     compute a Comprehensive Groebner System using Kapur-Sun-Wang algorithm
@@ -1041,6 +1042,8 @@ doc ///
   Inputs
     F :List
       a list of polynomials in a ring $R = k[U][X]$
+    T :CGBTriple
+      constructed by @TO "CGBFromTriple"@ from a triple $\{E, N, F\}$
     Depth=>ZZ
       a bound on the recursion depth; a negative value means no bound
   Outputs
@@ -1088,6 +1091,71 @@ doc ///
     MDBasis
 ///
 
+
+doc ///
+  Key
+    CGBTriple
+    (net, CGBTriple)
+  Headline
+    input data for PGBMain
+  Description
+    Text
+      Let $R = k[U][X]$ be a polynomial ring, where $U$ is a set of parameters and $X$ a set of variables.
+      An object of type CGBTriple represents a list of polynomials $F$ in $R$ for that we want a comprehensive
+      groebner basis for, which should be defined on the constructible set $V(E)\setminus V(N)$ of parameter space,
+      where $E$ and $N$ are lists of polynomials in $k[U]$.
+
+      This object is used as an input to @TO "PGBMain"@, which computes a comprehensive Groebner system for $F$
+      on $V(E)\setminus V(N)$. This object stores the triple $\{E, N, F\}$ along with rings and ring maps used
+      by the computation so that they are only built only once.
+      Objects of this type are constructed with @TO "CGBFromTriple"@.
+    Example
+      U = QQ[a,b,c];
+      R = U[x,y];
+      F = {a*x - b, b*y - a, c*x^2 - y, c*y^2 - x};
+      T = CGBFromTriple {{a, b}, {c}, F}
+      netList PGBMain T
+  SeeAlso
+    CGBFromTriple
+    PGBMain
+///
+
+doc ///
+  Key
+    CGBFromTriple
+    (CGBFromTriple, List)
+  Headline
+    construct a CGBTriple
+  Usage
+    T = CGBFromTriple {E, N, F}
+  Inputs
+    E :List
+      of polynomials in $k[U]$, the equations of the parameters, use $\{0\}$ if there is none
+    N :List
+      of nonzero polynomials in $k[U]$, the non-vanishing functions for the parameters; use $\{1\}$ if there is none
+    F :List
+      a nonempty list of polynomials in a ring $R = k[U][X]$
+  Outputs
+    T :CGBTriple
+      represents the polynomials $F$ on the constructible set $V(E)\setminus V(N)$
+  Description
+    Text
+      The input is a list $\{E, N, F\}$ of three lists. The polynomials in $E$ and $N$ describe the
+      constructible set $V(E)\setminus V(N)$ of parameter values, and $F$ is the parametric polynomial system.
+      The result can be passed to @TO "PGBMain"@ to compute a comprehensive Gröbner system for $F$ on $V(E)\setminus V(N)$.
+    Example
+      U = QQ[a,b,c];
+      R = U[x,y];
+      F = {a*x - b, b*y - a, c*x^2 - y, c*y^2 - x};
+      T = CGBFromTriple {{0_U}, {1_U}, F}
+      PGBMain T == PGBMain F
+    Text
+      The function gives an error if: the input is not a list of three lists, if $E$ or $F$ is empty,
+      or if $N$ contains $0$.
+  SeeAlso
+    CGBTriple
+    PGBMain
+///
 
 
 
