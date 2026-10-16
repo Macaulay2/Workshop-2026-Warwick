@@ -28,13 +28,17 @@ export {
     "PGBMain",
     "MDBasis",
     "Depth",
-    "CheckAssumption"
+    "CheckAssumption",
+    "CGBTriple"
 } -- functions, objects to export
 
 protect ICheckLoops
 
 
 CGBTriple = new Type of HashTable
+
+-- print a CGBTriple as its triple {E, N, F}, hiding the rings and maps it stores
+net CGBTriple := T -> "CGBTriple" | net T#"triple";
 
 -- store all the maps and rings of a CGB computation in a object
 CGBData = new Type of HashTable
