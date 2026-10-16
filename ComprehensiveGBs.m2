@@ -16,7 +16,8 @@ newPackage(
     Keywords => {""},
     AuxiliaryFiles => false,
     PackageImports => {"MinimalPrimes", "RealRoots"},
-    DebuggingMode => true
+    DebuggingMode => true,
+    HomePage => "https://github.com/Macaulay2/Workshop-2026-Warwick/tree/CGBs"
 )
 
 export {
