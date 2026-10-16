@@ -274,8 +274,6 @@ CGBMainRec (List, List, List, CGBData) := o -> (F, S, memo, cgbData) -> (
 );
 
 
--- TODO: check if the normalisation is necessary for the case where ReduceStrata => true
-
 CGB = method( Options => {
     ReduceStrata => false,
     Verbose => false,
