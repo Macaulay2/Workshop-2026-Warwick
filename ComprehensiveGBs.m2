@@ -463,8 +463,12 @@ MDBasis List := G -> (
 -- polynomial system", D.Kapur Y. Sun D. Wang,
 -- J. of Symbolic Computation issue 49, 2013
 --------------------------------------------------
-PGBMain = method();
-PGBMain CGBTriple := T -> (
+PGBMain = method(
+    Options => {
+        Depth => -1
+        }
+    );
+PGBMain CGBTriple := o -> T -> (
     {E, N, F} := T#"triple";
     cgbData := T#"cgbData";
     R := cgbData#"R";
@@ -526,6 +530,11 @@ PGBMain CGBTriple := T -> (
     if consistencyCheckAllTogether(Gr, productList) then (
         PGB = unique(PGB | {{Gr, productList, if length Gm == 0 then {0_R} else Gm}});
         );
+    -- Depth controls the number of recursive calls:
+    -- if Depth == 0 then we stop here, otherwise recurse with Depth = Depth - 1
+    -- (default value for Depth is -1 never hits zero)
+    if o.Depth == 0 then return PGB;
+    o' := o ++ {Depth => o.Depth - 1};
     for i in 0..length H - 1 do (
         -- Both CCheck and ICheck require E to be a Groebner basis of <E>!
         E' := first entries gens gb ideal unique(Gr | {H_i});
@@ -536,15 +545,13 @@ PGBMain CGBTriple := T -> (
             PGB = unique(PGB | PGBMain CGBFromTriple {
                     E',
                     N,
-                    listDiff}
-                )
+                    listDiff}, o')
             )
         else (
             PGB = unique(PGB | PGBMain CGBFromTriple {
                     E',
                     unique totalListProduct(N, {squareFreePart product H_{0..i-1}}),
-                    listDiff}
-                )
+                    listDiff}, o')
             );
         );
     return PGB
@@ -553,11 +560,11 @@ PGBMain CGBTriple := T -> (
 -- TODO: homogenise the output of CGBMain and PGBMain, e.g. should they both output
 -- lists of 3-tuples (3 element lists) or something else?
 
-PGBMain List := F -> (
+PGBMain List := o -> F -> (
     if zero length F then error "List must be non-empty";
     R := ring first F;
     U := coefficientRing R;
-    PGBMain CGBFromTriple {{0_U}, {1_U}, F}
+    PGBMain(CGBFromTriple {{0_U}, {1_U}, F}, o)
 )
 
 
