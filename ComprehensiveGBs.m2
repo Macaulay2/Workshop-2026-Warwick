@@ -155,11 +155,6 @@ rabinowitschMap = R -> (
 )
 
 
--- R=QQ[x,y]
--- E={x+y}
--- N={y^2}
--- isConsistentRabinowitsch(E,N)
-
 
 isCoveredPrime = method(); -- returns whether V(P) is covered by the strata in memo, with P being a prime ideal
 isCoveredPrime (Ideal, List) := (P, memo) -> (
@@ -176,8 +171,8 @@ CGBMain = method(
         Verbose => false,
         Depth => -1,
         CheckAssumption => true
-    }
-); -- Initialises CGBMainRec
+        }
+    ); -- Initialises CGBMainRec
 
 CGBMain List := o -> F -> (
     R := ring first F;
@@ -186,29 +181,29 @@ CGBMain List := o -> F -> (
     cgs := CGBMain(F, S, o ++ {CheckAssumption => false});
     if #S == 0 then return cgs;
     {({0_KU}, S, apply(S, s -> promote(s, R)))} | cgs
-)
+    )
 CGBMain (List, List) := o -> (F, S) -> (
     R := ring first F;
     KU := coefficientRing R;
     S' := apply(S, s -> (
-        s' := sub(s, R);
-        if not liftable(s', KU) then
+            s' := sub(s, R);
+            if not liftable(s', KU) then
             error("S must consist of polynomials in the parameters; found " | toString s);
-        lift(s', KU)
-    ));
+            lift(s', KU)
+            ));
     cgbData := CGBDataFromRings R;
     if o.CheckAssumption then (
         -- V(S) is contained in V(<F> cap k[U]) <=> (S, <F> cap k[U]) is inconsistent
         if isConsistentRabinowitsch(S', first entries eliminateVariables(F, cgbData)) then
-            error "V(S) is not contained in V(ideal F cap k[U]); pass CheckAssumption => false to skip this check";
-    );
+        error "V(S) is not contained in V(ideal F cap k[U]); pass CheckAssumption => false to skip this check";
+        );
     cgs := CGBMainRec(F, S', {}, cgbData,
         ReduceStrata => o.ReduceStrata,
         Verbose => o.Verbose,
         Depth => o.Depth
-    );
+        );
     apply(cgs, t -> (if #(t#0) == 0 then {0_KU} else t#0, t#1, t#2))
-)
+    )
 
 CGBMainRec = method(
     Options => {
@@ -233,9 +228,6 @@ CGBMainRec (List, List, List, CGBData) := o -> (F, S, memo, cgbData) -> (
         return {}
     );
     l := first gens RExt;
-
-    -- G := gens gb ideal (l * RtoRExt matrix {F} | (l-1) * RtoRExt promote(matrix {S}, R));
-    -- The list-based version turns out to be a little faster
     G := gens gb ideal join(
         apply(F, f -> l * RtoRExt f),
         apply(S, s -> (l-1) * RtoRExt s));
@@ -277,20 +269,6 @@ CGBMainRec (List, List, List, CGBData) := o -> (F, S, memo, cgbData) -> (
 );
 
 
--*
-
-Notes on Optimisation:
-
--- profiling - see what else is taking time
-
-needsPackage "ComprehensiveGBs"
-R = QQ[a,b][x,y,z, MonomialOrder => Lex]
-F = {x^3 - a, y^4 - b, x+y-z}
-profile CGBMain(F, {});
-profileSummary
-
-*-
-
 -- TODO: check if the normalisation is necessary for the case where ReduceStrata => true
 
 CGB = method( Options => {
@@ -316,6 +294,8 @@ CGB List := o -> F -> (
 
 
 eliminateVariables = method()
+-- TODO: Check if the following version of eliminateVariables is needed anymore
+-- do we only need the CGBData eliminateVariables?
 eliminateVariables List := F -> (
     R := ring first F;
     n := numgens R;
@@ -339,7 +319,6 @@ eliminateVariables List := F -> (
     mm S'
 )
 
--- pass cgbData instead
 eliminateVariables (List, CGBData) := (F, cgbData) -> (
     R := cgbData#"R";
     RtoRFlat := cgbData#"RtoRFlat";
@@ -348,9 +327,6 @@ eliminateVariables (List, CGBData) := (F, cgbData) -> (
     cgbData#"RFlattoKU" selectInSubring(#variableBlocks, Gflat)
 )
 
-
--- TODO: what should we do with cgbOnGraph? Maybe adding a doc page with some experiments and
--- examples?
 
 cgbOnGraph = method()
 cgbOnGraph (List, ZZ) := (G, d) -> (
@@ -365,7 +341,7 @@ cgbOnGraph (List, ZZ) := (G, d) -> (
 )
 
 -- Given two lists A and B return the list
--- {a*b s.t. a in A and b in B}
+-- {a*b : a in A,  b in B}
 totalListProduct = method();
 totalListProduct (List, List) := (A, B) -> flatten table(A, B, times);
 
@@ -411,52 +387,56 @@ For each element in the resulting list, it ...
 Since we already compute `minimal` for the second heuristic, we sort the list and keep the first polynomial of each leading monomial
 
 Previous version of MDBasis is below in case we need it again.
-*-
 
 
-
--*
 MDBasis = method();
-MDBasis List := G -> (
-    if #G == 0 then return {};
-    lpps := leadMonomial \ G;
-    minimal := select(G, g -> not any(lpps, m -> m != leadMonomial g and leadMonomial g % m == 0));
+MDBasis (List) := (G) -> (
     F := G;
+    if length F == 0 then (
+        return {}
+    );
+    -- Section 7.1, first heuristic
+    simpler := lc -> max({0} | apply(listOfFactors lc, f -> first degree f));
+    -- Section 7.1, second heuristic
+    lpps := apply(G, leadMonomial);
+    minimal := select(G, g -> not any(lpps, m -> m != leadMonomial g and (leadMonomial g) % m == 0));
+    freq := tally apply(minimal, g -> toString leadCoefficient g);
+    sharedCount := lc -> if freq#?(toString lc) then freq#(toString lc) else 0;
+    -- order the input by those two heuristics;
+    -- if there are still ties, order by the keys (chosen purely arbitrarily) after them
     F = sort(F, g -> (lc := leadCoefficient g; (- sharedCount lc, simpler lc, #terms lc, first degree lc, toString g)));
     Basis := {first F};
     F = delete(first F, F);
-    for g in F do ( -- loop through elements of G
-        -- print("Deleting ", g, "from ", F);
+    for g in F do ( --loop through elements of G
+        --print("Deleting ", g, "from ", F);
         F = delete(g, F);
-        toAdd := true; -- At the end of the loop, if LT_x(g) is not already implied
-                       -- by elements in Basis, we should add g to our Basis
+        toAdd := true; --At the end of the loop, if LT_x(g) is not already implied
+                       --by elements in Basis, we should add g to our Basis
         for f in Basis do (
-            -- print(f, Basis);
-            LTg := leadMonomial g;
-            LTf := leadMonomial f;
+            --print(f, Basis);
+            LTg := leadMonomial(g);
+            LTf := leadMonomial(f);
             if LTg % LTf == 0 then (
-                toAdd = false; -- LTg is already in Basis, exit the loop and do not add g to Basis
+                toAdd = false; --LTg is already in Basis, exit the loop and do not add g to Basis
                 break
             )
-            else if LTf % LTg == 0 then ( -- LTg divides something in Basis, so it can replace it
-                -- print("Deliting ", f, " from ", Basis, " and adding ", g );
+            else if LTf % LTg == 0 then ( --LTg divides something in Basis, so it can replace it
+                --print("Deliting ", f, " from ", Basis, " and adding ", g );
                 Basis = unique(delete(f, Basis) | {g});
-                toAdd = false; -- avoid adding g multiple times
-                continue -- might happen that LTg divides other leading terms in Basis
+                toAdd = false; --avoid adding g multiple times
+                continue --might happen that LTg divides other leading terms in Basis
             );
         );
         if toAdd then ( -- LTg is not implied by anything in Basis
-            Basis |= {g};
+            Basis |=  {g};
         );
     );
     return Basis
 );
-
--- TODO: Add the actual previous version of MDBasis here for reference
 *-
 
 --------------------------------------------------
--- Implementing algorithm in section 4.1 of
+-- Implementing algorithm in Section 4.1 of
 -- "An efficient algorithm for computing a
 -- comprehensive Gröbner system of a parametric
 -- polynomial system", D.Kapur Y. Sun D. Wang,
@@ -535,7 +515,7 @@ PGBMain CGBTriple := o -> T -> (
     if o.Depth == 0 then return PGB;
     o' := o ++ {Depth => o.Depth - 1};
     for i in 0..length H - 1 do (
-        -- Both CCheck and ICheck require E to be a Groebner basis of <E>!
+        -- Both CCheck and ICheck require E to be a Groebner basis of <E>
         E' := first entries gens gb ideal unique(Gr | {H_i});
         if length E' == 0 then (
             E' = {0_KU};
@@ -612,35 +592,14 @@ CCheck (List, RingElement) := (E, f) -> (
         );
     );
     alpha := apply(numgens R, i -> random(-100, 100));
-
-
-    -*
-    remaining := select(0..(#U-1), i -> not member(i,V));
-
-    newR := coefficientRing R[apply(remaining, i -> U_i)]; --
-    newU := gens newR;
-
-    images := toList  apply(0..(#U-1), i -> (
-        if member(i,V) then (
-            alpha_(position(V, j -> j == i))
-        ) else (
-            newU_(position(remaining, j -> j == i))
-        )
-    ));
-    *-
-
     phi := map(R, R, for i from 0 to numgens R-1 list if member(i, V) then alpha_i else R_i);
-
     spE := gb (ideal (phi \ E) + ideal (gens R)_V);
     -- the above is a little different from KSW where they restrict to a smaller ring
     -- and check that spE is zero dimensional there
     -- Here we add in the variables in order to avoid constructing a new polynomial ring
     -- and hopefully the GB computation is just as fast
-
     fAlpha := phi f;
-    -- fAlpha = sub(fAlpha, newR); -- shouldn't need this
     GspE := flatten entries gens spE;
-
     if zero dim ideal GspE and zeroDimCheck(GspE, fAlpha) then (
         return true; -- certifies consistency
     );
@@ -695,8 +654,8 @@ ICheck (List, RingElement) := o -> (E, f) -> (
 );
 
 ----------------------------------------
--- THE FOLLOWING PUTS TOGETHER ZERODIMCHECK
--- CCHECK AND ICHECK
+-- The following puts together ZeroDimCheck
+-- CCheck AND ICheck
 -- 1)check whether f is already in <E>
 -- 2)determine the dimension of <E>
 -- 3) zeroDimCheck or CCheck
@@ -711,62 +670,60 @@ consistencyCheckAllTogether = method(
 
 consistencyCheckAllTogether (List, RingElement) := o -> (E, f) -> (
     if zero (f % ideal E) then (
-        -- print "inconsistent: direct ideal membership check was used";
+        if debugLevel > 0 then (
+            print "inconsistent: direct ideal membership check was used";
+            );
         return false; -- inconsistent
     );
-
     d := dim ideal E;
-
     if zero d then (
-        -- print "zeroDimCheck was used";
+        if debugLevel > 0 then (
+            print "zeroDimCheck was used";
+            );
         return zeroDimCheck(E, f);
     );
-
     if CCheck(E, f) then (
-        -- print "consistent: CCheck was used";
+        if debugLevel > 0 then (
+            print "consistent: CCheck was used";
+            );
         return true; -- consistent
     );
-
     if ICheck(E, f, ICheckLoops => o.ICheckLoops) then (
-        -- print "inconsistent: ICheck was used";
+        if debugLevel > 0 then (
+            print "inconsistent: ICheck was used";
+            );
         return false; -- inconsistent
     );
-
     if o.ICheckLoops === infinity then (
         -- ICheck also checks consistency when ICheckLoops is infinity
         -- so if we reach this point, f is not in rad(E)
         return true; -- consistent
     );
-
-    -- print "General check was used";
+    if debugLevel > 0 then (
+       print "General check was used";
+       );
     return null; -- temporary
 );
 
--- Cannot have ideal E = (0) or ideal F = (0)
+-- Note that we cannot have ideal E = (0) or ideal F = (0)
 consistencyCheckAllTogether (List, List) := o -> (E, N) -> (
     if all(N, zero) then return false;
     if all(E, zero) then return true;
     undecided := false;
     for f in N do (
         check := consistencyCheckAllTogether(E, f, ICheckLoops => o.ICheckLoops);
-
         if check === true then (
             return true;
         );
-
         if check === null then (
             undecided = true;
         );
     );
-
     if undecided then (
         return isConsistentRabinowitsch(E, N)
     );
-
     return false
 );
-
-
 
 
 -* Documentation section *-
