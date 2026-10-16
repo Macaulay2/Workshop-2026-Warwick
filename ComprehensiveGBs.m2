@@ -742,9 +742,8 @@ doc ///
       is the union of all the sets $G_i$ in a comprehensive Groebner system $\mathcal{G}$ for F on $S$. Notice that, $(\sigma_a(F))=(1)$
       for any $a \in L^m \setminus V(S)$. Therefore, $\mathcal{G} \cup \{(\emptyset,S,S)\}$ is a comprehensive Groebner system for $F$.
 
-      The function @TO "CGBMain"@ is the implementation of Algorithm CGBMain of @HREF("#ref2","[2]")@.
-
-      Instead the function @TO "PGBMain"@ corresponds to the Algorithm PGBMain of @HREF("#ref1","[1]")@.
+      The function @TO "CGBMain"@ is the implementation of Algorithm CGBMain of @HREF("#ref2","[2]")@. The function @TO "PGBMain"@
+      corresponds to the Algorithm PGBMain of @HREF("#ref1","[1]")@.
   References
       @LABEL("[1]","id" => "ref1")@ Deepak Kapur, Yao Sun, and Dingkang Wang. 2013. An efficient algorithm for computing a comprehensive Gr\"obner system of a parametric polynomial system. In Journal of Symbolic Computation, 49, 27-44.
       @LABEL("[2]","id" => "ref2")@ Akira Suzuki and Yosuke Sato. 2006. A simple algorithm to compute comprehensive Groebner bases using Groebner bases. In Proceedings of the 2006 international symposium on Symbolic and algebraic computation (ISSAC '06). Association for Computing Machinery, New York, NY, USA, 326–331. https://doi.org/10.1145/1145768.1145821
@@ -859,7 +858,11 @@ doc ///
     ignore computations on strata which have already been considered
   Description
     Text
-      ReduceStrata is an option to ignore computations on strata which have already been considered. This value is set to false by default. For smaller examples, changing this to true can reduce computation times, as for the following example. It will also give more easily parseable results.
+      ReduceStrata is an option to ignore computations on strata which
+      have already been considered. This value is set to false by default.
+      For smaller examples, changing this to true can reduce computation
+      times, as for the following example. It will also give more easily
+      parseable results.
     Example
       R2 = QQ[a,b][x,y,z];
       F2 = {x^2-a,y^3-b,x+y-z};
@@ -872,10 +875,11 @@ doc ///
   Key
     Verbose
   Headline
-    a record of CGBMain iterations
+    record CGBMain iterations
   Description
     Text
-      Setting Verbose to True will print whatever $F$ and $S$ that CGBMainRec is currently working on:
+      Setting Verbose to @TT "true"@ will print whatever $F$ and $S$ that
+      CGBMainRec is currently working on:
     Example
       R1 = QQ[a,b][x,y];
       F1 = {a*x+b*y};
@@ -891,14 +895,14 @@ doc ///
     cgbOnGraph
     (cgbOnGraph,List,ZZ)
   Headline
-    A method for creating parametrized polynomial systems from a graph and calculating a Comprehensive Groebner basis for them.
+    parametrized systems from a graph
   Usage
     (F, GG) = cgbOnGraph(G,d)
   Inputs
     G: List
-      A list consisting of a list of vertices and a list of edges.
+      a list consisting of a list of vertices and a list of edges.
     d: ZZ
-      A postive integer
+      a postive integer
   Outputs
     F: List
       A list of polynomials
@@ -907,20 +911,17 @@ doc ///
   Description
     Text
       Let $G=(V,E)$ be graph and fix a positive integer $d$.
-      Consider the paramaterized polynomial systems $F=\{f_e\}_{e\in E}\subseteq K[\lambda_e\:e\in E][x_{v,k}:v\in V,1\leq k \leq d]$,
+      Consider the paramaterized polynomial systems
+      $F=\{f_e\}_{e\in E}\subseteq K[\lambda_e\:e\in E][x_{v,k}:v\in V,1\leq k \leq d]$,
       where $K\in \{\mathbb{C},\mathbb{R}\}$ and
-      \[   f_{ij}=\sum_{k=1}^{d}(x_{i,k}-x_{j,k})^2  -\lambda_{ij} \].
+      \[ f_{ij}=\sum_{k=1}^{d}(x_{i,k}-x_{j,k})^2  -\lambda_{ij} \].
       cgbOnGraph returns the polynomial systems $F$ and a Combrehensive Groebner Basis of $F$
-
     Example
       (F,GG)=cgbOnGraph({{1,2,3},{(1,2),(2,3),(3,1)}},1);
       netList F
       GG_0
-
-      --cgbOnGraph({{1,2,3,4},{(1,2),(1,3),(1,4),(2,3),(2,4)}},1)
-
   Caveat
-    This function is not set up to take in Type Graph. User will have to convert to list.
+    This function is not set up to take in Type Graph. The user should convert it to a list.
   SeeAlso
     ComprehensiveGBs
 
@@ -942,10 +943,13 @@ doc ///
       the minimal Dickson basis of F
   Description
     Text
-      Following the Definition 4.1 of @HREF("#ref1","[1]")@, given a sequence F of polynomials in $k[U][X]$, MDBasis(F) returns the minimal Dickson basis of F.
+      Following the Definition 4.1 of @HREF("#ref1","[1]")@, given a sequence F of polynomials
+      in $k[U][X]$, MDBasis(F) returns the minimal Dickson basis of F.
       -- do we want to make the defition explicit?
   References
-    @LABEL("[1]","id" => "ref1")@ Deepak Kapur, Yao Sun, and Dingkang Wang. 2013. An efficient algorithm for computing a comprehensive Gr\"obner system of a parametric polynomial system. In Journal of Symbolic Computation, 49, 27-44.
+    @LABEL("[1]","id" => "ref1")@ Deepak Kapur, Yao Sun, and Dingkang Wang. 2013. An efficient
+    algorithm for computing a comprehensive Gr\"obner system of a parametric polynomial system.
+    In Journal of Symbolic Computation, 49, 27-44.
   SeeAlso
     ComprehensiveGBs
     PGBMain
@@ -977,23 +981,36 @@ doc ///
       of polynomials forming a comprehensive Groebner basis of $\langle F\rangle$
   Description
     Text
-      Implementation of the Algorithm proposed by Suzuki and Sato. Given a tower polynomial ring $R = k[U][X]$ for $U$ a set of parameters and $X$ a set of variables, and $F\subset R$ an ideal of variables and parameters, CGB takes $F$ as input and returns a comprehensive Groebner basis of $\langle F\rangle$ over the whole parameter space.
-      The function computes a comprehensive Groebner system with CGBMain and returns the union of its Groebner bases, together with a basis of the elimination ideal $\langle F\rangle\cap k[U]$.
+      Implementation of the Algorithm proposed by Suzuki and Sato. Given a tower
+      polynomial ring $R = k[U][X]$ for $U$ a set of parameters and $X$ a set
+      of variables, and $F\subset R$ an ideal of variables and parameters, CGB
+      takes $F$ as input and returns a comprehensive Groebner basis of
+      $\langle F\rangle$ over the whole parameter space.
+      The function computes a comprehensive Groebner system with CGBMain and
+      returns the union of its Groebner bases, together with a basis of the
+      elimination ideal $\langle F\rangle\cap k[U]$.
       As above, the ring must be initialised as a tower ring:
     Example
       R1 = QQ[a,b][x,y]
     Text
-      Here $X = \{x,y\}$ and $U = \{a,b\}$. If we wanted to find a comprehensive Groebner basis over $\mathb{Q}^2$ for $F = \langle ax+by\rangle$, we input the following:
+      Here $X = \{x,y\}$ and $U = \{a,b\}$. If we wanted to find a comprehensive
+      Groebner basis over $\mathb{Q}^2$ for $F = \langle ax+by\rangle$, we input
+      the following:
     Example
       F1 = {a*x+b*y}
       CGB F1
     Text
-      CGB has several options: ReduceStrata and Verbose. ReduceStrata is an option to ignore computations on strata which have already been considered. This value is set to false by default. For smaller examples, changing this to true can reduce computation times, as for the following example. It will also give more easily parseable results.
+      CGB has several options: ReduceStrata and Verbose. ReduceStrata is an option
+      to ignore computations on strata which have already been considered. This
+      value is set to false by default. For smaller examples, changing this to
+      true can reduce computation times, as for the following example. It will
+      also give more easily parseable results.
     Example
       R2 = QQ[a,b][x,y,z];
       F2 = {x^2-a,y^3-b,x+y-z};
     Text
-      Setting Verbose to True will print whatever $F$ and $S$ that CGBMainRec is currently working on:
+      Setting Verbose to True will print whatever $F$ and $S$ that CGBMainRec is
+      currently working on:
     Example
       CGB(F1,Verbose=>true)
   SeeAlso
