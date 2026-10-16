@@ -297,31 +297,6 @@ CGB List := o -> F -> (
 
 
 eliminateVariables = method()
--- TODO: Check if the following version of eliminateVariables is needed anymore
--- do we only need the CGBData eliminateVariables?
-eliminateVariables List := F -> (
-    R := ring first F;
-    n := numgens R;
-    C := coefficientRing R;
-    m := numgens C;
-    x := local x;
-    u := local u;
-    K := coefficientRing C;
-    S := K[x_1..x_n, u_1..u_m, MonomialOrder => ringOrder R | ringOrder C];
-    U := gens C;
-    X := gens R;
-    l1 := for i from 0 to m-1 list U_i => S_(i+n);
-    l2 := for j from 0 to n-1 list X_j => S_j;
-    F' := apply(F, h -> sub(h, l1|l2));
-    F'gbgens := gens gb ideal F';
-    variableBlocks := select(ringOrder R, orderEntry -> first orderEntry =!= Weights);
-    S' := selectInSubring(#variableBlocks, F'gbgens);
-    mm := map(C, ring S',
-        toList(n:0)|gens C
-    );
-    mm S'
-)
-
 eliminateVariables (List, CGBData) := (F, cgbData) -> (
     R := cgbData#"R";
     RtoRFlat := cgbData#"RtoRFlat";
