@@ -1,6 +1,6 @@
 newPackage(
     "ComprehensiveGBs",
-    Version => "0.1",
+    Version => "1.0",
     Date => "",
     Headline => "A package for computing Comprehensive Groebner Bases (CGBs)",
     Authors => {
@@ -18,7 +18,7 @@ newPackage(
     PackageImports => {"MinimalPrimes", "RealRoots"},
     DebuggingMode => true,
     HomePage => "https://github.com/Macaulay2/Workshop-2026-Warwick/tree/CGBs"
-)
+    )
 
 export {
     "CGBMain",

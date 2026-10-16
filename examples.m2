@@ -210,6 +210,10 @@ M2 = matrix {
     {p_{1,2}+ p_{2,2}, b_{1,2}*p_{1,2}+ b_{2,2}*p_{2,2}}}
 
 F = {det M1, det M2} -- Defining equations for the Sphon variety of a 2x2 game with payoff matrices A= (a_{i, j}) and B = (b_{i,j})
+L = CGBMain(F, ReduceStrata => true);
+L = CGBMain(F, ReduceStrata => true, Depth => 0);
+elapsedTime L = PGBMain(F);
+
 
 spohnMatrix = method();
 spohnMatrix
@@ -281,7 +285,7 @@ E5 = {(x_1 - a)^2 + (y_1 - 1)^2 - a^2 - 1,
 
 --Examples from KSW (they took the ones from
 --Nabeshima and made them more complex)
-U = QQ[a,b,c,d, MonomialOrder => GRevLex] -- (Ollie: Computations finish now with GRevLex - is this order problematic?)
+U = QQ[a,b,c,d, MonomialOrder => Lex] -- (Ollie: Computations finish now with GRevLex - is this order problematic?)
 R = U[x,y,z,w, MonomialOrder => Lex]
 
 S1= {a*x^4 + c*x^2 + y,
