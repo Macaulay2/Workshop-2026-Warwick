@@ -1022,7 +1022,68 @@ doc ///
     CGBMain
     ReduceStrata
     Verbose
-  ///
+///
+
+doc ///
+  Key
+    PGBMain
+    (PGBMain, List)
+    [PGBMain, Depth]
+  Headline
+    compute a Comprehensive Groebner System using Kapur-Sun-Wang algorithm
+  Usage
+    PGBMain F
+    PGBMain T
+  Inputs
+    F :List
+      a list of polynomials in a ring $R = k[U][X]$
+    Depth=>ZZ
+      a bound on the recursion depth; a negative value means no bound
+  Outputs
+    :List
+      of lists $\{E_i, N_i, G_i\}$ such that $G_i$ is a Groebner basis on $V(E_i)\setminus V(N_i)$
+  Description
+    Text
+      Implementation of Algorithm PGBMain of @HREF("#ref1","[1]")@. Given a polynomial ring
+      $R = k[U][X]$, where $U$ is a set of parameters and $X$ a set of variables, and a list $F$ of
+      polynomials in $R$, PGBMain returns a minimal comprehensive Groebner system for $F$ on the whole
+      parameter space. The strata $V(E_i)\setminus V(N_i)$ are disjoint and nonempty, and the
+      leading coefficients of the polynomials in $G_i$ do not vanish on them.
+    Example
+      U = QQ[a,b,c];
+      R = U[x,y];
+      F = {a*x - b, b*y - a, c*x^2 - y, c*y^2 - x};
+      netList PGBMain F
+    Text
+      To compute a comprehensive Groebner system on $V(E)\setminus V(N)$ instead, where $E$ and $N$
+      are lists of polynomials in $k[U]$, pass the triple $\{E, N, F\}$ to @TO "CGBFromTriple"@ and
+      call PGBMain on the result.
+    Example
+      netList PGBMain CGBFromTriple {{a, b}, {c}, F}
+    Text
+      The option Depth sets a bound on the recursion depth of the algorithm. See also @TO "CGBMain"@.
+      In each recursive call of the function, the algorithm considers a stratum on for
+      which one of the leading coefficients $h_i$ of the minimal Dickson basis vanishes.
+      When the function is about to recurse, the implementation checks the value of Depth: if it is
+      zero then the function stops and returns the current system, otherwise it decrements Depth
+      and recurses. So with Depth => 0, the only the branches found by the first call are returned.
+      The default Depth is -1, which never reaches zero, so the full comprehensive Gröbner system is
+      computed.
+    Example
+      for i from 0 to 2 do print (i, netList PGBMain(F, Depth => i))
+    Text
+      Note. If Depth is not negative, then the output is a comprehensive Groebner system on only
+      part of the parameter space.
+  References
+    @LABEL("[1]","id" => "ref1")@ Deepak Kapur, Yao Sun, and Dingkang Wang. 2013. An efficient
+    algorithm for computing a comprehensive Gr\"obner system of a parametric polynomial system.
+    In Journal of Symbolic Computation, 49, 27-44.
+  SeeAlso
+    CGBMain
+    CGBFromTriple
+    MDBasis
+///
+
 
 
 
