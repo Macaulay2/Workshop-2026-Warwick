@@ -521,16 +521,18 @@ PGBMain CGBTriple := o -> T -> (
             E' = {0_KU};
             );
         if i == 0 then (
-            PGB = unique(PGB | PGBMain CGBFromTriple {
-                    E',
-                    N,
-                    listDiff}, o')
+            PGB = unique(PGB | PGBMain(CGBFromTriple {
+                        E',
+                        N,
+                        listDiff}, o')
+                )
             )
         else (
-            PGB = unique(PGB | PGBMain CGBFromTriple {
-                    E',
-                    unique totalListProduct(N, {squareFreePart product H_{0..i-1}}),
-                    listDiff}, o')
+            PGB = unique(PGB | PGBMain(CGBFromTriple {
+                        E',
+                        unique totalListProduct(N, {squareFreePart product H_{0..i-1}}),
+                        listDiff}, o')
+                )
             );
         );
     return PGB
