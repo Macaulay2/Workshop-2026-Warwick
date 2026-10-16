@@ -31,8 +31,7 @@ export {
     "CheckAssumption"
 } -- functions, objects to export
 
--- TODO: decide if this name should change (is Loops too common of a word) - e.g. ICheckLoops
-protect Loops
+protect ICheckLoops
 
 
 CGBTriple = new Type of HashTable
@@ -650,11 +649,11 @@ CCheck (List, RingElement) := (E, f) -> (
 
 
 
--- TODO: check for improvement on ICheck, what should be the default value for Loops?
--- For example, Loops => 5 takes a very long time
+-- TODO: check for improvement on ICheck, what should be the default value for ICheckLoops?
+-- For example, ICheckLoops => 5 takes a very long time
 ICheck = method(
     Options => {
-        Loops => infinity
+        ICheckLoops => infinity
     }
 );
 
@@ -664,7 +663,7 @@ ICheck (List, RingElement) := o -> (E, f) -> (
     );
     -- we do the computation in the quotient ring R/<E>
     -- this avoids extra costs when doing s := p^2 in the main loop
-    if o.Loops === infinity then (
+    if o.ICheckLoops === infinity then (
         return not isConsistentRabinowitsch(E, {squareFreePart f}); -- certifies inconsistency/consistency
     );
     Q := ring f / ideal E;
@@ -674,7 +673,7 @@ ICheck (List, RingElement) := o -> (E, f) -> (
     factors := listOfFactors f;
     promoted := factors / (g -> promote(g, Q));
     -- before performing ICheck on the input f, we first perform ICheck on the factors of f
-    -- this is a not-too-expensive heuristic, but it proves very helpful for S5 and P3P when Loops is set to 4
+    -- this is a not-too-expensive heuristic, but it proves very helpful for S5 and P3P when ICheckLoops is set to 4
     candidates := if zero length factors then {promote(f, Q)}
         else if #factors == 1 then promoted
         else sort(promoted, z -> #terms z) | {promote(product factors, Q)};
@@ -682,7 +681,7 @@ ICheck (List, RingElement) := o -> (E, f) -> (
         if zero p then (
             return true; -- certifies inconsistency
         );
-        for i from 1 to o.Loops do (
+        for i from 1 to o.ICheckLoops do (
             s := p^2;
             if zero s then (
                 return true; -- certifies inconsistency
@@ -706,7 +705,7 @@ ICheck (List, RingElement) := o -> (E, f) -> (
 
 consistencyCheckAllTogether = method(
     Options => {
-        Loops => infinity
+        ICheckLoops => infinity
     }
 );
 
@@ -728,13 +727,13 @@ consistencyCheckAllTogether (List, RingElement) := o -> (E, f) -> (
         return true; -- consistent
     );
 
-    if ICheck(E, f, Loops => o.Loops) then (
+    if ICheck(E, f, ICheckLoops => o.ICheckLoops) then (
         -- print "inconsistent: ICheck was used";
         return false; -- inconsistent
     );
 
-    if o.Loops === infinity then (
-        -- ICheck also checks consistency when Loops is infinity
+    if o.ICheckLoops === infinity then (
+        -- ICheck also checks consistency when ICheckLoops is infinity
         -- so if we reach this point, f is not in rad(E)
         return true; -- consistent
     );
@@ -749,7 +748,7 @@ consistencyCheckAllTogether (List, List) := o -> (E, N) -> (
     if all(E, zero) then return true;
     undecided := false;
     for f in N do (
-        check := consistencyCheckAllTogether(E, f, Loops => o.Loops);
+        check := consistencyCheckAllTogether(E, f, ICheckLoops => o.ICheckLoops);
 
         if check === true then (
             return true;
