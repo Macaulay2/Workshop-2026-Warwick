@@ -385,53 +385,45 @@ PGBMain CGBTriple := o -> T -> (
     KU := cgbData#"KU";
     KUtoRFlat := cgbData#"KUtoRFlat";
     RFlattoR := cgbData#"RFlattoR";
-    KUtoR := cgbData#"KUtoR";
     RtoRFlat := cgbData#"RtoRFlat";
+    RFlattoKU := cgbData#"RFlattoKU";
     if not consistencyCheckAllTogether(E, N) then (
         return {} -- The domain is empty
     );
     -- Compute the GB of union(E, F), but viewing the parameters as variables
 
-    -- TODO : how can we translate the following parts to work with matrices:
-    -- i.e., if we have
-    -- G := gens gb ideal ...
-    -- ...
-    -- Gr := [what should go here?]
-    -- question: is there a clean way to check which elements of a matrix can lift?
-    -- question 2: is this something that should be converted to work with matrices or is list okay?
     G := first entries gens gb ideal ((KUtoRFlat \ E) | (RtoRFlat \ F));
-    if member(promote(1, RFlat), G) then (
+    if member(1_RFlat, G) then (
         return {{E, N, {1_R}}} -- Trivial case where the vanishing set is empty
-    );
-    Gr := for g in G list ( -- The polynomials in G that only contain the parameters
-        l := lift(RFlattoR g, KU, Verify => false);
-        -- lift() with Verify=>false returns Null when the lift is not possible
-        -- i.e. when the polynomial contains something other than parametetrs
-        if l === null then continue;
-        l
-    );
+        );
+
+    -- Split G into the polynomials that only contain the parameters (true)
+    -- and the others (false); the parameters are the last variables of RFlat
+    n := numgens R;
+    parts := partition(g -> all(support g, v -> index v >= n), G);
+    Gr := apply(if parts#?true then parts#true else {}, g -> RFlattoKU g);
+    -- Elements of GB that do not only contain parameters
+    listDiff := apply(if parts#?false then parts#false else {}, g -> RFlattoR g);
+
     -- By convention, an empty list for a GB means that the
     -- corresponding vanishing set is the whole space,
     -- which is equivalent to only containing the 0 element.
     -- To keep track of the original rings down the line and in the output,
     -- we never return an empty GB.
     if zero length Gr then (
-        Gr = {promote(0, KU)};
-    );
+        Gr = {0_KU};
+        );
     productList := unique totalListProduct(Gr, N); -- The list obtained by multiplying every element in Gr with every element in N
     if zero length productList then (
-        productList = {promote(0, KU)};
-    );
+        productList = {0_KU};
+        );
     PGB := {};
     if consistencyCheckAllTogether (E, productList) then (
-        PGB = {{E, productList, {promote(1, R)}}};
-    );
+        PGB = {{E, productList, {1_R}}};
+        );
     if not consistencyCheckAllTogether(Gr, N) then (
         return PGB
-    );
-    -- Elements of GB that do not only contain parameters
-    Gr' := new Set from (KUtoR \ Gr);
-    listDiff := select(RFlattoR \ G, g -> not Gr'#?g);
+        );
     Gm := MDBasis listDiff;
     H := unique flatten apply(Gm, g -> listOfFactors leadCoefficient g);
     h := squareFreePart lcm(H | {1_KU});
