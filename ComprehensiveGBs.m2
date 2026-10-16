@@ -363,54 +363,6 @@ For each element in the resulting list, it ...
 >> appears in the heuristic order, because everything else in the resulting list just appears once, i.e., it's never removed and moved.
 
 Since we already compute `minimal` for the second heuristic, we sort the list and keep the first polynomial of each leading monomial
-
-Previous version of MDBasis is below in case we need it again.
-
-
-MDBasis = method();
-MDBasis (List) := (G) -> (
-    F := G;
-    if length F == 0 then (
-        return {}
-    );
-    -- Section 7.1, first heuristic
-    simpler := lc -> max({0} | apply(listOfFactors lc, f -> first degree f));
-    -- Section 7.1, second heuristic
-    lpps := apply(G, leadMonomial);
-    minimal := select(G, g -> not any(lpps, m -> m != leadMonomial g and (leadMonomial g) % m == 0));
-    freq := tally apply(minimal, g -> toString leadCoefficient g);
-    sharedCount := lc -> if freq#?(toString lc) then freq#(toString lc) else 0;
-    -- order the input by those two heuristics;
-    -- if there are still ties, order by the keys (chosen purely arbitrarily) after them
-    F = sort(F, g -> (lc := leadCoefficient g; (- sharedCount lc, simpler lc, #terms lc, first degree lc, toString g)));
-    Basis := {first F};
-    F = delete(first F, F);
-    for g in F do ( --loop through elements of G
-        --print("Deleting ", g, "from ", F);
-        F = delete(g, F);
-        toAdd := true; --At the end of the loop, if LT_x(g) is not already implied
-                       --by elements in Basis, we should add g to our Basis
-        for f in Basis do (
-            --print(f, Basis);
-            LTg := leadMonomial(g);
-            LTf := leadMonomial(f);
-            if LTg % LTf == 0 then (
-                toAdd = false; --LTg is already in Basis, exit the loop and do not add g to Basis
-                break
-            )
-            else if LTf % LTg == 0 then ( --LTg divides something in Basis, so it can replace it
-                --print("Deliting ", f, " from ", Basis, " and adding ", g );
-                Basis = unique(delete(f, Basis) | {g});
-                toAdd = false; --avoid adding g multiple times
-                continue --might happen that LTg divides other leading terms in Basis
-            );
-        );
-        if toAdd then ( -- LTg is not implied by anything in Basis
-            Basis |=  {g};
-        );
-    );
-    return Basis
-);
 *-
 
 --------------------------------------------------
