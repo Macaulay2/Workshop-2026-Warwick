@@ -1337,6 +1337,23 @@ assert(#G == 3)
 assert(set G === set {a_R - b_R, b*x - 1, b^2*x - b})
 ///
 
+-- Test Depth option for PGBMain
+TEST ///
+U = QQ[a, b, c, MonomialOrder => GRevLex];
+R = U[x, y, MonomialOrder => GRevLex];
+F = {a*x - b, b*y - a, c*x^2 - y, c*y^2 - x};
+strata = L -> set apply(L, t -> (set t#0, set t#1));
+L = PGBMain F;
+-- each extra level of recursion adds one branch in this example
+assert(apply(0..2, d -> #PGBMain(F, Depth => d)) == (2, 3, 4))
+-- the default never stops early, and a large depth gives the same result
+assert(strata PGBMain(F, Depth => 10) === strata L)
+-- with a smaller depth we get a subset of the branches
+assert all(0..2, d -> isSubset(strata PGBMain(F, Depth => d), strata L))
+-- the option also works for the CGBTriple version
+assert(#PGBMain(CGBFromTriple {{0_U}, {1_U}, F}, Depth => 0) == 2)
+///
+
 
 end --
 
