@@ -1455,7 +1455,7 @@ doc ///
         assert(not isInjective f)
     SeeAlso
         kernel(ToricVectorBundleMap)
-        ToricVectorBundle
+        ToricVectorBundleMap
 ///
 
 doc ///
@@ -1489,9 +1489,9 @@ doc ///
         f = map(F, E, matrix(ring E,{{1,0}}));
         assert(isSurjective f)
     SeeAlso
-        (image, ToricVectorBundleMap)
-        (cokernel, ToricVectorBundleMap)
-        ToricVectorBundle
+        (image,ToricVectorBundleMap)
+        (cokernel,ToricVectorBundleMap)
+        ToricVectorBundleMap
 ///
 
 doc ///
@@ -1500,11 +1500,11 @@ doc ///
     Headline
         image of a map of toric vector bundles
     Usage
-        image f
+        I = image f
     Inputs
         f : ToricVectorBundleMap
     Outputs
-        : ToricVectorBundle
+        I : ToricVectorBundle
             the image toric vector bundle of f
     Description
         Text
@@ -1518,15 +1518,15 @@ doc ///
         adapted basis and used to construct the image toric vector
         bundle.
     Example
-        X = toricProjectiveSpace 2;
-        E = trivialBundle(X, 1);
-        F = trivialBundle(X, 2);
-        f = map(E, F, matrix(ring E,{{1,0}}));
+        X = toricProjectiveSpace 2
+        E = toricVectorBundle(X, {matrix(QQ, {{-1,0},{-1,1}}), matrix(QQ, {{1,0},{0,1}}), matrix(QQ, {{0,1},{1,0}})}, {{1,0}, {1,0}, {1,0}})
+        H = E ++ trivialBundle(X, 1)
+        f = map(H, E, matrix(QQ, {{1,0},{0,1},{0,0}}))
         image f
     SeeAlso
         (isSurjective, ToricVectorBundleMap)
         (isWellDefined, ToricVectorBundleMap)
-        ToricVectorBundle
+        ToricVectorBundleMap
 ///
 
 doc ///
@@ -1561,7 +1561,7 @@ doc ///
     SeeAlso
         isInjective(ToricVectorBundleMap)
         isWellDefined(ToricVectorBundleMap)
-        ToricVectorBundle
+        ToricVectorBundleMap
 ///
 
 doc ///
@@ -1595,7 +1595,7 @@ doc ///
     SeeAlso
         isSurjective(ToricVectorBundleMap)
         isWellDefined(ToricVectorBundleMap)
-        ToricVectorBundle
+        ToricVectorBundleMap
 ///
 
 doc ///
