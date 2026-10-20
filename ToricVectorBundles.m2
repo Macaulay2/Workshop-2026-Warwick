@@ -754,7 +754,7 @@ ToricVectorBundleMap.synonym = "map of toric vector bundles on a fixed toric var
 source ToricVectorBundleMap := ToricVectorBundle => f -> f.source
 target ToricVectorBundleMap := ToricVectorBundle => f -> f.target
 map ToricVectorBundleMap := Matrix => opts -> f -> f.map
-matrix ToricVectorBundleMap := Matrix => f -> f.map
+matrix ToricVectorBundleMap := Matrix => opts -> f -> f.map
 
 net ToricVectorBundleMap := f -> (
     arrow := " <--";
@@ -954,7 +954,6 @@ jumpsAux = (basemat, L,mm) ->(
 -- Given a non square matrix of full rank and a list of jumps it returns a square matrix and a list of jumps
 -- such that the filtration defined is the same as the one we started with. 
 -- This fucntion is used in weilToKyachko but also in coker, image and ker
-
 adaptedBasis = (ML) -> (
     M:= ML_0;
     L:= ML_1;
@@ -979,9 +978,9 @@ adaptedBasis = (ML) -> (
     {M_cols, jumps}
 )
 
-image (ToricVectorBundleMap) := f ->(
-    if isSurjective(f) then( return target f ); 
-    if not isWellDefined(f) then ( error (" The map is not well defined"));
+image ToricVectorBundleMap := f ->(
+    if isSurjective f then( return target f); 
+    if (not isWellDefined f) then error ("The map is not well defined");
     M := f.map;
     E1:= source f;
     X:= variety E1;
