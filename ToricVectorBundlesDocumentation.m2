@@ -2023,7 +2023,7 @@ doc ///
         weilDecoration
         (weilDecoration, ToricVectorBundle)
     Headline
-        the Weil decoration associated to a toric vector bundle.
+        The Weil decoration associated to a toric vector bundle.
     Usage
         WD = weilDecoration(E)
     Inputs
@@ -2037,9 +2037,9 @@ doc ///
             Let $E_0$ denote the fiber of @TT "E"@ at the origin of @TT "X"@. Then the @TT "WD"@ is an hashTable that associates to 
             each stratum closure in $E_0$, the divisor decorating it.
         Example
-            M = toricProjectiveSpace 3;
-            V = tangentBundle;
-            W = weilDecoration V;
+            X = toricProjectiveSpace 3;
+            E = tangentBundle X;
+            W = weilDecoration E;
             netList strata W
         Caveat 
             The stratum $(0,\infinity)$ is omitted. 
@@ -2060,7 +2060,7 @@ doc ///
         (weilToKlyachko,NormalToricVariety,WeilDecoration)
         (weilToKlyachko,NormalToricVariety,List)
     Headline
-        the toric vector bundle associated to a Weil decoration.
+        The toric vector bundle associated to a Weil decoration.
     Usage
         E = weilToKlyachko(WD)
         E = weilToKlyachko(X,WD)
@@ -2077,8 +2077,8 @@ doc ///
             corresponding unique @TO "ToricVectorBundle" @TT "E"@. 
             For each ray of @TT "X"@, we have a filtrations with the related jumps.
         Example
-            M = toricProjectiveSpace 3;
-            V = tangentBundle;
+            X = toricProjectiveSpace 3;
+            V = tangentBundle X;
             WD = weilDecoration V;
             E = weilToKlyachko WD;
             displayFiltrations
@@ -2095,21 +2095,20 @@ doc ///
         strata
         (strata, WeilDecoration)
     Headline
-        the list of pairs of stratum subspaces and divisor coefficients of a Weil decoration
+        The list of pairs of stratum subspaces and divisor coefficients of a Weil decoration
     Usage
         S = strata(WD)
     Inputs
         WD : WeilDecoration
     Outputs
-        S : List
-            pairs consisting of a stratum subspace and its decorating divisor
+        S : List of pairs consisting of a stratum subspace and its decorating divisor
     Description
         Text
             Given a @TO "WeilDecoration"@TT "WD"@, it outputs the contents of the hashTable as a list of pairs.
         Example
-            M = toricProjectiveSpace 3;
-            V = tangentBundle;
-            WD = weilDecoration V;
+            X = toricProjectiveSpace 3;
+            E = tangentBundle X;
+            WD = weilDecoration E;
             S = strata(WD)
     SeeAlso
         weilDecoration
@@ -2117,46 +2116,72 @@ doc ///
 
 doc ///
     Key
+        variety
         (variety, WeilDecoration)
     Headline
-        TODO
+        The variety underlying a Weil decoration
     Usage
-        S = variety WD
+        X = variety WD
     Inputs
         WD : WeilDecoration
     Outputs
-        S : List
-            pairs consisting of a stratum subspace and its decorating divisor
+        X : NormalToricVariety
     Description
-        TODO
+        Text
+            Given a @TO "WeilDecoration" @@TT "WD"@, it extracts its underlying @TO "NormalToricVarieties:NormalToricVariety"@@TT "X"@.
+        Example
+            Y = toricProjectiveSpace 3;
+            E = tangentBundle Y;
+            WD = weilDecoration E;
+            X = variety WD
+    SeeAlso
+        weilDecoration
 ///
 
 doc ///
     Key
+        rank
         (rank, WeilDecoration)
     Headline
-        TODO
+        The rank of the toric vector bundle associated to a Weil decoration
     Usage
-        S = rank WD
+        r = rank WD
     Inputs
         WD : WeilDecoration
     Outputs
-        S : ZZ
+        r : ZZ
     Description
-        TODO
+        Text
+            Given a @TO "WeilDecoration" @@TT "WD"@, it outputs the rank of the associated @TO "ToricVectorBundle" @@TT "E"@.
+        Example
+            X = toricProjectiveSpace 3;
+            E = tangentBundle X;
+            WD = weilDecoration E;
+            r = rank WD
+    SeeAlso
+        weilDecoration
 ///
 
 doc ///
     Key
+        net
         (net, WeilDecoration)
     Headline
-        TODO
+        Displays the characteristics of a Weil decoration.
     Usage
         S = net WD
     Inputs
         WD : WeilDecoration
     Description
-        TODO
+        Text
+            Given a @TO "WeilDecoration" @@TT "WD"@, it describes it via its rank and the number of nonzero strata.
+        Example
+            X = toricProjectiveSpace 3;
+            E = tangentBundle X;
+            WD = weilDecoration E;
+            S = net WD
+    SeeAlso
+        weilDecoration
 ///
 
 
