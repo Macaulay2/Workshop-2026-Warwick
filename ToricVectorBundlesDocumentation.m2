@@ -259,11 +259,6 @@ doc ///
             --netList strata W
     SeeAlso
         weilDecoration
-        (net, WeilDecoration)
-        (variety, WeilDecoration)
-        (rank, WeilDecoration)
-        (strata, WeilDecoration)
-        (net, WeilDecoration)
         (variety, WeilDecoration)
         (rank, WeilDecoration)
         (strata, WeilDecoration)
@@ -1447,14 +1442,14 @@ doc ///
 
             Returns @TT "true"@ if all these conditions are satisfied, and
             @TT "false"@ otherwise.
-    Example
-        X = toricProjectiveSpace 2;
-        E = trivialBundle(X, 1);
-        F = trivialBundle(X, 2);
-        f = map(F, E, matrix(ring E,{{1}}));
-        assert(not isInjective f)
+        Example
+            X = toricProjectiveSpace 2;
+            E = trivialBundle(X, 1);
+            F = trivialBundle(X, 2);
+            f = map(F, E, matrix(ring E,{{1}}));
+            assert(not isInjective f)
     SeeAlso
-        kernel(ToricVectorBundleMap)
+        (kernel,ToricVectorBundleMap)
         ToricVectorBundleMap
 ///
 
@@ -1482,12 +1477,12 @@ doc ///
 
             Returns @TT "true"@ if all these conditions are satisfied, and
             @TT "false"@ otherwise.
-    Example
-        X = toricProjectiveSpace 2;
-        E = trivialBundle(X, 2);
-        F = trivialBundle(X, 1);
-        f = map(F, E, matrix(ring E,{{1,0}}));
-        assert(isSurjective f)
+        Example
+            X = toricProjectiveSpace 2;
+            E = trivialBundle(X, 2);
+            F = trivialBundle(X, 1);
+            f = map(F, E, matrix(ring E,{{1,0}}));
+            assert(isSurjective f)
     SeeAlso
         (image,ToricVectorBundleMap)
         (cokernel,ToricVectorBundleMap)
@@ -1508,21 +1503,21 @@ doc ///
             the image toric vector bundle of f
     Description
         Text
-        Given a map @TT "f : E_1 -> E_2"@ of toric vector bundles,
-        computes the image of @TT "f"@ as a toric vector bundle on
-        the same toric variety.
+            Given a map @TT "f : E_1 -> E_2"@ of toric vector bundles,
+            computes the image of @TT "f"@ as a toric vector bundle on
+            the same toric variety.
 
-        The image is computed by taking the images of the filtered
-        pieces of @TT "E_1"@ under the underlying module map of
-        @TT "f"@. The resulting filtration data is refined using an
-        adapted basis and used to construct the image toric vector
-        bundle.
-    Example
-        X = toricProjectiveSpace 2
-        E = toricVectorBundle(X, {matrix(QQ, {{-1,0},{-1,1}}), matrix(QQ, {{1,0},{0,1}}), matrix(QQ, {{0,1},{1,0}})}, {{1,0}, {1,0}, {1,0}})
-        H = E ++ trivialBundle(X, 1)
-        f = map(H, E, matrix(QQ, {{1,0},{0,1},{0,0}}))
-        image f
+            The image is computed by taking the images of the filtered
+            pieces of @TT "E_1"@ under the underlying module map of
+            @TT "f"@. The resulting filtration data is refined using an
+            adapted basis and used to construct the image toric vector
+            bundle.
+        Example
+            X = toricProjectiveSpace 2
+            E = toricVectorBundle(X, {matrix(QQ, {{-1,0},{-1,1}}), matrix(QQ, {{1,0},{0,1}}), matrix(QQ, {{0,1},{1,0}})}, {{1,0}, {1,0}, {1,0}})
+            H = E ++ trivialBundle(X, 1)
+            f = map(H, E, matrix(QQ, {{1,0},{0,1},{0,0}}))
+            image f
     SeeAlso
         (isSurjective, ToricVectorBundleMap)
         (isWellDefined, ToricVectorBundleMap)
@@ -1559,8 +1554,8 @@ doc ///
             f = map(F, E, matrix(ring E,{{1,0}}));
             kernel f;
     SeeAlso
-        isInjective(ToricVectorBundleMap)
-        isWellDefined(ToricVectorBundleMap)
+        (isInjective,ToricVectorBundleMap)
+        (isWellDefined,ToricVectorBundleMap)
         ToricVectorBundleMap
 ///
 
@@ -1593,23 +1588,23 @@ doc ///
             f = map(F, E, matrix(ring E,{{1,0}}));
             cokernel f;
     SeeAlso
-        isSurjective(ToricVectorBundleMap)
-        isWellDefined(ToricVectorBundleMap)
+        (isSurjective,ToricVectorBundleMap)
+        (isWellDefined,ToricVectorBundleMap)
         ToricVectorBundleMap
 ///
 
 doc ///
     Key
-        ToricVectorBundleMap ++ ToricVectorBundleMap
+        (symbol ++ ,ToricVectorBundleMap, ToricVectorBundleMap)
     Headline
         direct sum of maps of toric vector bundles
     Usage
-        f ++ g
+        h = f ++ g
     Inputs
         f : ToricVectorBundleMap
         g : ToricVectorBundleMap
     Outputs
-        : ToricVectorBundleMap
+        h: ToricVectorBundleMap
             the direct sum of the maps f and g
     Description
         Text
@@ -1631,16 +1626,16 @@ doc ///
 
 doc ///
     Key
-        ToricVectorBundleMap ** ToricVectorBundleMap
+        (symbol ** ,ToricVectorBundleMap, ToricVectorBundleMap)
     Headline
         tensor product of maps of toric vector bundles
     Usage
-        f ** g
+        h = f ** g
     Inputs
         f : ToricVectorBundleMap
         g : ToricVectorBundleMap
     Outputs
-        : ToricVectorBundleMap
+        h: ToricVectorBundleMap
             the tensor product of the maps f and g
     Description
         Text
@@ -1669,12 +1664,12 @@ doc ///
 -- TODO update to toricVectorBundleKaneyama
 doc ///
     Key
-        toricVectorBundle
-        (toricVectorBundle,ZZ,Fan)
+        toricVectorBundleKaneyama
+        (toricVectorBundleKaneyama,ZZ,Fan)
     Headline
         the trivial bundle of rank 'k' for a given fan
     Usage
-        E = toricVectorBundle(k,F)
+        E = toricVectorBundleKaneyama(k,F)
     Inputs
         k:ZZ
             strictly positive
@@ -1690,9 +1685,7 @@ doc ///
             If no further options are given then the resulting bundle will be in Klyachko's
             description: The basis assigned to every ray is the standard basis of $\mathbb{Q}^k$ and
             the filtration is given by $0$ for all $i<0$ and $\mathbb{Q}^k$ for $i>=0$.
-        Example
-            E = toricVectorBundle(2,projectiveSpaceFan 2)
-            details E
+
         Text
             If the option @TT "\"Type\" => \"Kaneyama\""@ is given then the resulting bundle will be
             in Kaneyama's description: The degree vectors of this bundle are all zero vectors and
@@ -1779,7 +1772,7 @@ doc ///
             dimensional cone of the underlying fan over which @TT "E"@ is defined. Note that in
             @TT "E"@ the top dimensional cones are already sorted and that the degree matrices in
             @TT "L"@ will be assigned to the cones in that order. To find out the order use
-            @TO (maxCones,ToricVectorBundle)@. The matrices need not satisfy the regularity
+            TO (maxCones,ToricVectorBundle). The matrices need not satisfy the regularity
             condition. This can be checked with @TO regCheck@.
         Example
             E = toricVectorBundleKaneyama(2,pp1ProductFan 2)
@@ -1833,8 +1826,8 @@ doc ///
 
 doc ///
     Key
-        weilToCartierKaneyama
-        (weilToCartierKaneyama,List,Fan)
+         lineBundleKaneyama
+        ( lineBundleKaneyama,List,Fan)
     Headline
         the line bundle given by a Cartier divisor
     Usage
@@ -2062,8 +2055,8 @@ doc ///
         WD : WeilDecoration
     Description
         Text
-            Given a @TO "ToricVectorBundle" @TT "E"@ in the Klyachko convention over a @TO "NormalToricVarieties:NormalToricVariety" @TT "X"@, 
-            it outputs its @TO "WeilDecoration"@TT "WD"@. This is given as follows.
+            Given a @TO "ToricVectorBundle"@ @TT "E"@ in the Klyachko convention over a @TO "NormalToricVarieties:NormalToricVariety"@ @TT "X"@, 
+            it outputs its @TO "WeilDecoration"@ @TT "WD"@. This is given as follows.
             Let $E_0$ denote the fiber of @TT "E"@ at the origin of @TT "X"@. Then the @TT "WD"@ is an hashTable that associates to 
             each stratum closure in $E_0$, the divisor decorating it.
         Example
@@ -2071,13 +2064,12 @@ doc ///
             V = tangentBundle;
             W = weilDecoration V;
             netList strata W
-        Caveat 
-            The stratum $(0,\infinity)$ is omitted. 
+    Caveat 
+        The stratum $(0,\infinity)$ is omitted. 
     SeeAlso
-        net (WeilDecoration)
-        variety (WeilDecoration)
-        rank (WeilDecoration)
-        strata (WeilDecoration)
+        (variety, WeilDecoration)
+        (rank, WeilDecoration)
+        (strata, WeilDecoration)
         weilDecorationDivisors
         weilToKlyachko
 ///
@@ -2097,14 +2089,15 @@ doc ///
         E = weilToKlyachko(X,L)
     Inputs
         X : NormalToricVariety
-        WD : WeilDecoration or List
-            a Weil decoration or a list of pairs of stratum subspaces and divisor coefficients
+        WD : WeilDecoration 
+        L : List
+            a list of pairs of stratum subspaces and divisor coefficients
     Outputs
         E : ToricVectorBundle
     Description
         Text
-            Given a @TO "WeilDecoration"@TT "WD"@ on some @TO "NormalToricVarieties:NormalToricVariety" @TT "X"@, it associates its
-            corresponding unique @TO "ToricVectorBundle" @TT "E"@. 
+            Given a @TO "WeilDecoration"@ @TT "WD"@ on some @TO "NormalToricVarieties:NormalToricVariety"@ @TT "X"@, it associates its
+            corresponding unique @TO "ToricVectorBundle"@ @TT "E"@. 
             For each ray of @TT "X"@, we have a filtrations with the related jumps.
         Example
             M = toricProjectiveSpace 3;
@@ -2135,7 +2128,7 @@ doc ///
             pairs consisting of a stratum subspace and its decorating divisor
     Description
         Text
-            Given a @TO "WeilDecoration"@TT "WD"@, it outputs the contents of the hashTable as a list of pairs.
+            Given a @TO "WeilDecoration"@ @TT "WD"@, it outputs the contents of the hashTable as a list of pairs.
         Example
             M = toricProjectiveSpace 3;
             V = tangentBundle;
@@ -2155,7 +2148,7 @@ doc ///
     Inputs
         WD : WeilDecoration
     Outputs
-        X : NormalToricVariety
+        X:NormalToricVariety
     Description
         Text
           TODO
@@ -2213,7 +2206,7 @@ doc ///
             details E
 ///
 
-
+-*
 doc ///
     Key
         (net,ToricVectorBundleKaneyama)
@@ -2234,7 +2227,9 @@ doc ///
         (net,ToricVectorBundle)
         details
 ///
+*-
 
+-*
 doc ///
     Key
         (net,ToricVectorBundle)
@@ -2258,7 +2253,7 @@ doc ///
         (net,ToricVectorBundleKaneyama)
         details
 ///
-
+*-
 
 doc ///
     Key
@@ -2300,7 +2295,8 @@ doc ///
         M : Module
             a module over the Cox ring of X
     Outputs
-        f : ToricVectorBundleMap or ToricVectorBundle
+        f : ToricVectorBundleMap
+        E : ToricVectorBundle
     Description
         Text
           TODO
@@ -2510,7 +2506,7 @@ doc ///
 doc ///
     Key
         base
-        (base,ToricVectorBundle)
+        (base,ToricVectorBundleKaneyama)
     Headline
         the basis matrices for the rays
     Usage
@@ -2538,7 +2534,7 @@ doc ///
 doc ///
     Key
         charts
-        (charts,ToricVectorBundle)
+        (charts,ToricVectorBundleKaneyama)
     Headline
         the number of maximal affine charts
     Usage
@@ -2580,16 +2576,16 @@ doc ///
             bundle is given on each ray $\rho$ by the following filtration of
             coker(E,M)${}^\rho = ( E^{\rho} ) / $im(M) :
         Text
-            coker(E,M)${}^\rho(i) := E^{\rho}(i) / ( E^{\rho}(i) \cap $ im(M) ).
+            --coker(E,M)${}^\rho(i) := E^{\rho}(i) / ( E^{\rho}(i) \cap $ im(M) ).
         Example
             E = tangentBundle hirzebruchFan 2
             E = E ** E
             M = matrix {{1,0},{0,1},{1,0},{0,1/1}}
-            E1 = coker(E,M)
-            details E1
+            --E1 = coker(E,M)
+            --details E1
     SeeAlso
-        (image,ToricVectorBundle,Matrix)
-        (ker,ToricVectorBundle,Matrix)
+        (image,ToricVectorBundleMap)
+        (ker,ToricVectorBundleMap)
 ///
 
 
@@ -2632,7 +2628,6 @@ doc ///
     SeeAlso
         findWeights
         isWellDefined
-        (maxCones,ToricVectorBundle)
 ///
 
 doc ///
@@ -2721,6 +2716,7 @@ doc ///
         projectiveSpaceFan
 ///
 
+-*
 doc ///
     Key
         (image,ToricVectorBundle,Matrix)
@@ -2818,7 +2814,7 @@ doc ///
         (fan,ToricVectorBundle)
         (rays,ToricVectorBundle)
 ///
-
+*-
 doc ///
     Key
         pp1ProductFan
