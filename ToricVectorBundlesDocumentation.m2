@@ -243,7 +243,7 @@ doc ///
             A Weil decoration of a toric vector bundle, in the sense of Altmann, Hochenegger and Witt.
         Text
             Consider a toric variety $X$ and a toric vector bundle $E$ on $X$,
-            A Weil deocration is a map $\mathcal{D}\colon E_0\to \operatorname{Div}\cup\{\infinity\}$, where $E_0$ denotes the fibre at the origin, such that 
+            A Weil decoration is a map $\mathcal{D}\colon E_0\to \operatorname{Div}\cup\{\infinity\}$, where $E_0$ denotes the fibre at the origin, such that 
             $1.$ $\mathcal{D}(e) = (\infinity)$ if and only if $e = 0$, and $\mathcal{D}|_{E_0\{0}}$ factorises over the projectivisation \mathbb{P}(E_0)$ of $E_0$.
             $2.$  for all $e, e'\in E_0$, the inequality $\mathcal{D}(e+e')\geq \mathcal{D}(e)\wedge\mathcal{D}(e')$ holds true.
         Text
@@ -2053,7 +2053,7 @@ doc ///
         weilDecoration
         (weilDecoration, ToricVectorBundle)
     Headline
-        TODO
+        the Weil decoration associated to a toric vector bundle.
     Usage
         WD = weilDecoration(E)
     Inputs
@@ -2062,7 +2062,24 @@ doc ///
         WD : WeilDecoration
     Description
         Text
-          TODO
+            Given a @TO "ToricVectorBundle" @TT "E"@ in the Klyachko convention over a @TO "NormalToricVarieties:NormalToricVariety" @TT "X"@, 
+            it outputs its @TO "WeilDecoration"@TT "WD"@. This is given as follows.
+            Let $E_0$ denote the fiber of @TT "E"@ at the origin of @TT "X"@. Then the @TT "WD"@ is an hashTable that associates to 
+            each stratum closure in $E_0$, the divisor decorating it.
+        Example
+            M = toricProjectiveSpace 3;
+            V = tangentBundle;
+            W = weilDecoration V;
+            netList strata W
+        Caveat 
+            The stratum $(0,\infinity)$ is omitted. 
+    SeeAlso
+        net (WeilDecoration)
+        variety (WeilDecoration)
+        rank (WeilDecoration)
+        strata (WeilDecoration)
+        weilDecorationDivisors
+        weilToKlyachko
 ///
 
 
@@ -2073,7 +2090,7 @@ doc ///
         (weilToKlyachko,NormalToricVariety,WeilDecoration)
         (weilToKlyachko,NormalToricVariety,List)
     Headline
-        TODO
+        the toric vector bundle associated to a Weil decoration.
     Usage
         E = weilToKlyachko(WD)
         E = weilToKlyachko(X,WD)
@@ -2086,7 +2103,20 @@ doc ///
         E : ToricVectorBundle
     Description
         Text
-          TODO
+            Given a @TO "WeilDecoration"@TT "WD"@ on some @TO "NormalToricVarieties:NormalToricVariety" @TT "X"@, it associates its
+            corresponding unique @TO "ToricVectorBundle" @TT "E"@. 
+            For each ray of @TT "X"@, we have a filtrations with the related jumps.
+        Example
+            M = toricProjectiveSpace 3;
+            V = tangentBundle;
+            WD = weilDecoration V;
+            E = weilToKlyachko WD;
+            displayFiltrations
+        Text
+            Alternatively, one can input the underlying normal toric variety together with the Weil decoration as a hashTable or
+            as a list of pairs of stratum subspaces and divisor coefficients.
+    SeeAlso
+        weilDecoration
 ///
 
 
@@ -2095,7 +2125,7 @@ doc ///
         strata
         (strata, WeilDecoration)
     Headline
-        TODO
+        the list of pairs of stratum subspaces and divisor coefficients of a Weil decoration
     Usage
         S = strata(WD)
     Inputs
@@ -2105,7 +2135,14 @@ doc ///
             pairs consisting of a stratum subspace and its decorating divisor
     Description
         Text
-          TODO
+            Given a @TO "WeilDecoration"@TT "WD"@, it outputs the contents of the hashTable as a list of pairs.
+        Example
+            M = toricProjectiveSpace 3;
+            V = tangentBundle;
+            WD = weilDecoration V;
+            S = strata(WD)
+    SeeAlso
+        weilDecoration
 ///
 
 doc ///
