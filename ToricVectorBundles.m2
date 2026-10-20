@@ -719,7 +719,6 @@ randomDeformation ( ToricVectorBundle ) :=(tvb) ->(
     R:= ring tvb;
     -- Change the matrices in the filtration and preserve the jumps
     newMatrices := apply(filtrationMatrices tvb, M ->(
-            -- TODO How do we want to get the random matrices?
             A := random(R^k, R^k);
             while det A == 0 do (A = random(R^k, R^k));
             A)
@@ -1285,7 +1284,6 @@ fineGr = (X,A,n) -> (
   oldNS := apply(q, i -> NS#i);
   currentMS :={};
   currentNS :={};
-
   while isMember({}, values MS) or isMember({}, values NS) do(
       if oldMS == currentMS and oldNS == currentNS then(
           jnew = min apply(p, j -> if MS#j == {} then( j)else( infinity) );
@@ -1293,12 +1291,9 @@ fineGr = (X,A,n) -> (
           inew = min apply(q, i -> if NS#i == {} then( i)else( infinity) );
           if inew != infinity then( NS#inew= flatten entries (L* matrix {(degrees source A )_inew}); );
           );
-          
       );
-
       oldMS = apply(p, j -> MS#j);
       oldNS = apply(q, i -> NS#i);
-
       for j from 0 to p-1 do(
           for i from 0 to q-1 do(
               if (aux_i)_j != {} then(
@@ -1307,17 +1302,13 @@ fineGr = (X,A,n) -> (
               );
           );
       );
-      
       currentMS = apply(p, j -> MS#j);
       currentNS = apply(q, i -> NS#i);
-
   ); 
   sdegs := - apply(p , j -> MS#j );
   tdegs := - apply(q , i -> NS#i );
   R := newRing( S, Degrees => entries id_(ZZ^(n)));
   map(R^tdegs,R^sdegs,sub(A, R) )
-  
-
 )
 
 
