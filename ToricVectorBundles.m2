@@ -1644,7 +1644,7 @@ doc ///
     SeeAlso
         "NormalToricVarieties"
 ///
-
+-*
 doc ///
     Key
         ToricVectorBundleKlyachko
@@ -1703,7 +1703,7 @@ doc ///
         moduleToKlyachko
         ToricVectorBundleKaneyama
 ///
-
+*-
 -*
 doc ///
     Key
@@ -3513,6 +3513,7 @@ doc ///
 ///
 
 *-
+-*
 -----------------------------------------------------------
 -- Documentation for everything related to maps (29/9/2026)
 -----------------------------------------------------------
@@ -3751,6 +3752,8 @@ doc ///
     SeeAlso
         ToricVectorBundleMap
 ///
+*-
+--load "KaneyamaDocumentation.m2"
 -------------------------------------------
 -- TESTS
 -------------------------------------------
