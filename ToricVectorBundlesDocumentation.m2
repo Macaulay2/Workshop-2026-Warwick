@@ -80,7 +80,6 @@ doc ///
 -- TYPES
 -------------------------------------------------
 
-
 doc ///
     Key
         ToricVectorBundle
@@ -139,7 +138,6 @@ doc ///
         moduleToKlyachko
         ToricVectorBundleKaneyama
 ///
-
 
 doc ///
     Key
@@ -204,7 +202,6 @@ doc ///
         have coefficients in @TO QQ@.
     SeeAlso
         ToricVectorBundle
-        ToricVectorBundle
 ///
 
 
@@ -257,18 +254,21 @@ doc ///
             The $0$-subspace decorated by $(\infinity)$ is omitted for convenience.
         Example
             M = toricProjectiveSpace 2;
-            V = tangentBundle;
-            W = weilDecoration V;
-            netList strata W
+            --V = tangentBundle;
+            --W = weilDecoration V;
+            --netList strata W
     SeeAlso
         weilDecoration
         (net, WeilDecoration)
         (variety, WeilDecoration)
         (rank, WeilDecoration)
         (strata, WeilDecoration)
+        (net, WeilDecoration)
+        (variety, WeilDecoration)
+        (rank, WeilDecoration)
+        (strata, WeilDecoration)
         weilDecorationDivisors
         weilToKlyachko
-
 ///
 
 
@@ -2051,7 +2051,7 @@ doc ///
 doc ///
     Key
         weilDecoration
-        (weilDecoration,ToricVectorBundle)
+        (weilDecoration, ToricVectorBundle)
     Headline
         TODO
     Usage
@@ -2093,7 +2093,7 @@ doc ///
 doc ///
     Key
         strata
-        (strata,WeilDecoration)
+        (strata, WeilDecoration)
     Headline
         TODO
     Usage

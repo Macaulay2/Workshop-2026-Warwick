@@ -719,7 +719,6 @@ randomDeformation ( ToricVectorBundle ) :=(tvb) ->(
     R:= ring tvb;
     -- Change the matrices in the filtration and preserve the jumps
     newMatrices := apply(filtrationMatrices tvb, M ->(
-            -- TODO How do we want to get the random matrices?
             A := random(R^k, R^k);
             while det A == 0 do (A = random(R^k, R^k));
             A)
@@ -1080,9 +1079,6 @@ cokernel (ToricVectorBundleMap) := f ->(
     L:= apply(Xrays,  p ->
         apply(steps, i ->(
                 -- TO DO: fix this
-                -- This will give the data for the cokerenel but where the ambien matrix need not be square
-                -- We later need to get an square matrix out of it by "selecting a subset of the columns" (using adaptedBasis) or using some other method 
-                -- The choices made here (and below) interact with how isIsomorphic works etc
                 amb := module (ring E2) ^ (rank E2);
                 f1 := image map(amb, , sub(M * filteredPiece(E1,p,i),RX));
                 f2 := image map(amb, , sub(filteredPiece(E2,p,i),RX));
@@ -1288,7 +1284,6 @@ fineGr = (X,A,n) -> (
   oldNS := apply(q, i -> NS#i);
   currentMS :={};
   currentNS :={};
-
   while isMember({}, values MS) or isMember({}, values NS) do(
       if oldMS == currentMS and oldNS == currentNS then(
           jnew = min apply(p, j -> if MS#j == {} then( j)else( infinity) );
@@ -1296,12 +1291,9 @@ fineGr = (X,A,n) -> (
           inew = min apply(q, i -> if NS#i == {} then( i)else( infinity) );
           if inew != infinity then( NS#inew= flatten entries (L* matrix {(degrees source A )_inew}); );
           );
-          
       );
-
       oldMS = apply(p, j -> MS#j);
       oldNS = apply(q, i -> NS#i);
-
       for j from 0 to p-1 do(
           for i from 0 to q-1 do(
               if (aux_i)_j != {} then(
@@ -1310,17 +1302,13 @@ fineGr = (X,A,n) -> (
               );
           );
       );
-      
       currentMS = apply(p, j -> MS#j);
       currentNS = apply(q, i -> NS#i);
-
   ); 
   sdegs := - apply(p , j -> MS#j );
   tdegs := - apply(q , i -> NS#i );
   R := newRing( S, Degrees => entries id_(ZZ^(n)));
   map(R^tdegs,R^sdegs,sub(A, R) )
-  
-
 )
 
 
@@ -1617,7 +1605,6 @@ net ToricVectorBundle := E -> (
 -------------------------------------------
 
 load "ToricVectorBundlesDocumentation.m2"
-
 
 -------------------------------------------
 -- TESTS
@@ -2296,6 +2283,7 @@ load "KaneyamaTests.m2"
 
 -- Test ??
 -- Checking isWellDefined TODO : I think this was intended for Klyachko type originally
+-- addBase does not exist anumore
 TEST ///
 T = toricVectorBundle(2,pp1ProductFan 2)
 T1 = addBase(T,{matrix{{1,2},{3,1}},matrix{{-1,0},{3,1}},matrix{{1,2},{-3,-1}},matrix{{-1,0},{-3,-1}}})
