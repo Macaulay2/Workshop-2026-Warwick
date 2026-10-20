@@ -1488,7 +1488,7 @@ doc ///
         assert(not isInjective f)
     SeeAlso
         kernel(ToricVectorBundleMap)
-        ToricVectorBundle
+        ToricVectorBundleMap
 ///
 
 doc ///
@@ -1524,7 +1524,40 @@ doc ///
     SeeAlso
         image(ToricVectorBundleMap)
         cokernel(ToricVectorBundleMap)
-        ToricVectorBundle
+        ToricVectorBundleMap
+///
+
+doc ///
+    Key
+        isIsomorphism(ToricVectorBundleMap)
+    Headline
+        test whether a map of toric vector bundles is an isomorphism
+    Usage
+        isIsomorphism f
+    Inputs
+        f : ToricVectorBundleMap
+    Outputs
+        : Boolean
+            whether f is an isomorphism
+    Description
+        Text
+        Determines whether the map @TT "f"@ is an isomorphism as a map of
+        toric vector bundles.
+
+        The method checks that @TT "f"@ is well defined, is injective and 
+        is surjective. It returns @TT "true"@ if all the above conditions 
+        are satisfied and @TT "false"@ otherwise. 
+    Example
+        X = toricProjectiveSpace 2;
+        E = trivialBundle(X, 2);
+        F = trivialBundle(X, 1);
+        f = map(F, E, matrix(ring E,{{1,0}}));
+        assert(not isIsomorphism f)
+    SeeAlso
+        isInjective(ToricVectorBundleMap)
+        isSurjective(ToricVectorBundleMap)
+        isWellDefined(ToricVectorBundleMap)
+        ToricVectorBundleMap
 ///
 
 doc ///
@@ -1533,11 +1566,11 @@ doc ///
     Headline
         image of a map of toric vector bundles
     Usage
-        image f
+        I = image f
     Inputs
         f : ToricVectorBundleMap
     Outputs
-        : ToricVectorBundle
+        I : ToricVectorBundle
             the image toric vector bundle of f
     Description
         Text
@@ -1551,15 +1584,15 @@ doc ///
         adapted basis and used to construct the image toric vector
         bundle.
     Example
-        X = toricProjectiveSpace 2;
-        E = trivialBundle(X, 1);
-        F = trivialBundle(X, 2);
-        f = map(E, F, matrix(ring E,{{1,0}}));
+        X = toricProjectiveSpace 2
+        E = toricVectorBundle(X, {matrix(QQ, {{-1,0},{-1,1}}), matrix(QQ, {{1,0},{0,1}}), matrix(QQ, {{0,1},{1,0}})}, {{1,0}, {1,0}, {1,0}})
+        H = E ++ trivialBundle(X, 1)
+        f = map(H, E, matrix(QQ, {{1,0},{0,1},{0,0}}))
         image f
     SeeAlso
         isSurjective(ToricVectorBundleMap)
         isWellDefined(ToricVectorBundleMap)
-        ToricVectorBundle
+        ToricVectorBundleMap
 ///
 
 doc ///
@@ -1594,7 +1627,7 @@ doc ///
     SeeAlso
         isInjective(ToricVectorBundleMap)
         isWellDefined(ToricVectorBundleMap)
-        ToricVectorBundle
+        ToricVectorBundleMap
 ///
 
 doc ///
@@ -1628,7 +1661,7 @@ doc ///
     SeeAlso
         isSurjective(ToricVectorBundleMap)
         isWellDefined(ToricVectorBundleMap)
-        ToricVectorBundle
+        ToricVectorBundleMap
 ///
 
 doc ///

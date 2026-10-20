@@ -955,8 +955,7 @@ jumpsAux = (basemat, L,mm) ->(
 -- Given a non square matrix of full rank and a list of jumps it returns a square matrix and a list of jumps
 -- such that the filtration defined is the same as the one we started with. 
 -- This fucntion is used in weilToKyachko but also in coker, image and ker
--- TODO: check that it interacts correctly with isWellDefined ToricVectorBundle
--- The input is of the form ML={Matrix, List}
+
 adaptedBasis = (ML) -> (
     M:= ML_0;
     L:= ML_1;
@@ -980,8 +979,6 @@ adaptedBasis = (ML) -> (
     );
     {M_cols, jumps}
 )
-
--- TODO NEEDS TO BE FIXED
 
 image (ToricVectorBundleMap) := f ->(
     if isSurjective(f) then( return target f ); 
@@ -1023,8 +1020,6 @@ image (ToricVectorBundleMap) := f ->(
     newJumps= newData_1;
     toricVectorBundle(X, newMatrices, newJumps)
 )
-
--- TODO fix jumps
 
 kernel (ToricVectorBundleMap) := opts -> f ->(
     E1:= source f;
