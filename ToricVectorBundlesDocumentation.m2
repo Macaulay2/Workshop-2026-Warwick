@@ -80,7 +80,6 @@ doc ///
 -- TYPES
 -------------------------------------------------
 
-
 doc ///
     Key
         ToricVectorBundle
@@ -117,7 +116,7 @@ doc ///
             F = filtrations TX
             (filtrationJumps TX)_0 == {1,0}
         Text
-            An individual filtered piece may be recovered using @TO filteredPiece(ToricVectorBundle,List,ZZ)@.
+            An individual filtered piece may be recovered using @TO filteredPiece@.
         Example
             filteredPiece(TX,{-1,-1},1)
         Text
@@ -139,7 +138,6 @@ doc ///
         moduleToKlyachko
         ToricVectorBundleKaneyama
 ///
-
 
 doc ///
     Key
@@ -204,7 +202,6 @@ doc ///
         have coefficients in @TO QQ@.
     SeeAlso
         ToricVectorBundle
-        ToricVectorBundle
 ///
 
 
@@ -245,7 +242,7 @@ doc ///
             A Weil decoration of a toric vector bundle, in the sense of Altmann, Hochenegger and Witt.
         Text
             Consider a toric variety $X$ and a toric vector bundle $E$ on $X$,
-            A Weil deocration is a map $\mathcal{D}\colon E_0\to \operatorname{Div}\cup\{\infinity\}$, where $E_0$ denotes the fibre at the origin, such that 
+            A Weil decoration is a map $\mathcal{D}\colon E_0\to \operatorname{Div}\cup\{\infinity\}$, where $E_0$ denotes the fibre at the origin, such that 
             $1.$ $\mathcal{D}(e) = (\infinity)$ if and only if $e = 0$, and $\mathcal{D}|_{E_0\{0}}$ factorises over the projectivisation \mathbb{P}(E_0)$ of $E_0$.
             $2.$  for all $e, e'\in E_0$, the inequality $\mathcal{D}(e+e')\geq \mathcal{D}(e)\wedge\mathcal{D}(e')$ holds true.
         Text
@@ -256,18 +253,17 @@ doc ///
             The $0$-subspace decorated by $(\infinity)$ is omitted for convenience.
         Example
             M = toricProjectiveSpace 2;
-            V = tangentBundle;
-            W = weilDecoration V;
-            netList strata W
+            --V = tangentBundle;
+            --W = weilDecoration V;
+            --netList strata W
     SeeAlso
         weilDecoration
-        net (WeilDecoration)
-        variety (WeilDecoration)
-        rank (WeilDecoration)
-        strata (WeilDecoration)
+        (net, WeilDecoration)
+        (variety, WeilDecoration)
+        (rank, WeilDecoration)
+        (strata, WeilDecoration)
         weilDecorationDivisors
         weilToKlyachko
-
 ///
 
 
@@ -299,7 +295,7 @@ doc ///
         E:ToricVectorBundle
     Description
         Text
-            Given a @TO "NormalToricVarieties::NormalToricVariety" @TT "X"@ over a field @TT "F"@ and a list of $r\times r$ matrices @TT "L1"@
+            Given a @TO "NormalToricVarieties::NormalToricVariety"@ $X$ over a field $F$ and a list of $r\times r$ matrices @TT "L1"@
             having one matrix with entries in @TT "F"@ for each ray in the fan of @TT "X"@
             and a list @TT "L2"@ having a list of $r$ integers for each ray in the fan of @TT "X"@;
             it outputs a @TO toricVectorBundle@ @TT "E"@. This toric vector bundle has as Klyachko description by decreasing filtrations
@@ -308,7 +304,7 @@ doc ///
             It is assumed that the lists @TT "L1"@ and @TT "L2"@ are ordered according to the way @TO "NormalToricVarieties:: rays"@ of @TT "X"@ is and 
             that the list of jumps is ordered so that the the $j$-th entry of the jumps list is the maximun index for which the $j$-th column appears in the filtration. 
 
-            Alternatively, the input can be given as a pair of a @TO "NormalToricVarieties::NormalToricVariety" @TT "X"@  over a field @TT "F"@ and a HashTable H.
+            Alternatively, the input can be given as a pair of a @TO "NormalToricVarieties::NormalToricVariety"@ $X$ over a field @TT "F"@ and a HashTable H.
             The HashTable H must have as keys the rays of the fan and for each ray store a list consisting first of a $r\times r$ matrix with entries in @TT "F"@ 
             and a list of $r$ integers.
 
@@ -349,11 +345,9 @@ doc ///
         E : ToricVectorBundle
         p : List
             coordinates of a ray of the underlying fan
-    Outputs
-        M : List or Matrix
-            the filtration matrices for all rays, or the matrix for ray p
     Description
-        TODO
+        Text
+            TODO
 ///
 
 doc ///
@@ -374,7 +368,8 @@ doc ///
         J : List
             filtration jumps for all rays, or for ray p
     Description
-        TODO
+        Text
+            TODO
 ///
 
 doc ///
@@ -395,7 +390,8 @@ doc ///
         M : Matrix
             a basis matrix for the filtered piece at p and index i
     Description
-        TODO
+        Text
+            TODO
 ///
 
 
@@ -618,7 +614,8 @@ doc ///
     Outputs
         E : ToricVectorBundle
     Description
-        TODO
+        Text
+            TODO
 ///
 
 
@@ -640,7 +637,8 @@ doc ///
     Outputs
         E : ToricVectorBundle
     Description
-        TODO
+        Text
+            TODO
 ///
 
 
@@ -689,21 +687,21 @@ doc ///
             the l-th exterior power of E
     Description
         Text
-        Computes the @TT "l"@-th exterior power of the toric vector
-        bundle @TT "E"@.
+            Computes the @TT "l"@-th exterior power of the toric vector    
+            bundle @TT "E"@.
 
-        For each ray of the underlying toric variety, the filtration
-        matrix of the result is formed from the @TT "l"@ by @TT "l"@
-        minors of the filtration matrix of @TT "E"@, with rows and
-        columns indexed by the @TT "l"@-element subsets of the basis.
-        The filtration jumps are the sums of the corresponding jumps
-        of @TT "E"@.
-    Example
-        X = toricProjectiveSpace 2;
-        E = trivialBundle(X, 3);
-        assert(rank exteriorPower(E, 2) == 3)
-        assert(rank exteriorPower(E, 0) == 1)
-        assert(rank exteriorPower(E, 4) == 0)
+            For each ray of the underlying toric variety, the filtration
+            matrix of the result is formed from the @TT "l"@ by @TT "l"@
+            minors of the filtration matrix of @TT "E"@, with rows and
+            columns indexed by the @TT "l"@-element subsets of the basis.
+            The filtration jumps are the sums of the corresponding jumps
+            of @TT "E"@.
+        Example
+            X = toricProjectiveSpace 2;    
+            E = trivialBundle(X, 3);
+            assert(rank exteriorPower(E, 2) == 3)
+            assert(rank exteriorPower(E, 0) == 1)
+            assert(rank exteriorPower(E, 4) == 0)
     SeeAlso
         (symmetricPower, ToricVectorBundle, ZZ)
         ToricVectorBundle
@@ -725,22 +723,22 @@ doc ///
             the l-th symmetric power of E
     Description
         Text
-        Computes the @TT "l"@-th symmetric power of the toric vector
-        bundle @TT "E"@.
+            Computes the @TT "l"@-th symmetric power of the toric vector    
+            bundle @TT "E"@.
 
-        For each ray of the underlying toric variety, the filtration
-        matrix of the result has rows and columns indexed by the
-        multisets of size @TT "l"@ in the basis of @TT "E"@. Each entry
-        is obtained by summing, over all orderings of the row multiset,
-        the products of the corresponding entries of the filtration
-        matrix of @TT "E"@. The filtration jumps are the sums of the
-        corresponding jumps of @TT "E"@.
-    Example
-        X = toricProjectiveSpace 2;
-        E = trivialBundle(X, 3);
-        assert(rank symmetricPower(E, 2) == 6)
-        assert(rank symmetricPower(E, 1) == 3)
-        assert(rank symmetricPower(E, 0) == 1)
+            For each ray of the underlying toric variety, the filtration
+            matrix of the result has rows and columns indexed by the
+            multisets of size @TT "l"@ in the basis of @TT "E"@. Each entry
+            is obtained by summing, over all orderings of the row multiset,
+            the products of the corresponding entries of the filtration
+            matrix of @TT "E"@. The filtration jumps are the sums of the
+            corresponding jumps of @TT "E"@.
+        Example
+            X = toricProjectiveSpace 2;    
+            E = trivialBundle(X, 3);
+            assert(rank symmetricPower(E, 2) == 6)
+            assert(rank symmetricPower(E, 1) == 3)
+            assert(rank symmetricPower(E, 0) == 1)
     SeeAlso
         (exteriorPower, ToricVectorBundle, ZZ)
         ToricVectorBundle
@@ -763,22 +761,21 @@ doc ///
             the tensor product of E and F
     Description
         Text
-        Computes the tensor product of the toric vector bundles
-        @TT "E"@ and @TT "F"@, which must be defined over the same
-        toric variety.
+            Computes the tensor product of the toric vector bundles    
+            @TT "E"@ and @TT "F"@, which must be defined over the same
+            toric variety.
 
-        For each ray of the underlying toric variety, the filtration
-        matrix of the result is the tensor product of the filtration
-        matrices of @TT "E"@ and @TT "F"@. The filtration jump for the
-        basis vector @TT "e_i ** f_j"@ is the sum of the jump for
-        @TT "e_i"@ in @TT "E"@ and the jump for @TT "f_j"@ in @TT "F"@.
-
-    Example
-        X = toricProjectiveSpace 2;
-        E = trivialBundle(X, 2);
-        F = trivialBundle(X, 3);
-        assert(rank tensor(E, F) == 6)
-        assert(rank (E ** F) == 6)
+            For each ray of the underlying toric variety, the filtration
+            matrix of the result is the tensor product of the filtration
+            matrices of @TT "E"@ and @TT "F"@. The filtration jump for the
+            basis vector @TT "e_i ** f_j"@ is the sum of the jump for
+            @TT "e_i"@ in @TT "E"@ and the jump for @TT "f_j"@ in @TT "F"@.
+        Example
+            X = toricProjectiveSpace 2;    
+            E = trivialBundle(X, 2);
+            F = trivialBundle(X, 3);
+            assert(rank tensor(E, F) == 6)
+            assert(rank (E ** F) == 6)
     SeeAlso
         (symbol **, ToricVectorBundleMap, ToricVectorBundleMap)
         (exteriorPower, ToricVectorBundle, ZZ)
@@ -2057,9 +2054,9 @@ doc ///
 doc ///
     Key
         weilDecoration
-        (weilDecoration,ToricVectorBundle)
+        (weilDecoration, ToricVectorBundle)
     Headline
-        TODO
+        the Weil decoration associated to a toric vector bundle.
     Usage
         WD = weilDecoration(E)
     Inputs
@@ -2067,7 +2064,25 @@ doc ///
     Outputs
         WD : WeilDecoration
     Description
-        TODO
+        Text
+            Given a @TO "ToricVectorBundle" @TT "E"@ in the Klyachko convention over a @TO "NormalToricVarieties:NormalToricVariety" @TT "X"@, 
+            it outputs its @TO "WeilDecoration"@TT "WD"@. This is given as follows.
+            Let $E_0$ denote the fiber of @TT "E"@ at the origin of @TT "X"@. Then the @TT "WD"@ is an hashTable that associates to 
+            each stratum closure in $E_0$, the divisor decorating it.
+        Example
+            M = toricProjectiveSpace 3;
+            V = tangentBundle;
+            W = weilDecoration V;
+            netList strata W
+        Caveat 
+            The stratum $(0,\infinity)$ is omitted. 
+    SeeAlso
+        net (WeilDecoration)
+        variety (WeilDecoration)
+        rank (WeilDecoration)
+        strata (WeilDecoration)
+        weilDecorationDivisors
+        weilToKlyachko
 ///
 
 
@@ -2078,7 +2093,7 @@ doc ///
         (weilToKlyachko,NormalToricVariety,WeilDecoration)
         (weilToKlyachko,NormalToricVariety,List)
     Headline
-        TODO
+        the toric vector bundle associated to a Weil decoration.
     Usage
         E = weilToKlyachko(WD)
         E = weilToKlyachko(X,WD)
@@ -2090,16 +2105,30 @@ doc ///
     Outputs
         E : ToricVectorBundle
     Description
-        TODO
+        Text
+            Given a @TO "WeilDecoration"@TT "WD"@ on some @TO "NormalToricVarieties:NormalToricVariety" @TT "X"@, it associates its
+            corresponding unique @TO "ToricVectorBundle" @TT "E"@. 
+            For each ray of @TT "X"@, we have a filtrations with the related jumps.
+        Example
+            M = toricProjectiveSpace 3;
+            V = tangentBundle;
+            WD = weilDecoration V;
+            E = weilToKlyachko WD;
+            displayFiltrations
+        Text
+            Alternatively, one can input the underlying normal toric variety together with the Weil decoration as a hashTable or
+            as a list of pairs of stratum subspaces and divisor coefficients.
+    SeeAlso
+        weilDecoration
 ///
 
 
 doc ///
     Key
         strata
-        (strata,WeilDecoration)
+        (strata, WeilDecoration)
     Headline
-        TODO
+        the list of pairs of stratum subspaces and divisor coefficients of a Weil decoration
     Usage
         S = strata(WD)
     Inputs
@@ -2107,6 +2136,58 @@ doc ///
     Outputs
         S : List
             pairs consisting of a stratum subspace and its decorating divisor
+    Description
+        Text
+            Given a @TO "WeilDecoration"@TT "WD"@, it outputs the contents of the hashTable as a list of pairs.
+        Example
+            M = toricProjectiveSpace 3;
+            V = tangentBundle;
+            WD = weilDecoration V;
+            S = strata(WD)
+    SeeAlso
+        weilDecoration
+///
+
+doc ///
+    Key
+        (variety, WeilDecoration)
+    Headline
+        TODO
+    Usage
+        S = variety WD
+    Inputs
+        WD : WeilDecoration
+    Outputs
+        S : List
+            pairs consisting of a stratum subspace and its decorating divisor
+    Description
+        TODO
+///
+
+doc ///
+    Key
+        (rank, WeilDecoration)
+    Headline
+        TODO
+    Usage
+        S = rank WD
+    Inputs
+        WD : WeilDecoration
+    Outputs
+        S : ZZ
+    Description
+        TODO
+///
+
+doc ///
+    Key
+        (net, WeilDecoration)
+    Headline
+        TODO
+    Usage
+        S = net WD
+    Inputs
+        WD : WeilDecoration
     Description
         TODO
 ///
