@@ -332,3 +332,83 @@ doc ///
         isWellDefined
 ///
 *-
+doc ///
+    Key
+        (ring,ToricVectorBundle)
+    Headline
+        the graded ring of the bundle
+    Usage
+        R = ring E
+    Inputs
+        E:ToricVectorBundle
+    Outputs
+        R:Ring
+    Description
+        Text
+            For a vector bundle in Kaneyama's description the graded ring is @TO QQ@ with degree
+            space the lattice of the underlying fan.
+        Example
+            E = tangentBundleKaneyama(projectiveSpaceFan 3)
+            ring E
+        Text
+            For a vector bundle in Klyachko's description the graded ring is @TO QQ@ with degree
+            space the lattice of the underlying fan.
+        Example
+            E = toricVectorBundle(1,projectiveSpaceFan 2, toList(3:matrix{{1/2}}),toList(3:matrix{{-1}}))
+            ring E
+    SeeAlso
+        (cohomology,ZZ,ToricVectorBundle)
+        (cohomology,ZZ,ToricVectorBundle,Matrix)
+        (cohomology,ZZ,ToricVectorBundle,List)
+///
+doc ///
+    Key
+        (rank,ToricVectorBundle)
+    Headline
+        the rank of the vector bundle
+    Usage
+        r = rank E
+    Inputs
+        E:ToricVectorBundle
+    Outputs
+        r:ZZ
+    Description
+        Text
+            Returns the rank $r$ of the toric vector bundle in Kaneyama's description.
+        Example
+            E = tangentBundle projectiveSpaceFan 3
+            rank E
+    SeeAlso
+        (rays,ToricVectorBundle)
+        (fan,ToricVectorBundle)
+        charts
+///
+
+doc ///
+    Key
+        (dual,ToricVectorBundle)
+    Headline
+        the dual bundle of a toric vector bundle
+    Usage
+        Ed = dual E
+    Inputs
+        E:ToricVectorBundle
+    Outputs
+        Ed:ToricVectorBundle
+    Description
+        Text
+            @TT "dual"@ computes the dual vector bundle of a toric vector bundle.
+        Example
+            E = tangentBundleKaneyama(pp1ProductFan 2)
+            Ed = dual E
+            details Ed
+            Ed == cotangentBundleKaneyama(pp1ProductFan 2)
+        Example
+            E = tangentBundle projectiveSpaceFan 2
+            Ed = dual E
+            details Ed
+            Ed == cotangentBundle projectiveSpaceFan 2
+    SeeAlso
+        tangentBundle
+        cotangentBundle
+///
