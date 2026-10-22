@@ -471,6 +471,8 @@ tensor(ToricVectorBundleKaneyama, ToricVectorBundleKaneyama) := ToricVectorBundl
 
 ToricVectorBundleKaneyama ** ToricVectorBundleKaneyama := (tvb1,tvb2) -> tensor(tvb1,tvb2)
 
+twist(ToricVectorBundleKaneyama, List) := (E, s) -> E ** lineBundleKaneyama(variety E, s)
+
 -- PURPOSE : Generating the Vector Bundle given by a divisor
 
 lineBundleKaneyama  = method();
