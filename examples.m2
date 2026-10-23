@@ -61,7 +61,9 @@ G2' = CGBMain(F, Depth => 2, ReduceStrata => true);
 netList for g in G2' list {g_0, factor \ g_1}
 
 
-
+R = QQ[a,b][x,y, MonomialOrder => Lex]
+F = {x*2 + y*2-1, (x-a)^2+(x-b)^2-1}
+CGBMain F
 
 
 
@@ -81,6 +83,11 @@ R = QQ[a,b][x,y, MonomialOrder => Lex]
 F = {a*x + b*y}
 CGBMain F
 CGB F
+Lrestricted = CGBMain(F, {a});
+U = QQ[a,b];
+R = U[x];
+F = {a*x, a*(a-1)};
+CGBMain(F,{b})
 
 
 
@@ -235,7 +242,11 @@ R = U[x,y, MonomialOrder => Lex]
 F={a*x-b,b*y-a,c*x^2-y,c*y^2-x}
 T = CGBFromTriple {{0_U}, {1_U}, F}
 L= PGBMain T
+LL= PGBMain F
 netList oo
+T = CGBFromTriple {{a,b}, {c}, F};
+Lrestricted = PGBMain T;
+netList Lrestricted
 
 LL = apply(CGBMain(F, ReduceStrata => true), e -> toList e)
 netList oo
@@ -349,7 +360,17 @@ G = CGBMain F;
 G = CGBMain(F, ReduceStrata => true);
 netList G
 
-
+U = QQ[a, MonomialOrder => Lex];
+R = U[x,y, MonomialOrder => Lex];
+G = {
+    a*x^2-y,
+    a*y^2-1,
+    a*x-1,
+    (a+1)*x-y,
+    (a+1)*y-a
+    };
+M = MDBasis G;
+netList M
 
 
 -- in KSW the P3P takes around 2.5s with KSW and 1+hour
