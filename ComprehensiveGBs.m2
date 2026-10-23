@@ -4,14 +4,14 @@ newPackage(
     Date => "",
     Headline => "A package for computing Comprehensive Groebner Bases (CGBs)",
     Authors => {
-        { Name => "Lorenzo De Biase", Email => "lorenzo.debiase@enea.it", HomePage => "https://sites.google.com/view/lorenzodebiase/"},
-        { Name => "Weijia Wang", Email => "weijia.wang@lip6.fr", HomePage => "https://weijia.perso.lip6.fr/"},
-        { Name => "Angelo El Saliby", Email => "angelo.el.saliby@mis.mpg.de", HomePage => "angeloelsaliby.github.io"},
-        { Name => "Oliver Clarke", Email => "oliver.clarke@durham.ac.uk", HomePage => "https://www.oliverclarkemath.com"},
-        { Name => "Sam Knight", Email => "samdeckardknight@gmail.com", HomePage => ""},
         { Name => "Agustina Cagliero", Email => "mariaagustina.cagliero@kuleuven.be", HomePage => "https://sites.google.com/view/mariaagustinacagliero/"},
+        { Name => "Oliver Clarke", Email => "oliver.clarke@durham.ac.uk", HomePage => "https://www.oliverclarkemath.com"},
+        { Name => "Woody Cohen", Email => "2597103@swansea.ac.uk", HomePage => ""},
+        { Name => "Lorenzo De Biase", Email => "lorenzo.debiase@enea.it", HomePage => "https://sites.google.com/view/lorenzodebiase/"},
+        { Name => "Angelo El Saliby", Email => "angelo.el.saliby@mis.mpg.de", HomePage => "angeloelsaliby.github.io"},
         { Name => "Giulia Gaggero", Email => "gaggerog@mcmaster.ca", HomePage => ""},
-        { Name => "Woody Cohen", Email => "2597103@swansea.ac.uk", HomePage => ""}
+        { Name => "Sam Knight", Email => "samdeckardknight@gmail.com", HomePage => ""},
+        { Name => "Weijia Wang", Email => "weijia.wang@lip6.fr", HomePage => "https://weijia.perso.lip6.fr/"}
     },
     Keywords => {""},
     AuxiliaryFiles => false,
