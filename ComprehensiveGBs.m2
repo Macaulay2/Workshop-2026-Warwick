@@ -25,21 +25,14 @@ export {
     "CGB",
     "cgbOnGraph",
     "ReduceStrata",
-    "CGBFromTriple",
     "PGBMain",
     "MDBasis",
     "Depth",
-    "CheckAssumption",
-    "CGBTriple"
+    "CheckAssumption"
 } -- functions, objects to export
 
 protect ICheckLoops
 
-
-CGBTriple = new Type of HashTable
-
--- print a CGBTriple as its triple {E, N, F}, hiding the rings and maps it stores
-net CGBTriple := T -> "CGBTriple" | net T#"triple";
 
 -- store all the maps and rings of a CGB computation in a object
 CGBData = new Type of HashTable
@@ -62,22 +55,6 @@ ringOrder PolynomialRing := List => R -> (
             orderEntry
         )
     ))
-);
-
-CGBFromTriple = method(); -- Constructor for a CGBTriple starting from
-                          -- a list {E, F, G} where V(E)\V(F) is the
-                          -- parametric strata and G is the set of
-                          -- polynomial to be studied on it.
-
-CGBFromTriple List := CGBTriple => L -> (
-    if length L != 3 then error "expected a triple {E, N, F} of three lists";
-    if length L_0 == 0 then error "E must not be empty; use {0} when no equality constraints are present";
-    if length L_2 == 0 then error "F must not be empty";
-    if any(L_1, n -> zero n) then error "Please remove zeros from N";
-    R := ring L_2_0;
-    return new CGBTriple from {
-        "triple" => L,
-        "cgbData" => CGBDataFromRings R};
 );
 
 CGBDataFromRings = method();
@@ -378,10 +355,8 @@ PGBMain = method(
         Depth => -1
         }
     );
-PGBMain CGBTriple := o -> T -> (
-    {E, N, F} := T#"triple";
-    cgbData := T#"cgbData";
-    R := cgbData#"R";
+PGBMain (List, List, List, Ring) := o -> (E, N, F, R) -> (
+    cgbData := CGBDataFromRings R;
     RFlat := cgbData#"RFlat";
     KU := cgbData#"KU";
     KUtoRFlat := cgbData#"KUtoRFlat";
@@ -444,17 +419,17 @@ PGBMain CGBTriple := o -> T -> (
             E' = {0_KU};
             );
         if i == 0 then (
-            PGB = unique(PGB | PGBMain(CGBFromTriple {
+            PGB = unique(PGB | PGBMain(
                         E',
                         N,
-                        listDiff}, o')
+                        listDiff, o')
                 )
             )
         else (
-            PGB = unique(PGB | PGBMain(CGBFromTriple {
+            PGB = unique(PGB | PGBMain(
                         E',
                         unique totalListProduct(N, {squareFreePart product H_{0..i-1}}),
-                        listDiff}, o')
+                        listDiff, o')
                 )
             );
         );
@@ -468,7 +443,24 @@ PGBMain List := o -> F -> (
     if zero length F then error "List must be non-empty";
     R := ring first F;
     U := coefficientRing R;
-    PGBMain(CGBFromTriple {{0_U}, {1_U}, F}, o)
+    PGBMain({0_U}, {1_U}, F, R, o)
+)
+
+PGBMain (List, List) := o -> (E, F) -> (
+    if zero length F then error "List must be non-empty";
+    R := ring first F;
+    U := coefficientRing R;
+    if zero length E then E = {0_U};
+    PGBMain(E, {1_U}, F, o)
+)
+
+PGBMain (List, List, List) := o -> (E, N, F) -> (
+    if zero length F then error "List must be non-empty";
+    R := ring first F;
+    U := coefficientRing R;
+    if zero length E then E = {0_U};
+    if zero length N then N = {1_U};
+    PGBMain(E, N, F, R, o)
 )
 
 
@@ -989,18 +981,22 @@ doc ///
   Key
     PGBMain
     (PGBMain, List)
-    (PGBMain, CGBTriple)
+    (PGBMain, List, List)
+    (PGBMain, List, List, List)
     [PGBMain, Depth]
   Headline
     compute a Comprehensive Groebner System using Kapur-Sun-Wang algorithm
   Usage
     PGBMain F
-    PGBMain T
+    PGBMain(E, N, F)
+    PGBMain(E, F)
   Inputs
     F :List
       a list of polynomials in a ring $R = k[U][X]$
-    T :CGBTriple
-      constructed by @TO "CGBFromTriple"@ from a triple $\{E, N, F\}$
+    E :List
+      The strata where to execute the computation
+    F :List
+      The strata to remove from the vanishing set of $E$
     Depth=>ZZ
       a bound on the recursion depth; a negative value means no bound
   Outputs
@@ -1020,10 +1016,9 @@ doc ///
       netList PGBMain F
     Text
       To compute a comprehensive Groebner system on $V(E)\setminus V(N)$ instead, where $E$ and $N$
-      are lists of polynomials in $k[U]$, pass the triple $\{E, N, F\}$ to @TO "CGBFromTriple"@ and
-      call PGBMain on the result.
+      are lists of polynomials in $k[U]$, call PGBMain on the triple $\{E, N, F\}$.
     Example
-      netList PGBMain CGBFromTriple {{a, b}, {c}, F}
+      netList PGBMain ({a, b}, {c}, F)
     Text
       The option Depth sets a bound on the recursion depth of the algorithm. See also @TO "CGBMain"@.
       In each recursive call of the function, the algorithm considers a stratum on for
@@ -1044,75 +1039,10 @@ doc ///
     In Journal of Symbolic Computation, 49, 27-44.
   SeeAlso
     CGBMain
-    CGBFromTriple
     MDBasis
 ///
 
 
-doc ///
-  Key
-    CGBTriple
-    (net, CGBTriple)
-  Headline
-    input data for PGBMain
-  Description
-    Text
-      Let $R = k[U][X]$ be a polynomial ring, where $U$ is a set of parameters and $X$ a set of variables.
-      An object of type CGBTriple represents a list of polynomials $F$ in $R$ for that we want a comprehensive
-      groebner basis for, which should be defined on the constructible set $V(E)\setminus V(N)$ of parameter space,
-      where $E$ and $N$ are lists of polynomials in $k[U]$.
-
-      This object is used as an input to @TO "PGBMain"@, which computes a comprehensive Groebner system for $F$
-      on $V(E)\setminus V(N)$. This object stores the triple $\{E, N, F\}$ along with rings and ring maps used
-      by the computation so that they are only built only once.
-      Objects of this type are constructed with @TO "CGBFromTriple"@.
-    Example
-      U = QQ[a,b,c];
-      R = U[x,y];
-      F = {a*x - b, b*y - a, c*x^2 - y, c*y^2 - x};
-      T = CGBFromTriple {{a, b}, {c}, F}
-      netList PGBMain T
-  SeeAlso
-    CGBFromTriple
-    PGBMain
-///
-
-doc ///
-  Key
-    CGBFromTriple
-    (CGBFromTriple, List)
-  Headline
-    construct a CGBTriple
-  Usage
-    T = CGBFromTriple {E, N, F}
-  Inputs
-    E :List
-      of polynomials in $k[U]$, the equations of the parameters, use $\{0\}$ if there is none
-    N :List
-      of nonzero polynomials in $k[U]$, the non-vanishing functions for the parameters; use $\{1\}$ if there is none
-    F :List
-      a nonempty list of polynomials in a ring $R = k[U][X]$
-  Outputs
-    T :CGBTriple
-      represents the polynomials $F$ on the constructible set $V(E)\setminus V(N)$
-  Description
-    Text
-      The input is a list $\{E, N, F\}$ of three lists. The polynomials in $E$ and $N$ describe the
-      constructible set $V(E)\setminus V(N)$ of parameter values, and $F$ is the parametric polynomial system.
-      The result can be passed to @TO "PGBMain"@ to compute a comprehensive Groebner system for $F$ on $V(E)\setminus V(N)$.
-    Example
-      U = QQ[a,b,c];
-      R = U[x,y];
-      F = {a*x - b, b*y - a, c*x^2 - y, c*y^2 - x};
-      T = CGBFromTriple {{0_U}, {1_U}, F}
-      PGBMain T == PGBMain F
-    Text
-      The function gives an error if: the input is not a list of three lists, if $E$ or $F$ is empty,
-      or if $N$ contains $0$.
-  SeeAlso
-    CGBTriple
-    PGBMain
-///
 
 
 
@@ -1367,7 +1297,7 @@ TEST /// -* Testing PGBMain on {a*x-, b*y-a, c*x^2-y, c*y^2-x} *-
 U := QQ[a, b, c, MonomialOrder => GRevLex]
 R := U[x,y,z, MonomialOrder => GRevLex]
 G := {a*x-b, b*y-a, c*x^2-y, c*y^2-x}
-L := PGBMain CGBFromTriple {{0_U}, {1_U}, G}
+L := PGBMain({0_U}, {1_U}, G)
 U' = ring first first first L
 R' = ring first last first L
 ExpResult = set{
@@ -1397,6 +1327,18 @@ assert((set apply(L, r -> set \ r)) == ExpResult )
 
 ///
 
+TEST /// -* Testing PGBMain overloads*-
+U := QQ[a, b, c, MonomialOrder => GRevLex]
+R := U[x,y,z, MonomialOrder => GRevLex]
+G := {a*x-b, b*y-a, c*x^2-y, c*y^2-x}
+L := PGBMain({0_U}, {1_U}, G, R)
+
+assert(PGBMain(G) == L)
+assert(PGBMain({0_U}, G) == L)
+assert(PGBMain({0_U}, {1_U}, G) == L)
+
+///
+
 
 ----------------------------------
 -- TEST for consistency checks
@@ -1409,7 +1351,7 @@ U = QQ[a,b];
 assert CCheck({0_U, a}, b)
 assert consistencyCheckAllTogether({0_U, a}, {1_U})
 R = U[x,y];
-L = PGBMain CGBFromTriple {{0_U, a}, {1_U}, {a*x+b*y}};
+L = PGBMain({0_U, a}, {1_U}, {a*x+b*y});
 assert(set apply(L, t -> set \ t) === set {
     {set {a}, set {b}, set {b*y}},
     {set {b, a}, set {1_U}, set {0_R}}})
@@ -1440,8 +1382,6 @@ assert(apply(0..2, d -> #PGBMain(F, Depth => d)) == (2, 3, 4))
 assert(strata PGBMain(F, Depth => 10) === strata L)
 -- with a smaller depth we get a subset of the branches
 assert all(0..2, d -> isSubset(strata PGBMain(F, Depth => d), strata L))
--- the option also works for the CGBTriple version
-assert(#PGBMain(CGBFromTriple {{0_U}, {1_U}, F}, Depth => 0) == 2)
 ///
 
 
