@@ -398,59 +398,6 @@ removeDupeCols := fM -> (
     matrix {unique for c to numColumns M' - 1 list matrix M'_c}
 )
 
--*
-restart
-debug needsPackage "ToricVectorBundles2"
-X = toricProjectiveSpace(3, CoefficientRing=> ZZ/101);
-TX = tangentBundle X;
-triv = trivialBundle(X,1);
-sumoflbs = lineBundle X_0 ++ lineBundle X_1 ++ lineBundle X_2 ++ lineBundle X_3;
-f = map(sumoflbs,triv,matrix(ZZ/101,{{1},{1},{1},{1}}));
-g = map(TX,sumoflbs, transpose sub(matrix rays X,ZZ/101));
-image f == ker g
-
-Y = toricProjectiveSpace 1
-mats := {matrix {{1,0},{1,0},{1,1},{1,0}}, matrix {{1,0},{1,0},{0,1},{1,0}}}
-jumps := {{1,0},{0,1}}
-E' = toricVectorBundle(Y,mats,jumps)
-displayFiltrations E'
-displayFiltrations prune E'
-T1 = E'
-T2 = prune E'
-T1 == T2
-
-X = hirzebruchSurface 2
-E = tangentBundle X
-L = lineBundle(X_0 + 2*X_1 + 4*X_2 + 5*X_3)
-T1 = exteriorPower(E ++ L, 2)
-T2 = (exteriorPower(E,0) ** exteriorPower(L,2)) ++ (exteriorPower(E,1)**exteriorPower(L,1)) ++ (exteriorPower(E,2) ** exteriorPower(L,0))
-T1 == T2
-
-X = toricProjectiveSpace 3
-E = tangentBundle X
-E' = E ++ trivialBundle(X,1);
-f = map(E',E,matrix{{1,0,0},{0,1,0},{0,0,1},{0,0,0}})
-T1 = E
-T2 = image f
-displayFiltrations T1
-displayFiltrations T2
-T1 == T2
-T1 == prune T2
-
-X = toricProjectiveSpace 2;
-E1 = toricVectorBundle(X,{matrix {{-1,-1},{-1,0}}, matrix {{1,0},{0,1}}, matrix {{0,1},{1,0}}}, {{1,0},{1,0},{1,0}})
-E2 = toricVectorBundle(X,{matrix {{-1,0},{-1,-1}}, matrix {{0,1},{1,0}}, matrix {{1,0},{0,1}}}, {{1,0},{1,0},{1,0}})
-E1 == E2
-
--- here's another random example
-Y = hirzebruchSurface 2;
-E1 = tangentBundle Y ++ tangentBundle Y;
-M = matrix(ring E1, {{1,1,0,2},{0,1,1,1},{0,1,0,-1},{0,0,0,1}});
-filtmats = apply(filtrationMatrices E1, m -> M * m)
-E2 = toricVectorBundle(Y,filtmats, filtrationJumps E1)
-E1 == E2
-*-
-
 ToricVectorBundle == ToricVectorBundle := (T1,T2) -> (areIsomorphic(T1,T2))
 areIsomorphic = method()
 areIsomorphic (ToricVectorBundle,ToricVectorBundle) := Boolean => (T1,T2) -> (    
@@ -474,17 +421,22 @@ areIsomorphic (ToricVectorBundle,ToricVectorBundle) := Boolean => (T1,T2) -> (
         g2 := sub(matrix {groundSet T2}, ring T2);
         if numColumns g1 == numColumns g2 then (
             -- attempt to find the isomorphism between them.
-            N := solve(transpose g1, transpose g2);
-            if N =!= null then (
-                f := map(T2, T1, transpose N);
-                -- if this one is well defined and bijective, then it's our guy.
-                areTVBsIso = if not(isWellDefined f or isInjective f or isSurjective f) then false else (
-                    T1.cache.iso#T2 = f;
-                    Ninv := solve(transpose g2, transpose g1);
-                    T2.cache.iso#T1 = map(T1, T2, transpose Ninv);
-                    true
-                    )
-                );
+            fixedbasis := g1_{0..rank T1-1};
+            for S in subsets(numColumns g2, rank T1) list (
+                newbasis := g2_S;
+                N := solve(transpose fixedbasis, transpose newbasis);
+                if N =!= null then (
+                    f := map(T2, T1, transpose N);
+                    -- if this one is well defined and bijective, then it's our guy.
+                    areTVBsIso = if isWellDefined f and isInjective f and isSurjective f then (
+                        T1.cache.iso#T2 = f;
+                        Ninv := solve(transpose newbasis, transpose fixedbasis);
+                        T2.cache.iso#T1 = map(T1, T2, transpose Ninv);
+                        true
+                        ) else false;
+                    break
+                    );
+                )
             )
         );
     areTVBsIso
@@ -971,6 +923,17 @@ image ToricVectorBundleMap := f ->(
     toricVectorBundle(variety E, for fM in filtrationMatrices E list M * fM, filtrationJumps E)
 )
 
+-*
+restart
+debug needsPackage "ToricVectorBundles2"
+ X = toricProjectiveSpace 1;
+ S = ring X;
+ I = ideal X;
+ Qtvb =  transpose map(S^{{1}, {2}, {1}, {3}},S^2,{{x_0, x_1}, {0, x_0^2}, {x_1, 0}, {0, x_0^2*x_1}})
+phi1 =  moduleToKlyachko (X, Qtvb)
+ker phi1
+*-
+
 kernel ToricVectorBundleMap := opts -> f -> (
     if not isWellDefined f then error("The map is not well defined");
     E := source f;
@@ -984,10 +947,14 @@ kernel ToricVectorBundleMap := opts -> f -> (
         -- intersect them with the kernel as subspaces to get a new filtration
         newFilt := transpose for F in filtPieces list (
             -- if the intersection is zero then skip it.
-            if intersect(image F_0, K) == 0 then continue else {gens intersect(image F_0, K), F_1}
+            if intersect(image F_0, K) == 0 then continue else (
+                filtmat := gens intersect(image F_0, K);
+                filtjumps := for i to numColumns filtmat - 1 list F_1;
+                {filtmat, filtjumps}
+                )
             );
         -- concatenate all of those filtered pieces together, then prune them (i.e. choose a basis)
-        pruneFiltration(matrix {newFilt_0}, newFilt_1)
+        pruneFiltration(matrix {newFilt_0}, flatten newFilt_1)
         );
     toricVectorBundle(variety E, mats, jumps)
 )
@@ -2810,7 +2777,7 @@ f = map(E',E,M)
 
 -*
 restart
-debug needsPackage "ToricVectorBundles"
+debug needsPackage "ToricVectorBundles2"
 X = toricProjectiveSpace(3, CoefficientRing=> ZZ/101);
 TX = tangentBundle X;
 triv = trivialBundle(X,1);
@@ -2819,6 +2786,8 @@ f = map(sumoflbs,triv,matrix(ZZ/101,{{1},{1},{1},{1}}));
 g = map(TX,sumoflbs, transpose sub(matrix rays X,ZZ/101));
 image g
 ker g
+displayFiltrations image f
+displayFiltrations prune image f
 
 Y = toricProjectiveSpace 1
 mats := {matrix {{1,0},{1,0},{1,1},{1,0}}, matrix {{1,0},{1,0},{0,1},{1,0}}}
