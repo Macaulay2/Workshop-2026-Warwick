@@ -343,32 +343,7 @@ doc ///
 
 doc ///
     Key
-        cechComplexKaneyama
-        (cechComplexKaneyama,ZZ,ToricVectorBundleKaneyama,Matrix)
-    Headline
-        TODO
-    Usage
-        C = cechComplexKaneyama(k,E,u)
-    Inputs
-        k : ZZ
-            index of the term in the Cech complex
-        E : ToricVectorBundleKaneyama
-        u : Matrix
-            a one-column matrix representing a degree vector
-    Outputs
-        C : Sequence
-            data for a term of the Cech complex and its boundary map
-    Description
-        Text
-          TODO
-///
-
--- TODO Unify with Klyachko
-
-doc ///
-    Key
-        deltaEKaneyama
-        (deltaEKaneyama,ToricVectorBundleKaneyama)
+        (deltaE,ToricVectorBundleKaneyama)
     Headline
         TODO
     Usage
@@ -387,8 +362,7 @@ doc ///
 
 doc ///
     Key
-        detailsKaneyama
-        (detailsKaneyama,ToricVectorBundleKaneyama)
+        (details,ToricVectorBundleKaneyama)
     Headline
         TODO
     Usage
@@ -407,9 +381,8 @@ doc ///
 
 doc ///
     Key
-        eulerChiKaneyama
-        (eulerChiKaneyama,ToricVectorBundleKaneyama)
-        (eulerChiKaneyama,Matrix,ToricVectorBundleKaneyama)
+        (eulerChi,ToricVectorBundleKaneyama)
+        (eulerChi,Matrix,ToricVectorBundleKaneyama)
     Headline
         TODO
     Usage
@@ -430,7 +403,6 @@ doc ///
 -- Change to Kaneyama
 doc ///
     Key
-        isWellDefined
         (isWellDefined,ToricVectorBundleKaneyama)
     Headline
         checks if the data does in fact define an equivariant toric vector bundle
