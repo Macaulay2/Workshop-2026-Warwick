@@ -58,22 +58,27 @@ toricVectorBundleKaneyama (ZZ,Fan) := (k,F) -> (
 --     	    	 (e_i^1,...,e_i^k) = (e_j^1,...,e_j^k)* A
 --     	     The matrices in 'degreeList' will be assigned to the cones in the order in which they are numbered.
 toricVectorBundleKaneyama (ZZ,Fan,List,List) := (k,F,degreelist,matrixlist) -> (
-     -- Generating the trivial vector bundle of rank k
-     tvb := toricVectorBundleKaneyama(k,F);
-     -- Adding the given degrees and transition matrices
-     tvb = addDegrees(tvb,degreelist);
-     tvb = addBaseChange(tvb,matrixlist);
-     tvb)
+    -- Generating the trivial vector bundle of rank k
+    tvb := toricVectorBundleKaneyama(k,F);
+    -- Adding the given degrees and transition matrices
+    tvb = addDegrees(tvb,degreelist);
+    tvb = addBaseChange(tvb,matrixlist);
+    tvb)
 
 -- Modifying the standard output for a ToricVectorBundleKaneyama to give an overview of its characteristica
 net ToricVectorBundleKaneyama := tvb -> ( horizontalJoin flatten ( 
-	  "{", 
-	  -- prints the parts vertically
-	  stack (horizontalJoin \ sort apply({"dimension of the variety",
-			                      "rank of the vector bundle",
-					      "number of affine charts"}, key -> (net key, " => ", net tvb#key))),
-	  "}" ))
- 
+        "{", 
+        -- prints the parts vertically
+        stack (horizontalJoin \ sort apply({"dimension of the variety",
+                    "rank of the vector bundle",
+                    "number of affine charts"}, key -> (net key, " => ", net tvb#key))),
+        "}" )
+    )
+
+details ToricVectorBundleKaneyama := tvb -> (
+    hashTable apply(pairs(tvb#"topConeTable"), p -> ( p#1 => (rays posHull p#0,tvb#"degreeTable"#(p#0)))),tvb#"baseChangeTable"
+    )
+
 ------------------------------------------
  -- GETTER FUNCTIONS KANEYAMA
  ------------------------------------------

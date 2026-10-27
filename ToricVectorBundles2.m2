@@ -2,7 +2,7 @@
 ---------------------------------------------------------------------------
 -- UPDATE HISTORY : November 2008, November 2009, April 2010, May 2024, April 2025, September 2026
 ---------------------------------------------------------------------------
-newPackage("ToricVectorBundles",
+newPackage("ToricVectorBundles2",
     Headline => "vector bundles on toric varieties",
     Version => "2.0",
     Date => "September, 2026",
@@ -103,14 +103,28 @@ export {
     "twist",
     "isTwistOf",
     "firstChernClass",
-    "grRing", -- For test 13
     -- Misc
     "displayFiltrations",
+    -- Positivity    
+    "groundSet", 
+    "parliament",
+    "compatibleBases",
+    "isLocallyWeil",
+    "cartierInd",
+    "toricChernCharacter",
+    "graphToricChernCharacter",
+    "separatesJets",
+    "isGloballyGenerated",
+    "restrictToInvCurves",
+    "drawParliament2Dtikz",
+    "wellformedBundleFiltrations",
+    "DrawCohomology",
+    "DrawChernCharacter",
     -- Kaneyama (old code)
+    "cocycleCheck",
+    "regCheck",
     "addBaseChange",
     "addDegrees",
-    "cartierIndex",
-    "charts",
     "lineBundleKaneyama", 
     "hirzebruchFan",
     "pp1ProductFan", 
@@ -119,7 +133,6 @@ export {
     "customConeSort"
     }
 
-load "Kaneyama.m2"
 -- These are cached keywords as part of:
 -- cechComplex
 protect cech
@@ -129,7 +142,9 @@ protect regularityCondition
 -- areIsomorphic
 protect iso
 -- cohomology
-protect gradedCoeffRing
+protect weightedCoeffRing
+protect eigenspaceDecompositions
+protect ambRank
 
 ---------------------------------------------------------------------------
 -- MAIN TYPE
@@ -142,12 +157,13 @@ globalAssignment ToricVectorBundle
 toricVectorBundle = method(Options => true)
 toricVectorBundle (NormalToricVariety, List, List) := {} >> o -> (baseVariety, matrixList, indexesList) -> (
     -- error checking
-    if #matrixList != #(rays baseVariety) then error("there must be as many filtrations as rays of the base");
-    if #indexesList != #(rays baseVariety) then error("there must be as many filtrations as rays of the base");
-    L := apply(matrixList, m -> {numColumns m, numRows m});
-    if not same L then error("the sizes of the filtration matrices must be the same");
-    rankE := (unique flatten L)_0;
-    if any(indexesList, l -> #l != rankE) then error("the filtration data must be same length as rank");
+    if #matrixList != #(rays baseVariety) then error("there must be as many filtration matrices as rays of the base");
+    if #indexesList != #(rays baseVariety) then error("there must be as many index lists as rays of the base");
+    L := apply(matrixList, m -> rank m);
+    if not same L then error("the ranks of the filtration matrices must be the same");
+    rankE := L_0;
+    if any(#rays baseVariety, p -> #(indexesList_p) != numColumns matrixList_p) then error("the index lists must have entries corresponding to the columns of the filtration matrices");
+    if rank matrix {matrixList} > rankE then error("the underlying vector space must be the same for each ray");
     -- technically the filtration matrices need to be over the coefficient ring of E
     modifiedMatList := apply(matrixList, M -> sub(M, coefficientRing ring baseVariety));
     new ToricVectorBundle from {
@@ -155,6 +171,7 @@ toricVectorBundle (NormalToricVariety, List, List) := {} >> o -> (baseVariety, m
 	symbol filtrationMatrices => modifiedMatList,
 	symbol filtrationJumps => indexesList,
 	symbol rank => rankE,
+        symbol ambRank => numRows matrixList_0,
 	symbol cache => new CacheTable}
     )
 -- Alternative input
@@ -164,6 +181,40 @@ toricVectorBundle (NormalToricVariety, HashTable) := {} >> o -> (baseVariety, fi
     toricVectorBundle(baseVariety, mats, jumps)
     )
 
+-- Unexported helper.
+-- This method takes an (n x m) matrix of rank r whose i-th column is labeled with
+-- an integer "jumps_i", and returns a rank r (n x r) submatrix with the same sublabels.
+-- The choice of submatrix is dependent on the labeling: a higher label has higher priority.
+pruneFiltration = method()
+pruneFiltration (Matrix, List) := (filtMat, jumps) -> (
+    r := rank filtMat;
+    -- silly hack. I want to traverse the filtrations backwards so I make this auxiliary
+    -- index set and reverse sort it.
+    J := for j to #jumps - 1 list {jumps_j, -j};
+    currentspan := matrix (filtMat*0)_0;
+    newJ := {};
+    for j in reverse sort J do (
+        if intersect(image matrix filtMat_(-j_1), image currentspan) != 0 then continue;
+        currentspan = currentspan | matrix filtMat_(-j_1);
+        newJ = newJ | {j_0}
+        );
+    {currentspan_{1..r}, newJ}
+    )
+
+prune ToricVectorBundle := ToricVectorBundle => o -> E -> E.cache.minimalPresentation ??= (
+    R := rays E;
+    D := details E;
+    toricVectorBundle(variety E, hashTable for p in R list p => (
+            (M, J) := toSequence D#p;
+            -- if the matrix is not given by a basis, then we need to choose a basis.
+            if numColumns M > rank E then (M,J) = toSequence pruneFiltration(M,J);
+            -- once the number of columns equals the rank, we can prune.
+            pr := matrix (prune image transpose M).cache.pruningMap;
+            {transpose (transpose M * matrix pr), J}
+            )
+        )
+    )
+
 ---------------------------------------------------------------------------
 -- BASIC CONSTRUCTORS
 ---------------------------------------------------------------------------
@@ -171,7 +222,7 @@ toricVectorBundle (NormalToricVariety, HashTable) := {} >> o -> (baseVariety, fi
 trivialBundle = method()
 trivialBundle NormalToricVariety := X -> trivialBundle(X,1)
 trivialBundle(NormalToricVariety, ZZ) := (X,r) -> (
-    if r < 0 then error("expected nonnegative rank.");
+    if r < 0 then error("expected nonnegative rank");
     H := hashTable for p in rays X list p => {id_((coefficientRing ring X)^r), toList(r:0)};    
     toricVectorBundle(X, H)
 )
@@ -191,9 +242,11 @@ tangentBundle NormalToricVariety := X -> (
     R:= coefficientRing ring X;
     raysX := rays X;
     chR := char R;
-    -- TODO: decide if this is the way we want to implement it
-    if chR != 0 then(
-    if not all apply(unique flatten raysX, p -> gcd(chR, p)==1 or p == 0) then( error ("Some entry in the rays is divisible by the characteristic of the field. Please use other method to define the bundle")););
+    -- If we're in finite characteristic we need to be more careful with ray generators.
+    if chR != 0 then (
+        if not all apply(unique flatten raysX, p -> gcd(chR, p) == 1 or p == 0)
+        then error ("Some entry in the rays is divisible by the characteristic of the field. Please use other method to define the bundle");
+        );
     raylist := apply(raysX, p -> promote(matrix vector p,R));
     -- The filtration matrix for ray rho has rho has the first column, and its
     -- orthogonal complement for the remaining columns.
@@ -211,11 +264,7 @@ variety ToricVectorBundle := E -> E.variety
 fan ToricVectorBundle := E -> fan E.variety
 rank ToricVectorBundle := E ->(E.rank)
 ring ToricVectorBundle := E -> coefficientRing ring variety E
-rays ToricVectorBundle := {} >> o -> E -> rays variety E 
-
--- This ring is needed for the cohomology computations
-grRing = method()
-grRing ToricVectorBundle := (cacheValue symbol gradedCoeffRing)(E ->  (ring E)[DegreeRank => dim variety E])
+rays ToricVectorBundle := {} >> o -> E -> rays variety E
 
 filtrationJumps = method()
 filtrationJumps ToricVectorBundle := E -> (E.filtrationJumps)
@@ -245,7 +294,7 @@ filteredPiece = method()
 filteredPiece (ToricVectorBundle, List, ZZ) := (E, p, i) ->(
     dataE:= (details(E))#p;
     jumpE:= dataE_1;
-    inds:= select(toList(0..rank(E)-1), n -> (i <= jumpE_n));
+    inds:= select(numColumns dataE_0, n -> (i <= jumpE_n));
     (dataE_0)_inds
 )
 
@@ -257,87 +306,79 @@ ToricVectorBundle.directSum = args -> (
     args = toList args;
     T := args#0;
     scan(drop(args,1), E -> T = T ++ E);
-    T)      
+    T)
 ToricVectorBundle ++ ToricVectorBundle := (tvb1,tvb2) -> (
-    --Errors check
-    if variety tvb1 =!= variety tvb2 then(error("expected the bundles to be over the same base toric variety") );
+    -- Error checking
+    if variety tvb1 =!= variety tvb2 then error("expected the bundles to be over the same base toric variety");
     X := variety tvb1;
-    nrays := # rays variety tvb1;
+    nrays := #rays variety tvb1;
+    -- The new filtration matrices are just the direct sums
     L1:= filtrationMatrices tvb1; 
     L2:= filtrationMatrices tvb2;
-    Lnew:= apply(nrays, i -> L1_i++L2_i);
+    Lnew:= apply(nrays, i -> L1_i ++ L2_i);
+    -- The new jumps are just the old jumps, corresponding to the correct columns.
     J1:= filtrationJumps tvb1; 
     J2:= filtrationJumps tvb2;
-    Jnew:= apply(nrays, i -> J1_i|J2_i);
+    Jnew:= apply(nrays, i -> J1_i | J2_i);
     toricVectorBundle(X, Lnew, Jnew)
-    ) 
+    )
 
--- PURPOSE : Computing the dual bundle to a given ToricVectorBundle
---   INPUT : 'tvb',  a ToricVectorBundle
---  OUTPUT : the dual ToricVectorBundle
+tensor(ToricVectorBundle, ToricVectorBundle) := ToricVectorBundle => {} >> opts -> (tvb1, tvb2) -> (
+    if variety tvb1 =!= variety tvb2 then error("expected the bundles to be over the same toric variety");
+    X := variety tvb1;
+    L1 := filtrationMatrices tvb1; 
+    L2 := filtrationMatrices tvb2;
+    Lnew:= apply(#rays X, i -> L1_i**L2_i );
+    J1:= filtrationJumps tvb1; 
+    J2:= filtrationJumps tvb2;
+    -- TODO check that this is what we want
+    Jnew := apply(#rays X, p -> flatten apply(J1_p, e1 -> flatten apply(J2_p, e2 -> e1 + e2)));
+    toricVectorBundle(X, Lnew, Jnew)
+    )
+ToricVectorBundle ** ToricVectorBundle := (tvb1,tvb2) -> tensor(tvb1,tvb2)
+
+twist = method()
+twist(ToricVectorBundle, ToricDivisor) := (E, D) -> E ** lineBundle D
+twist(ToricVectorBundle, List) := (E, s) -> E ** lineBundle(variety E, s)
+
 dual ToricVectorBundle := {} >> opts -> tvb -> (    
     -- if a vector space has basis B, the dual has basis transpose inverse B
     filtMats := apply(filtrationMatrices tvb, M -> transpose inverse M);
     -- the jumps in the filtration get reverse and negated.
-    -- TODO check if we need reverse J or not
-    filtJumps := apply(filtrationJumps tvb, J -> - J);
-    return toricVectorBundle(variety tvb, filtMats, filtJumps)
+    -- TODO: reverse the jumps?
+    filtJumps := apply(filtrationJumps tvb, J -> -J);
+    toricVectorBundle(variety tvb, filtMats, filtJumps)
     )
 
--- PURPOSE : Computing the 'l'-th exterior power of a ToricVectorBundle
---   INPUT : '(TVB, l)',  where 'l' is a strictly positive integer and 'TVB'is a TorcVectorBundle
---  OUTPUT : the 'l'-th exterior power of TVB
 exteriorPower (ToricVectorBundle, ZZ) := opts -> (TVB, l) -> (
-    if l < 0 then (
-        error("expected nonnegative exponent");
-        )
-    else if l == 0 then (
-        trivialBundle(variety TVB, 1)
-        )
-    else if l > rank TVB then (
-        trivialBundle(variety TVB, 0)
-        )
+    if l < 0 then error("expected nonnegative exponent")
+    else if l == 0 then trivialBundle(variety TVB, 1)
+    else if l > rank TVB then trivialBundle(variety TVB, 0)
     else (
         R := rays variety TVB;
-        fM := filtrationMatrices TVB;
-        fJ := filtrationJumps TVB;
+        D := details TVB;
         ind := subsets(rank TVB,l);
-        indtable := hashTable apply(#ind, i -> ind#i => i);
-        newfM := apply(#R, t -> (
-                M := mutableMatrix(ring TVB,#ind,#ind);
-                for i in ind do (
-                    for j in ind do (
-                        M_(indtable#i,indtable#j) = det((fM_t)^i_j);
-                        );
-                    );
-                matrix M
-                )
+        newfM := for p in R list (
+            -- the new filtration matrices are given by minors of the old ones.
+            matrix for i in ind list for j in ind list det ((D#p)_0)^i_j
             );
-        newfJ := apply(#R, t -> (
-                apply(ind, j -> sum (fJ_t)_j)
-                )
-            );
+        -- the new jumps are given by the sums of the jumps corresponding to those minors.
+        newfJ := for p in R list apply(ind, j -> sum ((D#p)_1)_j);
         toricVectorBundle(variety TVB, newfM, newfJ)
         )
     )
 
--- PURPOSE : Constructs the symmetric power of a given bundle. 
---   INPUT : '(TVB, l)', where "TVB" is a bundle and l is the rank, 
---  OUTPUT : the lth symmetric power of TVB. 
 symmetricPower (ToricVectorBundle, ZZ) := (TVB, l) -> (
-    if l < 0 then (
-        error("expected nonnegative exponent");
-        )
-    else if l == 0 then (
-        trivialBundle(variety TVB, 1)
-        )
+    if l < 0 then error("expected nonnegative exponent")
+    else if l == 0 then trivialBundle(variety TVB, 1)
     else (
         R := rays variety TVB;
         fM := filtrationMatrices TVB;
         fJ := filtrationJumps TVB;
-        ind := sort apply(subsets(rank TVB + l - 1,l),s -> apply(#s, i -> s#i-i));
+        ind := sort apply(subsets(rank TVB + l - 1, l),s -> apply(#s, i -> s#i - i));
         allind := sort unique flatten apply(ind, permutations);
         indtable := hashTable apply(#ind, i -> ind#i => i);
+        -- TODO: a mutable matrix isn't necessary here. we might also be able to clean up the indices.
         newfM := apply(#R, t -> (
                 M := mutableMatrix(ring TVB,#ind,#ind);
                 for i in ind do (
@@ -356,64 +397,51 @@ symmetricPower (ToricVectorBundle, ZZ) := (TVB, l) -> (
         )
     )
 
+removeDupeCols := fM -> (
+    M' := matrix {fM};
+    matrix {unique for c to numColumns M' - 1 list matrix M'_c}
+)
 
 ToricVectorBundle == ToricVectorBundle := (T1,T2) -> (areIsomorphic(T1,T2))
 areIsomorphic = method()
-areIsomorphic (ToricVectorBundle,ToricVectorBundle) := Boolean => (T1,T2) -> (
-    --First check that the bundles have same rank, defined over same ring and have same base variety before
-    --anything else
+areIsomorphic (ToricVectorBundle,ToricVectorBundle) := Boolean => (T1,T2) -> (    
+    -- First, check that the bundles have same rank, base variety, and filtration jumps.
     jumps := rsort unique flatten filtrationJumps T1;
-    if not ((rank T1 == rank T2) and (variety T1 === variety T2) and (ring T1 === ring T2) and (jumps == rsort unique flatten filtrationJumps T2) ) then return false;
-    --Checking if T1 and T2 have already been deemed isomorphic. If not, create entries in a cache
+    jumps' := rsort unique flatten filtrationJumps T2;
+    if not ( (rank T1 == rank T2) and (variety T1 === variety T2) and (jumps == jumps') ) then return false;
+    -- Check the cache, and if it's empty, populate it.
     if not T1.cache.?iso then (
         T1.cache.iso = new MutableHashTable;
         );
     if not T2.cache.?iso then (
         T2.cache.iso = new MutableHashTable;
         );
-    --If T1 does have an entry for iso in the cache, we check if any of the maps targets is T2
-    --i.e. check if we've already deemed T1 iso T2
+    -- if it's non-empty, look for T2 as target.
     if T1.cache.iso#?T2 then return true;    
     if not T1.cache.iso#?T2 then (
-        -- first try the identity map
-        isoMatrix := matrix id_((ring T1)^(rank T1));
-        f := map(T2,T1, isoMatrix);
-        areTVBsIso := ((isWellDefined f) and (isInjective f) and (isSurjective f));
-        if not areTVBsIso then (
-            -- attempt to find an isomorphism
-            n:= rank T1;
-            aux1 := flatten apply( jumps, j -> apply(rays T1, rho -> filteredPiece(T1, rho, j) ) );
-            aux2 := flatten apply( jumps, j -> apply(rays T2, rho ->filteredPiece(T2, rho, j) ) );
-            -- When doing the fold the zero columns are automatically removed    
-            M1 := fold((i,j) -> i|j, flatten apply(toList(1..n), i -> select(aux1, M -> numcols M == i ) ));
-            M2 := fold((i,j) -> i|j, flatten apply(toList(1..n), i -> select(aux2, M -> numcols M == i ) ));
-            
-            -- Try several maps possible isomorphisms:
-            subs:= subsets( numcols M1 ,n);
-            seen := {};
-            
-            for s in subs do(
-                M1s := M1_s;
-                M2s := M2_s;
-                if not any( seen , x -> x== (M1s, M2s )) and det M1s =!= 0_(ring T1) and det M2s =!= 0_(ring T2)  then(
-                seen = append(seen, (M1s, M2s));
-                f = map(T2,T1,M2s* (inverse M1s) );
-                areTVBsIso = ((isWellDefined f) and (isInjective f) and (isSurjective f));
-                if areTVBsIso then break
+        areTVBsIso := false;
+        -- compute the ground sets of both.
+        --g1 := sub(matrix {groundSet T1}, ring T1);
+        --g2 := sub(matrix {groundSet T2}, ring T2);
+        g1 := removeDupeCols filtrationMatrices T1;
+        g2 := removeDupeCols filtrationMatrices T2;
+        if numColumns g1 == numColumns g2 then (
+            -- attempt to find the isomorphism between them.
+            N := solve(transpose g1, transpose g2);
+            if N =!= null then (
+                f := map(T2, T1, transpose N);
+                -- if this one is well defined and bijective, then it's our guy.
+                areTVBsIso = if not(isWellDefined f or isInjective f or isSurjective f) then false else (
+                    T1.cache.iso#T2 = f;
+                    Ninv := solve(transpose g2, transpose g1);
+                    T2.cache.iso#T1 = map(T1, T2, transpose Ninv);
+                    true
+                    )
                 );
-                if areTVBsIso then break
-            );
-            
-            );
-        if areTVBsIso then (
-            T1.cache.iso#T2 = f;
-            finv := map(T1,T2,(map f)^-1);
-            T2.cache.iso#T1 = finv;
-            );
-        areTVBsIso
-        )
+            )
+        );
+    areTVBsIso
     )
-
 
 isomorphism (ToricVectorBundle,ToricVectorBundle) := Boolean => o -> (T1,T2) -> (
     if not areIsomorphic(T1,T2) then error("The bundles are not isomorphic");
@@ -435,6 +463,11 @@ isTwistOf (ToricVectorBundle, ToricVectorBundle) := (E1, E2) -> (
 -------------------------------------------------------------------------------------
 -- COHOMOLOGICAL COMPUTATIONS
 -------------------------------------------------------------------------------------
+
+-- The cohomology of a toric vector bundle inherits an action of the torus, so these
+-- vector spaces naturally come equipped with torus weights.
+-- This makes a weighted version of the coefficient ring to keep track of these weights.
+weightedCoeffRing := (cacheValue symbol weightedCoeffRing)(E ->  (ring E)[DegreeRank => dim variety E])
 
 -- PURPOSE : Computing the Cech complex of a vector bundle
 cechComplex = method()
@@ -567,7 +600,7 @@ cohom (ZZ,ToricVectorBundle,Matrix) := (k,T,u) -> (
         MapF2toF3 := matrix apply(#F3, j -> apply(#F2, i -> if F2toF3#?(i,j) then F2toF3#(i,j) else map(tvbR^tvbrank,tvbR^(F2columns#i),0)));
         -- Compute the cohomology
         d := (rank ker MapF2toF3)-(rank image MapF1toF2);
-        T.cache.HH#(k,u) = (grRing T)^(toList(d:flatten entries(-u))));
+        T.cache.HH#(k,u) = (weightedCoeffRing T)^(toList(d:flatten entries(-u))));
     T.cache.HH#(k,u)
     )
 
@@ -598,10 +631,19 @@ cohomology(ZZ,ToricVectorBundle,List) := opts -> (i,T,P)-> (
     )
 cohomology(ZZ,ToricVectorBundle) := opts -> (i,T)-> (
     L := cohomology(i,T,latticePoints deltaE T,Degree => opts.Degree);
-    if L == {} then (grRing T)^0 else directSum L
+    if L == {} then (weightedCoeffRing T)^0 else directSum L
     )
 
 hh(ZZ,ToricVectorBundle) := ZZ => (i,T) -> rank cohomology(i,T)
+-- this extracts graded pieces.
+hh(ZZ,Sequence) := ZZ => (i,S) -> (
+    -- some error checking.
+    if #S != 2 then error("The Sequence has to contain a toric vector bundle and a weight vector.");
+    if not instance(S#1,Matrix) then error("The second argument has to be a weight vector given by a matrix.");
+    if not (instance(S#0,ToricVectorBundle) or instance(S#0,ToricVectorBundleKaneyama)) then error("The first argument has to be a toric vector bundle.");
+    rank cohomology(i,S#0,S#1)
+    )
+
 deltaE = method()
 deltaE ToricVectorBundle := (cacheValue symbol deltaE)( tvb -> (
         if not isComplete variety tvb then error("The toric variety needs to be complete.");
@@ -649,101 +691,19 @@ isGeneral ToricVectorBundle :=  E -> (
     E.cache.isGeneral
     )
 
-
--- PURPOSE : Computing the Cartier index of a Weil divisor
---   INPUT : '(L,F)',  where 'F' is a Fan and 'L' is a list of integers defining a Weil divisor
---  OUTPUT : The smallest multiple of the divisor which is Cartier if the divisor is QQ-Cartier, if not 
---     	     an error is returned
-cartierIndex = method(TypicalValue => ZZ)
-
-cartierIndex (NormalToricVariety, List) := (X, L) ->(
-    -- TODO : add checks for the Cartier index to make sense    
-    if any(L, l -> not instance(l,ZZ)) then error("The weights have to be in ZZ.");
-    denom := 1; 
-    raysX := rays X;
-    maxCs := X.max;
-    Frays := transpose  matrix raysX;
-    L = hashTable apply(#raysX, i -> Frays_i => L_i);
-    n:= ambDim ( fan X);
-    scan(maxCs, C -> (
-	       rC := Frays_C;
-	       -- Taking the first n x n submatrix
-	       rC1 := rC_{0..n-1};
-	       -- Setting up the solution vector by composing the corresponding weights
-	       v := matrix apply(n, i -> (c := entries rC1_{i}; {-(L#c)}));
-	       -- Computing the degree vector
-	       w := vertices polyhedronFromHData(matrix {toList(n:0)},matrix {{0}},transpose rC1,v);
-	       -- Checking if w also fulfils the equations given by the remaining rays
-	       if numColumns rC != n then (
-		    v = v || matrix apply(toList(n..(numColumns rC)-1), i -> {-(L#(entries rC_{i}))});
-	            if (transpose rC)*w - v != 0 then error("The weights do not define a Cartier divisor."));
-	       -- Check if w is QQ-Cartier
-	       scan(flatten entries w, e -> denom = lcm(denominator e ,denom))));
-     denom
-     )
-
-
-
-
-cartierIndex (List,Fan) := (L,F) -> (
-     rl := raySortOfFan F;
-     -- Checking for input errors
-     if #L != #rl then error("The number of weights has to equal the number of rays.");
-     n := ambDim F;
-     -- Checking for further errors and assigning the weights to the rays
-     L = hashTable apply(#rl, i -> (if class L#i =!= ZZ then error("The weights have to be in ZZ."); rl#i => L#i));
-     -- Keeping track of the lowest common multiple of denominators of the degrees,
-     -- to check whether the divisor itself is Cartier or which multiple
-     denom := 1;
-     -- Computing the degree vector for every top dimensional cone
-     Frays := rays F;
-     scan(sort maxCones F, C -> (
-	       rC := Frays_C;
-	       -- Taking the first n x n submatrix
-	       rC1 := rC_{0..n-1};
-	       -- Setting up the solution vector by composing the corresponding weights
-	       v := matrix apply(n, i -> (c := rC1_{i}; {-(L#c)}));
-	       -- Computing the degree vector
-	       w := vertices polyhedronFromHData(matrix {toList(n:0)},matrix {{0}},transpose rC1,v);
-	       -- Checking if w also fulfils the equations given by the remaining rays
-	       if numColumns rC != n then (
-		    v = v || matrix apply(toList(n..(numColumns rC)-1), i -> {-(L#(rC_{i}))});
-	            if (transpose rC)*w - v != 0 then error("The weights do not define a Cartier divisor."));
-	       -- Check if w is QQ-Cartier
-	       scan(flatten entries w, e -> denom = lcm(denominator e ,denom))));
-     denom)
-
 randomDeformation = method()
-randomDeformation ( ToricVectorBundle ) :=(tvb) ->(
+randomDeformation ToricVectorBundle := tvb -> (
     k := rank tvb;    
     R:= ring tvb;
     -- Change the matrices in the filtration and preserve the jumps
-    newMatrices := apply(filtrationMatrices tvb, M ->(
+    newMatrices := apply(filtrationMatrices tvb, M -> (
             A := random(R^k, R^k);
             while det A == 0 do (A = random(R^k, R^k));
-            A)
+            A
+            )
         );
     toricVectorBundle(variety tvb, newMatrices, filtrationJumps tvb)
     )
-
-tensor(ToricVectorBundle, ToricVectorBundle) := ToricVectorBundle => {} >> opts -> (tvb1, tvb2) -> (
-    if variety(tvb1) =!= variety(tvb2) then(error("Expected the bundles to be over the same toric variety.") );
-    X:=variety(tvb1 );
-    nrays := # rays (variety(tvb1 ));
-    L1:= filtrationMatrices( tvb1 ); 
-    L2:= filtrationMatrices (tvb2 );
-    Lnew:= apply(nrays, i -> L1_i**L2_i );
-    J1:= filtrationJumps( tvb1 ); 
-    J2:= filtrationJumps (tvb2 );
-    -- TODO check that this is what we want
-    Jnew := apply(nrays, p -> flatten apply(J1_p, e1 -> flatten apply(J2_p, e2 -> e1 + e2)));
-    toricVectorBundle(X, Lnew, Jnew)
-    )
-ToricVectorBundle ** ToricVectorBundle := (tvb1,tvb2) -> tensor(tvb1,tvb2)
-
-twist = method()
-twist(ToricVectorBundle, ToricDivisor) := (E, D) -> E ** lineBundle D
-twist(ToricVectorBundle, List) := (E, s) -> E ** lineBundle(variety E, s)
 
 --------------------------------------
 -- MAPS
@@ -763,11 +723,9 @@ net ToricVectorBundleMap := f -> (
     "ToricVectorBundleMap " || (net expression target f | themap | net expression source f)
     )
 
--- We allow defining a map that is not well defined
 map(ToricVectorBundle, ToricVectorBundle, Matrix):= ToricVectorBundleMap => opts -> (E2, E1, M) ->(
-
-    -- if numRows M =!= rank E2 or numColumns M =!= rank E1 then error " The dimensions of the matrix don't match the ranks of the bundles";
-    if ring M =!= ring E1 or ring M =!= ring E2 then error " The matrix needs to be defined over the same ring as the bundles";
+    if numRows M != E2.ambRank or numColumns M != E1.ambRank then error " The dimensions of the matrix don't match the ranks of the bundles";
+    if ring M =!= ring E1 or ring M =!= ring E2 then try sub(M, ring E1) then M = sub(M, ring E1) else error " The matrix needs to be defined over the same ring as the bundles";
     if variety E1 =!= variety E2 then error "The base varieties of the bundles have to coincide";
     new ToricVectorBundleMap from{
         symbol source => E1,
@@ -777,7 +735,7 @@ map(ToricVectorBundle, ToricVectorBundle, Matrix):= ToricVectorBundleMap => opts
     }
 )
 
-ToricVectorBundleMap#id = E -> map(E,E, id_(ring E^(rank E) ))
+ToricVectorBundleMap#id = E -> map(E,E, id_(ring E^(rank E)))
 
 isWellDefined ToricVectorBundleMap := Boolean => f ->(
     if f.cache.?isWellDefined then return f.cache.isWellDefined;
@@ -833,7 +791,7 @@ isWellDefined ToricVectorBundleMap := Boolean => f ->(
                 return f.cache.isWellDefined);
         m1 := min j;
         m2 := max j;
-        amb := module (ring E2) ^ (rank (filtrationMatrices E2)_0);
+        amb := module (ring E2) ^ (numRows (filtrationMatrices E2)_0);
         for i from m1 to m2 do (
             -- not writing rank E2 allows for matrices that are not square (see cokernel)
             f1 := map(amb, , sub( M* filteredPiece(E1,p,i), RX));
@@ -857,11 +815,6 @@ isInjective (ToricVectorBundleMap) := f -> (
         if debugLevel > 0 then (
             << "-- the map is not well defined" << endl
             );
-        return false
-        );
-    if not isInjective (map f) then (
-        if debugLevel > 0 then (
-            << "-- the map is not injective" << endl);
         return false
         );
     X := variety(source f);
@@ -888,11 +841,6 @@ isSurjective (ToricVectorBundleMap) := f -> (
             << "-- the map is not well defined" << endl);
         return false
         );
-    if not isSurjective (map f) then (
-        if debugLevel > 0 then (
-            << "-- the map is not surjective" << endl);
-        return false
-        );
     X := variety(source f);
     for p in rays X do (
         r := flatten join(filtrationJumps source f, filtrationJumps target f);
@@ -911,35 +859,26 @@ isSurjective (ToricVectorBundleMap) := f -> (
     return true
     )
 
-
-
--- As are isomorphic may not find the isomorphism with the implemented strategy,
+-- As areIsomorphic may not find the isomorphism with the implemented strategy,
 -- the following method checks if a map is an isomorphism and if it is stores it.
-
 isIsomorphism ToricVectorBundleMap := Boolean =>  f ->(
-
     T1 := source f;
     T2 := target f;
     if T1.cache.?iso and T1.cache.iso#? T2 then ( if map f == map T1.cache.iso#T2 then return true; );
-
     areTVBsIso := ((isWellDefined f) and (isInjective f) and (isSurjective f));
     if areTVBsIso then (
-    if not T1.cache.?iso then (
-        T1.cache.iso = new MutableHashTable;
-        );
-    if not T2.cache.?iso then (
-        T2.cache.iso = new MutableHashTable;
-        );
-            T1.cache.iso#T2 = f;
-            finv := map(T1,T2,(map f)^-1);
-            T2.cache.iso#T1 = finv;
+        if not T1.cache.?iso then (
+            T1.cache.iso = new MutableHashTable;
             );
-    
+        if not T2.cache.?iso then (
+            T2.cache.iso = new MutableHashTable;
+            );
+        T1.cache.iso#T2 = f;
+        finv := map(T1,T2,(map f)^-1);
+        T2.cache.iso#T1 = finv;
+        );
     areTVBsIso
-    
-)
-
-
+    )
 
 -- Auxiliary fucntion for computing the jumps that happened in a list of matrices in a filtration
 -- Takes a matrix to which we want to assing the jums, a list of the filtered pieces and the minimun idex where it stats
@@ -979,81 +918,35 @@ adaptedBasis = (ML) -> (
 )
 
 image ToricVectorBundleMap := f ->(
-    if isSurjective f then( return target f); 
-    if (not isWellDefined f) then error ("The map is not well defined");
-    M := f.map;
-    E1:= source f;
-    X:= variety E1;
-    Xrays := rays E1;
-    minj:= min flatten filtrationJumps(E1);
-    maxj:= max flatten filtrationJumps(E1);
-    steps:=  toList(minj..maxj);
-    -- get the images of the filtered pieces
-    L := apply(Xrays,  p ->
-        apply(steps, i ->(
-                prod := M * filteredPiece(E1,p,i);
-                -- take the image of the filtered piece and prune it.
-                pr := (prune image prod).cache.pruningMap;
-                -- then apply that pruning map.
-                prod * matrix pr
-                ))
-        );
-    -- Define the new data
-    newMatrices:= apply(L, i ->  matrix fold ( (A,B)-> A|B, i) );
-    newJumps := apply( # Xrays , i -> jumpsAux(newMatrices_i, L_i, minj ) );
-    newData := {newMatrices, newJumps};
-    -- Refine it it needed
-    if numcols newMatrices_0 =!= numrows newMatrices_0 then(
-    newData = transpose apply( transpose  newData, a -> adaptedBasis(a) ););
-    newMatrices = newData_0;
-    -- if the map is not surjective, then we also need to make sure that the
-    -- matrices are square, which we do one final prune for.
-    newMatrices = for m in newMatrices list (
-        if numcols m != numrows m then (
-            pr := (prune image transpose m).cache.pruningMap;
-            transpose (transpose m * matrix pr)
-            )
-        else m
-        );
-    newJumps= newData_1;
-    toricVectorBundle(X, newMatrices, newJumps)
+    if not isWellDefined f then error("The map is not well defined");
+    M := matrix f;
+    E := source f;
+    -- simply apply the map to each filtration matrix.
+    toricVectorBundle(variety E, for fM in filtrationMatrices E list M * fM, filtrationJumps E)
 )
 
-kernel (ToricVectorBundleMap) := opts -> f ->(
-    E1:= source f;
-    X:= variety E1;
-    if isInjective(f) then( return trivialBundle(X,0) ); 
-    if not isWellDefined(f) then ( error (" The map is not well defined"));
-    M := f.map;
-    Xrays := rays E1;
-    minj:= min flatten filtrationJumps(E1);
-    maxj:= max flatten filtrationJumps(E1);
-    steps:=  toList(minj..maxj);
-    kerM := kernel M;
-    amb:= target gens kerM;
-    pr:= (prune kernel (M)).cache.pruningMap;
-    ipr := map(source pr, target pr, inverse pr);
-    -- Get the kernel of the pieces
-    L:= apply(Xrays,  p ->
-        apply(steps, i ->(
-            ipr*inducedMap(kerM,intersect(image map(amb, , filteredPiece(E1,p,i)), kerM))
-        ))
-    );
-    -- Define the new data
-    -- The command matrix is there so that the map is simplify to be betweent free modules
-    newMatrices:= apply(L, i ->  matrix fold ( (A,B)-> A|B, i) );
-    newJumps := apply( # Xrays , i -> jumpsAux (newMatrices_i, L_i, minj ) );
-    newData := transpose {newMatrices, newJumps};
-    -- Refine it it needed
-    newData = transpose apply( newData, a -> adaptedBasis(a) );
-    newMatrices = newData_0;
-    newJumps= newData_1;
-    toricVectorBundle(X, newMatrices, newJumps)
+kernel ToricVectorBundleMap := opts -> f -> (
+    if not isWellDefined f then error("The map is not well defined");
+    E := source f;
+    if isInjective f then return trivialBundle(variety E,0);
+    K := ker matrix f;
+    D := details E;
+    -- take each of the unique filtered pieces in the filtration
+    (mats, jumps) := toSequence transpose for p in rays E list (
+        -- we'll scan the filtration in decreasing order so that dimensions are ascending.
+        filtPieces := for j in rsort unique (D#p)_1 list {filteredPiece(E,p,j), j};
+        -- intersect them with the kernel as subspaces to get a new filtration
+        newFilt := transpose for F in filtPieces list (
+            -- if the intersection is zero then skip it.
+            if intersect(image F_0, K) == 0 then continue else {gens intersect(image F_0, K), F_1}
+            );
+        -- concatenate all of those filtered pieces together, then prune them (i.e. choose a basis)
+        pruneFiltration(matrix {newFilt_0}, newFilt_1)
+        );
+    toricVectorBundle(variety E, mats, jumps)
 )
 
-
-
-
+--todo
 cokernel (ToricVectorBundleMap) := f ->(
     if not isWellDefined(f) then ( error (" The map is not well defined"));
     if isSurjective(f) then( return trivialBundle(variety source (f), 0) ); 
@@ -1594,6 +1487,14 @@ net ToricVectorBundle := E -> (
     "ToricVectorBundle of rank " | net rank E | " on " | net variety E
     )
 
+
+
+
+
+load "Kaneyama.m2"
+load "Positivity.m2"
+
+
 -------------------------------------------
 -- DOCUMENTATION
 -------------------------------------------
@@ -2006,20 +1907,20 @@ assert(eulerChi T == -1) -- eulerChi T == 2 :(
 -- Checking cohomology for Klyachko
 TEST ///
 T1 = trivialBundle(X = toricProjectiveSpace 1 ** toricProjectiveSpace 1, 2)
-assert(sort degrees cohomology(0,T1) == sort degrees (grRing T1)^{{0,0},{0,0}})
-assert(sort degrees cohomology(1,T1) == sort degrees (grRing T1)^0)
-assert(sort degrees cohomology(2,T1) == sort degrees (grRing T1)^0)
+assert(sort degrees cohomology(0,T1) == {{0,0},{0,0}})
+assert(sort degrees cohomology(1,T1) == {})
+assert(sort degrees cohomology(2,T1) == {})
 T2 = tangentBundle X
-assert(sort degrees cohomology(0,T2,matrix{{0},{0}}) == sort degrees (grRing T2)^{{0,0},{0,0}})
-assert(sort degrees cohomology(0,T2,matrix{{1},{1}}) == sort degrees (grRing T2)^0)
-assert(sort degrees cohomology(0,T2) == sort degrees (grRing T2)^{{1,0},{0,1},{0,0},{0,0},{0,-1},{-1,0}})
-assert(sort degrees cohomology(1,T2) == sort degrees (grRing T2)^0)
-assert(sort degrees cohomology(2,T2) == sort degrees (grRing T2)^0)
+assert(sort degrees cohomology(0,T2,matrix{{0},{0}}) == {{0,0},{0,0}})
+assert(sort degrees cohomology(0,T2,matrix{{1},{1}}) == {})
+assert(sort degrees cohomology(0,T2) == {{-1,0},{0,-1},{0,0},{0,0},{0,1},{1,0}})
+assert(sort degrees cohomology(1,T2) == {})
+assert(sort degrees cohomology(2,T2) == {})
 T3 = tangentBundle(Y = hirzebruchSurface 3 ** toricProjectiveSpace 1)
-assert(sort degrees cohomology(0,T3) == sort degrees (grRing T3)^{{0, 0, 1}, {1, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {-1, 0, 0}, {0, 0, -1}, {0, -1, 0}, {-1, -1, 0}, {-2, -1, 0}, {-3, -1, 0}})
-assert(sort degrees cohomology(1,T3) == sort degrees (grRing T3)^{{2, 1, 0}, {1, 1, 0}})
-assert(sort degrees cohomology(2,T3) == sort degrees (grRing T3)^0)
-assert(sort degrees cohomology(3,T3) == sort degrees (grRing T3)^0)
+assert(sort degrees cohomology(0,T3) == {{-1, 0, 0}, {0, 0, -1}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 1}, {0, 1, 0}, {1, 0, 0}, {1, 1, 0}, {2, 1, 0}, {3, 1, 0}})
+assert(sort degrees cohomology(1,T3) == {{-2, -1, 0}, {-1, -1, 0}})
+assert(sort degrees cohomology(2,T3) == {})
+assert(sort degrees cohomology(3,T3) == {})
 ///
 
 -- Test 14
@@ -2797,6 +2698,34 @@ X = toricProjectiveSpace 3
 E = toricVectorBundle(X,filts,jumps)
 
 -- We store some archived code that René wrote.
+cartierIndex (List,Fan) := (L,F) -> (
+     rl := raySortOfFan F;
+     -- Checking for input errors
+     if #L != #rl then error("The number of weights has to equal the number of rays.");
+     n := ambDim F;
+     -- Checking for further errors and assigning the weights to the rays
+     L = hashTable apply(#rl, i -> (if class L#i =!= ZZ then error("The weights have to be in ZZ."); rl#i => L#i));
+     -- Keeping track of the lowest common multiple of denominators of the degrees,
+     -- to check whether the divisor itself is Cartier or which multiple
+     denom := 1;
+     -- Computing the degree vector for every top dimensional cone
+     Frays := rays F;
+     scan(sort maxCones F, C -> (
+	       rC := Frays_C;
+	       -- Taking the first n x n submatrix
+	       rC1 := rC_{0..n-1};
+	       -- Setting up the solution vector by composing the corresponding weights
+	       v := matrix apply(n, i -> (c := rC1_{i}; {-(L#c)}));
+	       -- Computing the degree vector
+	       w := vertices polyhedronFromHData(matrix {toList(n:0)},matrix {{0}},transpose rC1,v);
+	       -- Checking if w also fulfils the equations given by the remaining rays
+	       if numColumns rC != n then (
+		    v = v || matrix apply(toList(n..(numColumns rC)-1), i -> {-(L#(rC_{i}))});
+	            if (transpose rC)*w - v != 0 then error("The weights do not define a Cartier divisor."));
+	       -- Check if w is QQ-Cartier
+	       scan(flatten entries w, e -> denom = lcm(denominator e ,denom))));
+     denom)
+
 
 X = toricProjectiveSpace 1
 --source
@@ -2831,4 +2760,121 @@ f = map(E',E,M)
     1/0;
     tvb  = image phi;
     );
-    *-
+*-
+
+-*
+restart
+debug needsPackage "ToricVectorBundles"
+X = toricProjectiveSpace(3, CoefficientRing=> ZZ/101);
+TX = tangentBundle X;
+triv = trivialBundle(X,1);
+sumoflbs = lineBundle X_0 ++ lineBundle X_1 ++ lineBundle X_2 ++ lineBundle X_3;
+f = map(sumoflbs,triv,matrix(ZZ/101,{{1},{1},{1},{1}}));
+g = map(TX,sumoflbs, transpose sub(matrix rays X,ZZ/101));
+image g
+ker g
+
+Y = toricProjectiveSpace 1
+mats := {matrix {{1,0},{1,0},{1,1},{1,0}}, matrix {{1,0},{1,0},{0,1},{1,0}}}
+jumps := {{1,0},{0,1}}
+E' = toricVectorBundle(Y,mats,jumps)
+displayFiltrations E'
+displayFiltrations prune E'
+T1 = E'
+T2 = prune E'
+T1 == T2
+
+X = hirzebruchSurface 2
+E = tangentBundle X
+L = lineBundle(X_0 + 2*X_1 + 4*X_2 + 5*X_3)
+T1 = exteriorPower(E ++ L, 2)
+T2 = (exteriorPower(E,0) ** exteriorPower(L,2)) ++ (exteriorPower(E,1)**exteriorPower(L,1)) ++ (exteriorPower(E,2) ** exteriorPower(L,0))
+areIsomorphic(T1,T2)
+E = T1
+
+X = toricProjectiveSpace 3
+E = tangentBundle X
+E' = E ++ trivialBundle(X,1);
+f = map(E',E,matrix{{1,0,0},{0,1,0},{0,0,1},{0,0,0}})
+T1 = E
+T2 = image f
+displayFiltrations T1
+displayFiltrations T2
+T1 == T2
+T1 == prune T2
+*-
+
+
+
+torusWeights := E -> (
+    D := details E;
+    R := rays E;
+    decomps := for m in max variety E list (
+        -- first we'll find the torus weights that pair with the range
+        -- of the filtration for each ray. i.e. we make the hyperplane
+        -- inequalities minj \leq <u, p> \leq maxj for each p in R_m.
+        (M,a) := toSequence transpose for p in R_m list (
+            minj := min (D#p)_1;
+            maxj := max (D#p)_1;
+            {{matrix{-p,p}}, {matrix{{-minj},{maxj}}}}
+            );
+        -- if X is smooth then this will always be bounded and contain
+        -- at least one lattice point. else...?
+        P := polyhedronFromHData(matrix M, matrix a);
+        L := latticePoints P;
+        -- for each ray, record the characters and which index they appear.
+        H := hashTable for p in R_m list p => (
+            hashTable for j in unique (D#p)_1 list j => select(L, l -> ((matrix {p}) * l)_0 == j)
+            );
+        -- sort the indices in reverse order, so that we are building up in dim.
+        jumpindices := rsort unique flatten ((values H)/keys);
+        chardata := for j in jumpindices list (
+            -- for each ray which has this index, we will try to add its corresponding vector.
+            for p in select(keys H, h -> isMember(j, keys H#h)) list (
+                -- pick out the corresponding vector for the index jump.
+                v := (D#p)_0_{position((D#p)_1, j' -> j' == j)};
+                -- for each ray p' not equal to p, we find the index j' where v intersects the filtration
+                -- of p' and take the set of characters H#p#j'.
+                if not H#p#?j then continue;
+                filtindices := {{p, j}};
+                filtindices = (filtindices | for p' in delete(p, R_m) list (
+                        j' := {};
+                        for k in rsort unique (D#p')_1 do (
+                            if intersect(image filteredPiece(E,p',k), image v) != 0 then (j' = k; break) else continue
+                            );
+                        if not H#p'#?j' then {} else {p', j'}
+                        )
+                    );
+                -- try to intersect the lists of characters
+                chars := toList intersect for f in filtindices list if f == {} then set {} else set H#(f_0)#(f_1);
+                -- if this intersection was empty, then it was impossible to index the decomposition.
+                if chars == {} then continue else {p, chars_0, v}
+                )
+            );
+        -- todo: now to parse the character data to try and find a decomposition.
+        (toruswts, fibrebasis) := toSequence apply(transpose flatten chardata, MM -> matrix {MM});
+        --if numColumns fibrebasis != rank E then {} else
+        {toruswts, fibrebasis}
+        );
+    if any(decomps, d -> d == {}) then false else (E.cache.eigenspaceDecompositions = decomps; true)
+    )
+
+
+
+changelist: 2026-10-27
+- renamed the package so that we can install it to find bugs in doc
+- * made it so that you don't need square matrices (!)
+- added prune because of *
+- loooots of clean up. mostly whitespace, some formatting.
+- fixed image
+- fixed ker
+- changed groundSet to accommodate *
+- fixed all present documentation errors (Kaneyama needs to be split out)
+
+todo
+- tests are all broken atm and i didn't fix them
+- finish coker
+- alas, isomorphism is still broken even with groundset.
+- implement andreas' small changes/bugfixes
+- implement me own version of compatibility check
+- implement iswelldefined (need span of filt mats to be same)

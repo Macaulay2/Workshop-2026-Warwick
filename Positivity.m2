@@ -36,6 +36,15 @@
 --    meaningless for varieties which are not complete or not smooth.
 ------------------------------------------------------------------------------
 
+protect basesSortedByFiltrations 
+protect filtrationFlags
+protect posetTvb
+protect restrictionsToInvCurves
+protect isLW
+protect isLF
+-- Options
+protect preferredGenerators
+
 ------------------------------------------------------------------------------
 -- METHOD: groundSet
 ------------------------------------------------------------------------------
@@ -54,44 +63,39 @@ maxCones ToricVectorBundle := T -> (
    )
 
 
-flags = method()
+flags = method(TypicalValue => HashTable)
 flags (ToricVectorBundle) := (cacheValue symbol filtrationFlags) ( E -> (
     fJs := unique flatten filtrationJumps( E);
     hashTable for rho in rays E list (
         rayFlag := unique for i in fJs list ((filteredPiece( E, rho, i)));
-        rayFlag =  sort( select(rayFlag, M -> rank M != 0), mat -> numgens source mat);
+        rayFlag =  sort( select(rayFlag, M -> rank M != 0), mat -> numColumns mat);
         rho => rayFlag
     )
 ))
 
-getColumns = method ()
-getColumns (Matrix) := mat -> toList apply( 0..<numgens source mat, i->mat_i )
-getColumns (Module) := M -> apply( getColumns gens M, c -> image matrix c)
+getColumns = method(TypicalValue => List)
+getColumns Matrix := mat -> toList apply( 0..<numColumns mat, i->mat_i )
+getColumns Module := M -> apply(getColumns gens M, c -> image matrix c)
 
-primitive = method ()
-primitive (Matrix) := mat -> (
- m := 1;
- if instance(mat_(0,0),QQ) then
-  m = lcm apply(flatten entries mat, denominator);
- matmod := m*mat;
- m = gcd flatten entries matmod;
- lift(1/m*promote(matmod,QQ),ZZ)
-)
+primitive = method(TypicalValue => Matrix)
+primitive Matrix := mat -> (
+    m := 1;
+    if ring mat === QQ then
+    m = lcm apply(flatten entries mat, denominator);
+    matmod := lift(m*mat,ZZ);
+    m = gcd flatten entries matmod;
+    matmod//m
+    )
 
--- is there a better way?
-
-cartesianProduct2= (L1,L2) -> flatten apply(L1, l1 -> apply(L2, l2 -> {l1,l2}))
-
-cartesianProductNested = L -> fold(L, cartesianProduct2)
-inductiveFlatten = (L,i) -> if i<=0 then L else ( {L#0} | inductiveFlatten (L#1,i-1))
-cartesianProduct (List ) := L -> (
- if #L==1 then return apply(L#0, l-> {l}); -- border case
- n := #L-2;
- apply( cartesianProductNested L, l -> inductiveFlatten(l,n))
-)
+-- fold( Ls, (l1,l2) -> l1 ** l2 ) -- produces too many parentheses
+cartesianProduct List := Ls -> (
+    if #Ls<=1 then return Ls;
+    if #Ls==2 then return flatten table(Ls#0,Ls#1, (l1,l2) -> {l1,l2});
+    return flatten table( Ls#0, cartesianProduct( Ls_{1..<#Ls} ), (l1,l2) -> {l1} | l2 )
+    )
 
 
-poset = method()
+poset = method(TypicalValue => List)
 poset (ToricVectorBundle) := (cacheValue symbol posetTvb)  (E -> (
     -- do all possible intersections (over ring of defintion of E)
     intersections := apply( cartesianProduct values flags E, L -> intersect( apply(L, l -> image promote(l,ring E) ) ) );
@@ -107,8 +111,8 @@ poset (ToricVectorBundle) := (cacheValue symbol posetTvb)  (E -> (
 --           IMPORTANT: Due to the implementation, elements might appear several times
 --   INPUT : 'tvb', a ToricVectorBundle
 --  OUTPUT : ground set (list of nx1-matrices)
-groundSet = method(Options => true)
-groundSet (ToricVectorBundle) :=  {Verbosity => 0, preferredGenerators => {}} >> opts -> (cacheValue groundSet)  (E -> (
+groundSet = method(Options => true, TypicalValue => List)
+groundSet ToricVectorBundle :=  {Verbosity => 0, preferredGenerators => {}} >> opts -> (cacheValue groundSet)  (E -> (
     if opts#Verbosity>0 then << "METHOD: groundSet" << endl;
     intersections := poset E;
     if opts#Verbosity>0 then << "Poset of proper linear subspaces of E: " << endl << apply(intersections,gens) << endl;
@@ -121,7 +125,7 @@ groundSet (ToricVectorBundle) :=  {Verbosity => 0, preferredGenerators => {}} >>
         for V in Vs do (
             GinV := select(G, g -> isSubset(g, V) );
             if opts#Verbosity>0 then << "V = " << gens V << " contains " << apply(GinV,gens) << endl;
-            sumGinV := sum append(GinV, image map(R^(rank E),R^1,0)); -- works also if GinV empty
+            sumGinV := sum append(GinV, image map(R^(E.ambRank),R^1,0)); -- works also if GinV empty
             if rank sumGinV < rank V then (
                 newGs := {};
                 generatorsToChoose := {};
@@ -160,7 +164,7 @@ groundSet (ToricVectorBundle) :=  {Verbosity => 0, preferredGenerators => {}} >>
 -- polytopeTVB
 ------------------------------------------------------------------------------
 
-polytopeTVB = method(Options => true)
+polytopeTVB = method(Options => true, TypicalValue => Polyhedron)
 polytopeTVB (ToricVectorBundle, Matrix) := {Verbosity => 0} >> opts -> ( (E,l) -> (
     if opts#Verbosity>0 then << "Calculate polytope for l = " << l << endl;
     rayE := rays E;
@@ -189,8 +193,8 @@ polytopeTVB (ToricVectorBundle, Matrix) := {Verbosity => 0} >> opts -> ( (E,l) -
 --           compute the parliament of polytopes [RJS]
 --   INPUT : 'tvb', a ToricVectorBundle
 --  OUTPUT : parliament of polytopes, hash table (ground set => parliament)
-parliament = method()
-parliament(ToricVectorBundle) := {Verbosity => 0} >> opts -> (cacheValue parliament)( E -> (
+parliament = method(Options => true, TypicalValue => HashTable)
+parliament ToricVectorBundle := {Verbosity => 0} >> opts -> (cacheValue parliament)( E -> (
     if opts#Verbosity>0 then << "METHOD: parliament" << endl;
     gs := groundSet(E, Verbosity=>(opts#Verbosity-1));
     hashTable for l in gs list ( l => polytopeTVB(E,l, Verbosity=>opts#Verbosity) )
@@ -204,7 +208,7 @@ parliament(ToricVectorBundle) := {Verbosity => 0} >> opts -> (cacheValue parliam
 ------------------------------------------------------------------------------
 
 
-restrictToAffine = method(Options => true)
+restrictToAffine = method(Options => true, TypicalValue => ToricVectorBundle)
 restrictToAffine (ToricVectorBundle, Cone) := {Verbosity => 0} >> opts -> ( (tvb,cone) -> (
     if opts#Verbosity>0 then << "METHOD: restrictToAffine" << endl;
     TV := normalToricVariety(fan cone, CoefficientRing => ring tvb );
@@ -224,22 +228,18 @@ restrictToAffine (ToricVectorBundle, Matrix) := {Verbosity => 0} >> opts -> ( (t
 --   INPUT: 'tvb', toric vector bundle
 --          'sigma', maximal cone
 --  OUTPUT: compatible base (matrix of vectors)
-
-compatibleBasis = method(Options => true)
+compatibleBasis = method(Options => true, TypicalValue => Matrix)
 compatibleBasis (ToricVectorBundle, Cone) := {Verbosity => 0} >> opts -> (E,C) -> (
-    
- if opts#Verbosity>0 then << "METHOD: compatibleBasis" << endl;
+    if opts#Verbosity>0 then << "METHOD: compatibleBasis" << endl;
     F:= restrictToAffine(E, C, Verbosity=>opts#Verbosity);
-     if opts#Verbosity>0 then << "details of bundle restricted to " << C << endl << details E << endl;
+    if opts#Verbosity>0 then << "details of bundle restricted to " << C << endl << details E << endl;
     fold(groundSet (F, Verbosity=>opts#Verbosity-1, preferredGenerators=> groundSet E), (i,j) -> i|j)
-    
-)
+    )
 
 compatibleBasis (ToricVectorBundle, Matrix) := {Verbosity => 0} >> opts -> (E,C) -> (
-    
- if opts#Verbosity>0 then << "METHOD: compatibleBasis" << endl;
+    if opts#Verbosity>0 then << "METHOD: compatibleBasis" << endl;
     F:= restrictToAffine(E, C, Verbosity=>opts#Verbosity);
-     if opts#Verbosity>0 then << "details of bundle restricted to " << C << endl << details E << endl;
+    if opts#Verbosity>0 then << "details of bundle restricted to " << C << endl << details E << endl;
     fold(groundSet (F, Verbosity=>opts#Verbosity-1, preferredGenerators=> groundSet E), (i,j) -> i|j)
     
 )
@@ -250,14 +250,13 @@ compatibleBasis (ToricVectorBundle, Matrix) := {Verbosity => 0} >> opts -> (E,C)
 --          compute list of compatible bases as in [RJS, Section 3]
 --   INPUT: 'tvb', toric vector bundle
 --  OUTPUT: hash table: max cone => compatible basis
-compatibleBases = method( Options => true )
-compatibleBases (ToricVectorBundle):= {Verbosity => 0} >> opts -> (cacheValue symbol compatibleBases) (E -> (
-    
- if opts#Verbosity>0 then << "METHOD: compatibleBases" << endl;
-    maxcones :=  maxCones E;
-    --maxcones :=  apply(maxCones E,rays);
-    hashTable for sigma in maxcones list (rays sigma => compatibleBasis (E , sigma, Verbosity=>opts#Verbosity ))
-))
+compatibleBases = method( Options => true, TypicalValue => Matrix)
+compatibleBases ToricVectorBundle := {Verbosity => 0} >> opts -> (cacheValue symbol compatibleBases) (E -> (
+        if opts#Verbosity>0 then << "METHOD: compatibleBases" << endl;
+        maxcones := maxCones E;
+        --maxcones :=  apply(maxCones E,rays);
+        hashTable for sigma in maxcones list (rays sigma => compatibleBasis (E, sigma, Verbosity=>opts#Verbosity ))
+        ))
 
 ------------------------------------------------------------------------------
 -- isLocallyWeil
@@ -271,7 +270,7 @@ compatibleBases (ToricVectorBundle):= {Verbosity => 0} >> opts -> (cacheValue sy
 isLocallyWeil = method(Options => true)
 isLocallyWeil (ToricVectorBundle) := {Verbosity => 0} >> opts -> (cacheValue isLW) (tvb -> (
     if opts#Verbosity>0 then << "METHOD: isLocallyWeil" << endl;
- cbs := compatibleBases (tvb, Verbosity=>opts#Verbosity);
+ cbs := compatibleBases(tvb, Verbosity=>opts#Verbosity);
  isVB := applyValues(cbs, b -> numgens source b == rank tvb);
   if opts#Verbosity>0 then (
    << "cones where sheaf is not locally Weil:" << endl;
@@ -328,12 +327,12 @@ cb_0 => for b in base list (
  );
  result
 ))
- 
+     
 isLocallyFree ToricVectorBundle :=  tvb -> (
- if not isLocallyWeil tvb then (return false;);
- if not tvb.cache.?isLF then (toricChernCharacter tvb);
- tvb.cache.isLF
-)
+    if not isLocallyWeil tvb then (return false;);
+    if not tvb.cache.?isLF then (toricChernCharacter tvb);
+    tvb.cache.isLF
+    )
 
 cartierInd = method()
 cartierInd (ToricVectorBundle) := tvb -> (
@@ -446,10 +445,10 @@ separatesJetsLocally (ToricVectorBundle,Cone) := {Verbosity => 0} >> opts -> (tv
 --   INPUT : 'tvb', toric vector bundle
 --  OUTPUT :  Integer, -infinity if not separates any l-jets, otherwise l
 separatesJets = method(Options => true)
-separatesJets (ToricVectorBundle) := {Verbosity => 0} >> opts -> (cacheValue separatesJets) ( tvb -> (
- if opts#Verbosity>0 then << "METHOD: separatesJets" << endl;
- min( apply( maxCones tvb, sigma -> separatesJetsLocally(tvb,sigma, Verbosity=>opts#Verbosity) ) )
-))
+separatesJets (ToricVectorBundle) := {Verbosity => 0} >> opts -> (cacheValue separatesJets) (tvb -> (
+        if opts#Verbosity>0 then << "METHOD: separatesJets" << endl;
+        min(apply(maxCones tvb, sigma -> separatesJetsLocally(tvb,sigma, Verbosity=>opts#Verbosity) ) )
+        ))
 
 ------------------------------------------------------------------------------
 -- METHODS: isGloballyGenerated, isVeryAmple
