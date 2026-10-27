@@ -679,7 +679,7 @@ doc ///
       The function @TO "CGBMain"@ is the implementation of Algorithm CGBMain of @HREF("#ref2","[2]")@. The function @TO "PGBMain"@
       corresponds to the Algorithm PGBMain of @HREF("#ref1","[1]")@.
   References
-      @LABEL("[1]","id" => "ref1")@ Deepak Kapur, Yao Sun, and Dingkang Wang. 2013. An efficient algorithm for computing a comprehensive Gr\"obner system of a parametric polynomial system. In Journal of Symbolic Computation, 49, 27-44.
+      @LABEL("[1]","id" => "ref1")@ Deepak Kapur, Yao Sun, and Dingkang Wang. 2013. An efficient algorithm for computing a comprehensive Groebner system of a parametric polynomial system. In Journal of Symbolic Computation, 49, 27-44.
       @LABEL("[2]","id" => "ref2")@ Akira Suzuki and Yosuke Sato. 2006. A simple algorithm to compute comprehensive Groebner bases using Groebner bases. In Proceedings of the 2006 international symposium on Symbolic and algebraic computation (ISSAC '06). Association for Computing Machinery, New York, NY, USA, 326–331. https://doi.org/10.1145/1145768.1145821
 ///
 
@@ -922,7 +922,7 @@ doc ///
       $(a+1) x - y$ and $(a+1) y - a$, so $(a+1) x - y$ is chosen over $a x - 1$.
   References
     @LABEL("[1]","id" => "ref1")@ Deepak Kapur, Yao Sun, and Dingkang Wang. 2013. An efficient
-    algorithm for computing a comprehensive Gr\"obner system of a parametric polynomial system.
+    algorithm for computing a comprehensive Groebner system of a parametric polynomial system.
     In Journal of Symbolic Computation, 49, 27-44.
   SeeAlso
     PGBMain
@@ -1064,7 +1064,7 @@ doc ///
       PGBMain(F, ICheckLoops => 2) === PGBMain F
   References
     @LABEL("[1]","id" => "ref1")@ Deepak Kapur, Yao Sun, and Dingkang Wang. 2013. An efficient
-    algorithm for computing a comprehensive Gr\"obner system of a parametric polynomial system.
+    algorithm for computing a comprehensive Groebner system of a parametric polynomial system.
     In Journal of Symbolic Computation, 49, 27-44.
   SeeAlso
     CGBMain
