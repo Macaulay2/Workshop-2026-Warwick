@@ -455,13 +455,12 @@ doc ///
     Key
         fan
         (fan,ToricVectorBundle)
-        (fan, ToricVectorBundleKaneyama)
     Headline
         the underlying fan of a toric vector bundle
     Usage
         F = fan E
     Inputs
-        E:ToricVectorBundle
+        E : ToricVectorBundle
     Outputs
         F : Fan
     Description
@@ -490,7 +489,6 @@ doc ///
     Key
         ring
         (ring,ToricVectorBundle)
-        (ring,ToricVectorBundleKaneyama)
     Headline
         the field over which the ToricVectorBundle is defined
     Usage
@@ -519,7 +517,6 @@ doc ///
     Key
         rank
         (rank,ToricVectorBundle)
-        (rank, ToricVectorBundleKaneyama)
     Headline
         the rank of the vector bundle
     Usage
@@ -548,7 +545,6 @@ doc ///
     Key
         rays
         (rays,ToricVectorBundle)
-        (rays, ToricVectorBundleKaneyama)
     Headline
         the rays of the underlying fan
     Usage
@@ -556,7 +552,6 @@ doc ///
         L = rays F
     Inputs
         E:ToricVectorBundle
-        F:ToricVectorBundleKaneyama
     Outputs
         L:List
     Description
@@ -695,15 +690,14 @@ doc ///
     Key
         dual
         (dual,ToricVectorBundle)
-        (dual,ToricVectorBundleKaneyama)
     Headline
         the dual bundle of a toric vector bundle
     Usage
         Ed = dual E
     Inputs
-        E:{ToricVectorBundle,ToricVectorBundleKaneyama}
+        E : ToricVectorBundle
     Outputs
-        Ed:{ToricVectorBundle,ToricVectorBundleKaneyama}
+        Ed : ToricVectorBundle
     Description
         Text
             @TT "dual"@ computes the dual vector bundle of a toric vector bundle.
@@ -724,9 +718,9 @@ doc ///
             Ed == cotangentBundle X
             E = tangentBundleKaneyama projectiveSpaceFan 2
             Ed = dual E
-            detailsKaneyama Ed
+            details Ed
             CT = cotangentBundleKaneyama projectiveSpaceFan 2
-            detailsKaneyama CT
+            details CT
             Ed == CT
     SeeAlso
         tangentBundle
@@ -737,19 +731,16 @@ doc ///
 
 doc ///
     Key
-        exteriorPower
-        (exteriorPower, ToricVectorBundle, ZZ)
-        (exteriorPower, ZZ, ToricVectorBundleKaneyama)
+        (exteriorPower, ZZ, ToricVectorBundle)
     Headline
         exterior power of a toric vector bundle
     Usage
-        El = exteriorPower(E, l)
+        El = exteriorPower(l, E)
         Fl = exteriorPower(l,F)
     Inputs
-        E : ToricVectorBundle
         l : ZZ
+        E : ToricVectorBundle
             a nonnegative integer
-        F : ToricVectorBundleKaneyama
     Outputs
         El: ToricVectorBundle
             the l-th exterior power of E
@@ -769,34 +760,25 @@ doc ///
         Example
           X = toricProjectiveSpace 2;
           E = trivialBundle(X, 3);
-          assert(rank exteriorPower(E, 2) == 3)
-          assert(rank exteriorPower(E, 0) == 1)
-          assert(rank exteriorPower(E, 4) == 0)
-        Text
-          The method also computes the l-th exterior power of @TO ToricVectorBundleKaneyama@ objects.
-        Example
-          E = tangentBundleKaneyama hirzebruchFan 3
-          detailsKaneyama E
-          Ee = exteriorPower(2,E)
-          detailsKaneyama Ee
+          assert(rank exteriorPower(2, E) == 3)
+          assert(rank exteriorPower(0, E) == 1)
+          assert(rank exteriorPower(4, E) == 0)
     SeeAlso
-        (symmetricPower, ToricVectorBundle, ZZ)
+        (symmetricPower, ZZ, ToricVectorBundle)
         (symmetricPower, ZZ, ToricVectorBundleKaneyama)
         ToricVectorBundle
 ///
 
 doc ///
     Key
-        symmetricPower
-        (symmetricPower, ToricVectorBundle, ZZ)
-        (symmetricPower, ZZ, ToricVectorBundleKaneyama)
+        (symmetricPower, ZZ, ToricVectorBundle)
     Headline
         symmetric power of a toric vector bundle
     Usage
-        symmetricPower(E, l)
+        symmetricPower(l, E)
     Inputs
-        E : ToricVectorBundle
         l : ZZ
+        E : ToricVectorBundle
             a nonnegative integer
     Outputs
         : ToricVectorBundle
@@ -816,46 +798,37 @@ doc ///
         Example
           X = toricProjectiveSpace 2;
           E = trivialBundle(X, 3);
-          assert(rank symmetricPower(E, 2) == 6)
-          assert(rank symmetricPower(E, 1) == 3)
-          assert(rank symmetricPower(E, 0) == 1)
+          assert(rank symmetricPower(2, E) == 6)
+          assert(rank symmetricPower(1, E) == 3)
+          assert(rank symmetricPower(0, E) == 1)
         Text
           The method also computes the l-th symmetric power of @TO ToricVectorBundleKaneyama@ objects.
         Example
           E = tangentBundleKaneyama hirzebruchFan 3
-          detailsKaneyama E
+          details E
           Ee = symmetricPower(2,E)
-          detailsKaneyama Ee
+          details Ee
     SeeAlso
-        (exteriorPower, ToricVectorBundle, ZZ)
+        (exteriorPower, ZZ, ToricVectorBundle)
         (exteriorPower, ZZ, ToricVectorBundleKaneyama)
         ToricVectorBundle
 ///
 
 doc ///
     Key
-        tensor
         (tensor, ToricVectorBundle, ToricVectorBundle)
         (symbol **, ToricVectorBundle, ToricVectorBundle)
-        (tensor, ToricVectorBundleKaneyama, ToricVectorBundleKaneyama)
-        (symbol **, ToricVectorBundleKaneyama, ToricVectorBundleKaneyama)
     Headline
         tensor product of toric vector bundles
     Usage
         EF = tensor(E, F)
         EF = E ** F
-        EF' = tensor(E',F')
-        EF' = E' ** F'
     Inputs
         E : ToricVectorBundle
         F : ToricVectorBundle
-        E': ToricVectorBundleKaneyama
-        F': ToricVectorBundleKaneyama
     Outputs
         EF: ToricVectorBundle
             the tensor product of E and F
-        EF': ToricVectorBundleKaneyama
-            the tensor product of E' and F'
     Description
         Text
           Computes the tensor product of the toric vector bundles
@@ -880,11 +853,11 @@ doc ///
             E1 = toricVectorBundleKaneyama(2,hirzebruchFan 3)
             E2 = tangentBundleKaneyama hirzebruchFan 3
             E = E1 ** E2
-            detailsKaneyama E
+            details E
     SeeAlso
         (symbol **, ToricVectorBundleMap, ToricVectorBundleMap)
-        (exteriorPower, ToricVectorBundle, ZZ)
-        (symmetricPower, ToricVectorBundle, ZZ)
+        (exteriorPower, ZZ, ToricVectorBundle)
+        (symmetricPower, ZZ, ToricVectorBundle)
         ToricVectorBundle
 ///
 
@@ -922,55 +895,19 @@ doc ///
         details
         isGeneral
 ///
--*
--- TODO compare with the one above
-doc ///
-    Key
-        (symbol **,ToricVectorBundle,ToricVectorBundle)
-    Headline
-        the tensor product of two toric vector bundles
-    Usage
-        E = E1 ** E2
-    Inputs
-        E1:ToricVectorBundle
-        E2:ToricVectorBundle
-    Outputs
-        E:ToricVectorBundle
-    Description
-        Text
-            If $E_1$ and $E_2$ are defined over the same fan and in the same description, then
-            @TT "tensor"@ computes the tensor product of the two vector bundles in this description
-        Example
-            E1 = toricVectorBundle(2,hirzebruchFan 3)
-            E2 = tangentBundle hirzebruchFan 3
-            E = E1 ** E2
-            details E
-        Example
-            E1 = toricVectorBundle(2,hirzebruchFan 3,"Type" => "Kaneyama")
-            E2 = tangentBundle(hirzebruchFan 3,"Type" => "Kaneyama")
-            E = E1 ** E2
-            details E
-    SeeAlso
-        (tensor,ToricVectorBundle,ToricVectorBundle)
-        (symbol ++,ToricVectorBundle,ToricVectorBundle)
-        (exteriorPower,ToricVectorBundle,ZZ)
-        (symmetricPower,ToricVectorBundle,ZZ)
-///
-*-
---todo kaneyama...
+
 doc ///
     Key
         (symbol ++,ToricVectorBundle,ToricVectorBundle)
-        (symbol ++, ToricVectorBundleKaneyama, ToricVectorBundleKaneyama)
     Headline
         the direct sum of two toric vector bundles
     Usage
         E = E1 ++ E2
     Inputs
-        E1:{ToricVectorBundle, ToricVectorBundleKaneyama}
-        E2:{ToricVectorBundle, ToricVectorBundleKaneyama}
+        E1 : ToricVectorBundle
+        E2 : ToricVectorBundle
     Outputs
-        E:{ToricVectorBundle, ToricVectorBundleKaneyama}
+        E: ToricVectorBundle
     Description
         Text
             If $E_1$ and $E_2$ are defined over the same fan, then @TT "directSum"@ computes the
@@ -990,8 +927,8 @@ doc ///
     SeeAlso
         (symbol **,ToricVectorBundle,ToricVectorBundle)
         (tensor,ToricVectorBundle,ToricVectorBundle)
-        (exteriorPower,ToricVectorBundle,ZZ)
-        (symmetricPower,ToricVectorBundle,ZZ)
+        (exteriorPower, ZZ, ToricVectorBundle)
+        (symmetricPower, ZZ, ToricVectorBundle)
 ///
 
 
@@ -1035,7 +972,6 @@ doc ///
     Key
         twist
         (twist,ToricVectorBundle,List)
-        (twist,ToricVectorBundleKaneyama,List)
         (twist,ToricVectorBundle, ToricDivisor)
     Headline
         twists a toric vector bundle with a line bundle
@@ -1091,7 +1027,7 @@ doc ///
             of all rays. The method then returns whether the bundles are isomorphic.
         Example
             HF = hirzebruchSurface 2
-            E = exteriorPower(cotangentBundle HF,2)
+            E = exteriorPower(2, cotangentBundle HF)
             F = lineBundle(HF,{-1,-1,-1,-1})
             areIsomorphic(E,F)
         Text
@@ -1118,7 +1054,6 @@ doc ///
 doc ///
     Key
         (symbol ==,ToricVectorBundle,ToricVectorBundle)
-        (symbol ==,ToricVectorBundleKaneyama,ToricVectorBundleKaneyama)
     Headline
         checks for isomorphism or equality
     Usage
@@ -1171,7 +1106,7 @@ doc ///
             For this, the two bundles must be defined over the same fan.
         Example
             HF = hirzebruchSurface 2
-            E = exteriorPower(cotangentBundle HF,2)
+            E = exteriorPower(2, cotangentBundle HF)
             F = lineBundle(HF,{-1,-1,-1,-1})
     SeeAlso
         areIsomorphic
@@ -1970,94 +1905,6 @@ doc ///
 ///
 
 
--- TODO Unify with Klyachko
-
-doc ///
-    Key
-        cechComplexKaneyama
-        (cechComplexKaneyama,ZZ,ToricVectorBundleKaneyama,Matrix)
-    Headline
-        TODO
-    Usage
-        C = cechComplexKaneyama(k,E,u)
-    Inputs
-        k : ZZ
-            index of the term in the Cech complex
-        E : ToricVectorBundleKaneyama
-        u : Matrix
-            a one-column matrix representing a degree vector
-    Outputs
-        C : Sequence
-            data for a term of the Cech complex and its boundary map
-    Description
-        Text
-          TODO
-///
-
--- TODO Unify with Klyachko
-
-doc ///
-    Key
-        deltaEKaneyama
-        (deltaEKaneyama,ToricVectorBundleKaneyama)
-    Headline
-        TODO
-    Usage
-        P = deltaEKaneyama(E)
-    Inputs
-        E : ToricVectorBundleKaneyama
-    Outputs
-        P : Polyhedron
-    Description
-        Text
-          TODO
-///
-
-
--- TODO Unify with Klyachko
-
-doc ///
-    Key
-        detailsKaneyama
-        (detailsKaneyama,ToricVectorBundleKaneyama)
-    Headline
-        TODO
-    Usage
-        D = detailsKaneyama(E)
-    Inputs
-        E : ToricVectorBundleKaneyama
-    Outputs
-        D : HashTable
-    Description
-        Text
-          TODO
-///
-
-
--- TODO Unify with Klyachko
-
-doc ///
-    Key
-        eulerChiKaneyama
-        (eulerChiKaneyama,ToricVectorBundleKaneyama)
-        (eulerChiKaneyama,Matrix,ToricVectorBundleKaneyama)
-    Headline
-        TODO
-    Usage
-        chi = eulerChiKaneyama(E)
-        chi = eulerChiKaneyama(u,E)
-    Inputs
-        E : ToricVectorBundleKaneyama
-        u : Matrix
-            a one-column matrix representing a degree vector
-    Outputs
-        chi : ZZ
-    Description
-        Text
-          TODO
-///
-
-
 -- Change to Kaneyama
 doc ///
     Key
@@ -2284,7 +2131,7 @@ doc ///
             pair of maximal cones that intersect in a codimension 1 face.
         Example
             E = tangentBundleKaneyama(pp1ProductFan 2)
-            detailsKaneyama E
+            details E
         Text
             For a toric vector bundle in Klyachko's description, the hash table @TT "ht"@ contains
             the rays of the underlying fan and for each ray the basis of the bundle over this ray
