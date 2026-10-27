@@ -1974,30 +1974,6 @@ doc ///
 
 doc ///
     Key
-        cechComplexKaneyama
-        (cechComplexKaneyama,ZZ,ToricVectorBundleKaneyama,Matrix)
-    Headline
-        TODO
-    Usage
-        C = cechComplexKaneyama(k,E,u)
-    Inputs
-        k : ZZ
-            index of the term in the Cech complex
-        E : ToricVectorBundleKaneyama
-        u : Matrix
-            a one-column matrix representing a degree vector
-    Outputs
-        C : Sequence
-            data for a term of the Cech complex and its boundary map
-    Description
-        Text
-          TODO
-///
-
--- TODO Unify with Klyachko
-
-doc ///
-    Key
         deltaEKaneyama
         (deltaEKaneyama,ToricVectorBundleKaneyama)
     Headline
@@ -2013,49 +1989,6 @@ doc ///
           TODO
 ///
 
-
--- TODO Unify with Klyachko
-
-doc ///
-    Key
-        detailsKaneyama
-        (detailsKaneyama,ToricVectorBundleKaneyama)
-    Headline
-        TODO
-    Usage
-        D = detailsKaneyama(E)
-    Inputs
-        E : ToricVectorBundleKaneyama
-    Outputs
-        D : HashTable
-    Description
-        Text
-          TODO
-///
-
-
--- TODO Unify with Klyachko
-
-doc ///
-    Key
-        eulerChiKaneyama
-        (eulerChiKaneyama,ToricVectorBundleKaneyama)
-        (eulerChiKaneyama,Matrix,ToricVectorBundleKaneyama)
-    Headline
-        TODO
-    Usage
-        chi = eulerChiKaneyama(E)
-        chi = eulerChiKaneyama(u,E)
-    Inputs
-        E : ToricVectorBundleKaneyama
-        u : Matrix
-            a one-column matrix representing a degree vector
-    Outputs
-        chi : ZZ
-    Description
-        Text
-          TODO
-///
 
 
 -- Change to Kaneyama
