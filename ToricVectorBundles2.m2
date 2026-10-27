@@ -85,14 +85,10 @@ export {
     "strata",
     -- Operations
     "areIsomorphic",
-    "cechComplexKaneyama",
     "deltaE",
-    "deltaEKaneyama",
     "details",
-    "detailsKaneyama",
     "filtrations" => "details",
     "eulerChi",
-    "eulerChiKaneyama",
     "filteredPiece",
     "moduleToKlyachko",
     "klyachkoToModule",
@@ -350,7 +346,7 @@ dual ToricVectorBundle := {} >> opts -> tvb -> (
     toricVectorBundle(variety tvb, filtMats, filtJumps)
     )
 
-exteriorPower (ToricVectorBundle, ZZ) := opts -> (TVB, l) -> (
+exteriorPower (ZZ, ToricVectorBundle) := opts -> (l, TVB) -> (
     if l < 0 then error("expected nonnegative exponent")
     else if l == 0 then trivialBundle(variety TVB, 1)
     else if l > rank TVB then trivialBundle(variety TVB, 0)
@@ -368,7 +364,7 @@ exteriorPower (ToricVectorBundle, ZZ) := opts -> (TVB, l) -> (
         )
     )
 
-symmetricPower (ToricVectorBundle, ZZ) := (TVB, l) -> (
+symmetricPower (ZZ, ToricVectorBundle) := (l, TVB) -> (
     if l < 0 then error("expected nonnegative exponent")
     else if l == 0 then trivialBundle(variety TVB, 1)
     else (
@@ -418,23 +414,26 @@ areIsomorphic (ToricVectorBundle,ToricVectorBundle) := Boolean => (T1,T2) -> (
     if not T1.cache.iso#?T2 then (
         areTVBsIso := false;
         -- compute the ground sets of both.
-        --g1 := sub(matrix {groundSet T1}, ring T1);
-        --g2 := sub(matrix {groundSet T2}, ring T2);
-        g1 := removeDupeCols filtrationMatrices T1;
-        g2 := removeDupeCols filtrationMatrices T2;
+        g1 := sub(matrix {groundSet T1}, ring T1);
+        g2 := sub(matrix {groundSet T2}, ring T2);
         if numColumns g1 == numColumns g2 then (
             -- attempt to find the isomorphism between them.
-            N := solve(transpose g1, transpose g2);
-            if N =!= null then (
-                f := map(T2, T1, transpose N);
-                -- if this one is well defined and bijective, then it's our guy.
-                areTVBsIso = if not(isWellDefined f or isInjective f or isSurjective f) then false else (
-                    T1.cache.iso#T2 = f;
-                    Ninv := solve(transpose g2, transpose g1);
-                    T2.cache.iso#T1 = map(T1, T2, transpose Ninv);
-                    true
-                    )
-                );
+            fixedbasis := g1_{0..rank T1-1};
+            for S in subsets(numColumns g2, rank T1) list (
+                newbasis := g2_S;
+                N := solve(transpose fixedbasis, transpose newbasis);
+                if N =!= null then (
+                    f := map(T2, T1, transpose N);
+                    -- if this one is well defined and bijective, then it's our guy.
+                    areTVBsIso = if isWellDefined f and isInjective f and isSurjective f then (
+                        T1.cache.iso#T2 = f;
+                        Ninv := solve(transpose newbasis, transpose fixedbasis);
+                        T2.cache.iso#T1 = map(T1, T2, transpose Ninv);
+                        true
+                        ) else false;
+                    break
+                    );
+                )
             )
         );
     areTVBsIso
@@ -464,7 +463,7 @@ isTwistOf (ToricVectorBundle, ToricVectorBundle) := (E1, E2) -> (
 -- The cohomology of a toric vector bundle inherits an action of the torus, so these
 -- vector spaces naturally come equipped with torus weights.
 -- This makes a weighted version of the coefficient ring to keep track of these weights.
-weightedCoeffRing := (cacheValue symbol weightedCoeffRing)(E ->  (ring E)[DegreeRank => dim variety E])
+weightedCoeffRing := (cacheValue symbol weightedCoeffRing)(E -> (ring E)[DegreeRank => dim variety E])
 
 -- PURPOSE : Computing the Cech complex of a vector bundle
 cechComplex = method()
@@ -530,7 +529,6 @@ cechComplex (ZZ,ToricVectorBundle,Matrix) := (k,T,u) -> (
         bT :=  hashTable apply(raysT, rho -> transpose matrix {rho} => (details T)#rho_0 );
         if not T.cache.cech#?(k,u) then (
             -- rT will be used to sort the rays
-    
             -- if the previous chain has not been computed we have to compute the cones of the right dimension (n-k)
             if not T.cache.cech#?(k-1,u) or k == 0 then (
                 -- if k==n then the chain is the "complete bundle" and the next chain is 0
@@ -922,6 +920,17 @@ image ToricVectorBundleMap := f ->(
     toricVectorBundle(variety E, for fM in filtrationMatrices E list M * fM, filtrationJumps E)
 )
 
+-*
+restart
+debug needsPackage "ToricVectorBundles2"
+ X = toricProjectiveSpace 1;
+ S = ring X;
+ I = ideal X;
+ Qtvb =  transpose map(S^{{1}, {2}, {1}, {3}},S^2,{{x_0, x_1}, {0, x_0^2}, {x_1, 0}, {0, x_0^2*x_1}})
+phi1 =  moduleToKlyachko (X, Qtvb)
+ker phi1
+*-
+
 kernel ToricVectorBundleMap := opts -> f -> (
     if not isWellDefined f then error("The map is not well defined");
     E := source f;
@@ -935,10 +944,14 @@ kernel ToricVectorBundleMap := opts -> f -> (
         -- intersect them with the kernel as subspaces to get a new filtration
         newFilt := transpose for F in filtPieces list (
             -- if the intersection is zero then skip it.
-            if intersect(image F_0, K) == 0 then continue else {gens intersect(image F_0, K), F_1}
+            if intersect(image F_0, K) == 0 then continue else (
+                filtmat := gens intersect(image F_0, K);
+                filtjumps := for i to numColumns filtmat - 1 list F_1;
+                {filtmat, filtjumps}
+                )
             );
         -- concatenate all of those filtered pieces together, then prune them (i.e. choose a basis)
-        pruneFiltration(matrix {newFilt_0}, newFilt_1)
+        pruneFiltration(matrix {newFilt_0}, flatten newFilt_1)
         );
     toricVectorBundle(variety E, mats, jumps)
 )
@@ -1497,6 +1510,7 @@ load "Positivity.m2"
 -------------------------------------------
 
 load "ToricVectorBundlesDocumentation.m2"
+load "KaneyamaDocumentation.m2"
 
 -------------------------------------------
 -- TESTS
@@ -2761,7 +2775,7 @@ f = map(E',E,M)
 
 -*
 restart
-debug needsPackage "ToricVectorBundles"
+debug needsPackage "ToricVectorBundles2"
 X = toricProjectiveSpace(3, CoefficientRing=> ZZ/101);
 TX = tangentBundle X;
 triv = trivialBundle(X,1);
@@ -2770,6 +2784,8 @@ f = map(sumoflbs,triv,matrix(ZZ/101,{{1},{1},{1},{1}}));
 g = map(TX,sumoflbs, transpose sub(matrix rays X,ZZ/101));
 image g
 ker g
+displayFiltrations image f
+displayFiltrations prune image f
 
 Y = toricProjectiveSpace 1
 mats := {matrix {{1,0},{1,0},{1,1},{1,0}}, matrix {{1,0},{1,0},{0,1},{1,0}}}
