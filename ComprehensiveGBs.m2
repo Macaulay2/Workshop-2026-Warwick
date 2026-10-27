@@ -28,10 +28,9 @@ export {
     "PGBMain",
     "MDBasis",
     "Depth",
-    "CheckAssumption"
+    "CheckAssumption",
+    "ICheckLoops"
 } -- functions, objects to export
-
-protect ICheckLoops
 
 
 -- store all the maps and rings of a CGB computation in a object
@@ -352,7 +351,8 @@ Since we already compute `minimal` for the second heuristic, we sort the list an
 --------------------------------------------------
 PGBMain = method(
     Options => {
-        Depth => -1
+        Depth => -1,
+        ICheckLoops => infinity
         }
     );
 PGBMain (List, List, List, Ring) := o -> (E, N, F, R) -> (
@@ -363,7 +363,7 @@ PGBMain (List, List, List, Ring) := o -> (E, N, F, R) -> (
     RFlattoR := cgbData#"RFlattoR";
     RtoRFlat := cgbData#"RtoRFlat";
     RFlattoKU := cgbData#"RFlattoKU";
-    if not consistencyCheckAllTogether(E, N) then (
+    if not consistencyCheckAllTogether(E, N, ICheckLoops => o.ICheckLoops) then (
         return {} -- The domain is empty
     );
     -- Compute the GB of union(E, F), but viewing the parameters as variables
@@ -394,17 +394,17 @@ PGBMain (List, List, List, Ring) := o -> (E, N, F, R) -> (
         productList = {0_KU};
         );
     PGB := {};
-    if consistencyCheckAllTogether (E, productList) then (
+    if consistencyCheckAllTogether(E, productList, ICheckLoops => o.ICheckLoops) then (
         PGB = {{E, productList, {1_R}}};
         );
-    if not consistencyCheckAllTogether(Gr, N) then (
+    if not consistencyCheckAllTogether(Gr, N, ICheckLoops => o.ICheckLoops) then (
         return PGB
         );
     Gm := MDBasis listDiff;
     H := unique flatten apply(Gm, g -> listOfFactors leadCoefficient g);
     h := squareFreePart lcm(H | {1_KU});
     productList = unique (squareFreePart \ totalListProduct(N, {h}));
-    if consistencyCheckAllTogether(Gr, productList) then (
+    if consistencyCheckAllTogether(Gr, productList, ICheckLoops => o.ICheckLoops) then (
         PGB = unique(PGB | {{Gr, productList, if length Gm == 0 then {0_R} else Gm}});
         );
     -- Depth controls the number of recursive calls:
@@ -807,6 +807,21 @@ doc ///
 
 doc ///
   Key
+    ICheckLoops
+  Headline
+    number of squarings in the consistency checks of PGBMain
+  Description
+    Text
+      ICheckLoops is an option to set the number of squarings that
+      one of the consistency checks tries before it falls back on the
+      Rabinowitsch trick. The default value @TT "infinity"@ skips
+      the squarings.
+  SeeAlso
+    PGBMain
+///
+
+doc ///
+  Key
     Verbose
   Headline
     record CGBMain iterations
@@ -984,6 +999,7 @@ doc ///
     (PGBMain, List, List)
     (PGBMain, List, List, List)
     [PGBMain, Depth]
+    [PGBMain, ICheckLoops]
   Headline
     compute a Comprehensive Groebner System using Kapur-Sun-Wang algorithm
   Usage
@@ -999,6 +1015,8 @@ doc ///
       The strata to remove from the vanishing set of $E$
     Depth=>ZZ
       a bound on the recursion depth; a negative value means no bound
+    ICheckLoops=>ZZ
+      the number of squarings in one of the consistency checks; the value @TO "infinity"@ means skip the squarings
   Outputs
     :List
       of lists $\{E_i, N_i, G_i\}$ such that $G_i$ is a Groebner basis on $V(E_i)\setminus V(N_i)$
@@ -1033,6 +1051,16 @@ doc ///
     Text
       Note. If Depth is not negative, then the output is a comprehensive Groebner system on only
       part of the parameter space.
+    Text
+      The algorithm discards the strata $V(E)\setminus V(N)$ that are empty, using the consistency
+      checks of Section 5 of @HREF("#ref1","[1]")@.
+      One of them decides whether $f \in \sqrt{\langle E\rangle}$ for $f \in N$.
+      If ICheckLoops is a nonnegative integer $k$, then it first computes the normal forms
+      of $f^{2^i}$ modulo $E$ for $i \le k$, and it falls back on the Rabinowitsch trick only
+      if none of them is zero.
+      The default value @TT "infinity"@ uses the Rabinowitsch trick directly.
+    Example
+      PGBMain(F, ICheckLoops => 2) === PGBMain F
   References
     @LABEL("[1]","id" => "ref1")@ Deepak Kapur, Yao Sun, and Dingkang Wang. 2013. An efficient
     algorithm for computing a comprehensive Gr\"obner system of a parametric polynomial system.
@@ -1367,6 +1395,17 @@ G = CGB {a*x - 1, b*x - 1};
 assert all(G, g -> ring g === R)
 assert(#G == 3)
 assert(set G === set {a_R - b_R, b*x - 1, b^2*x - b})
+///
+
+------------------------------
+-- Test ICheckLoops option for PGBMain
+------------------------------
+TEST ///
+U = QQ[a, b, c];
+R = U[x, y, MonomialOrder => Lex];
+F = {a*x - b, b*y - a, c*x^2 - y, c*y^2 - x};
+L = PGBMain F;
+assert all({0, 1, 2, 4}, k -> PGBMain(F, ICheckLoops => k) === L)
 ///
 
 -- Test Depth option for PGBMain
