@@ -75,49 +75,18 @@ doc ///
 
 ///
 
+------------------------------
+-- Constructors and modifiers
+------------------------------
 doc ///
     Key
+        toricVectorBundleKaneyama
         (toricVectorBundleKaneyama,ZZ,Fan)
-    Headline
-        the trivial bundle in Kaneyama's description of rank 'k' for a given fan
-    Usage
-        E = toricVectorBundleKaneyama(k,F)
-    Inputs
-        k : ZZ
-            strictly positive
-        F : Fan
-            an object of class Fan
-    Outputs
-        E : ToricVectorBundleKaneyama
-    Description
-        Text
-            For a given pure, full dimensional and pointed Fan, @TT "F"@, the function @TT "toricVectorBundleKaneyama"@
-            generates the trivial toric vector bundle of rank @TT "k"@ in Kaneyama's description:
-            The degree vectors of this bundle are all zero vectors and the transition matrices
-            are all the identity.
-        Example
-            E = toricVectorBundleKaneyama(2,pp1ProductFan 2)
-            details E
-    Caveat
-        For Kaneyama's description, only complete, pointed fans are implemented and thus
-        a non complete fan will produce an error.
-    SeeAlso
-        toricVectorBundle
-        addBaseChange
-        addDegrees
-        addBase
-        addFiltration
-        details
-        isWellDefinedKaneyama
-        
-///
-
-doc ///
-    Key
         (toricVectorBundleKaneyama,ZZ,Fan,List,List)
     Headline
-        a toric vector bundle in Kaneyama's description of rank 'k' with given filtrations or degrees
+        a toric vector bundle in Kaneyama's description of rank 'k'
     Usage
+        E = toricVectorBundleKaneyama(k,F)
         E = toricVectorBundleKaneyama(k,F,degreeList,matrixList)
     Inputs
         k : ZZ
@@ -130,23 +99,36 @@ doc ///
         E : ToricVectorBundleKaneyama
     Description
         Text
-            For a given pure, full dimensional and pointed fan @TT "F"@, the function @TT "toricVectorBundleKaneyama"@
-            generates the toric vector bundle of rank @TT "k"@ given by the data in the two lists
-            @TT "degreeList"@ and @TT "matrixList"@ in Kaneyama's description: The first list @TT "degreeList"@
-            will give the degree matrices and the second list @TT matrixList@ will give the transition matrices.
+            For a given pure, full dimensional and pointed Fan, @TT "F"@, the function @TT "toricVectorBundleKaneyama(ZZ,Fan)"@
+            generates the trivial toric vector bundle of rank @TT "k"@ in Kaneyama's description:
+            The degree vectors of this bundle are all zero vectors and the transition matrices
+            are all the identity.
+
+        Example
+             E = toricVectorBundleKaneyama(2,pp1ProductFan 2)
+             details E
+
+        Text
+            If inputs @TT "degreeList"@,@TT "matrixList"@ are given, the function @TT "toricVectorBundleKaneyama(ZZ,Fan,degreeList,matrixList)"@
+            generates the toric vector bundle of rank @TT "k"@ in Kaneyama's description: The first list @TT "degreeList"@
+            will give the degree matrices and the second list @TT "matrixList"@ will give the transition matrices.
             The number of matrices in @TT "degreeList"@ must match the number of maximal cones of the fan and they
             must be $n$ times @TT "k"@ matrices over @TO ZZ@. They will be assigned to the cones in the order they
-            appear in @TT "maxCones F". The number of matrices in @TT "matrixList"@ must match the number of pairs
+            appear in @TT "maxCones F"@. The number of matrices in @TT "matrixList"@ must match the number of pairs
             of maximal cones that intersect in a common codimension-one face and must all be in GL(@TT "k"@,@TO QQ@).
             They will be assigned to the pairs $(i,j)$ in lexicographic order.
         Text
             Note that the degrees and transition matrices that are given to the function need not satisfy the regularity
-            or the cocycle condition. These can be checked by using @TO isWellDefinedKaneyama@.  
+            or the cocycle condition. These can be checked by using @TO regCheck@ and @TO cocycleCheck@,
+            or @TO (isWellDefined,ToricVectorBundleKaneyama)@.
+
         Example
             degreeList = {matrix {{1,0},{0,1}},matrix{{0,1},{1,0}},matrix{{-1,0},{-1,1}}}
             matrixList = {matrix {{-1,0},{0,-1}},matrix{{0,1},{1,0}},matrix{{0,-1},{-1,0}}}
             E = toricVectorBundleKaneyama(2,projectiveSpaceFan 2, degreeList, matrixList)
             details E
+            isWellDefined E
+
     Caveat
         For Kaneyama's description, only complete, pointed fans are implemented and thus
         a non complete fan will produce an error.
@@ -154,8 +136,343 @@ doc ///
         toricVectorBundle
         addBaseChange
         addDegrees
-        addBase
-        addFiltration
+        --addBase
+        --addFiltration
         details
-        isWellDefinedKaneyama       
+        (isWellDefined,ToricVectorBundleKaneyama)
+        
+///
+
+doc ///
+    Key
+        addBaseChange
+        (addBaseChange,ToricVectorBundleKaneyama,List)
+    Headline
+        changing the transition matrices of a toric vector bundle
+    Usage
+        F = addBaseChange(E,L)
+    Inputs
+        E:ToricVectorBundleKaneyama
+        L:List
+            with matrices over @TO ZZ@ or @TO QQ@
+    Outputs
+        F:ToricVectorBundleKaneyama
+    Description
+        Text
+            @TT "addBaseChange"@ replaces the transition matrices in @TT "E"@ by the matrices in the
+            @TO List@ @TT "L"@. The matrices in @TT "L"@ must be in GL($k$,@TO ZZ@) or
+            GL($k$,@TO QQ@), where $k$ is the rank of the vector bundle @TT "T"@. The list has to
+            contain one matrix for each maximal dimensional cone of the underlying fan over which
+            @TT "E"@ is defined. The fan can be recovered with @TO (fan,ToricVectorBundle)@. The
+            vector bundle already has a list of pairs $(i,j)$ denoting the codim 1 intersections of
+            two maximal cones with $i<j$ and they are ordered in lexicographic order. The matrices
+            will be assigned to the pairs $(i,j)$ in that order. To see which codimension 1 cone
+            corresponds to the pair $(i,j)$ use @TO (details,ToricVectorBundle)@. The matrix $A$
+            assigned to $(i,j)$ denotes the transition $(e_i^1,...,e_i^k) = (e_j^1,...,e_j^k)*A$.
+            The matrices need not satisfy the regularity or the cocycle condition. These can be
+            checked with @TO regCheck@ and @TO cocycleCheck@, or @TO (isWellDefined,ToricVectorBundleKaneyama)@.
+        Example
+            E = toricVectorBundleKaneyama(2,pp1ProductFan 2)
+            details E
+            F = addBaseChange(E,{matrix{{1,2},{0,1}},matrix{{1,0},{3,1}},matrix{{1,-2},{0,1}},matrix{{1,0},{-3,1}}})
+            details F
+            cocycleCheck F
+            isWellDefined F
+    SeeAlso
+        addDegrees
+        regCheck
+        cocycleCheck
+        (isWellDefined,ToricVectorBundleKaneyama)
+///
+
+doc ///
+    Key
+        addDegrees
+        (addDegrees,ToricVectorBundleKaneyama,List)
+    Headline
+        changing the degrees of a toric vector bundle
+    Usage
+        F = addDegrees(E,L)
+    Inputs
+        E:ToricVectorBundleKaneyama
+        L:List
+            with matrices over @TO ZZ@
+    Outputs
+        F:ToricVectorBundleKaneyama
+    Description
+        Text
+            @TT "addDegrees"@ replaces the degree matrices in @TT "E"@ by the matrices in the
+            @TO List@ @TT "L"@. The matrices in @TT "L"@ must be $n$ by $k$ matrices over @TO ZZ@,
+            where $k$ is the rank of the vector bundle @TT "E"@ and $n$ is the dimension of the
+            underlying toric variety. The list has to contain one matrix for each maximal
+            dimensional cone of the underlying fan over which @TT "E"@ is defined. Note that in
+            @TT "E"@ the top dimensional cones are already sorted and that the degree matrices in
+            @TT "L"@ will be assigned to the cones in that order. To find out the order use
+            TO (maxCones,ToricVectorBundle). The matrices need not satisfy the regularity
+            condition. This can be checked with @TO regCheck@.
+        Example
+            E = toricVectorBundleKaneyama(2,pp1ProductFan 2)
+            details E
+            F = addDegrees(E,{matrix{{1,2},{3,1}},matrix{{-1,0},{3,1}},matrix{{1,2},{-3,-1}},matrix{{-1,0},{-3,-1}}})
+            details F
+            regCheck F
+    SeeAlso
+        addBaseChange
+        regCheck
+        cocycleCheck
+///
+
+doc ///
+    Key
+        regCheck
+        (regCheck,ToricVectorBundleKaneyama)
+    Headline
+        checking the regularity condition for a toric vector bundle
+    Usage
+        b = regCheck E
+    Inputs
+        E:ToricVectorBundleKaneyama
+    Outputs
+        b:Boolean
+            whether @TT "E"@ satisfies the regularity condition
+    Description
+        Text
+            For a toric vector bundle in Kaneyama's description, the regularity condition means that
+            for every pair of maximal cones $\sigma_1,\sigma_2$intersecting in a common
+            codimension-one face, the two sets of degrees $d_1,d_2$ and the transition matrix
+            $A_{1,2}$ fulfil the regularity condition. I.e. for every $i$ and $j$ we have that
+            either the $(i,j)$ entry of the matrix $A_{1,2}$ is $0$ or the difference of the $i$-th
+            degree vector of $d_1$ of $\sigma_1$ and the $j$-th degree vector of $d_2$ of $\sigma_2$
+            is in the dual cone of the intersection of $\sigma_1$ and $\sigma_2$.
+        Text
+            Note that this is only necessary for toric vector bundles generated 'by hand' using
+            @TO addBaseChange@ and @TO addDegrees@, since bundles generated for example by
+            @TO tangentBundle@ satisfy the condition automatically.
+        Example
+            E = tangentBundleKaneyama(pp1ProductFan 2)
+            regCheck E
+    SeeAlso
+        addBaseChange
+        addDegrees
+        cocycleCheck
+        (isWellDefined,ToricVectorBundleKaneyama)
+///
+
+-- TODO Unify with Klyachko
+
+doc ///
+    Key
+         lineBundleKaneyama
+        (lineBundleKaneyama,List,Fan)
+    Headline
+        the line bundle given by a Cartier divisor
+    Usage
+        E = lineBundleKaneyama(L,F)
+    Inputs
+        L:List
+        F:Fan
+            a pure and full dimensional fan
+    Outputs
+        E:ToricVectorBundleKaneyama
+    Description
+        Text
+            @TT "L"@ must be a list of weights, exactly one for each ray of the fan. Then the list of
+            weights for each ray describes a Weil divisor on the toric variety. If the Weil divisor
+            defined by these weights defines in fact a Cartier divisor, then @TT "lineBundleKaneyama"@
+            computes the toric vector bundle associated to the Cartier divisor. The resulting bundle will be in
+            Kaneyama's description.
+        Text
+            If no further options are given then the resulting bundle will be in Klyachko's
+            description:
+        Example
+            F = hirzebruchFan 3
+            E = lineBundleKaneyama({1,-3,4,-2},F)
+            details E
+        Text
+            If the option @TT "\"Type\" => \"Kaneyama\""@ is given then the resulting bundle will be
+            in Kaneyama's description:
+        Example
+            F = hirzebruchFan 3
+            E = lineBundleKaneyama({1,-3,4,-2},F)
+            details E
+    Caveat
+        The ordering of the list @TT "L"@ must correspond to the ordering of the rays of the fan
+        output by @TO raySortOfFan@.
+    SeeAlso
+        lineBundle
+///
+
+doc ///
+    Key
+        cotangentBundleKaneyama
+        (cotangentBundleKaneyama,Fan)
+    Headline
+        TODO
+    Usage
+        E = cotangentBundleKaneyama(F)
+    Inputs
+        F : Fan
+    Outputs
+        E : ToricVectorBundleKaneyama
+    Description
+        Text
+          TODO
+///
+
+-- TODO Unify with Klyachko
+
+doc ///
+    Key
+        tangentBundleKaneyama
+        (tangentBundleKaneyama,Fan)
+    Headline
+        TODO
+    Usage
+        E = tangentBundleKaneyama(F)
+    Inputs
+        F : Fan
+    Outputs
+        E : ToricVectorBundleKaneyama
+    Description
+        Text
+          TODO
+///
+
+
+-- TODO Unify with Klyachko
+
+doc ///
+    Key
+        cechComplexKaneyama
+        (cechComplexKaneyama,ZZ,ToricVectorBundleKaneyama,Matrix)
+    Headline
+        TODO
+    Usage
+        C = cechComplexKaneyama(k,E,u)
+    Inputs
+        k : ZZ
+            index of the term in the Cech complex
+        E : ToricVectorBundleKaneyama
+        u : Matrix
+            a one-column matrix representing a degree vector
+    Outputs
+        C : Sequence
+            data for a term of the Cech complex and its boundary map
+    Description
+        Text
+          TODO
+///
+
+-- TODO Unify with Klyachko
+
+doc ///
+    Key
+        deltaEKaneyama
+        (deltaEKaneyama,ToricVectorBundleKaneyama)
+    Headline
+        TODO
+    Usage
+        P = deltaEKaneyama(E)
+    Inputs
+        E : ToricVectorBundleKaneyama
+    Outputs
+        P : Polyhedron
+    Description
+        Text
+          TODO
+///
+
+
+-- TODO Unify with Klyachko
+
+doc ///
+    Key
+        detailsKaneyama
+        (detailsKaneyama,ToricVectorBundleKaneyama)
+    Headline
+        TODO
+    Usage
+        D = detailsKaneyama(E)
+    Inputs
+        E : ToricVectorBundleKaneyama
+    Outputs
+        D : HashTable
+    Description
+        Text
+          TODO
+///
+
+
+-- TODO Unify with Klyachko
+
+doc ///
+    Key
+        eulerChiKaneyama
+        (eulerChiKaneyama,ToricVectorBundleKaneyama)
+        (eulerChiKaneyama,Matrix,ToricVectorBundleKaneyama)
+    Headline
+        TODO
+    Usage
+        chi = eulerChiKaneyama(E)
+        chi = eulerChiKaneyama(u,E)
+    Inputs
+        E : ToricVectorBundleKaneyama
+        u : Matrix
+            a one-column matrix representing a degree vector
+    Outputs
+        chi : ZZ
+    Description
+        Text
+          TODO
+///
+
+
+-- Change to Kaneyama
+doc ///
+    Key
+        isWellDefined
+        (isWellDefined,ToricVectorBundleKaneyama)
+    Headline
+        checks if the data does in fact define an equivariant toric vector bundle
+    Usage
+        b = isWellDefined E
+    Inputs
+        E:ToricVectorBundleKaneyama
+    Outputs
+        b:Boolean
+            whether @TT "E"@ defines a toric vector bundle
+    Description
+        Text
+            If @TT "E"@ is in Klyachko's description then the data in @TT "E"@ defines an
+            equivariant toric vector on the toric variety if and only if for each maximal cone
+            exists a decomposition into torus eigenspaces of the bundle. See
+            @HREF("http://math.stanford.edu/~sampayne/", "Sam Payne's")@
+            @EM "Moduli of toric vector bundles"@, Compositio Math. 144, 2008. Section 2.3. This
+            uses the two functions TO findWeights and TO existsDecomposition.
+        Example
+            E = toricVectorBundleKaneyama(2,pp1ProductFan 2)
+            E = addBaseChange(E,{matrix{{1,2},{3,1}},matrix{{-1,0},{3,1}},matrix{{1,2},{-3,-1}},matrix{{-1,0},{-3,-1}}})
+            isWellDefined E
+            F = toricVectorBundleKaneyama(1,normalFan crossPolytope 3)
+            --F = addFiltration(F,apply({2,1,1,2,2,1,1,2}, i -> matrix {{i}}))
+            isWellDefined F
+        Text
+            If @TT "E"@ is in Kaneyama's description then data in @TT "E"@ defines an equivariant
+            toric vector bundle on the toric variety if and only if it satisfies the regularity and
+            the cocycle condition (See @TO cocycleCheck@ and @TO regCheck@).
+        Example
+            E = toricVectorBundleKaneyama(2,pp1ProductFan 2)
+            isWellDefined E
+            E = addBaseChange(E,{matrix{{1,2},{3,1}},matrix{{-1,0},{3,1}},matrix{{1,2},{-3,-1}},matrix{{-1,0},{-3,-1}}})
+            isWellDefined E
+    Caveat
+        @TT "isWellDefined"@ is known to produce incorrect output for Klyachko bundles. The user is
+        recommended to instead use @TT "isLocallyFree"@ from the package
+        @TT "PositivityToricBundles"@.
+    SeeAlso
+        cocycleCheck
+        regCheck
+        addBaseChange
+        addDegrees
+        details
 ///
