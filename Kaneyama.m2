@@ -282,25 +282,24 @@ exteriorPower (ZZ,ToricVectorBundleKaneyama) := ToricVectorBundleKaneyama => opt
          E))
 
 -- PURPOSE : Compute the Euler characteristic
-eulerChiKaneyama = method();
 --   INPUT : '(u,T)',  where 'T' is a ToricVectorBundleKaneyama and 'u' is a one column matrix over ZZ giving a degree vector
 --  OUTPUT : The Euler characteristic of the Cech complex at degree 'u'
-eulerChiKaneyama (Matrix,ToricVectorBundleKaneyama) := (u,T) -> (
-    if not T.cache.?eulerChiKaneyama then T.cache.eulerChiKaneyama = new MutableHashTable;
-    if not T.cache.eulerChiKaneyama#?u then (
+eulerChi (Matrix,ToricVectorBundleKaneyama) := (u,T) -> (
+    if not T.cache.?eulerChi then T.cache.eulerChi = new MutableHashTable;
+    if not T.cache.eulerChi#?u then (
 	  n := T#"dimension of the variety";
 	  -- Compute the Cech complex and compute the alternating sum of the dimensions
-	  T.cache.eulerChiKaneyama#u = sum apply(n+2, i -> (-1)^i * numColumns (cechComplexKaneyama(i,T,u))#1));
-     T.cache.eulerChiKaneyama#u)
+	  T.cache.eulerChi#u = sum apply(n+2, i -> (-1)^i * numColumns (cechComplex(i,T,u))#1));
+     T.cache.eulerChi#u)
 
 
 --   INPUT : 'T',  a ToricVectorBundleKaneyama
 --  OUTPUT : The Euler characteristic of the bundle
-eulerChiKaneyama ToricVectorBundleKaneyama := T -> (
+eulerChi ToricVectorBundleKaneyama := T -> (
      -- Compute the set of degrees with possible cohomology
      L := latticePoints deltaEKaneyama T;
      -- Sum up their characteristics
-     sum apply(L, l -> eulerChiKaneyama(l,T)))
+     sum apply(L, l -> eulerChi(l,T)))
 
 -- PURPOSE : Returning the table of codimension 1 cones of the underlying fan
 --   INPUT : 'T',  a ToricVectorBundleKaneyama
@@ -318,10 +317,10 @@ cohomology (ZZ,ToricVectorBundleKaneyama,Matrix) := opts -> (k,T,u) -> (
      if not T.cache.?HH then T.cache.HH = new MutableHashTable;
      if not T.cache.HH#?(k,u) then (
 	  -- Get the k-1 th and k th differential
-	  d := if k == 0 then rank ker (cechComplexKaneyama(k,T,u))#1 else (
+	  d := if k == 0 then rank ker (cechComplex(k,T,u))#1 else (
 	       -- Generate the two boundary operators
-	       d1 := (cechComplexKaneyama(k-1,T,u))#1;
-	       d2 := (cechComplexKaneyama(k,T,u))#1;
+	       d1 := (cechComplex(k-1,T,u))#1;
+	       d2 := (cechComplex(k,T,u))#1;
 	       (rank ker d2) - (rank image d1));
 	  T.cache.HH#(k,u) = (ring T)^(toList(d:flatten entries(-u))));
      T.cache.HH#(k,u))
@@ -554,13 +553,13 @@ cotangentBundleKaneyama Fan := F -> (
      E)
  
 -- PURPOSE : Computing the Cech complex of a vector bundle (Kaneyama)
-cechComplexKaneyama = method();
+
 --   INPUT : '(k,T,u)', where 'k' is an integer between -1 and the dimension of the bundle +1, 'T' a ToricVectorBundleKaneyama, and 'u' a
 --     	    	        one column matrix giving a degree vector
 --  OUTPUT : '(Fk,Fkcolumns,FktoFk+1)', where 'Fk' is a hashTable with the summands of the 'k'th chain, 'Fkcolumns' is a hashTable with the
 --     	    	      	   	        dimensions of these summands, and 'FktoFk+1' is a hashTable with the components of the 'k'th 
 --     	    	      	   	        boundary operator
-cechComplexKaneyama (ZZ,ToricVectorBundleKaneyama,Matrix) := (k,tvb,u) -> ( 
+cechComplex (ZZ,ToricVectorBundleKaneyama,Matrix) := (k,tvb,u) -> ( 
      -- Checking for input errors
      if numRows u != tvb#"dimension of the variety" or numColumns u != 1 then error("Expected a matrix with 1 column and ", toString tvb#"dimension of the variety", " rows.");
      if ring u =!= ZZ then error("The degree has to be an integer vector.");
