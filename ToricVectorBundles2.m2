@@ -85,14 +85,10 @@ export {
     "strata",
     -- Operations
     "areIsomorphic",
-    "cechComplexKaneyama",
     "deltaE",
-    "deltaEKaneyama",
     "details",
-    "detailsKaneyama",
     "filtrations" => "details",
     "eulerChi",
-    "eulerChiKaneyama",
     "filteredPiece",
     "moduleToKlyachko",
     "klyachkoToModule",
@@ -350,7 +346,7 @@ dual ToricVectorBundle := {} >> opts -> tvb -> (
     toricVectorBundle(variety tvb, filtMats, filtJumps)
     )
 
-exteriorPower (ToricVectorBundle, ZZ) := opts -> (TVB, l) -> (
+exteriorPower (ZZ, ToricVectorBundle) := opts -> (l, TVB) -> (
     if l < 0 then error("expected nonnegative exponent")
     else if l == 0 then trivialBundle(variety TVB, 1)
     else if l > rank TVB then trivialBundle(variety TVB, 0)
@@ -368,7 +364,7 @@ exteriorPower (ToricVectorBundle, ZZ) := opts -> (TVB, l) -> (
         )
     )
 
-symmetricPower (ToricVectorBundle, ZZ) := (TVB, l) -> (
+symmetricPower (ZZ, ToricVectorBundle) := (l, TVB) -> (
     if l < 0 then error("expected nonnegative exponent")
     else if l == 0 then trivialBundle(variety TVB, 1)
     else (
@@ -402,6 +398,59 @@ removeDupeCols := fM -> (
     matrix {unique for c to numColumns M' - 1 list matrix M'_c}
 )
 
+-*
+restart
+debug needsPackage "ToricVectorBundles2"
+X = toricProjectiveSpace(3, CoefficientRing=> ZZ/101);
+TX = tangentBundle X;
+triv = trivialBundle(X,1);
+sumoflbs = lineBundle X_0 ++ lineBundle X_1 ++ lineBundle X_2 ++ lineBundle X_3;
+f = map(sumoflbs,triv,matrix(ZZ/101,{{1},{1},{1},{1}}));
+g = map(TX,sumoflbs, transpose sub(matrix rays X,ZZ/101));
+image f == ker g
+
+Y = toricProjectiveSpace 1
+mats := {matrix {{1,0},{1,0},{1,1},{1,0}}, matrix {{1,0},{1,0},{0,1},{1,0}}}
+jumps := {{1,0},{0,1}}
+E' = toricVectorBundle(Y,mats,jumps)
+displayFiltrations E'
+displayFiltrations prune E'
+T1 = E'
+T2 = prune E'
+T1 == T2
+
+X = hirzebruchSurface 2
+E = tangentBundle X
+L = lineBundle(X_0 + 2*X_1 + 4*X_2 + 5*X_3)
+T1 = exteriorPower(E ++ L, 2)
+T2 = (exteriorPower(E,0) ** exteriorPower(L,2)) ++ (exteriorPower(E,1)**exteriorPower(L,1)) ++ (exteriorPower(E,2) ** exteriorPower(L,0))
+T1 == T2
+
+X = toricProjectiveSpace 3
+E = tangentBundle X
+E' = E ++ trivialBundle(X,1);
+f = map(E',E,matrix{{1,0,0},{0,1,0},{0,0,1},{0,0,0}})
+T1 = E
+T2 = image f
+displayFiltrations T1
+displayFiltrations T2
+T1 == T2
+T1 == prune T2
+
+X = toricProjectiveSpace 2;
+E1 = toricVectorBundle(X,{matrix {{-1,-1},{-1,0}}, matrix {{1,0},{0,1}}, matrix {{0,1},{1,0}}}, {{1,0},{1,0},{1,0}})
+E2 = toricVectorBundle(X,{matrix {{-1,0},{-1,-1}}, matrix {{0,1},{1,0}}, matrix {{1,0},{0,1}}}, {{1,0},{1,0},{1,0}})
+E1 == E2
+
+-- here's another random example
+Y = hirzebruchSurface 2;
+E1 = tangentBundle Y ++ tangentBundle Y;
+M = matrix(ring E1, {{1,1,0,2},{0,1,1,1},{0,1,0,-1},{0,0,0,1}});
+filtmats = apply(filtrationMatrices E1, m -> M * m)
+E2 = toricVectorBundle(Y,filtmats, filtrationJumps E1)
+E1 == E2
+*-
+
 ToricVectorBundle == ToricVectorBundle := (T1,T2) -> (areIsomorphic(T1,T2))
 areIsomorphic = method()
 areIsomorphic (ToricVectorBundle,ToricVectorBundle) := Boolean => (T1,T2) -> (    
@@ -421,10 +470,8 @@ areIsomorphic (ToricVectorBundle,ToricVectorBundle) := Boolean => (T1,T2) -> (
     if not T1.cache.iso#?T2 then (
         areTVBsIso := false;
         -- compute the ground sets of both.
-        --g1 := sub(matrix {groundSet T1}, ring T1);
-        --g2 := sub(matrix {groundSet T2}, ring T2);
-        g1 := removeDupeCols filtrationMatrices T1;
-        g2 := removeDupeCols filtrationMatrices T2;
+        g1 := sub(matrix {groundSet T1}, ring T1);
+        g2 := sub(matrix {groundSet T2}, ring T2);
         if numColumns g1 == numColumns g2 then (
             -- attempt to find the isomorphism between them.
             N := solve(transpose g1, transpose g2);
@@ -467,7 +514,7 @@ isTwistOf (ToricVectorBundle, ToricVectorBundle) := (E1, E2) -> (
 -- The cohomology of a toric vector bundle inherits an action of the torus, so these
 -- vector spaces naturally come equipped with torus weights.
 -- This makes a weighted version of the coefficient ring to keep track of these weights.
-weightedCoeffRing := (cacheValue symbol weightedCoeffRing)(E ->  (ring E)[DegreeRank => dim variety E])
+weightedCoeffRing := (cacheValue symbol weightedCoeffRing)(E -> (ring E)[DegreeRank => dim variety E])
 
 -- PURPOSE : Computing the Cech complex of a vector bundle
 cechComplex = method()
@@ -533,7 +580,6 @@ cechComplex (ZZ,ToricVectorBundle,Matrix) := (k,T,u) -> (
         bT :=  hashTable apply(raysT, rho -> transpose matrix {rho} => (details T)#rho_0 );
         if not T.cache.cech#?(k,u) then (
             -- rT will be used to sort the rays
-    
             -- if the previous chain has not been computed we have to compute the cones of the right dimension (n-k)
             if not T.cache.cech#?(k-1,u) or k == 0 then (
                 -- if k==n then the chain is the "complete bundle" and the next chain is 0
