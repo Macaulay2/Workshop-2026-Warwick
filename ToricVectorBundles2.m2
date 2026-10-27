@@ -378,16 +378,13 @@ symmetricPower (ToricVectorBundle, ZZ) := (TVB, l) -> (
         ind := sort apply(subsets(rank TVB + l - 1, l),s -> apply(#s, i -> s#i - i));
         allind := sort unique flatten apply(ind, permutations);
         indtable := hashTable apply(#ind, i -> ind#i => i);
-        -- TODO: a mutable matrix isn't necessary here. we might also be able to clean up the indices.
-        newfM := apply(#R, t -> (
-                M := mutableMatrix(ring TVB,#ind,#ind);
-                for i in ind do (
-                    for j in allind do (
-                        M_(indtable#(sort j),indtable#i) = M_(indtable#(sort j),indtable#i) + product apply(#j, k -> ((fM_t)_i)_(j#k,k))
-                        );
-                    );
-                matrix M
-                )
+        -- the trick is to think of Sym(R^n) as a polynomial ring, then the symmetric power of a matrix 
+        -- is a 1xn matrix on the polynomial ring, and finally use the symmetricPower method for matrices
+        y := symbol y;
+        S := (ring TVB)[y_0..y_(rank TVB - 1)];
+        mons := symmetricPower(l, vars S);
+        newfM := apply(fM, A ->
+            lift(last coefficients(symmetricPower(l, vars S * sub(A, S)), Monomials => mons), ring TVB)
             );
         newfJ := apply(#R, t -> (
                 apply(ind, j -> sum (fJ_t)_j)
