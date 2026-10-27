@@ -293,7 +293,7 @@ cgbOnGraph (List, ZZ) := (G, d) -> (
     S := QQ[toSequence apply(E, l -> w_l)];
     R := S[x_(V_0, 1)..x_(V_(#V-1), d)];
     F := for i in E list(sum(1..d, k -> (R_(d*(i_0-V_0)+k-1)-R_(d*(i_1-V_0)+k-1))^2)-S_(position(E, j -> j === i)));
-    (F, CGBMain F)
+    (F, CGBMain (F, ReduceStrata => true))
 )
 
 -- Given two lists A and B return the list

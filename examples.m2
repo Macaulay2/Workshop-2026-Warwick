@@ -115,6 +115,7 @@ netList for g in G list {g_0, factor \ g_1}
 E={(1,2),(1,3),(2,3)}
 V={1,2,3}
 G={V,E}
+(F,GG)=cgbOnGraph(G,1);
 (F,GG)=cgbOnGraph(G,2);
 
 -- strata
