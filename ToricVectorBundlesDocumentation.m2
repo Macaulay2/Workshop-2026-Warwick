@@ -1403,7 +1403,7 @@ doc ///
         firstChernClass
         (firstChernClass,ToricVectorBundle)
     Headline
-        TODO
+        the first Chern class of a toric vector bundle
     Usage
         c1 = firstChernClass(E)
     Inputs
@@ -1412,7 +1412,15 @@ doc ///
         c1 : ToricDivisor
     Description
         Text
-          TODO
+            Given a @TO "ToricVectorBundle"@@TT "E"@ on a @TO "NormalToricVariety"@@TT "X"@, this function computes 
+            its first chern class @TT "c_1"@. It does so by computing its @TO "WeilDecoration"@, checking all the 
+            poset chains of length $0\leq i\leq$ @TT "rank E"@ $-1$ and summing the divisors with coefficient $(-1)^i$.
+        Example
+            X = toricProjectiveSpace 2;
+            E = tangentBundle X ++ lineBundle (X_1);
+            c1 = firstChernClass E
+    SeeAlso
+        weilDecoration 
 ///
 
 --------------------------------------------------------
