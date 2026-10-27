@@ -1,3 +1,157 @@
+
+
+doc ///
+    Key
+        (net, WeilDecoration)
+    Headline
+        Displays the characteristics of a Weil decoration.
+    Usage
+        S = net WD
+    Inputs
+        WD : WeilDecoration
+    Description
+        Text
+            Given a @TO "WeilDecoration" @@TT "WD"@, it describes it via its rank and the number of nonzero strata.
+        Example
+            X = toricProjectiveSpace 3;
+            E = tangentBundle X;
+            WD = weilDecoration E;
+            S = net WD
+    SeeAlso
+        weilDecoration
+///
+
+-*
+-- TODO compare with the one above
+doc ///
+    Key
+        (exteriorPower,ZZ,ToricVectorBundle)
+    Headline
+        the 'l'-th exterior power of a toric vector bundle
+    Usage
+        Ee = exteriorPower(l,E)
+    Inputs
+        l:ZZ
+            strictly positive
+        E:ToricVectorBundle
+    Outputs
+        Ee:ToricVectorBundle
+    Description
+        Text
+            @TT "exteriorPower"@ computes the @TT "l"@-th exterior power of a toric vector bundle in
+            each description. The resulting bundle will be given in the same description as the
+            original bundle. @TT "l"@ must be strictly positive and at most equal the rank of the
+            bundle.
+        Example
+            E = tangentBundle hirzebruchFan 3
+            details E
+            Ee = exteriorPower(2,E)
+            details Ee
+    SeeAlso
+        (symbol ++,ToricVectorBundle,ToricVectorBundle)
+        (tensor,ToricVectorBundle,ToricVectorBundle)
+        (symmetricPower,ToricVectorBundle,ZZ)
+///
+*-
+-*
+-- TODO compare with the one above
+doc ///
+    Key
+        (tensor,ToricVectorBundle,ToricVectorBundle)
+    Headline
+        the tensor product of two toric vector bundles
+    Usage
+        E = tensor(E1,E2)
+    Inputs
+        E1:ToricVectorBundle
+        E2:ToricVectorBundle
+    Outputs
+        E:ToricVectorBundle
+    Description
+        Text
+            If @TT "E1"@ and @TT "E2"@ are defined over the same fan and are in the same
+            description, then @TT "tensor"@ computes the tensor product of the two vector bundles in
+            this description.
+        Example
+            E1 = toricVectorBundle(2,hirzebruchFan 3)
+            E2 = tangentBundle hirzebruchFan 3
+            E = tensor(E1,E2)
+            details E
+    SeeAlso
+        (symbol **,ToricVectorBundle,ToricVectorBundle)
+        (symbol ++,ToricVectorBundle,ToricVectorBundle)
+        (exteriorPower,ToricVectorBundle,ZZ)
+        (symmetricPower,ToricVectorBundle,ZZ)
+///
+*-
+-*
+-- TODO compare with the one above
+doc ///
+    Key
+        (symmetricPower,ZZ,ToricVectorBundle)
+    Headline
+        the 'l'-th symmetric power of a toric vector bundle
+    Usage
+        Es = symmetricPower(l,E)
+    Inputs
+        l:ZZ
+            strictly positive
+        E:ToricVectorBundle
+    Outputs
+        Es:ToricVectorBundle
+    Description
+        Text
+            @TT "symmetricPower"@ computes the $l$-th symmetric power of a toric vector bundle in
+            each description. The resulting bundle will be given in the same description as the
+            original bundle. $l$ must be strictly positive.
+        Example
+            E = tangentBundle hirzebruchFan 3
+            details E
+            Es = symmetricPower(2,E)
+            details Es
+    SeeAlso
+        (exteriorPower,ToricVectorBundle,ZZ)
+        (symbol ++,ToricVectorBundle,ToricVectorBundle)
+        (tensor,ToricVectorBundle,ToricVectorBundle)
+///
+*-
+
+-*
+-- TODO compare with the one above
+doc ///
+    Key
+        (symbol **,ToricVectorBundle,ToricVectorBundle)
+    Headline
+        the tensor product of two toric vector bundles
+    Usage
+        E = E1 ** E2
+    Inputs
+        E1:ToricVectorBundle
+        E2:ToricVectorBundle
+    Outputs
+        E:ToricVectorBundle
+    Description
+        Text
+            If $E_1$ and $E_2$ are defined over the same fan and in the same description, then
+            @TT "tensor"@ computes the tensor product of the two vector bundles in this description
+        Example
+            E1 = toricVectorBundle(2,hirzebruchFan 3)
+            E2 = tangentBundle hirzebruchFan 3
+            E = E1 ** E2
+            details E
+        Example
+            E1 = toricVectorBundle(2,hirzebruchFan 3,"Type" => "Kaneyama")
+            E2 = tangentBundle(hirzebruchFan 3,"Type" => "Kaneyama")
+            E = E1 ** E2
+            details E
+    SeeAlso
+        (tensor,ToricVectorBundle,ToricVectorBundle)
+        (symbol ++,ToricVectorBundle,ToricVectorBundle)
+        (exteriorPower,ToricVectorBundle,ZZ)
+        (symmetricPower,ToricVectorBundle,ZZ)
+///
+*-
+
 -*
 doc ///
     Key
@@ -332,3 +486,83 @@ doc ///
         isWellDefined
 ///
 *-
+doc ///
+    Key
+        (ring,ToricVectorBundle)
+    Headline
+        the graded ring of the bundle
+    Usage
+        R = ring E
+    Inputs
+        E:ToricVectorBundle
+    Outputs
+        R:Ring
+    Description
+        Text
+            For a vector bundle in Kaneyama's description the graded ring is @TO QQ@ with degree
+            space the lattice of the underlying fan.
+        Example
+            E = tangentBundleKaneyama(projectiveSpaceFan 3)
+            ring E
+        Text
+            For a vector bundle in Klyachko's description the graded ring is @TO QQ@ with degree
+            space the lattice of the underlying fan.
+        Example
+            E = toricVectorBundle(1,projectiveSpaceFan 2, toList(3:matrix{{1/2}}),toList(3:matrix{{-1}}))
+            ring E
+    SeeAlso
+        (cohomology,ZZ,ToricVectorBundle)
+        (cohomology,ZZ,ToricVectorBundle,Matrix)
+        (cohomology,ZZ,ToricVectorBundle,List)
+///
+doc ///
+    Key
+        (rank,ToricVectorBundle)
+    Headline
+        the rank of the vector bundle
+    Usage
+        r = rank E
+    Inputs
+        E:ToricVectorBundle
+    Outputs
+        r:ZZ
+    Description
+        Text
+            Returns the rank $r$ of the toric vector bundle in Kaneyama's description.
+        Example
+            E = tangentBundle projectiveSpaceFan 3
+            rank E
+    SeeAlso
+        (rays,ToricVectorBundle)
+        (fan,ToricVectorBundle)
+        charts
+///
+
+doc ///
+    Key
+        (dual,ToricVectorBundle)
+    Headline
+        the dual bundle of a toric vector bundle
+    Usage
+        Ed = dual E
+    Inputs
+        E:ToricVectorBundle
+    Outputs
+        Ed:ToricVectorBundle
+    Description
+        Text
+            @TT "dual"@ computes the dual vector bundle of a toric vector bundle.
+        Example
+            E = tangentBundleKaneyama(pp1ProductFan 2)
+            Ed = dual E
+            details Ed
+            Ed == cotangentBundleKaneyama(pp1ProductFan 2)
+        Example
+            E = tangentBundle projectiveSpaceFan 2
+            Ed = dual E
+            details Ed
+            Ed == cotangentBundle projectiveSpaceFan 2
+    SeeAlso
+        tangentBundle
+        cotangentBundle
+///

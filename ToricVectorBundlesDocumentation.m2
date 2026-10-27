@@ -257,9 +257,9 @@ doc ///
             The $0$-subspace decorated by $(\infinity)$ is omitted for convenience.
         Example
             M = toricProjectiveSpace 2;
-            --V = tangentBundle;
-            --W = weilDecoration V;
-            --netList strata W
+            V = tangentBundle M;
+            W = weilDecoration V
+            netList strata W
     SeeAlso
         weilDecoration
         (variety, WeilDecoration)
@@ -296,6 +296,7 @@ doc ///
           with keys the rays of X and values {Matrix, List}
     Outputs
         E:ToricVectorBundle
+          in its Klyachko description
     Description
         Text
             Given a @TO "NormalToricVarieties::NormalToricVariety"@ @TT "X"@ over a field @TT "F"@ and a list of $r\times r$ matrices @TT "L1"@
@@ -339,14 +340,14 @@ doc ///
         (filtrationMatrices,ToricVectorBundle)
         (filtrationMatrices,ToricVectorBundle,List)
     Headline
-        TODO
+        Matrices defining the filtrations of a toric vector bundle
     Usage
         M = filtrationMatrices(E)
         M = filtrationMatrices(E,p)
     Inputs
         E : ToricVectorBundle
         p : List
-            coordinates of a ray of the underlying fan
+            generators of a ray of the underlying fan
     Outputs
         M : Matrix
             the matrix for ray p
@@ -354,7 +355,21 @@ doc ///
             the list of matrices for all the rays
     Description
         Text
-          TODO
+          A @TO ToricVectorBundle@ of rank r in its Klyachko description is given by a $r\times r$ matrix
+          and a list of jumps. The list of all those matrices can be recovered using @TT "filtrationMatrices"@
+          and if a ray is specified, then the corresponding matrix for that ray is returned.
+        Example
+          X = toricProjectiveSpace 2;
+          T = tangentBundle X;
+          details T
+          filtrationMatrices(T)
+          filtrationMatrices(T , {-1,-1})
+    SeeAlso
+      toricVectorBundle
+      filtrationJumps
+      filteredPiece
+      details
+      (variety, ToricVectorBundle)
 ///
 
 doc ///
@@ -363,20 +378,34 @@ doc ///
         (filtrationJumps,ToricVectorBundle)
         (filtrationJumps,ToricVectorBundle,List)
     Headline
-        TODO
+        Jumps of the filtrations of vector spaces
     Usage
         J = filtrationJumps(E)
         J = filtrationJumps(E,p)
     Inputs
         E : ToricVectorBundle
         p : List
-            coordinates of a ray of the underlying fan
+            generators of a ray of the underlying fan
     Outputs
         J : List
             filtration jumps for all rays, or for ray p
     Description
         Text
-          TODO
+          A @TO ToricVectorBundle@ of rank r in its Klyachko description is given by a $r\times r$ matrix
+          and a list of jumps. The list of all those jumps can be recovered using @TT "filtrationJumps"@
+          and if a ray is specified, then the corresponding list of jumps in that ray is returned.
+        Example
+          X = toricProjectiveSpace 2;
+          T = tangentBundle X;
+          details T
+          filtrationJumps(T)
+          filtrationJumps(T , {-1,-1})
+    SeeAlso
+      toricVectorBundle
+      filtrationMatrices
+      filteredPiece
+      details
+      (variety, ToricVectorBundle)
 ///
 
 doc ///
@@ -384,7 +413,7 @@ doc ///
         filteredPiece
         (filteredPiece,ToricVectorBundle,List,ZZ)
     Headline
-        TODO
+        Filtered piece of a ray p at index i
     Usage
         M = filteredPiece(E,p,i)
     Inputs
@@ -398,13 +427,35 @@ doc ///
             a basis matrix for the filtered piece at p and index i
     Description
         Text
-          TODO
+          A @TO ToricVectorBundle@ of rank $r$ in its Klyachko description is given by a decreasing filtration of
+          vector spaces in each ray (satisfying a certain compatibility condition). This information is stored as a pair of a 
+          $r \times r$ matrix and a list of $r$ integers that indicate what is the first index where the corresponding column 
+          of the matrix appears. 
+        Example
+          X = toricProjectiveSpace 2
+          E =  lineBundle(X_2 + X_1)++ (lineBundle(X, {-2,-1,3})** tangentBundle X ) 
+          details E 
+          filteredPiece(E, {0,1}, -2)
+          filteredPiece(E, {0,1}, 2)
+          filteredPiece(E, {0,1}, 5)
+        Text
+          A convenient way of displaying all the relevant filtered pieces of a @TO ToricVectorBundle@ is using @TO displayFiltrations@.
+        Example
+          displayFiltrations E
+    SeeAlso
+      filtrationMatrices
+      filtrationJumps
+      displayFiltrations
+      details
+      (variety, ToricVectorBundle)
 ///
 
 
 doc ///
     Key
+        fan
         (fan,ToricVectorBundle)
+        (fan, ToricVectorBundleKaneyama)
     Headline
         the underlying fan of a toric vector bundle
     Usage
@@ -415,22 +466,33 @@ doc ///
         F : Fan
     Description
         Text
-            Returns the fan of the underlying toric variety. This is an object of the package
+            Returns the fan of the underlying @TO "NormalToricVarieties:: NormalToricVariety"@. This is an object of the package
             Polyhedra. See also @TO "Polyhedra::Fan"@.
         Example
-            E = tangentBundle hirzebruchSurface 3
+            X = hirzebruchSurface 3
+            E = tangentBundle X
             F = fan E
             rays F
+            maxCones F
+            fan X == fan E
+        Example
+            E = tangentBundleKaneyama hirzebruchFan 3
+            F = fan E
+            rays F
+            maxCones F
     SeeAlso
         "Polyhedra::Fan"
+        variety
 ///
 
 --todo Kaneyama
 doc ///
     Key
+        ring
         (ring,ToricVectorBundle)
+        (ring,ToricVectorBundleKaneyama)
     Headline
-        the coefficient ring of the bundle
+        the field over which the ToricVectorBundle is defined
     Usage
         R = ring E
     Inputs
@@ -447,55 +509,74 @@ doc ///
             E' = trivialBundle hirzebruchSurface(2, CoefficientRing => ZZ/101)
             ring E'
     SeeAlso
-        (cohomology,ZZ,ToricVectorBundle)
-        (cohomology,ZZ,ToricVectorBundle,Matrix)
-        (cohomology,ZZ,ToricVectorBundle,List)
+        toricVectorBundle
 ///
+
+
 
 
 doc ///
     Key
+        rank
         (rank,ToricVectorBundle)
+        (rank, ToricVectorBundleKaneyama)
     Headline
         the rank of the vector bundle
     Usage
-        k = rank E
+        r = rank E
     Inputs
         E : ToricVectorBundle
     Outputs
-        k : ZZ
+        r : ZZ
     Description
         Text
-            Returns the rank $k$ of the toric vector bundle in Kaneyama's description.
+            Returns the rank $r$ of a @TO ToricVectorBundle@ in Klyachko's description or a @TO ToricVectorBundleKaneyama@.
         Example
-            E = tangentBundle toricProjectiveSpace 3
+            X = toricProjectiveSpace 2** toricProjectiveSpace 3
+            E = tangentBundle X
+            rank E
+        Example
+            E = tangentBundleKaneyama pp1ProductFan 3
             rank E
     SeeAlso
         (rays,ToricVectorBundle)
         (fan,ToricVectorBundle)
+        toricVectorBundle
 ///
 
 doc ///
     Key
+        rays
         (rays,ToricVectorBundle)
+        (rays, ToricVectorBundleKaneyama)
     Headline
         the rays of the underlying fan
     Usage
         L = rays E
+        L = rays F
     Inputs
         E:ToricVectorBundle
+        F:ToricVectorBundleKaneyama
     Outputs
         L:List
     Description
         Text
-            Returns the rays of the fan of the underlying toric variety as a list. Each ray is given
-            as a one column matrix.
+            Returns the rays of the fan of the underlying toric variety of a @TO ToricVectorBundle@ as a list. Each ray is given
+            as a list and they coincide with the rays of the underlying @TO "NormalToricVarieties:: NormalToricVariety"@.
         Example
-            E = cotangentBundle toricProjectiveSpace 2
+            X = toricProjectiveSpace 2;
+            E = cotangentBundle X
+            rays E
+            rays X
+        Text 
+            For a @TO ToricVectorBundleKaneyama@ it returns the list of rays of the underlying fan, where each ray is represented as a one column matrix.
+        Example
+            E = cotangentBundleKaneyama projectiveSpaceFan 2
             rays E
     SeeAlso
         (rank,ToricVectorBundle)
         (fan,ToricVectorBundle)
+        (variety, ToricVectorBundle)
 ///
 
 
@@ -520,34 +601,35 @@ doc ///
         E:ToricVectorBundle
     Description
         Text
-            If the fan @TT "F"@ is pure, of full dimension and smooth, then the function generates
-            the cotangent bundle of the toric variety given by @TT "F"@. If no further options are
-            given then the resulting bundle will be in Klyachko's description:
+            If the toric variety @TT "X"@ is smooth, then the function generates
+            the cotangent bundle of @TT "X"@. 
         Example
-            X = toricProjectiveSpace 2
+            X = toricProjectiveSpace 2;
             E = cotangentBundle X
             details E
+            dual tangentBundle X == E
         Text
-            If the option @TT "\"Type\" => \"Kaneyama\""@ is given then the resulting bundle will be
-            in Kaneyama's description:
+            To create the cotangent bundle in its Kaneyama description use @TO cotangentBundleKaneyama@.
         Example
-            F = projectiveSpaceFan 2
+            F = projectiveSpaceFan 2;
             E = cotangentBundleKaneyama(F)
             details E
     SeeAlso
         tangentBundle
+        cotangentBundleKaneyama
+        tangentBundleKaneyama
+        dual
 ///
 
 
-
-
+-- TODO Update and add Kaneyama version
 doc ///
     Key
         lineBundle
         (lineBundle,ToricDivisor)
         (lineBundle,NormalToricVariety,List)
     Headline
-        TODO
+        creates a line bundle in a toric variety
     Usage
         E = lineBundle(D)
         E = lineBundle(X,L)
@@ -555,12 +637,24 @@ doc ///
         D : ToricDivisor
         X : NormalToricVariety
         L : List
-            divisor coefficients indexed by the rays of X
+            divisor coefficients indexed by the rays X
     Outputs
         E : ToricVectorBundle
     Description
         Text
-          TODO
+          Given $X$ a @TO "NormalToricVarieties:: NormalToricVariety"@ and a $T-$invariant divisor $D= \sum_{\rho \in \Sigma}D_\rho$, the associated sheaf 
+          $\mathcal{L}= \mathcal{O}_X(D)$ is obtained. If $X$ is smooth then $\mathcal{L}$ is a line bundle. 
+        Example
+          X = toricProjectiveSpace 3;
+          L  = lineBundle( 3*X_0-1*X_1+ 2*X_3)
+          displayFiltrations L
+          L' = lineBundle( X ,{3,-1,0,2})
+          L == L'
+        Text
+          TODO KANEYAMA
+    SeeAlso
+        twist
+        (tensor,ToricVectorBundle, ToricVectorBundle)
 ///
 
 
@@ -571,7 +665,7 @@ doc ///
         (trivialBundle,NormalToricVariety)
         (trivialBundle,NormalToricVariety,ZZ)
     Headline
-        TODO
+        trivial bundle of rank r on a toric variety
     Usage
         E = trivialBundle(X)
         E = trivialBundle(X,r)
@@ -583,54 +677,84 @@ doc ///
         E : ToricVectorBundle
     Description
         Text
-          TODO
+          For a @TO "NormalToricVarieties:: NormalToricVariety"@, X, it retruns the trivial bundle of rank @TT "r"@ 
+          or the trivial bundle of rank 1 if no integer is passed. 
+        Example
+          X = toricProjectiveSpace 2
+          details trivialBundle X
+          details trivialBundle( X, 3)
+          details trivialBundle (X, 0)
+    SeeAlso
+      (tensor, ToricVectorBundle, ToricVectorBundle)
+      (symbol ++,  ToricVectorBundle, ToricVectorBundle)
+      twist
 ///
 
 
 doc ///
     Key
+        dual
         (dual,ToricVectorBundle)
+        (dual,ToricVectorBundleKaneyama)
     Headline
         the dual bundle of a toric vector bundle
     Usage
         Ed = dual E
     Inputs
-        E:ToricVectorBundle
+        E:{ToricVectorBundle,ToricVectorBundleKaneyama}
     Outputs
-        Ed:ToricVectorBundle
+        Ed:{ToricVectorBundle,ToricVectorBundleKaneyama}
     Description
         Text
             @TT "dual"@ computes the dual vector bundle of a toric vector bundle.
         Example
-            E = tangentBundleKaneyama(pp1ProductFan 2)
+            X = toricProjectiveSpace 1 ** toricProjectiveSpace 1
+            E = tangentBundle(X)
+            details E
             Ed = dual E
             details Ed
-            Ed == cotangentBundleKaneyama(pp1ProductFan 2)
+            Ed == cotangentBundle(X)
+        Text 
+            One can also take duals of bundles in Kaneyama's description (TODO: FIX EXAMPLE the bundles should be equal)
         Example
             X = toricProjectiveSpace 2;
             E = tangentBundle X;
             Ed = dual E;
             displayFiltrations Ed
             Ed == cotangentBundle X
+            E = tangentBundleKaneyama projectiveSpaceFan 2
+            Ed = dual E
+            detailsKaneyama Ed
+            CT = cotangentBundleKaneyama projectiveSpaceFan 2
+            detailsKaneyama CT
+            Ed == CT
     SeeAlso
         tangentBundle
         cotangentBundle
+        tangentBundleKaneyama
+        cotangentBundleKaneyama
 ///
 
 doc ///
     Key
+        exteriorPower
         (exteriorPower, ToricVectorBundle, ZZ)
+        (exteriorPower, ZZ, ToricVectorBundleKaneyama)
     Headline
         exterior power of a toric vector bundle
     Usage
-        exteriorPower(E, l)
+        El = exteriorPower(E, l)
+        Fl = exteriorPower(l,F)
     Inputs
         E : ToricVectorBundle
         l : ZZ
             a nonnegative integer
+        F : ToricVectorBundleKaneyama
     Outputs
-        : ToricVectorBundle
+        El: ToricVectorBundle
             the l-th exterior power of E
+        Fl: ToricVectorBundleKaneyama
+            the l-th exterior power of F
     Description
         Text
           Computes the @TT "l"@-th exterior power of the toric vector
@@ -648,14 +772,24 @@ doc ///
           assert(rank exteriorPower(E, 2) == 3)
           assert(rank exteriorPower(E, 0) == 1)
           assert(rank exteriorPower(E, 4) == 0)
+        Text
+          The method also computes the l-th exterior power of @TO ToricVectorBundleKaneyama@ objects.
+        Example
+          E = tangentBundleKaneyama hirzebruchFan 3
+          detailsKaneyama E
+          Ee = exteriorPower(2,E)
+          detailsKaneyama Ee
     SeeAlso
         (symmetricPower, ToricVectorBundle, ZZ)
+        (symmetricPower, ZZ, ToricVectorBundleKaneyama)
         ToricVectorBundle
 ///
 
 doc ///
     Key
+        symmetricPower
         (symmetricPower, ToricVectorBundle, ZZ)
+        (symmetricPower, ZZ, ToricVectorBundleKaneyama)
     Headline
         symmetric power of a toric vector bundle
     Usage
@@ -685,26 +819,43 @@ doc ///
           assert(rank symmetricPower(E, 2) == 6)
           assert(rank symmetricPower(E, 1) == 3)
           assert(rank symmetricPower(E, 0) == 1)
+        Text
+          The method also computes the l-th symmetric power of @TO ToricVectorBundleKaneyama@ objects.
+        Example
+          E = tangentBundleKaneyama hirzebruchFan 3
+          detailsKaneyama E
+          Ee = symmetricPower(2,E)
+          detailsKaneyama Ee
     SeeAlso
         (exteriorPower, ToricVectorBundle, ZZ)
+        (exteriorPower, ZZ, ToricVectorBundleKaneyama)
         ToricVectorBundle
 ///
 
 doc ///
     Key
+        tensor
         (tensor, ToricVectorBundle, ToricVectorBundle)
         (symbol **, ToricVectorBundle, ToricVectorBundle)
+        (tensor, ToricVectorBundleKaneyama, ToricVectorBundleKaneyama)
+        (symbol **, ToricVectorBundleKaneyama, ToricVectorBundleKaneyama)
     Headline
         tensor product of toric vector bundles
     Usage
-        tensor(E, F)
-        E ** F
+        EF = tensor(E, F)
+        EF = E ** F
+        EF' = tensor(E',F')
+        EF' = E' ** F'
     Inputs
         E : ToricVectorBundle
         F : ToricVectorBundle
+        E': ToricVectorBundleKaneyama
+        F': ToricVectorBundleKaneyama
     Outputs
-        : ToricVectorBundle
+        EF: ToricVectorBundle
             the tensor product of E and F
+        EF': ToricVectorBundleKaneyama
+            the tensor product of E' and F'
     Description
         Text
           Computes the tensor product of the toric vector bundles
@@ -723,44 +874,19 @@ doc ///
           F = trivialBundle(X, 3);
           assert(rank tensor(E, F) == 6)
           assert(rank (E ** F) == 6)
+        Text
+          The method also computes the tensor product of @TO ToricVectorBundleKaneyama@ objects.
+        Example
+            E1 = toricVectorBundleKaneyama(2,hirzebruchFan 3)
+            E2 = tangentBundleKaneyama hirzebruchFan 3
+            E = E1 ** E2
+            detailsKaneyama E
     SeeAlso
         (symbol **, ToricVectorBundleMap, ToricVectorBundleMap)
         (exteriorPower, ToricVectorBundle, ZZ)
         (symmetricPower, ToricVectorBundle, ZZ)
         ToricVectorBundle
 ///
--*
--- TODO compare with the one above
-doc ///
-    Key
-        (exteriorPower,ZZ,ToricVectorBundle)
-    Headline
-        the 'l'-th exterior power of a toric vector bundle
-    Usage
-        Ee = exteriorPower(l,E)
-    Inputs
-        l:ZZ
-            strictly positive
-        E:ToricVectorBundle
-    Outputs
-        Ee:ToricVectorBundle
-    Description
-        Text
-            @TT "exteriorPower"@ computes the @TT "l"@-th exterior power of a toric vector bundle in
-            each description. The resulting bundle will be given in the same description as the
-            original bundle. @TT "l"@ must be strictly positive and at most equal the rank of the
-            bundle.
-        Example
-            E = tangentBundle hirzebruchFan 3
-            details E
-            Ee = exteriorPower(2,E)
-            details Ee
-    SeeAlso
-        (symbol ++,ToricVectorBundle,ToricVectorBundle)
-        (tensor,ToricVectorBundle,ToricVectorBundle)
-        (symmetricPower,ToricVectorBundle,ZZ)
-///
-*-
 
 doc ///
     Key
@@ -796,7 +922,6 @@ doc ///
         details
         isGeneral
 ///
-
 -*
 -- TODO compare with the one above
 doc ///
@@ -836,15 +961,16 @@ doc ///
 doc ///
     Key
         (symbol ++,ToricVectorBundle,ToricVectorBundle)
+        (symbol ++, ToricVectorBundleKaneyama, ToricVectorBundleKaneyama)
     Headline
         the direct sum of two toric vector bundles
     Usage
         E = E1 ++ E2
     Inputs
-        E1:ToricVectorBundle
-        E2:ToricVectorBundle
+        E1:{ToricVectorBundle, ToricVectorBundleKaneyama}
+        E2:{ToricVectorBundle, ToricVectorBundleKaneyama}
     Outputs
-        E:ToricVectorBundle
+        E:{ToricVectorBundle, ToricVectorBundleKaneyama}
     Description
         Text
             If $E_1$ and $E_2$ are defined over the same fan, then @TT "directSum"@ computes the
@@ -868,38 +994,8 @@ doc ///
         (symmetricPower,ToricVectorBundle,ZZ)
 ///
 
--*
--- TODO compare with the one above
-doc ///
-    Key
-        (symmetricPower,ZZ,ToricVectorBundle)
-    Headline
-        the 'l'-th symmetric power of a toric vector bundle
-    Usage
-        Es = symmetricPower(l,E)
-    Inputs
-        l:ZZ
-            strictly positive
-        E:ToricVectorBundle
-    Outputs
-        Es:ToricVectorBundle
-    Description
-        Text
-            @TT "symmetricPower"@ computes the $l$-th symmetric power of a toric vector bundle in
-            each description. The resulting bundle will be given in the same description as the
-            original bundle. $l$ must be strictly positive.
-        Example
-            E = tangentBundle hirzebruchFan 3
-            details E
-            Es = symmetricPower(2,E)
-            details Es
-    SeeAlso
-        (exteriorPower,ToricVectorBundle,ZZ)
-        (symbol ++,ToricVectorBundle,ToricVectorBundle)
-        (tensor,ToricVectorBundle,ToricVectorBundle)
-///
-*-
 
+-- TODO Update and add Kaneyama version
 
 doc ///
     Key
@@ -932,42 +1028,14 @@ doc ///
     SeeAlso
         cotangentBundle
 ///
--*
--- TODO compare with the one above
-doc ///
-    Key
-        (tensor,ToricVectorBundle,ToricVectorBundle)
-    Headline
-        the tensor product of two toric vector bundles
-    Usage
-        E = tensor(E1,E2)
-    Inputs
-        E1:ToricVectorBundle
-        E2:ToricVectorBundle
-    Outputs
-        E:ToricVectorBundle
-    Description
-        Text
-            If @TT "E1"@ and @TT "E2"@ are defined over the same fan and are in the same
-            description, then @TT "tensor"@ computes the tensor product of the two vector bundles in
-            this description.
-        Example
-            E1 = toricVectorBundle(2,hirzebruchFan 3)
-            E2 = tangentBundle hirzebruchFan 3
-            E = tensor(E1,E2)
-            details E
-    SeeAlso
-        (symbol **,ToricVectorBundle,ToricVectorBundle)
-        (symbol ++,ToricVectorBundle,ToricVectorBundle)
-        (exteriorPower,ToricVectorBundle,ZZ)
-        (symmetricPower,ToricVectorBundle,ZZ)
-///
-*-
+
+-- TODO Update and add Kaneyama version
 
 doc ///
     Key
         twist
         (twist,ToricVectorBundle,List)
+        (twist,ToricVectorBundleKaneyama,List)
         (twist,ToricVectorBundle, ToricDivisor)
     Headline
         twists a toric vector bundle with a line bundle
@@ -1046,12 +1114,13 @@ doc ///
         details
 ///
 
-
+-- TODO Update and add Kaneyama version
 doc ///
     Key
         (symbol ==,ToricVectorBundle,ToricVectorBundle)
+        (symbol ==,ToricVectorBundleKaneyama,ToricVectorBundleKaneyama)
     Headline
-        checks for equality
+        checks for isomorphism or equality
     Usage
         E1 == E2
     Inputs
@@ -1078,6 +1147,7 @@ doc ///
         (isomorphism,ToricVectorBundle,ToricVectorBundle)
 ///
 
+--todo broken
 -*
 doc ///
     Key
@@ -1086,15 +1156,13 @@ doc ///
         the isomorphism if the two bundles are isomorphic
     Usage
         M = isomorphism(E,F)
-          isomorphism(E,F)
+        isomorphism(E,F)
     Inputs
         E:ToricVectorBundle
         F:ToricVectorBundle
     Outputs
         M:Matrix
             over the ring over which the two bundles are defined
-        :Boolean
-            returns false if the bundles are not isomorphic
     Description
         Text
             Two equivariant vector bundles in Klyachko's description are isomorphic if there exists
@@ -1105,11 +1173,10 @@ doc ///
             HF = hirzebruchSurface 2
             E = exteriorPower(cotangentBundle HF,2)
             F = lineBundle(HF,{-1,-1,-1,-1})
-            M = isomorphism(E,F)
     SeeAlso
         areIsomorphic
         base
-        filtration
+        filtrations
         details
 ///
 *-
@@ -1136,6 +1203,8 @@ doc ///
 --------------------------------------------------------
 -- Cohomology related methods
 --------------------------------------------------------
+
+-- TODO Update and add Kaneyama version
 
 doc ///
     Key
@@ -1192,6 +1261,7 @@ doc ///
         eulerChi
 ///
 
+-- TODO Update and add Kaneyama version
 doc ///
     Key
         (cohomology,ZZ,ToricVectorBundle,List)
@@ -1224,7 +1294,7 @@ doc ///
         (hh,ZZ,ToricVectorBundle)
         eulerChi
 ///
-
+-- TODO Update and add Kaneyama version
 doc ///
     Key
         (cohomology,ZZ,ToricVectorBundle,Matrix)
@@ -1258,6 +1328,8 @@ doc ///
         eulerChi
 ///
 
+-- TODO Update and add Kaneyama version
+
 doc ///
     Key
         deltaE
@@ -1290,6 +1362,8 @@ doc ///
         (cohomology,ZZ,ToricVectorBundle)
         (hh,ZZ,ToricVectorBundle)
 ///
+
+-- TODO Update and add Kaneyama version
 
 doc ///
     Key
@@ -1330,6 +1404,7 @@ doc ///
         (hh,ZZ,ToricVectorBundle)
 ///
 
+-- TODO Update and add Kaneyama version
 
 doc ///
     Key
@@ -1369,6 +1444,25 @@ doc ///
         deltaE
 ///
 
+-- TODO Update and add Kaneyama version
+-*
+doc ///
+    Key
+        grRing
+        (grRing,ToricVectorBundle)
+    Headline
+        TODO
+    Usage
+        R = grRing(E)
+    Inputs
+        E : ToricVectorBundle
+    Outputs
+        R : Ring
+    Description
+        Text
+          TODO
+///
+*-
 doc ///
     Key
         firstChernClass
@@ -1793,7 +1887,7 @@ doc ///
         isWellDefined
 ///
 
-
+-- TODO Unify with Klyachko
 
 doc ///
     Key
@@ -1837,6 +1931,7 @@ doc ///
 ///
 
 
+-- TODO Unify with Klyachko
 
 doc ///
     Key
@@ -1854,6 +1949,8 @@ doc ///
         Text
           TODO
 ///
+
+-- TODO Unify with Klyachko
 
 doc ///
     Key
@@ -1873,6 +1970,7 @@ doc ///
 ///
 
 
+-- TODO Unify with Klyachko
 
 doc ///
     Key
@@ -1896,6 +1994,8 @@ doc ///
           TODO
 ///
 
+-- TODO Unify with Klyachko
+
 doc ///
     Key
         deltaEKaneyama
@@ -1913,6 +2013,9 @@ doc ///
           TODO
 ///
 
+
+-- TODO Unify with Klyachko
+
 doc ///
     Key
         detailsKaneyama
@@ -1929,6 +2032,9 @@ doc ///
         Text
           TODO
 ///
+
+
+-- TODO Unify with Klyachko
 
 doc ///
     Key
@@ -2131,7 +2237,6 @@ doc ///
 
 doc ///
     Key
-        rank
         (rank, WeilDecoration)
     Headline
         The rank of the toric vector bundle associated to a Weil decoration
@@ -2153,28 +2258,6 @@ doc ///
         weilDecoration
 ///
 
-doc ///
-    Key
-        net
-        (net, WeilDecoration)
-    Headline
-        Displays the characteristics of a Weil decoration.
-    Usage
-        S = net WD
-    Inputs
-        WD : WeilDecoration
-    Description
-        Text
-            Given a @TO "WeilDecoration" @@TT "WD"@, it describes it via its rank and the number of nonzero strata.
-        Example
-            X = toricProjectiveSpace 3;
-            E = tangentBundle X;
-            WD = weilDecoration E;
-            S = net WD
-    SeeAlso
-        weilDecoration
-///
-
 
 --------------------------------------------------------
 -- Display and details
@@ -2191,8 +2274,8 @@ doc ///
     Inputs
         E:ToricVectorBundle
     Outputs
-        ht:Sequence
-            or @TO HashTable@ if the bundle is in Klyachko's description
+        ht:HashTable
+            or @TO Sequence@ if the bundle is in Kaneyamas's description
     Description
         Text
             For a toric vector bundle in Kaneyama's description, the sequence @TT "ht"@ contains a
@@ -2201,7 +2284,7 @@ doc ///
             pair of maximal cones that intersect in a codimension 1 face.
         Example
             E = tangentBundleKaneyama(pp1ProductFan 2)
-            details E
+            detailsKaneyama E
         Text
             For a toric vector bundle in Klyachko's description, the hash table @TT "ht"@ contains
             the rays of the underlying fan and for each ray the basis of the bundle over this ray
@@ -2212,61 +2295,12 @@ doc ///
             details E
 ///
 
--*
-doc ///
-    Key
-        (net,ToricVectorBundleKaneyama)
-    Headline
-        displays characteristics of a toric vector bundle
-    Usage
-        net E
-    Inputs
-        E:ToricVectorBundleKaneyama
-    Description
-        Text
-            Displays an overview of the properties of a toric vector bundle, the dimension of the
-            variety, the number of affine charts, and the rank of the vector bundle.
-        Example
-            E = tangentBundleKaneyama(hirzebruchFan 3);
-            net E
-    SeeAlso
-        (net,ToricVectorBundle)
-        details
-///
-*-
-
--*
-doc ///
-    Key
-        (net,ToricVectorBundle)
-    Headline
-        displays characteristics of a toric vector bundle in Klyachko's description
-    Usage
-        net E
-    Inputs
-        E:ToricVectorBundle
-    Outputs
-        b:HashTable
-    Description
-        Text
-            Displays an overview of the properties of a toric vector bundle, the dimension of the
-            variety, the number of affine charts, the number of rays of the fan, and the rank of the
-            vector bundle.
-        Example
-            E = tangentBundle hirzebruchFan 3;
-            net E
-    SeeAlso
-        (net,ToricVectorBundleKaneyama)
-        details
-///
-*-
-
 doc ///
     Key
         displayFiltrations
         (displayFiltrations,ToricVectorBundle)
     Headline
-        TODO
+        prints the filtrations of a toric vector bundles
     Usage
         s = displayFiltrations(E)
     Inputs
@@ -2332,14 +2366,17 @@ doc ///
     Key
         cartierIndex
         (cartierIndex,List,Fan)
+        (cartierIndex, NormalToricVariety, List)
     Headline
         the Cartier index of a Weil divisor
     Usage
         N = cartierIndex(L,F)
+        N = cartierIndex(X, L)
     Inputs
         L:List
         F:Fan
             a pure and full dimensional fan
+        X:NormalToricVariety
     Outputs
         N:ZZ
     Description
@@ -2563,14 +2600,3 @@ doc ///
             F = projectiveSpaceFan 2
             raySortOfFan F
 ///
-
-
-
-
-
-
-----------------
---New
-----------------
-
-
