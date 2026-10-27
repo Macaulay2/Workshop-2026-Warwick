@@ -813,8 +813,8 @@ doc ///
   Description
     Text
       ICheckLoops is an option to set the number of squarings that
-      one of the consistency checks tries before it falls back on the
-      Rabinowitsch trick. The default value @TT "infinity"@ skips
+      the heuristic consistency check ICheck tries before it falls back
+      on the Rabinowitsch trick. The default value @TT "infinity"@ skips
       the squarings.
   SeeAlso
     PGBMain
@@ -1054,9 +1054,10 @@ doc ///
     Text
       The algorithm discards the strata $V(E)\setminus V(N)$ that are empty, using the consistency
       checks of Section 5 of @HREF("#ref1","[1]")@.
-      One of them decides whether $f \in \sqrt{\langle E\rangle}$ for $f \in N$.
-      If ICheckLoops is a nonnegative integer $k$, then it first computes the normal forms
-      of $f^{2^i}$ modulo $E$ for $i \le k$, and it falls back on the Rabinowitsch trick only
+      One of them decides whether $f \in \sqrt{\langle E\rangle}$ for $f \in N$, using the heuristic
+      called ICheck in Algorithm 3 of @HREF("#ref1","[1]")@, hence the name of the option.
+      If ICheckLoops is a nonnegative integer $k$, then ICheck computes the normal forms
+      of $f^{2^i}$ modulo $E$ for $i \le k$, and the algorithm falls back on the Rabinowitsch trick only
       if none of them is zero.
       The default value @TT "infinity"@ uses the Rabinowitsch trick directly.
     Example
