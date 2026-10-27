@@ -395,6 +395,7 @@ removeDupeCols := fM -> (
     matrix {unique for c to numColumns M' - 1 list matrix M'_c}
 )
 
+-- todo one more bug...
 ToricVectorBundle == ToricVectorBundle := (T1,T2) -> (areIsomorphic(T1,T2))
 areIsomorphic = method()
 areIsomorphic (ToricVectorBundle,ToricVectorBundle) := Boolean => (T1,T2) -> (    
@@ -920,17 +921,6 @@ image ToricVectorBundleMap := f ->(
     toricVectorBundle(variety E, for fM in filtrationMatrices E list M * fM, filtrationJumps E)
 )
 
--*
-restart
-debug needsPackage "ToricVectorBundles2"
- X = toricProjectiveSpace 1;
- S = ring X;
- I = ideal X;
- Qtvb =  transpose map(S^{{1}, {2}, {1}, {3}},S^2,{{x_0, x_1}, {0, x_0^2}, {x_1, 0}, {0, x_0^2*x_1}})
-phi1 =  moduleToKlyachko (X, Qtvb)
-ker phi1
-*-
-
 kernel ToricVectorBundleMap := opts -> f -> (
     if not isWellDefined f then error("The map is not well defined");
     E := source f;
@@ -954,13 +944,59 @@ kernel ToricVectorBundleMap := opts -> f -> (
         pruneFiltration(matrix {newFilt_0}, flatten newFilt_1)
         );
     toricVectorBundle(variety E, mats, jumps)
-)
+    )
 
---todo
+-*
+restart
+debug needsPackage "ToricVectorBundles2"
+ X = toricProjectiveSpace 1;
+ S = ring X;
+ I = ideal X;
+ Qtvb = map(S^{{1}, {2}, {1}, {3}},S^2,{{x_0, x_1}, {0, x_0^2}, {x_1, 0}, {0, x_0^2*x_1}})
+phi1 = moduleToKlyachko (X, Qtvb)
+coker phi1
+
+restart
+debug needsPackage "ToricVectorBundles2"
+X = toricProjectiveSpace(3, CoefficientRing=> ZZ/101);
+TX = tangentBundle X;
+triv = trivialBundle(X,1);
+sumoflbs = lineBundle X_0 ++ lineBundle X_1 ++ lineBundle X_2 ++ lineBundle X_3;
+f = map(sumoflbs,triv,matrix(ZZ/101,{{1},{1},{1},{1}}));
+g = map(TX,sumoflbs, transpose sub(matrix rays X,ZZ/101));
+
+
+*-
+-- todo not quite working.
+cokernel (ToricVectorBundleMap) := f ->(
+    if not isWellDefined f then error("The map is not well defined");
+    E := target f;
+    D := details E;
+    if isSurjective f then return trivialBundle(variety E,0);
+    imf := image f;
+    imD := details imf;
+    (mats, jumps) := toSequence transpose for p in rays E list (
+        -- we'll scan the filtration in decreasing order so that dimensions are ascending.
+        -- we have to merge the filtration jumps.
+        jumpindices := rsort unique ((D#p)_1 | (imD#p)_1);
+        EfiltPieces := for j in jumpindices list {filteredPiece(E,p,j), j};
+        imfiltPieces := for j in jumpindices list {filteredPiece(imf,p,j), j};
+        -- intersect them with the kernel as subspaces to get a new filtration
+        newFilt := transpose for i to #EfiltPieces-1 list (
+            (F, imF) := (EfiltPieces_i_0, imfiltPieces_i_0);
+            quotgens := F * (matrix (prune (image F / image imF)).cache.pruningMap);
+            {quotgens, for i to numColumns quotgens - 1 list F_i_1}
+            );
+        -- concatenate all of those filtered pieces together, then prune them (i.e. choose a basis)
+        --pruneFiltration(matrix {newFilt_0}, flatten newFilt_1)
+        newFilt
+        )
+    toricVectorBundle(variety E, mats, jumps)
+    )
+-*
 cokernel (ToricVectorBundleMap) := f ->(
     if not isWellDefined(f) then ( error (" The map is not well defined"));
-    if isSurjective(f) then( return trivialBundle(variety source (f), 0) ); 
-    
+    if isSurjective(f) then( return trivialBundle(variety source (f), 0) );     
     M := f.map;
     E1:= source f;
     E2 := target f;
@@ -988,7 +1024,8 @@ cokernel (ToricVectorBundleMap) := f ->(
     newJumps := apply( # Xrays , i -> jumpsAux(newMatrices_i, L_i, minj ) );
     (newMatrices, newJumps)= toSequence transpose apply(transpose{newMatrices, newJumps}, D -> adaptedBasis D );
     toricVectorBundle( X, newMatrices, newJumps)
-)
+    )
+*-
 
 ToricVectorBundleMap ++ ToricVectorBundleMap := (tvbmap1,tvbmap2) -> (
     map(tvbmap1.target ++ tvbmap2.target, tvbmap1.source ++ tvbmap2.source, tvbmap1.map ++ tvbmap2.map)
@@ -2887,7 +2924,8 @@ changelist: 2026-10-27
 todo
 - tests are all broken atm and i didn't fix them
 - finish coker
-- alas, isomorphism is still broken even with groundset.
-- implement andreas' small changes/bugfixes
+- alas, isomorphism is still broken slightly, with surjective maps.
+- implement andreas' small changes/bugfixes ( i did a few
 - implement me own version of compatibility check
 - implement iswelldefined (need span of filt mats to be same)
+- pruning map needs to be cached (is this auto done?)
