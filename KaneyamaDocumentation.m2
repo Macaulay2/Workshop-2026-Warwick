@@ -4,6 +4,10 @@
 
 beginDocumentation()
 
+-------------------
+--TYPE
+-------------------
+
 doc ///
     Key
         ToricVectorBundleKaneyama
@@ -65,5 +69,93 @@ doc ///
     Caveat
         This implementation only supports vector bundles where the corresponding transition maps
         have coefficients in @TO QQ@.
+    SeeAlso
+        ToricVectorBundle
+        ToricVectorBundle
 
+///
+
+doc ///
+    Key
+        (toricVectorBundleKaneyama,ZZ,Fan)
+    Headline
+        the trivial bundle in Kaneyama's description of rank 'k' for a given fan
+    Usage
+        E = toricVectorBundleKaneyama(k,F)
+    Inputs
+        k : ZZ
+            strictly positive
+        F : Fan
+            an object of class Fan
+    Outputs
+        E : ToricVectorBundleKaneyama
+    Description
+        Text
+            For a given pure, full dimensional and pointed Fan, @TT "F"@, the function @TT "toricVectorBundleKaneyama"@
+            generates the trivial toric vector bundle of rank @TT "k"@ in Kaneyama's description:
+            The degree vectors of this bundle are all zero vectors and the transition matrices
+            are all the identity.
+        Example
+            E = toricVectorBundleKaneyama(2,pp1ProductFan 2)
+            details E
+    Caveat
+        For Kaneyama's description, only complete, pointed fans are implemented and thus
+        a non complete fan will produce an error.
+    SeeAlso
+        toricVectorBundle
+        addBaseChange
+        addDegrees
+        addBase
+        addFiltration
+        details
+        isWellDefinedKaneyama
+        
+///
+
+doc ///
+    Key
+        (toricVectorBundleKaneyama,ZZ,Fan,List,List)
+    Headline
+        a toric vector bundle in Kaneyama's description of rank 'k' with given filtrations or degrees
+    Usage
+        E = toricVectorBundleKaneyama(k,F,degreeList,matrixList)
+    Inputs
+        k : ZZ
+            strictly positive
+        F : Fan
+            an object of class Fan
+        degreeList : List
+        matrixList : List
+    Outputs
+        E : ToricVectorBundleKaneyama
+    Description
+        Text
+            For a given pure, full dimensional and pointed fan @TT "F"@, the function @TT "toricVectorBundleKaneyama"@
+            generates the toric vector bundle of rank @TT "k"@ given by the data in the two lists
+            @TT "degreeList"@ and @TT "matrixList"@ in Kaneyama's description: The first list @TT "degreeList"@
+            will give the degree matrices and the second list @TT matrixList@ will give the transition matrices.
+            The number of matrices in @TT "degreeList"@ must match the number of maximal cones of the fan and they
+            must be $n$ times @TT "k"@ matrices over @TO ZZ@. They will be assigned to the cones in the order they
+            appear in @TT "maxCones F". The number of matrices in @TT "matrixList"@ must match the number of pairs
+            of maximal cones that intersect in a common codimension-one face and must all be in GL(@TT "k"@,@TO QQ@).
+            They will be assigned to the pairs $(i,j)$ in lexicographic order.
+        Text
+            Note that the degrees and transition matrices that are given to the function need not satisfy the regularity
+            or the cocycle condition. These can be checked by using @TO isWellDefinedKaneyama@.  
+        Example
+            degreeList = {matrix {{1,0},{0,1}},matrix{{0,1},{1,0}},matrix{{-1,0},{-1,1}}}
+            matrixList = {matrix {{-1,0},{0,-1}},matrix{{0,1},{1,0}},matrix{{0,-1},{-1,0}}}
+            E = toricVectorBundleKaneyama(2,projectiveSpaceFan 2, degreeList, matrixList)
+            details E
+    Caveat
+        For Kaneyama's description, only complete, pointed fans are implemented and thus
+        a non complete fan will produce an error.
+    SeeAlso
+        toricVectorBundle
+        addBaseChange
+        addDegrees
+        addBase
+        addFiltration
+        details
+        isWellDefinedKaneyama       
 ///
