@@ -990,7 +990,7 @@ cokernel (ToricVectorBundleMap) := f ->(
         -- concatenate all of those filtered pieces together, then prune them (i.e. choose a basis)
         --pruneFiltration(matrix {newFilt_0}, flatten newFilt_1)
         newFilt
-        )
+        );
     toricVectorBundle(variety E, mats, jumps)
     )
 -*

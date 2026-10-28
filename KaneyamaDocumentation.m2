@@ -378,9 +378,9 @@ doc ///
 
 
 -- TODO Unify with Klyachko
-
+-*
 doc ///
-    Key
+    Key 
         (eulerChi,ToricVectorBundleKaneyama)
         (eulerChi,Matrix,ToricVectorBundleKaneyama)
     Headline
@@ -398,7 +398,7 @@ doc ///
         Text
           TODO
 ///
-
+*-
 
 -- Change to Kaneyama
 doc ///

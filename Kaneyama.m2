@@ -297,7 +297,7 @@ eulerChi (Matrix,ToricVectorBundleKaneyama) := (u,T) -> (
 --  OUTPUT : The Euler characteristic of the bundle
 eulerChi ToricVectorBundleKaneyama := T -> (
      -- Compute the set of degrees with possible cohomology
-     L := latticePoints deltaEKaneyama T;
+     L := latticePoints deltaE T;
      -- Sum up their characteristics
      sum apply(L, l -> eulerChi(l,T)))
 
@@ -338,7 +338,7 @@ cohomology(ZZ,ToricVectorBundleKaneyama,List) := opts -> (i,T,P)-> (
 --  OUTPUT : the group as a graded module where the generators have the corresponding degree of the weight vector
 -- COMMENT : if the option "Degree" => 1 is given then it displays the number of degrees to calculate
 cohomology(ZZ,ToricVectorBundleKaneyama) := opts -> (i,T)-> (
-     L := cohomology(i,T,latticePoints deltaEKaneyama T,Degree => opts.Degree);
+     L := cohomology(i,T,latticePoints deltaE T,Degree => opts.Degree);
      if L == {} then (ring T)^0 else directSum L)
 
 -- PURPOSE : Computing the rank of the cohomology group of a given ToricVectorBundleKaneyama
@@ -348,10 +348,10 @@ hh(ZZ,ToricVectorBundleKaneyama) := ZZ => (i,T) -> rank cohomology(i,T)
 
 -- PURPOSE : Computing the polytope deltaE in the degree space such that outside this polytope
 --     	     every cohomology is 0
-deltaEKaneyama = method();
+
 --   INPUT : 'tvb',  a ToricVectorBundleKaneyama
 --  OUTPUT : a Polyhedron
-deltaEKaneyama ToricVectorBundleKaneyama := (cacheValue symbol deltaE)( tvb -> (
+deltaE ToricVectorBundleKaneyama := (cacheValue symbol deltaE)( tvb -> (
      	  if not isComplete tvb#"ToricVariety" then error("The toric variety needs to be complete.");
      	  n := tvb#"dimension of the variety";
       
