@@ -940,12 +940,12 @@ doc ///
   Description
     Text
       Following Definition 4.1 of @HREF("#ref1","[1]")@, a subset $F$ of $G$ is a minimal Dickson
-      basis of $G$ if
+      basis of $G$ if the following two conditions hold.
     Text
       @UL {
-          {"for every $g \\in G$ there is some $f \\in F$ such that the leading power product of $g$
-          is a multiple of the leading power product of $f$, and"},
-          {"for any two distinct $f_1, f_2 \\in F$, neither leading power product is a multiple of
+          {"For every $g \\in G$, there is some $f \\in F$ such that the leading power product of $g$
+          is a multiple of the leading power product of $f$."},
+          {"For any two distinct $f_1, f_2 \\in F$, neither leading power product is a multiple of
           the other."}
           }@
     Text
