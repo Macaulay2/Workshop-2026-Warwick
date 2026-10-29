@@ -675,7 +675,8 @@ doc ///
       corresponds to the Algorithm PGBMain of @HREF("#ref1","[1]")@.
   References
       @LABEL("[1]","id" => "ref1")@ Deepak Kapur, Yao Sun, and Dingkang Wang. 2013. An efficient algorithm for computing a comprehensive Gröbner system of a parametric polynomial system. In Journal of Symbolic Computation, 49, 27-44.
-      @LABEL("[2]","id" => "ref2")@ Akira Suzuki and Yosuke Sato. 2006. A simple algorithm to compute comprehensive Gröbner bases using Gröbner bases. In Proceedings of the 2006 international symposium on Symbolic and algebraic computation (ISSAC '06). Association for Computing Machinery, New York, NY, USA, 326–331. https://doi.org/10.1145/1145768.1145821
+
+      @LABEL("[2]","id" => "ref2")@ Akira Suzuki and Yosuke Sato. 2006. A simple algorithm to compute comprehensive Gröbner bases using Gröbner bases. In Proceedings of the 2006 International Symposium on Symbolic and Algebraic Computation (ISSAC '06). Association for Computing Machinery, New York, NY, USA, 326–331. https://doi.org/10.1145/1145768.1145821
 ///
 
 
@@ -712,7 +713,7 @@ doc ///
       $V(E)\setminus V(N)$
   Description
     Text
-      Implementation of the Algorithm proposed by Suzuki and Sato. Given a
+      Implementation of Algorithm CGBMain of @HREF("#ref1","[1]")@. Given a
       tower polynomial ring $R = k[U][X]$ for $U$ a set of parameters and
       $X$ a set of variables, $F\subset R$ an ideal of variables and
       parameters, and $S\subset k[U]$ an ideal satisfying $V(S)\subseteq
@@ -774,6 +775,11 @@ doc ///
       verified before the computation starts, and an error is raised
       when it fails. If the assumption is known to be true, the option
       CheckAssumption can be set to false to skip the verification step.
+  References
+    @LABEL("[1]","id" => "ref1")@ Akira Suzuki and Yosuke Sato. 2006. A simple algorithm to
+    compute comprehensive Gröbner bases using Gröbner bases. In Proceedings of the 2006
+    International Symposium on Symbolic and Algebraic Computation (ISSAC '06). Association for
+    Computing Machinery, New York, NY, USA, 326–331. https://doi.org/10.1145/1145768.1145821
   SeeAlso
     cgb
     ReduceStrata
