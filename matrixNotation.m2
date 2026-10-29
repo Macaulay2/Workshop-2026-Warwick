@@ -20,12 +20,12 @@ newPackage(
     )
 
 export {
-    "cgbMain",
-    "cgb",
-    "cgbOnGraph",
+    "comprehensiveGBMain",
+    "comprehensiveGB",
+    "comprehensiveGBOnGraph",
     "ReduceStrata", 
-    "cgbFromTriple", 
-    "pgbMain", 
+    "comprehensiveGBFromTriple", 
+    "parametricGBMain", 
     "minimalDicksonBasis",
     "Depth"
     } -- functions, objects to export
@@ -63,12 +63,12 @@ ringOrder PolynomialRing := List => R -> (
     ))
 );
 
-cgbFromTriple = method(); --Constructor for a CGBTriple starting from
+comprehensiveGBFromTriple = method(); --Constructor for a CGBTriple starting from
                           --a list {E, F, G} where V(E)\V(F) is the 
                           --parametric strata and G is the set of 
                           --polynomial to be studied on it.
 
-cgbFromTriple List := CGBTriple => (L) -> (
+comprehensiveGBFromTriple List := CGBTriple => (L) -> (
     if(length L == 3 and length L_0 > 0 and length L_2 > 0) then (
         R := ring L_2_0;
         return new CGBTriple from {
@@ -182,7 +182,7 @@ diffConstructibleByLC (List, Sequence) := opts -> (C, LC) -> (
 -- store all the maps and rings of a CGB computation in a object
 CGBData = new Type of HashTable
 
-cgbMain = method(
+comprehensiveGBMain = method(
     Options => {
         ReduceStrata => false,
         Strategy => "Rabinowitsch",
@@ -191,12 +191,12 @@ cgbMain = method(
         }
     ); -- Initialises cgbMainRec
 
-cgbMain (List) := o -> (F) -> (
+comprehensiveGBMain (List) := o -> (F) -> (
   R := ring first F;
   S := first entries eliminateVariables F;
-  cgbMain(F, S, o) | apply(S, s -> ({}, sub(s, R), {1_R}))
+  comprehensiveGBMain(F, S, o) | apply(S, s -> ({}, sub(s, R), {1_R}))
 )
-cgbMain (List, List) := o -> (F, S) -> (
+comprehensiveGBMain (List, List) := o -> (F, S) -> (
   R := ring F_0;
   X := gens R;
   KU := coefficientRing R;
@@ -359,21 +359,21 @@ Notes on Optimisation:
 needsPackage "ComprehensiveGBs"
 R = QQ[a,b][x,y,z, MonomialOrder => Lex]
 F = {x^3 - a, y^4 - b, x+y-z}
-profile cgbMain(F, {});
+profile comprehensiveGBMain(F, {});
 profileSummary
 
 *-
 
-cgb=method( Options => {
+comprehensiveGB=method( Options => {
         ReduceStrata => false,
         Strategy => "Rabinowitsch",
         Verbose => false,
         Depth => -1
         })
-cgb(List):= o -> F->(
+comprehensiveGB(List):= o -> F->(
     s:=first entries eliminateVariables(F);
     result:=s;
-    G:=cgbMain(F,s, ReduceStrata => o.ReduceStrata, Strategy => o.Strategy , Verbose => o.Verbose, Depth => o.Depth);
+    G:=comprehensiveGBMain(F,s, ReduceStrata => o.ReduceStrata, Strategy => o.Strategy , Verbose => o.Verbose, Depth => o.Depth);
     for i in G do (
         result=result|(i_2);
         );
@@ -407,8 +407,8 @@ eliminateVariables(List):=F->(
     )
 
 
-cgbOnGraph=method()
-cgbOnGraph(List,ZZ):=(G,d)->(
+comprehensiveGBOnGraph=method()
+comprehensiveGBOnGraph(List,ZZ):=(G,d)->(
   V:=G_0;
   E:=G_1;
   x:=getSymbol "x";
@@ -416,7 +416,7 @@ cgbOnGraph(List,ZZ):=(G,d)->(
   S:=QQ[toSequence apply(E, l -> w_l)];
   R:=S[x_(V_0,1)..x_(V_(#V-1),d)];
   F:=for i in E list(sum(1..d,k->(R_(2*i_0+k-3)-R_(2*i_1+k-3))^2)-S_(position(E, j -> j === i)));
-  (F, cgbMain(F, {}))
+  (F, comprehensiveGBMain(F, {}))
 )
 
 --Given two lists A and B return the list
@@ -489,8 +489,8 @@ minimalDicksonBasis (List) := (G) -> (
 --polynomial system", D.Kapur Y. Sun D. Wang, 
 --J. of Symbolic Computation issue 49, 2013
 --------------------------------------------------
-pgbMain = method();
-pgbMain (CGBTriple) := T -> (
+parametricGBMain = method();
+parametricGBMain (CGBTriple) := T -> (
     {E, N, F} := T#"triple";
     cgbData := T#"cgbData";
     R:=cgbData#"R";
@@ -551,13 +551,13 @@ pgbMain (CGBTriple) := T -> (
 
     for i in 0..(length(H)-1) do (
         if i == 0 then (
-            PGB = unique(PGB | pgbMain(cgbFromTriple({
+            PGB = unique(PGB | parametricGBMain(comprehensiveGBFromTriple({
             unique(Gr | {H_i}), 
             N, 
             listDiff}
             )))
         ) else (
-        PGB = unique(PGB | pgbMain(cgbFromTriple({
+        PGB = unique(PGB | parametricGBMain(comprehensiveGBFromTriple({
             unique(Gr | {H_i}), 
             unique(totalListProduct(N, {squareFreePart(product(H_{0..(i-1)}))})), 
             listDiff}
@@ -567,11 +567,11 @@ pgbMain (CGBTriple) := T -> (
     return PGB  
 );
 
-pgbMain List := F -> (
+parametricGBMain List := F -> (
     if #F == 0 then error("List must be non-empty");
     R := ring first F;
     U := coefficientRing R;
-    pgbMain(cgbFromTriple({{0_U}, {1_U}, F}))
+    parametricGBMain(comprehensiveGBFromTriple({{0_U}, {1_U}, F}))
     )
 
 

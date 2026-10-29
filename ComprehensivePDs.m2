@@ -32,5 +32,5 @@ strataFromFilteredPD (List, List) := (gI, Q) -> (
     H := sum(apply(Q / (q -> sub(q, F)), T | {1-sum(T)}, (q,t) -> q*t))
     G := gens gb H;
     needsPackage "ComprehensiveGBs";
-    J := cgbMain(G, , Depth => 0);
+    J := comprehensiveGBMain(G, , Depth => 0);
 );
