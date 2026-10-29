@@ -52,11 +52,11 @@ assert(T#"dimension of the variety" == 3)
 -- Checking deltaE for Kaneyama
 TEST ///
 T = toricVectorBundleKaneyama(3,projectiveSpaceFan 2)
-assert(deltaEKaneyama T == convexHull matrix{{0},{0}})
+assert(deltaE T == convexHull matrix{{0},{0}})
 T = tangentBundleKaneyama(projectiveSpaceFan 2)
-assert(deltaEKaneyama T == convexHull matrix {{-1,2,-1},{-1,-1,2}})
+assert(deltaE T == convexHull matrix {{-1,2,-1},{-1,-1,2}})
 T = cotangentBundleKaneyama(pp1ProductFan 3)
-assert(deltaEKaneyama T == convexHull matrix {{-1,1,-1,1,-1,1,-1,1},{-1,-1,1,1,-1,-1,1,1},{-1,-1,-1,-1,1,1,1,1}})
+assert(deltaE T == convexHull matrix {{-1,1,-1,1,-1,1,-1,1},{-1,-1,1,1,-1,-1,1,1},{-1,-1,-1,-1,1,1,1,1}})
 ///
 
 -- Test n+5
@@ -181,8 +181,8 @@ assert(T#"dimension of the variety" == 3)
 TEST ///
 T = tangentBundleKaneyama(hirzebruchFan 3)
 u = matrix {{0},{0}}
-assert(eulerChiKaneyama(u,T) == 2)
-assert(eulerChiKaneyama T == 6)
+assert(eulerChi(u,T) == 2)
+assert(eulerChi T == 6)
 ///
 
 -- Test n+13

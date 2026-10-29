@@ -86,7 +86,7 @@ details ToricVectorBundleKaneyama := tvb -> (
 rank ToricVectorBundleKaneyama := T -> T#"rank of the vector bundle"
 
 rays ToricVectorBundleKaneyama := {} >> o -> tvb -> raySortOfFan tvb#"ToricVariety"
-ring ToricVectorBundleKaneyama := (cacheValue symbol weightedCoeffRing)( T -> (
+ring ToricVectorBundleKaneyama := (cacheValue symbol WeightedCoeffRing)( T -> (
     QQ[DegreeRank => T#"dimension of the variety"])
 )
 

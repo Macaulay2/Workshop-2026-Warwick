@@ -99,6 +99,7 @@ export {
     "twist",
     "isTwistOf",
     "firstChernClass",
+    "cartierIndex",
     -- Misc
     "displayFiltrations",
     -- Positivity    
@@ -138,7 +139,7 @@ protect regularityCondition
 -- areIsomorphic
 protect iso
 -- cohomology
-protect weightedCoeffRing
+protect WeightedCoeffRing
 protect eigenspaceDecompositions
 protect ambRank
 
@@ -464,7 +465,8 @@ isTwistOf (ToricVectorBundle, ToricVectorBundle) := (E1, E2) -> (
 -- The cohomology of a toric vector bundle inherits an action of the torus, so these
 -- vector spaces naturally come equipped with torus weights.
 -- This makes a weighted version of the coefficient ring to keep track of these weights.
-weightedCoeffRing := (cacheValue symbol weightedCoeffRing)(E -> (ring E)[DegreeRank => dim variety E])
+weightedCoeffRing = method() 
+weightedCoeffRing (ToricVectorBundle) := T ->(cacheValue symbol WeightedCoeffRing)(E -> (ring E)[DegreeRank => dim variety E])
 
 -- PURPOSE : Computing the Cech complex of a vector bundle
 cechComplex = method()
@@ -720,7 +722,8 @@ net ToricVectorBundleMap := f -> (
     )
 
 map(ToricVectorBundle, ToricVectorBundle, Matrix):= ToricVectorBundleMap => opts -> (E2, E1, M) ->(
-    if numRows M != E2.ambRank or numColumns M != E1.ambRank then error " The dimensions of the matrix don't match the ranks of the bundles";
+    -- TODO; reformulate this check for non square matrices
+    --if numRows M != E2.ambRank or numColumns M != E1.ambRank then error " The dimensions of the matrix don't match the ranks of the bundles";
     if ring M =!= ring E1 or ring M =!= ring E2 then try sub(M, ring E1) then M = sub(M, ring E1) else error " The matrix needs to be defined over the same ring as the bundles";
     if variety E1 =!= variety E2 then error "The base varieties of the bundles have to coincide";
     new ToricVectorBundleMap from{
@@ -1783,7 +1786,7 @@ assert(dim variety T == 3)
 -- Checking exteriorPower for Klyachko
 TEST ///
 T = cotangentBundle hirzebruchSurface 3
-T = exteriorPower(T,2)
+T = exteriorPower(2,T)
 assert(ring T == ideal(1_QQ))
 
 assert(filtrationJumps T == {{-1}, {-1}, {-1}, {-1}})
@@ -1792,24 +1795,22 @@ assert(rank T == 1)
 assert(dim variety T == 2)
 
 T = tangentBundle toricProjectiveSpace 3
-T = exteriorPower(T,2)
+T = exteriorPower(2,T)
 assert(ring T == ideal(1_QQ))
 
 assert(filtrationJumps T == {{1, 1, 0}, {1, 1, 0}, {1, 1, 0}, {1, 1, 0}})
-assert(filtrationMatrices T == {map(QQ^3,QQ^3,{{-1, 0, 0}, {0, -1, 0}, {1, -1, 1}}),map(QQ^3,QQ^3,{{1, 0, 0}, {0, 1, 0}, {0, 0,
-      1}}),map(QQ^3,QQ^3,{{-1, 0, 0}, {0, 0, 1}, {0, 1, 0}}),map(QQ^3,QQ^3,{{0, 0, 1}, {-1, 0, 0}, {0, -1,
-      0}})})
+assert(filtrationMatrices T == {map(QQ^3,QQ^3,{{-1, 0, 0}, {0, -1, 0}, {1, -1, 1}}),map(QQ^3,QQ^3,{{1, 0, 0}, {0, 1, 0}, {0, 0,1}}),map(QQ^3,QQ^3,{{-1, 0, 0}, {0, 0, 1}, {0, 1, 0}}),map(QQ^3,QQ^3,{{0, 0, 1}, {-1, 0, 0}, {0, -1,0}})})
 assert(rank T == 3)
 assert(dim variety T == 3)
 
 X = hirzebruchSurface 2;
 E = tangentBundle X;
-assert(exteriorPower(E,1) == E)
-assert(rank exteriorPower(E++E,2) == 6)
+assert(exteriorPower(1,E) == E)
+assert(rank exteriorPower(2,E++E) == 6)
 D = toricDivisor({1,2,4,5},X)
 L = lineBundle(D)
-E1 = exteriorPower(E++L, 2);
-E2 = (exteriorPower(E,0)**exteriorPower(L,2))++(exteriorPower(E,1)**exteriorPower(L,1))++(exteriorPower(E,2)**exteriorPower(L,0))
+E1 = exteriorPower(2,E++L);
+E2 = (exteriorPower(0,E)**exteriorPower(2,L))++(exteriorPower(1,E)**exteriorPower(1,L))++(exteriorPower(2,E)**exteriorPower(0,L))
 assert(areIsomorphic(E1,E2))
 ///
 
@@ -1817,7 +1818,7 @@ assert(areIsomorphic(E1,E2))
 -- Checking symmetricPower for Klyachko
 TEST ///
 T = tangentBundle toricProjectiveSpace 3
-T = symmetricPower(T,2)
+T = symmetricPower(2,T)
 assert(ring T === QQ)
 assert(filtrationJumps T == {{2, 1, 1, 0, 0, 0}, {2, 1, 1, 0, 0, 0}, {2, 1, 1, 0, 0, 0}, {2, 1, 1, 0, 0, 0}})
 assert(filtrationMatrices T == {map(QQ^6,QQ^6,{{1, 0, 0, 0, 0, 0}, {2, -1, 0, 0, 0, 0}, {2, 0, -1, 0, 0, 0}, {1, -1, 0, 1, 0, 0},
@@ -1931,7 +1932,7 @@ assert(map isomorphism(E1,E2) == matrix(ring E1, {{0,1},{1,0}}))
 -- here's another random example
 Y = hirzebruchSurface 2;
 E1' = tangentBundle Y ++ tangentBundle Y;
-M = matrix(ring E1', {{1,1,0,2},{0,1,1,1},{0,1,0,-1},{0,0,0,1}});
+M =  map(QQ^4,QQ^4,{{1, 1, 1, 3}, {0, 1, 1, 2}, {0, 1, 0, 0}, {0, 0, 0, 1}});
 filtmats = apply(filtrationMatrices E1', m -> M * m)
 E2' = toricVectorBundle(Y,filtmats, filtrationJumps E1')
 assert(map isomorphism(E1',E2') == M)
@@ -2105,8 +2106,9 @@ assert(areIsomorphic(imf , kg))
 assert( rank(imf)== 1)
 assert( variety imf === X)
 assert( filtrationJumps (imf) =={{0}, {0}, {0}, {0}} )
-assert( filtrationMatrices imf == {matrix {{1_(ZZ/101)}}, matrix {{1_(ZZ/101)}}, matrix {{1_(ZZ/101)}}, matrix {{1_(ZZ/101)}}})
+assert( filtrationMatrices imf ==  {map((ZZ/101)^4,(ZZ/101)^1,{{1}, {1}, {1}, {1}}),map((ZZ/101)^4,(ZZ/101)^1,{{1}, {1}, {1}, {1}}),map((ZZ/101)^4,(ZZ/101)^1,{{1}, {1}, {1},      {1}}),map((ZZ/101)^4,(ZZ/101)^1,{{1}, {1}, {1}, {1}})})
 img= image g;
+-- BUG
 assert ( img == target g)
 
 
@@ -2114,7 +2116,7 @@ assert ( img == target g)
 assert( rank(kg)== 1)
 assert( variety kg === X)
 assert( filtrationJumps (kg) =={{0}, {0}, {0}, {0}} )
-assert( filtrationMatrices kg == {matrix {{1_(ZZ/101)}}, matrix {{1_(ZZ/101)}}, matrix {{1_(ZZ/101)}}, matrix {{1_(ZZ/101)}}})
+assert( filtrationMatrices kg ==  {map((ZZ/101)^4,(ZZ/101)^1,{{1}, {1}, {1}, {1}}),map((ZZ/101)^4,(ZZ/101)^1,{{1}, {1}, {1}, {1}}),map((ZZ/101)^4,(ZZ/101)^1,{{1}, {1}, {1},      {1}}),map((ZZ/101)^4,(ZZ/101)^1,{{1}, {1}, {1}, {1}})})
 kf = ker f;
 assert ( ker f == trivialBundle(X,0))
 
@@ -2138,6 +2140,7 @@ m = id_(QQ^2);
 z = transpose matrix {{0,0,0,0}};
 M = z | z | (m || m);
 f = map(E ++ E, E ++ E, transpose M)
+-- BUG
 assert(image f == E)
 ///
 
@@ -2184,6 +2187,7 @@ assert(E == V)
 
 -- Test 24
 TEST ///
+-- BUG areIsomorphic shouldn't fail here fails for T3 and T1
 X = toricProjectiveSpace 2
 T1 = tangentBundle X
 M1 = klyachkoToModule T1
@@ -2191,6 +2195,7 @@ T2 = moduleToKlyachko (X, M1)
 M2 = klyachkoToModule T2 
 T3 = moduleToKlyachko (X, M2)
 assert( T3 == T1)
+assert( T3 == T2)
 ///
 
 
