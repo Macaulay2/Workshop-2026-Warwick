@@ -2,7 +2,7 @@ newPackage(
     "matrixNotation",
     Version => "0.1",
     Date => "",
-    Headline => "A package for computing Comprehensive Groebner Bases (CGBs)",
+    Headline => "A package for computing Comprehensive Gröbner Bases (CGBs)",
     Authors => {
         { Name => "Lorenzo De Biase", Email => "lorenzo.debiase@enea.it", HomePage => "https://sites.google.com/view/lorenzodebiase/"},
         { Name => "Weijia Wang", Email => "weijia.wang@lip6.fr", HomePage => "https://weijia.perso.lip6.fr/"},
@@ -671,7 +671,7 @@ iCheck (List, RingElement) := o -> (E, f) -> (
     for i from 1 to o.Loops do (
         s := 0;
         for m in terms p do (
-            s = s + (p*m) % H; --H stores the computed Groebner basis, so it is not computed twice
+            s = s + (p*m) % H; --H stores the computed Gröbner basis, so it is not computed twice
         );
         if s == 0 then (
             return true; -- certifies inconsistency

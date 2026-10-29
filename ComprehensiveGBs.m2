@@ -2,7 +2,7 @@ newPackage(
     "ComprehensiveGBs",
     Version => "1.0",
     Date => "",
-    Headline => "A package for computing Comprehensive Groebner Bases (CGBs)",
+    Headline => "A package for computing Comprehensive Gröbner Bases (CGBs)",
     Authors => {
         { Name => "Agustina Cagliero", Email => "mariaagustina.cagliero@kuleuven.be", HomePage => "https://sites.google.com/view/mariaagustinacagliero/"},
         { Name => "Oliver Clarke", Email => "oliver.clarke@durham.ac.uk", HomePage => "https://www.oliverclarkemath.com"},
@@ -304,7 +304,7 @@ totalListProduct (List, List) := (A, B) -> flatten table(A, B, times);
 --------------------------------------------------
 -- Implementing definition 4.1 of
 -- "An efficient algorithm for computing a
--- comprehensive Groebner system of a parametric
+-- comprehensive Gröbner system of a parametric
 -- polynomial system", D. Kapur Y. Sun D. Wang,
 -- J. of Symbolic Computation issue 49, 2013
 --------------------------------------------------
@@ -345,7 +345,7 @@ Since we already compute `minimal` for the second heuristic, we sort the list an
 --------------------------------------------------
 -- Implementing algorithm in Section 4.1 of
 -- "An efficient algorithm for computing a
--- comprehensive Groebner system of a parametric
+-- comprehensive Gröbner system of a parametric
 -- polynomial system", D.Kapur Y. Sun D. Wang,
 -- J. of Symbolic Computation issue 49, 2013
 --------------------------------------------------
@@ -413,7 +413,7 @@ pgbMain (List, List, List, Ring) := o -> (E, N, F, R) -> (
     if o.Depth == 0 then return PGB;
     o' := o ++ {Depth => o.Depth - 1};
     for i in 0..length H - 1 do (
-        -- Both cCheck and iCheck require E to be a Groebner basis of <E>
+        -- Both cCheck and iCheck require E to be a Gröbner basis of <E>
         E' := first entries gens gb ideal unique(Gr | {H_i});
         if length E' == 0 then (
             E' = {0_KU};
@@ -648,11 +648,11 @@ doc ///
   Key
     ComprehensiveGBs
   Headline
-    a package for computing Comprehensive Groebner Bases (CGBs).
+    a package for computing Comprehensive Gröbner Bases (CGBs).
   Description
     Text
-      This package provides the implementations of two different algorithms for computing a comprehensive Groebner system and a
-      comprehensive Groebner basis of a parametric ideal. In the following we refer to Section 2 of @HREF("#ref1","[1]")@.
+      This package provides the implementations of two different algorithms for computing a comprehensive Gröbner system and a
+      comprehensive Gröbner basis of a parametric ideal. In the following we refer to Section 2 of @HREF("#ref1","[1]")@.
 
       Let $k$ be a field, $R$ be the polynomial ring $k[U]$ in the parameters $U=\{u_1,\ldots,u_m\}$, and $R[X]$ be the polynomial ring
       over $R$ in the variables $X=\{x_1,\ldots,x_n\}$ and $X\cap U=\emptyset$.
@@ -667,20 +667,20 @@ doc ///
 
       Let $F$ be a subset of $R[X]$, $E_1,N_1,\ldots, E_t,N_t$ be subsets of $R=k[U]$, $G_1,\ldots,G_t$ be subsets of $R[X]$,
       and S a subset of $L^m$ such that $S\subseteq (V(E_1)\setminus V(N_1) \cup \ldots \cup V(E_t)\setminus V(N_t)$. A finite set
-      $\mathcal{G} = \{(E_1,N_1,G_1),\ldots,(E_t,N_t,G_t)\}$ is called a comprehnsive Groebner system on $S$ for $F$ if
-      $\sigma_a(G_i)$ is a Groebner basis of the ideal $(\sigma_a(F))\subseteq L[X]$ for $a \in V(E_i) \setminus V(N_i)$ and
+      $\mathcal{G} = \{(E_1,N_1,G_1),\ldots,(E_t,N_t,G_t)\}$ is called a comprehnsive Gröbner system on $S$ for $F$ if
+      $\sigma_a(G_i)$ is a Gröbner basis of the ideal $(\sigma_a(F))\subseteq L[X]$ for $a \in V(E_i) \setminus V(N_i)$ and
       $i=1,\ldots,t$. Each $(E_i,N_i,G_i)$ is called a branch of $\mathcal{G}$. In particular, if $S=L^m$, then $\mathcal{G}$ is
-      called a comprehensive Groebner system for F.
+      called a comprehensive Gröbner system for F.
 
-      Given $S$ a basis of the elimination ideal of $(F)\cap k[U]$, a comprehenvive Groebner basis $\mathcal{B}$ for $F\subseteq R[X]$
-      is the union of all the sets $G_i$ in a comprehensive Groebner system $\mathcal{G}$ for F on $S$. Notice that, $(\sigma_a(F))=(1)$
-      for any $a \in L^m \setminus V(S)$. Therefore, $\mathcal{G} \cup \{(\emptyset,S,S)\}$ is a comprehensive Groebner system for $F$.
+      Given $S$ a basis of the elimination ideal of $(F)\cap k[U]$, a comprehenvive Gröbner basis $\mathcal{B}$ for $F\subseteq R[X]$
+      is the union of all the sets $G_i$ in a comprehensive Gröbner system $\mathcal{G}$ for F on $S$. Notice that, $(\sigma_a(F))=(1)$
+      for any $a \in L^m \setminus V(S)$. Therefore, $\mathcal{G} \cup \{(\emptyset,S,S)\}$ is a comprehensive Gröbner system for $F$.
 
       The function @TO "cgbMain"@ is the implementation of Algorithm CGBMain of @HREF("#ref2","[2]")@. The function @TO "pgbMain"@
       corresponds to the Algorithm PGBMain of @HREF("#ref1","[1]")@.
   References
-      @LABEL("[1]","id" => "ref1")@ Deepak Kapur, Yao Sun, and Dingkang Wang. 2013. An efficient algorithm for computing a comprehensive Groebner system of a parametric polynomial system. In Journal of Symbolic Computation, 49, 27-44.
-      @LABEL("[2]","id" => "ref2")@ Akira Suzuki and Yosuke Sato. 2006. A simple algorithm to compute comprehensive Groebner bases using Groebner bases. In Proceedings of the 2006 international symposium on Symbolic and algebraic computation (ISSAC '06). Association for Computing Machinery, New York, NY, USA, 326–331. https://doi.org/10.1145/1145768.1145821
+      @LABEL("[1]","id" => "ref1")@ Deepak Kapur, Yao Sun, and Dingkang Wang. 2013. An efficient algorithm for computing a comprehensive Gröbner system of a parametric polynomial system. In Journal of Symbolic Computation, 49, 27-44.
+      @LABEL("[2]","id" => "ref2")@ Akira Suzuki and Yosuke Sato. 2006. A simple algorithm to compute comprehensive Gröbner bases using Gröbner bases. In Proceedings of the 2006 international symposium on Symbolic and algebraic computation (ISSAC '06). Association for Computing Machinery, New York, NY, USA, 326–331. https://doi.org/10.1145/1145768.1145821
 ///
 
 
@@ -694,7 +694,7 @@ doc ///
     [cgbMain, Depth]
     [cgbMain, CheckAssumption]
   Headline
-    a method that computes a Comprehensive Groebner System
+    a method that computes a Comprehensive Gröbner System
   Usage
     cgbMain(F,S)
     cgbMain F
@@ -713,7 +713,7 @@ doc ///
        maximum recursion depth
   Outputs
     G :List
-      of Sequences of the form (E,N,G), where G is a Groebner basis on the set
+      of Sequences of the form (E,N,G), where G is a Gröbner basis on the set
       $V(E)\setminus V(N)$
   Description
     Text
@@ -722,14 +722,14 @@ doc ///
       $X$ a set of variables, $F\subset R$ an ideal of variables and
       parameters, and $S\subset k[U]$ an ideal satisfying $V(S)\subseteq
       V(\langle F\rangle\cap k[U])$, cgbMain takes $F$ and $S$ as inputs
-      and returns a comprehensive Groebner system on $V(S)$. The function
+      and returns a comprehensive Gröbner system on $V(S)$. The function
       itself passes $F$ and $S$ to cgbMainRec after initialising various
       objects. As above, the ring must be initialised as a tower ring:
     Example
       R1 = QQ[a,b][x,y]
     Text
       Here $X = \{x,y\}$ and $U = \{a,b\}$. If we wanted to find a
-      comprehensive Groebner system over $\mathb{Q}^2$ for
+      comprehensive Gröbner system over $\mathb{Q}^2$ for
       $F = \langle ax+by\rangle$, we input the following:
     Example
       F1 = {a*x+b*y}
@@ -768,13 +768,13 @@ doc ///
 
       @TO "cgbMain"@ can take in one or two lists as inputs.
       When $S$ is not specified, the function returns a comprehensive
-      Groebner system on the whole parameter space, by computing a basis
+      Gröbner system on the whole parameter space, by computing a basis
       $\{s_1,\dots,s_r\}$ of the elimination ideal
       $\langle F\rangle\cap k[U]$, passing that basis as $S$ to cgbMain,
       and prepending the extra segment
       $(\{0\}, \{s_1,\dots,s_r\}, \{s_1,\dots,s_r\})$
       to the output. When $S$ is specified, the function returns a
-      comprehensive Groebner system on $V(S)$, under the assumption that
+      comprehensive Gröbner system on $V(S)$, under the assumption that
       $V(S)\subseteq V(\langle F\rangle\cap k[U])$. That assumption is
       verified before the computation starts, and an error is raised
       when it fails. If the assumption is known to be true, the option
@@ -856,7 +856,7 @@ doc ///
     F: List
       A list of polynomials
     GG: List
-      The Comprehensive Groebner Basis of the polynomials
+      The Comprehensive Gröbner Basis of the polynomials
   Description
     Text
       Let $G=(V,E)$ be graph and fix a positive integer $d$.
@@ -864,7 +864,7 @@ doc ///
       $F=\{f_e\}_{e\in E}\subseteq K[\lambda_e\:e\in E][x_{v,k}:v\in V,1\leq k \leq d]$,
       where $K\in \{\mathbb{C},\mathbb{R}\}$ and
       \[ f_{ij}=\sum_{k=1}^{d}(x_{i,k}-x_{j,k})^2  -\lambda_{ij} \].
-      cgbOnGraph returns the polynomial systems $F$ and a Combrehensive Groebner Basis of $F$
+      cgbOnGraph returns the polynomial systems $F$ and a Combrehensive Gröbner Basis of $F$
     Example
       (F,GG)=cgbOnGraph({{1,2,3},{(1,2),(2,3),(3,1)}},1);
       netList F
@@ -922,7 +922,7 @@ doc ///
       $(a+1) x - y$ and $(a+1) y - a$, so $(a+1) x - y$ is chosen over $a x - 1$.
   References
     @LABEL("[1]","id" => "ref1")@ Deepak Kapur, Yao Sun, and Dingkang Wang. 2013. An efficient
-    algorithm for computing a comprehensive Groebner system of a parametric polynomial system.
+    algorithm for computing a comprehensive Gröbner system of a parametric polynomial system.
     In Journal of Symbolic Computation, 49, 27-44.
   SeeAlso
     pgbMain
@@ -937,7 +937,7 @@ doc ///
     [cgb, ReduceStrata]
     [cgb, Depth]
   Headline
-    a method that computes a Comprehensive Groebner Basis
+    a method that computes a Comprehensive Gröbner Basis
   Usage
     G = cgb F
   Inputs
@@ -951,23 +951,23 @@ doc ///
        maximum recursion depth
   Outputs
     G :List
-      of polynomials forming a comprehensive Groebner basis of $\langle F\rangle$
+      of polynomials forming a comprehensive Gröbner basis of $\langle F\rangle$
   Description
     Text
       Implementation of the Algorithm proposed by Suzuki and Sato. Given a tower
       polynomial ring $R = k[U][X]$ for $U$ a set of parameters and $X$ a set
       of variables, and $F\subset R$ an ideal of variables and parameters, cgb
-      takes $F$ as input and returns a comprehensive Groebner basis of
+      takes $F$ as input and returns a comprehensive Gröbner basis of
       $\langle F\rangle$ over the whole parameter space.
-      The function computes a comprehensive Groebner system with cgbMain and
-      returns the union of its Groebner bases, together with a basis of the
+      The function computes a comprehensive Gröbner system with cgbMain and
+      returns the union of its Gröbner bases, together with a basis of the
       elimination ideal $\langle F\rangle\cap k[U]$.
       As above, the ring must be initialised as a tower ring:
     Example
       R1 = QQ[a,b][x,y]
     Text
       Here $X = \{x,y\}$ and $U = \{a,b\}$. If we wanted to find a comprehensive
-      Groebner basis over $\mathb{Q}^2$ for $F = \langle ax+by\rangle$, we input
+      Gröbner basis over $\mathb{Q}^2$ for $F = \langle ax+by\rangle$, we input
       the following:
     Example
       F1 = {a*x+b*y}
@@ -1001,7 +1001,7 @@ doc ///
     [pgbMain, Depth]
     [pgbMain, ICheckLoops]
   Headline
-    compute a Comprehensive Groebner System using Kapur-Sun-Wang algorithm
+    compute a Comprehensive Gröbner System using Kapur-Sun-Wang algorithm
   Usage
     pgbMain F
     pgbMain(E, N, F)
@@ -1019,12 +1019,12 @@ doc ///
       the number of squarings in one of the consistency checks; the value @TO "infinity"@ means skip the squarings
   Outputs
     :List
-      of lists $\{E_i, N_i, G_i\}$ such that $G_i$ is a Groebner basis on $V(E_i)\setminus V(N_i)$
+      of lists $\{E_i, N_i, G_i\}$ such that $G_i$ is a Gröbner basis on $V(E_i)\setminus V(N_i)$
   Description
     Text
       Implementation of Algorithm PGBMain of @HREF("#ref1","[1]")@. Given a polynomial ring
       $R = k[U][X]$, where $U$ is a set of parameters and $X$ a set of variables, and a list $F$ of
-      polynomials in $R$, pgbMain returns a minimal comprehensive Groebner system for $F$ on the whole
+      polynomials in $R$, pgbMain returns a minimal comprehensive Gröbner system for $F$ on the whole
       parameter space. The strata $V(E_i)\setminus V(N_i)$ are disjoint and nonempty, and the
       leading coefficients of the polynomials in $G_i$ do not vanish on them.
     Example
@@ -1033,7 +1033,7 @@ doc ///
       F = {a*x - b, b*y - a, c*x^2 - y, c*y^2 - x};
       netList pgbMain F
     Text
-      To compute a comprehensive Groebner system on $V(E)\setminus V(N)$ instead, where $E$ and $N$
+      To compute a comprehensive Gröbner system on $V(E)\setminus V(N)$ instead, where $E$ and $N$
       are lists of polynomials in $k[U]$, call pgbMain on the triple $\{E, N, F\}$.
     Example
       netList pgbMain ({a, b}, {c}, F)
@@ -1044,12 +1044,12 @@ doc ///
       When the function is about to recurse, the implementation checks the value of Depth: if it is
       zero then the function stops and returns the current system, otherwise it decrements Depth
       and recurses. So with Depth => 0, the only the branches found by the first call are returned.
-      The default Depth is -1, which never reaches zero, so the full comprehensive Groebner system is
+      The default Depth is -1, which never reaches zero, so the full comprehensive Gröbner system is
       computed.
     Example
       for i from 0 to 2 do print (i, netList pgbMain(F, Depth => i))
     Text
-      Note. If Depth is not negative, then the output is a comprehensive Groebner system on only
+      Note. If Depth is not negative, then the output is a comprehensive Gröbner system on only
       part of the parameter space.
     Text
       The algorithm discards the strata $V(E)\setminus V(N)$ that are empty, using the consistency
@@ -1064,7 +1064,7 @@ doc ///
       pgbMain(F, ICheckLoops => 2) === pgbMain F
   References
     @LABEL("[1]","id" => "ref1")@ Deepak Kapur, Yao Sun, and Dingkang Wang. 2013. An efficient
-    algorithm for computing a comprehensive Groebner system of a parametric polynomial system.
+    algorithm for computing a comprehensive Gröbner system of a parametric polynomial system.
     In Journal of Symbolic Computation, 49, 27-44.
   SeeAlso
     cgbMain
@@ -1318,7 +1318,7 @@ assert(minimalDicksonBasis G == {a*y + z, c*x + c*z^2})
 -- TEST for pgbMain
 -- From Example 6.1 of
 -- "An efficient algorithm for computing a
--- comprehensive Groebner system of a parametric
+-- comprehensive Gröbner system of a parametric
 -- polynomial system", D. Kapur Y. Sun D. Wang,
 -- J. of Symbolic Computation issue 49, 2013
 ------------------------------------------------

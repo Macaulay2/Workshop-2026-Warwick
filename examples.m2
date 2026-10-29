@@ -1,5 +1,5 @@
 ---------------------------------------------
---Comprehensive Groebner Basis in Macaulay2: 
+--Comprehensive Gröbner Basis in Macaulay2: 
 ---------------------------------------------
 
 installPackage "ComprehensiveGBs"
