@@ -20,13 +20,13 @@ newPackage(
     )
 
 export {
-    "CGBMain",
-    "CGB",
+    "cgbMain",
+    "cgb",
     "cgbOnGraph",
     "ReduceStrata", 
-    "CGBFromTriple", 
-    "PGBMain", 
-    "MDBasis",
+    "cgbFromTriple", 
+    "pgbMain", 
+    "minimalDicksonBasis",
     "Depth"
     } -- functions, objects to export
 
@@ -63,23 +63,23 @@ ringOrder PolynomialRing := List => R -> (
     ))
 );
 
-CGBFromTriple = method(); --Constructor for a CGBTriple starting from
+cgbFromTriple = method(); --Constructor for a CGBTriple starting from
                           --a list {E, F, G} where V(E)\V(F) is the 
                           --parametric strata and G is the set of 
                           --polynomial to be studied on it.
 
-CGBFromTriple List := CGBTriple => (L) -> (
+cgbFromTriple List := CGBTriple => (L) -> (
     if(length L == 3 and length L_0 > 0 and length L_2 > 0) then (
         R := ring L_2_0;
         return new CGBTriple from {
             "triple" => {matrix {L_0}, matrix {L_1}, matrix {L_2}},
-            "cgbData" => CGBDataFromRings(R)};
+            "cgbData" => cgbDataFromRings(R)};
         );
 );
 
-CGBDataFromRings = method();
+cgbDataFromRings = method();
 
-CGBDataFromRings Ring := CGBData => (R) -> (
+cgbDataFromRings Ring := CGBData => (R) -> (
   X := gens R;
   KU := coefficientRing R;
   U := gens KU;
@@ -182,21 +182,21 @@ diffConstructibleByLC (List, Sequence) := opts -> (C, LC) -> (
 -- store all the maps and rings of a CGB computation in a object
 CGBData = new Type of HashTable
 
-CGBMain = method(
+cgbMain = method(
     Options => {
         ReduceStrata => false,
         Strategy => "Rabinowitsch",
         Verbose => false,
         Depth => -1
         }
-    ); -- Initialises CGBMainRec
+    ); -- Initialises cgbMainRec
 
-CGBMain (List) := o -> (F) -> (
+cgbMain (List) := o -> (F) -> (
   R := ring first F;
   S := first entries eliminateVariables F;
-  CGBMain(F, S, o) | apply(S, s -> ({}, sub(s, R), {1_R}))
+  cgbMain(F, S, o) | apply(S, s -> ({}, sub(s, R), {1_R}))
 )
-CGBMain (List, List) := o -> (F, S) -> (
+cgbMain (List, List) := o -> (F, S) -> (
   R := ring F_0;
   X := gens R;
   KU := coefficientRing R;
@@ -239,10 +239,10 @@ CGBMain (List, List) := o -> (F, S) -> (
   RExttoRExt' = RingsandThings_9;
   RExttoR = RingsandThings_10;
   RingsandThings = {R,X,RExt,RFlat,RExt',KU,RFlatl,RtoRExt,RExttoRFlatl,RExttoRExt',RExttoR};
-  CGBMainRec(F, S, {}, RingsandThings, o)
+  cgbMainRec(F, S, {}, RingsandThings, o)
 )
 
-CGBMainRec = method(
+cgbMainRec = method(
     Options => {
         ReduceStrata => false,
         Strategy => "Rabinowitsch",
@@ -250,7 +250,7 @@ CGBMainRec = method(
         Depth => -1
         }
     );
-CGBMainRec (List, List, List, List) := o -> (F, S, memo, RingsandThings) -> (
+cgbMainRec (List, List, List, List) := o -> (F, S, memo, RingsandThings) -> (
   R := RingsandThings_0;
   X := RingsandThings_1;
   RExt := RingsandThings_2;
@@ -333,7 +333,7 @@ CGBMainRec (List, List, List, List) := o -> (F, S, memo, RingsandThings) -> (
               continue;
               );
           if o.Depth != 0 then (
-              memo = CGBMainRec(F, append(S, sub(hi, R)), memo, RingsandThings, o ++ {Depth => o.Depth -1});
+              memo = cgbMainRec(F, append(S, sub(hi, R)), memo, RingsandThings, o ++ {Depth => o.Depth -1});
               )
           );
       return memo
@@ -345,7 +345,7 @@ CGBMainRec (List, List, List, List) := o -> (F, S, memo, RingsandThings) -> (
                   if zero g' then continue;
                   g')
               )
-          } | if o.Depth == 0 then {} else flatten apply(H, hi -> CGBMainRec(F, append(S, sub(hi, R)), memo, RingsandThings, o ++ {Depth => o.Depth -1}))
+          } | if o.Depth == 0 then {} else flatten apply(H, hi -> cgbMainRec(F, append(S, sub(hi, R)), memo, RingsandThings, o ++ {Depth => o.Depth -1}))
       );
   );
 
@@ -359,21 +359,21 @@ Notes on Optimisation:
 needsPackage "ComprehensiveGBs"
 R = QQ[a,b][x,y,z, MonomialOrder => Lex]
 F = {x^3 - a, y^4 - b, x+y-z}
-profile CGBMain(F, {});
+profile cgbMain(F, {});
 profileSummary
 
 *-
 
-CGB=method( Options => {
+cgb=method( Options => {
         ReduceStrata => false,
         Strategy => "Rabinowitsch",
         Verbose => false,
         Depth => -1
         })
-CGB(List):= o -> F->(
+cgb(List):= o -> F->(
     s:=first entries eliminateVariables(F);
     result:=s;
-    G:=CGBMain(F,s, ReduceStrata => o.ReduceStrata, Strategy => o.Strategy , Verbose => o.Verbose, Depth => o.Depth);
+    G:=cgbMain(F,s, ReduceStrata => o.ReduceStrata, Strategy => o.Strategy , Verbose => o.Verbose, Depth => o.Depth);
     for i in G do (
         result=result|(i_2);
         );
@@ -416,7 +416,7 @@ cgbOnGraph(List,ZZ):=(G,d)->(
   S:=QQ[toSequence apply(E, l -> w_l)];
   R:=S[x_(V_0,1)..x_(V_(#V-1),d)];
   F:=for i in E list(sum(1..d,k->(R_(2*i_0+k-3)-R_(2*i_1+k-3))^2)-S_(position(E, j -> j === i)));
-  (F, CGBMain(F, {}))
+  (F, cgbMain(F, {}))
 )
 
 --Given two lists A and B return the list
@@ -446,8 +446,8 @@ totalListProduct (List, List) := (A, B) -> (
 -- polynomial system", D. Kapur Y. Sun D. Wang, 
 -- J. of Symbolic Computation issue 49, 2013
 --------------------------------------------------
-MDBasis = method();
-MDBasis (List) := (G) -> (
+minimalDicksonBasis = method();
+minimalDicksonBasis (List) := (G) -> (
     F := G;
     if length F == 0 then (
         return {}
@@ -489,8 +489,8 @@ MDBasis (List) := (G) -> (
 --polynomial system", D.Kapur Y. Sun D. Wang, 
 --J. of Symbolic Computation issue 49, 2013
 --------------------------------------------------
-PGBMain = method();
-PGBMain (CGBTriple) := T -> (
+pgbMain = method();
+pgbMain (CGBTriple) := T -> (
     {E, N, F} := T#"triple";
     cgbData := T#"cgbData";
     R:=cgbData#"R";
@@ -541,7 +541,7 @@ PGBMain (CGBTriple) := T -> (
     );
     --Elements of GB that do not only contain parameters
     listDiff := toList((new Set from apply(G, i->sub(i, R))) - (new Set from apply(Gr, i->sub(i, R))));
-    Gm := MDBasis(listDiff);
+    Gm := minimalDicksonBasis(listDiff);
     H := unique(apply(Gm, g->squareFreePart(leadCoefficient(sub(g, R)))));
     h := squareFreePart(lcm(H));
     productList = unique(apply(totalListProduct(N, {sub(h, KU)}), i -> squareFreePart(i)));
@@ -551,13 +551,13 @@ PGBMain (CGBTriple) := T -> (
 
     for i in 0..(length(H)-1) do (
         if i == 0 then (
-            PGB = unique(PGB | PGBMain(CGBFromTriple({
+            PGB = unique(PGB | pgbMain(cgbFromTriple({
             unique(Gr | {H_i}), 
             N, 
             listDiff}
             )))
         ) else (
-        PGB = unique(PGB | PGBMain(CGBFromTriple({
+        PGB = unique(PGB | pgbMain(cgbFromTriple({
             unique(Gr | {H_i}), 
             unique(totalListProduct(N, {squareFreePart(product(H_{0..(i-1)}))})), 
             listDiff}
@@ -567,11 +567,11 @@ PGBMain (CGBTriple) := T -> (
     return PGB  
 );
 
-PGBMain List := F -> (
+pgbMain List := F -> (
     if #F == 0 then error("List must be non-empty");
     R := ring first F;
     U := coefficientRing R;
-    PGBMain(CGBFromTriple({{0_U}, {1_U}, F}))
+    pgbMain(cgbFromTriple({{0_U}, {1_U}, F}))
     )
 
 
@@ -596,13 +596,13 @@ zeroDimCheck (List, RingElement) := (E, f) -> (
 );
 
 -----------------------------
---CCheck if for those
+--cCheck if for those
 --cases in which <E> is
 --of positive dimensional.
 -----------------------------
 
-CCheck = method();
-CCheck (List, RingElement) := (E, f) -> (
+cCheck = method();
+cCheck (List, RingElement) := (E, f) -> (
     R := ring f;
     U := gens R;
     supports := apply(E, g -> (
@@ -659,13 +659,13 @@ CCheck (List, RingElement) := (E, f) -> (
 
 
 
-ICheck = method(
+iCheck = method(
     Options => {
         Loops => 5
     }
 );
 
-ICheck (List, RingElement) := o -> (E, f) -> (
+iCheck (List, RingElement) := o -> (E, f) -> (
     p := f;
     H:= gens gb ideal E;
     for i from 1 to o.Loops do (
@@ -687,8 +687,8 @@ ICheck (List, RingElement) := o -> (E, f) -> (
 --CCHECK AND ICHECK
 --1)check whether f is already in <E>
 --2)determine the dimension of <E>
---3) zeroDimCheck or CCheck
---4) if CCheck is not enough, do ICheck
+--3) zeroDimCheck or cCheck
+--4) if cCheck is not enough, do iCheck
 ----------------------------------------
 
 consistencyCheckAllTogether = method(
@@ -710,13 +710,13 @@ consistencyCheckAllTogether (Thing, RingElement) := o -> (E, f) -> (
         return zeroDimCheck(E,f);
     );
 
-    if CCheck(E,f) then (
-        print "false: CCheck was used";
+    if cCheck(E,f) then (
+        print "false: cCheck was used";
         return true; -- consistent
     );
 
-    if ICheck(E,f, Loops => o.Loops) then (
-        print "true: ICheck was used";
+    if iCheck(E,f, Loops => o.Loops) then (
+        print "true: iCheck was used";
         return false; -- inconsistent
     );
 

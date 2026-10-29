@@ -21,12 +21,12 @@ newPackage(
     )
 
 export {
-    "CGBMain",
-    "CGB",
+    "cgbMain",
+    "cgb",
     "cgbOnGraph",
     "ReduceStrata",
-    "PGBMain",
-    "MDBasis",
+    "pgbMain",
+    "minimalDicksonBasis",
     "Depth",
     "CheckAssumption",
     "ICheckLoops"
@@ -56,9 +56,9 @@ ringOrder PolynomialRing := List => R -> (
     ))
 );
 
-CGBDataFromRings = method();
+cgbDataFromRings = method();
 
-CGBDataFromRings Ring := CGBData => R -> (
+cgbDataFromRings Ring := CGBData => R -> (
     if R.cache#?"cgbData" then return R.cache#"cgbData";
     KU := coefficientRing R;
     K := coefficientRing KU;
@@ -147,24 +147,24 @@ isCoveredPrime (Ideal, List) := (P, memo) -> (
 
 
 
-CGBMain = method(
+cgbMain = method(
     Options => {
         ReduceStrata => false,
         Verbose => false,
         Depth => -1,
         CheckAssumption => true
         }
-    ); -- Initialises CGBMainRec
+    ); -- Initialises cgbMainRec
 
-CGBMain List := o -> F -> (
+cgbMain List := o -> F -> (
     R := ring first F;
     KU := coefficientRing R;
-    S := first entries eliminateVariables(F, CGBDataFromRings R);
-    cgs := CGBMain(F, S, o ++ {CheckAssumption => false});
+    S := first entries eliminateVariables(F, cgbDataFromRings R);
+    cgs := cgbMain(F, S, o ++ {CheckAssumption => false});
     if #S == 0 then return cgs;
     {({0_KU}, S, apply(S, s -> promote(s, R)))} | cgs
     )
-CGBMain (List, List) := o -> (F, S) -> (
+cgbMain (List, List) := o -> (F, S) -> (
     R := ring first F;
     KU := coefficientRing R;
     S' := apply(S, s -> (
@@ -173,13 +173,13 @@ CGBMain (List, List) := o -> (F, S) -> (
             error("S must consist of polynomials in the parameters; found " | toString s);
             lift(s', KU)
             ));
-    cgbData := CGBDataFromRings R;
+    cgbData := cgbDataFromRings R;
     if o.CheckAssumption then (
         -- V(S) is contained in V(<F> cap k[U]) <=> (S, <F> cap k[U]) is inconsistent
         if isConsistentRabinowitsch(S', first entries eliminateVariables(F, cgbData)) then
         error "V(S) is not contained in V(ideal F cap k[U]); pass CheckAssumption => false to skip this check";
         );
-    cgs := CGBMainRec(F, S', {}, cgbData,
+    cgs := cgbMainRec(F, S', {}, cgbData,
         ReduceStrata => o.ReduceStrata,
         Verbose => o.Verbose,
         Depth => o.Depth
@@ -187,14 +187,14 @@ CGBMain (List, List) := o -> (F, S) -> (
     apply(cgs, t -> (if #(t#0) == 0 then {0_KU} else t#0, t#1, t#2))
     )
 
-CGBMainRec = method(
+cgbMainRec = method(
     Options => {
         ReduceStrata => false,
         Verbose => false,
         Depth => -1
     }
 );
-CGBMainRec (List, List, List, CGBData) := o -> (F, S, memo, cgbData) -> (
+cgbMainRec (List, List, List, CGBData) := o -> (F, S, memo, cgbData) -> (
     R := cgbData#"R";
     RExt := cgbData#"RExt";
     KU := cgbData#"KU";
@@ -239,27 +239,27 @@ CGBMainRec (List, List, List, CGBData) := o -> (F, S, memo, cgbData) -> (
             for hi in H do (
                 for P in decompose ideal append(S, hi) do (
                     if not isCoveredPrime(P, memo) then (
-                        memo = CGBMainRec(F, first entries gens gb P, memo, cgbData, o ++ {Depth => o.Depth -1});
+                        memo = cgbMainRec(F, first entries gens gb P, memo, cgbData, o ++ {Depth => o.Depth -1});
                         )
                     )
                 )
             );
         return memo
     ) else (
-        return {branch} | if o.Depth == 0 then {} else flatten apply(H, hi -> CGBMainRec(F, append(S, hi), memo, cgbData, o ++ {Depth => o.Depth -1}))
+        return {branch} | if o.Depth == 0 then {} else flatten apply(H, hi -> cgbMainRec(F, append(S, hi), memo, cgbData, o ++ {Depth => o.Depth -1}))
     );
 );
 
 
-CGB = method( Options => {
+cgb = method( Options => {
     ReduceStrata => false,
     Verbose => false,
     Depth => -1
 })
-CGB List := o -> F -> (
+cgb List := o -> F -> (
     R := ring first F;
-    s := first entries eliminateVariables(F, CGBDataFromRings R);
-    G := CGBMain(F, s,
+    s := first entries eliminateVariables(F, cgbDataFromRings R);
+    G := cgbMain(F, s,
         ReduceStrata => o.ReduceStrata,
         Verbose => o.Verbose,
         Depth => o.Depth,
@@ -292,7 +292,7 @@ cgbOnGraph (List, ZZ) := (G, d) -> (
     S := QQ[toSequence apply(E, l -> w_l)];
     R := S[x_(V_0, 1)..x_(V_(#V-1), d)];
     F := for i in E list(sum(1..d, k -> (R_(d*(i_0-V_0)+k-1)-R_(d*(i_1-V_0)+k-1))^2)-S_(position(E, j -> j === i)));
-    (F, CGBMain (F, ReduceStrata => true))
+    (F, cgbMain (F, ReduceStrata => true))
 )
 
 -- Given two lists A and B return the list
@@ -308,8 +308,8 @@ totalListProduct (List, List) := (A, B) -> flatten table(A, B, times);
 -- polynomial system", D. Kapur Y. Sun D. Wang,
 -- J. of Symbolic Computation issue 49, 2013
 --------------------------------------------------
-MDBasis = method();
-MDBasis List := G -> (
+minimalDicksonBasis = method();
+minimalDicksonBasis List := G -> (
     if #G == 0 then return {};
     lpps := leadMonomial \ G;
     minimal := select(G, g -> not any(lpps, m -> m != leadMonomial g and leadMonomial g % m == 0));
@@ -328,9 +328,9 @@ MDBasis List := G -> (
     )
 )
 -*
-Notes: new implementation of MDBasis:
+Notes: new implementation of minimalDicksonBasis:
 
-Recall that a MDBasis keeps exactly one polynomial for each leading monomial that is minimal under divisibility.
+Recall that a minimal Dickson basis keeps exactly one polynomial for each leading monomial that is minimal under divisibility.
 The previous version has a loop to do this: it adds polynomials one at a time, and later additions replace
 earlier ones where the leading monomial is divisible by the new one.
 
@@ -349,14 +349,14 @@ Since we already compute `minimal` for the second heuristic, we sort the list an
 -- polynomial system", D.Kapur Y. Sun D. Wang,
 -- J. of Symbolic Computation issue 49, 2013
 --------------------------------------------------
-PGBMain = method(
+pgbMain = method(
     Options => {
         Depth => -1,
         ICheckLoops => infinity
         }
     );
-PGBMain (List, List, List, Ring) := o -> (E, N, F, R) -> (
-    cgbData := CGBDataFromRings R;
+pgbMain (List, List, List, Ring) := o -> (E, N, F, R) -> (
+    cgbData := cgbDataFromRings R;
     RFlat := cgbData#"RFlat";
     KU := cgbData#"KU";
     KUtoRFlat := cgbData#"KUtoRFlat";
@@ -400,7 +400,7 @@ PGBMain (List, List, List, Ring) := o -> (E, N, F, R) -> (
     if not consistencyCheckAllTogether(Gr, N, ICheckLoops => o.ICheckLoops) then (
         return PGB
         );
-    Gm := MDBasis listDiff;
+    Gm := minimalDicksonBasis listDiff;
     H := unique flatten apply(Gm, g -> listOfFactors leadCoefficient g);
     h := squareFreePart lcm(H | {1_KU});
     productList = unique (squareFreePart \ totalListProduct(N, {h}));
@@ -413,20 +413,20 @@ PGBMain (List, List, List, Ring) := o -> (E, N, F, R) -> (
     if o.Depth == 0 then return PGB;
     o' := o ++ {Depth => o.Depth - 1};
     for i in 0..length H - 1 do (
-        -- Both CCheck and ICheck require E to be a Groebner basis of <E>
+        -- Both cCheck and iCheck require E to be a Groebner basis of <E>
         E' := first entries gens gb ideal unique(Gr | {H_i});
         if length E' == 0 then (
             E' = {0_KU};
             );
         if i == 0 then (
-            PGB = unique(PGB | PGBMain(
+            PGB = unique(PGB | pgbMain(
                         E',
                         N,
                         listDiff, o')
                 )
             )
         else (
-            PGB = unique(PGB | PGBMain(
+            PGB = unique(PGB | pgbMain(
                         E',
                         unique totalListProduct(N, {squareFreePart product H_{0..i-1}}),
                         listDiff, o')
@@ -436,31 +436,31 @@ PGBMain (List, List, List, Ring) := o -> (E, N, F, R) -> (
     return PGB
     );
 
--- TODO: homogenise the output of CGBMain and PGBMain, e.g. should they both output
+-- TODO: homogenise the output of cgbMain and pgbMain, e.g. should they both output
 -- lists of 3-tuples (3 element lists) or something else?
 
-PGBMain List := o -> F -> (
+pgbMain List := o -> F -> (
     if zero length F then error "List must be non-empty";
     R := ring first F;
     U := coefficientRing R;
-    PGBMain({0_U}, {1_U}, F, R, o)
+    pgbMain({0_U}, {1_U}, F, R, o)
 )
 
-PGBMain (List, List) := o -> (E, F) -> (
+pgbMain (List, List) := o -> (E, F) -> (
     if zero length F then error "List must be non-empty";
     R := ring first F;
     U := coefficientRing R;
     if zero length E then E = {0_U};
-    PGBMain(E, {1_U}, F, o)
+    pgbMain(E, {1_U}, F, o)
 )
 
-PGBMain (List, List, List) := o -> (E, N, F) -> (
+pgbMain (List, List, List) := o -> (E, N, F) -> (
     if zero length F then error "List must be non-empty";
     R := ring first F;
     U := coefficientRing R;
     if zero length E then E = {0_U};
     if zero length N then N = {1_U};
-    PGBMain(E, N, F, R, o)
+    pgbMain(E, N, F, R, o)
 )
 
 
@@ -485,13 +485,13 @@ zeroDimCheck (List, RingElement) := (E, f) -> (
 );
 
 -----------------------------
--- CCheck if for those
+-- cCheck if for those
 -- cases in which <E> is
 -- of positive dimensional.
 -----------------------------
 
-CCheck = method();
-CCheck (List, RingElement) := (E, f) -> (
+cCheck = method();
+cCheck (List, RingElement) := (E, f) -> (
     R := ring f;
     U := gens R;
     supports := apply(select(E, g -> g != 0), g -> (
@@ -524,13 +524,13 @@ CCheck (List, RingElement) := (E, f) -> (
 );
 
 
-ICheck = method(
+iCheck = method(
     Options => {
         ICheckLoops => infinity
     }
 );
 
-ICheck (List, RingElement) := o -> (E, f) -> (
+iCheck (List, RingElement) := o -> (E, f) -> (
     if zero f then (
         return true; -- certifies inconsistency
     );
@@ -545,7 +545,7 @@ ICheck (List, RingElement) := o -> (E, f) -> (
     );
     factors := listOfFactors f;
     promoted := factors / (g -> promote(g, Q));
-    -- before performing ICheck on the input f, we first perform ICheck on the factors of f
+    -- before performing iCheck on the input f, we first perform iCheck on the factors of f
     -- this is a not-too-expensive heuristic, but it proves very helpful for S5 and P3P when ICheckLoops is set to 4
     candidates := if zero length factors then {promote(f, Q)}
         else if #factors == 1 then promoted
@@ -569,11 +569,11 @@ ICheck (List, RingElement) := o -> (E, f) -> (
 
 ----------------------------------------
 -- The following puts together ZeroDimCheck
--- CCheck AND ICheck
+-- cCheck AND iCheck
 -- 1)check whether f is already in <E>
 -- 2)determine the dimension of <E>
--- 3) zeroDimCheck or CCheck
--- 4) if CCheck is not enough, do ICheck
+-- 3) zeroDimCheck or cCheck
+-- 4) if cCheck is not enough, do iCheck
 ----------------------------------------
 
 consistencyCheckAllTogether = method(
@@ -596,20 +596,20 @@ consistencyCheckAllTogether (List, RingElement) := o -> (E, f) -> (
             );
         return zeroDimCheck(E, f);
     );
-    if CCheck(E, f) then (
+    if cCheck(E, f) then (
         if debugLevel > 0 then (
-            print "consistent: CCheck was used";
+            print "consistent: cCheck was used";
             );
         return true; -- consistent
     );
-    if ICheck(E, f, ICheckLoops => o.ICheckLoops) then (
+    if iCheck(E, f, ICheckLoops => o.ICheckLoops) then (
         if debugLevel > 0 then (
-            print "inconsistent: ICheck was used";
+            print "inconsistent: iCheck was used";
             );
         return false; -- inconsistent
     );
     if o.ICheckLoops === infinity then (
-        -- ICheck also checks consistency when ICheckLoops is infinity
+        -- iCheck also checks consistency when ICheckLoops is infinity
         -- so if we reach this point, f is not in rad(E)
         return true; -- consistent
     );
@@ -676,7 +676,7 @@ doc ///
       is the union of all the sets $G_i$ in a comprehensive Groebner system $\mathcal{G}$ for F on $S$. Notice that, $(\sigma_a(F))=(1)$
       for any $a \in L^m \setminus V(S)$. Therefore, $\mathcal{G} \cup \{(\emptyset,S,S)\}$ is a comprehensive Groebner system for $F$.
 
-      The function @TO "CGBMain"@ is the implementation of Algorithm CGBMain of @HREF("#ref2","[2]")@. The function @TO "PGBMain"@
+      The function @TO "cgbMain"@ is the implementation of Algorithm CGBMain of @HREF("#ref2","[2]")@. The function @TO "pgbMain"@
       corresponds to the Algorithm PGBMain of @HREF("#ref1","[1]")@.
   References
       @LABEL("[1]","id" => "ref1")@ Deepak Kapur, Yao Sun, and Dingkang Wang. 2013. An efficient algorithm for computing a comprehensive Groebner system of a parametric polynomial system. In Journal of Symbolic Computation, 49, 27-44.
@@ -686,18 +686,18 @@ doc ///
 
 doc ///
   Key
-    CGBMain
-    (CGBMain, List, List)
-    (CGBMain, List)
-    [CGBMain, Verbose]
-    [CGBMain, ReduceStrata]
-    [CGBMain, Depth]
-    [CGBMain, CheckAssumption]
+    cgbMain
+    (cgbMain, List, List)
+    (cgbMain, List)
+    [cgbMain, Verbose]
+    [cgbMain, ReduceStrata]
+    [cgbMain, Depth]
+    [cgbMain, CheckAssumption]
   Headline
     a method that computes a Comprehensive Groebner System
   Usage
-    CGBMain(F,S)
-    CGBMain F
+    cgbMain(F,S)
+    cgbMain F
   Inputs
     F :List
        a list of polynomials in a ring $R = k[U][X]$
@@ -721,9 +721,9 @@ doc ///
       tower polynomial ring $R = k[U][X]$ for $U$ a set of parameters and
       $X$ a set of variables, $F\subset R$ an ideal of variables and
       parameters, and $S\subset k[U]$ an ideal satisfying $V(S)\subseteq
-      V(\langle F\rangle\cap k[U])$, CGBMain takes $F$ and $S$ as inputs
+      V(\langle F\rangle\cap k[U])$, cgbMain takes $F$ and $S$ as inputs
       and returns a comprehensive Groebner system on $V(S)$. The function
-      itself passes $F$ and $S$ to CGBMainRec after initialising various
+      itself passes $F$ and $S$ to cgbMainRec after initialising various
       objects. As above, the ring must be initialised as a tower ring:
     Example
       R1 = QQ[a,b][x,y]
@@ -734,9 +734,9 @@ doc ///
     Example
       F1 = {a*x+b*y}
       S1 = {}
-      CGBMain(F1,S1)
+      cgbMain(F1,S1)
     Text
-      CGBMain has several options: ReduceStrata, Verbose, and Depth.
+      cgbMain has several options: ReduceStrata, Verbose, and Depth.
 
       ReduceStrata is an option to ignore computations on strata which
       have already been considered. This value is set to false by default.
@@ -751,13 +751,13 @@ doc ///
       Setting @TO "Verbose"@ to @TT "true"@ will display the current
       polynomial lists $F$ and $S$ in the internal computation.
     Example
-      CGBMain(F1,S1,Verbose=>true)
+      cgbMain(F1,S1,Verbose=>true)
     Text
       The option @TO "Depth"@ sets a bound for the recursion depth of the
       algorithm. For instance setting it to zero will return one of the
       generic stratum.
     Example
-      for i from 0 to 3 do print (i, netList CGBMain(F1, S1, Depth => i))
+      for i from 0 to 3 do print (i, netList cgbMain(F1, S1, Depth => i))
     Text
       When the function is about to recurse, the
       value of the depth option is checked, if the value is zero then
@@ -766,11 +766,11 @@ doc ///
       which means the depth will never reach zero on recursion.
 
 
-      @TO "CGBMain"@ can take in one or two lists as inputs.
+      @TO "cgbMain"@ can take in one or two lists as inputs.
       When $S$ is not specified, the function returns a comprehensive
       Groebner system on the whole parameter space, by computing a basis
       $\{s_1,\dots,s_r\}$ of the elimination ideal
-      $\langle F\rangle\cap k[U]$, passing that basis as $S$ to CGBMain,
+      $\langle F\rangle\cap k[U]$, passing that basis as $S$ to cgbMain,
       and prepending the extra segment
       $(\{0\}, \{s_1,\dots,s_r\}, \{s_1,\dots,s_r\})$
       to the output. When $S$ is specified, the function returns a
@@ -780,7 +780,7 @@ doc ///
       when it fails. If the assumption is known to be true, the option
       CheckAssumption can be set to false to skip the verification step.
   SeeAlso
-    CGB
+    cgb
     ReduceStrata
     Verbose
   ///
@@ -802,40 +802,40 @@ doc ///
       F2 = {x^2-a,y^3-b,x+y-z};
       S2 = {};
   SeeAlso
-    CGBMain
+    cgbMain
 ///
 
 doc ///
   Key
     ICheckLoops
   Headline
-    number of squarings in the consistency checks of PGBMain
+    number of squarings in the consistency checks of pgbMain
   Description
     Text
       ICheckLoops is an option to set the number of squarings that
-      the heuristic consistency check ICheck tries before it falls back
+      the heuristic consistency check iCheck tries before it falls back
       on the Rabinowitsch trick. The default value @TT "infinity"@ skips
       the squarings.
   SeeAlso
-    PGBMain
+    pgbMain
 ///
 
 doc ///
   Key
     Verbose
   Headline
-    record CGBMain iterations
+    record cgbMain iterations
   Description
     Text
       Setting Verbose to @TT "true"@ will print whatever $F$ and $S$ that
-      CGBMainRec is currently working on:
+      cgbMainRec is currently working on:
     Example
       R1 = QQ[a,b][x,y];
       F1 = {a*x+b*y};
       S1 = {};
-      CGBMain(F1,S1,Verbose=>true)
+      cgbMain(F1,S1,Verbose=>true)
   SeeAlso
-    CGBMain
+    cgbMain
 ///
 
 
@@ -879,12 +879,12 @@ doc ///
 
 doc ///
   Key
-    MDBasis
-    (MDBasis, List)
+    minimalDicksonBasis
+    (minimalDicksonBasis, List)
   Headline
     a method for computing a minimal Dickson basis
   Usage
-    MDBasis G
+    minimalDicksonBasis G
   Inputs
     G :List
       of polynomials in a ring $R = k[U][X]$
@@ -906,17 +906,17 @@ doc ///
       In other words, $F$ has one polynomial for each leading power product of $G$
       that is minimal under divisibility. The leading power products are taken with respect to the
       variables $X$ only, so the leading coefficients are polynomials in the parameters $U$.
-      We use a minimal Dickson basis in @TO "PGBMain"@ to determine how the
+      We use a minimal Dickson basis in @TO "pgbMain"@ to determine how the
       parameter space splits.
     Example
       U = QQ[a, MonomialOrder => Lex];
       R = U[x, y, MonomialOrder => Lex];
       G = {a*x^2 - y, a*y^2 - 1, a*x - 1, (a + 1)*x - y, (a + 1)*y - a};
-      MDBasis G
+      minimalDicksonBasis G
     Text
       The minimal leading power products here are $x$ and $y$. A minimal Dickson basis is not
       unique: both $a x - 1$ and $(a+1) x - y$ have leading power product $x$. Following the
-      heuristics of Section 7.1 of @HREF("#ref1","[1]")@, MDBasis prefers polynomials whose leading
+      heuristics of Section 7.1 of @HREF("#ref1","[1]")@, minimalDicksonBasis prefers polynomials whose leading
       coefficient is shared by many of the candidates, and then those whose leading coefficient
       has irreducible factors of low degree. Here $a + 1$ is the leading coefficient of both
       $(a+1) x - y$ and $(a+1) y - a$, so $(a+1) x - y$ is chosen over $a x - 1$.
@@ -925,21 +925,21 @@ doc ///
     algorithm for computing a comprehensive Groebner system of a parametric polynomial system.
     In Journal of Symbolic Computation, 49, 27-44.
   SeeAlso
-    PGBMain
+    pgbMain
 ///
 
 
 doc ///
   Key
-    "CGB"
-    (CGB, List)
-    [CGB, Verbose]
-    [CGB, ReduceStrata]
-    [CGB, Depth]
+    "cgb"
+    (cgb, List)
+    [cgb, Verbose]
+    [cgb, ReduceStrata]
+    [cgb, Depth]
   Headline
     a method that computes a Comprehensive Groebner Basis
   Usage
-    G = CGB F
+    G = cgb F
   Inputs
     F :List
        a list of polynomials in a ring $R = k[U][X]$
@@ -956,10 +956,10 @@ doc ///
     Text
       Implementation of the Algorithm proposed by Suzuki and Sato. Given a tower
       polynomial ring $R = k[U][X]$ for $U$ a set of parameters and $X$ a set
-      of variables, and $F\subset R$ an ideal of variables and parameters, CGB
+      of variables, and $F\subset R$ an ideal of variables and parameters, cgb
       takes $F$ as input and returns a comprehensive Groebner basis of
       $\langle F\rangle$ over the whole parameter space.
-      The function computes a comprehensive Groebner system with CGBMain and
+      The function computes a comprehensive Groebner system with cgbMain and
       returns the union of its Groebner bases, together with a basis of the
       elimination ideal $\langle F\rangle\cap k[U]$.
       As above, the ring must be initialised as a tower ring:
@@ -971,9 +971,9 @@ doc ///
       the following:
     Example
       F1 = {a*x+b*y}
-      CGB F1
+      cgb F1
     Text
-      CGB has several options: ReduceStrata and Verbose. ReduceStrata is an option
+      cgb has several options: ReduceStrata and Verbose. ReduceStrata is an option
       to ignore computations on strata which have already been considered. This
       value is set to false by default. For smaller examples, changing this to
       true can reduce computation times, as for the following example. It will
@@ -982,30 +982,30 @@ doc ///
       R2 = QQ[a,b][x,y,z];
       F2 = {x^2-a,y^3-b,x+y-z};
     Text
-      Setting Verbose to True will print whatever $F$ and $S$ that CGBMainRec is
+      Setting Verbose to True will print whatever $F$ and $S$ that cgbMainRec is
       currently working on:
     Example
-      CGB(F1,Verbose=>true)
+      cgb(F1,Verbose=>true)
   SeeAlso
-    CGBMain
+    cgbMain
     ReduceStrata
     Verbose
 ///
 
 doc ///
   Key
-    PGBMain
-    (PGBMain, List)
-    (PGBMain, List, List)
-    (PGBMain, List, List, List)
-    [PGBMain, Depth]
-    [PGBMain, ICheckLoops]
+    pgbMain
+    (pgbMain, List)
+    (pgbMain, List, List)
+    (pgbMain, List, List, List)
+    [pgbMain, Depth]
+    [pgbMain, ICheckLoops]
   Headline
     compute a Comprehensive Groebner System using Kapur-Sun-Wang algorithm
   Usage
-    PGBMain F
-    PGBMain(E, N, F)
-    PGBMain(E, F)
+    pgbMain F
+    pgbMain(E, N, F)
+    pgbMain(E, F)
   Inputs
     F :List
       a list of polynomials in a ring $R = k[U][X]$
@@ -1024,21 +1024,21 @@ doc ///
     Text
       Implementation of Algorithm PGBMain of @HREF("#ref1","[1]")@. Given a polynomial ring
       $R = k[U][X]$, where $U$ is a set of parameters and $X$ a set of variables, and a list $F$ of
-      polynomials in $R$, PGBMain returns a minimal comprehensive Groebner system for $F$ on the whole
+      polynomials in $R$, pgbMain returns a minimal comprehensive Groebner system for $F$ on the whole
       parameter space. The strata $V(E_i)\setminus V(N_i)$ are disjoint and nonempty, and the
       leading coefficients of the polynomials in $G_i$ do not vanish on them.
     Example
       U = QQ[a,b,c];
       R = U[x,y];
       F = {a*x - b, b*y - a, c*x^2 - y, c*y^2 - x};
-      netList PGBMain F
+      netList pgbMain F
     Text
       To compute a comprehensive Groebner system on $V(E)\setminus V(N)$ instead, where $E$ and $N$
-      are lists of polynomials in $k[U]$, call PGBMain on the triple $\{E, N, F\}$.
+      are lists of polynomials in $k[U]$, call pgbMain on the triple $\{E, N, F\}$.
     Example
-      netList PGBMain ({a, b}, {c}, F)
+      netList pgbMain ({a, b}, {c}, F)
     Text
-      The option Depth sets a bound on the recursion depth of the algorithm. See also @TO "CGBMain"@.
+      The option Depth sets a bound on the recursion depth of the algorithm. See also @TO "cgbMain"@.
       In each recursive call of the function, the algorithm considers a stratum on for
       which one of the leading coefficients $h_i$ of the minimal Dickson basis vanishes.
       When the function is about to recurse, the implementation checks the value of Depth: if it is
@@ -1047,7 +1047,7 @@ doc ///
       The default Depth is -1, which never reaches zero, so the full comprehensive Groebner system is
       computed.
     Example
-      for i from 0 to 2 do print (i, netList PGBMain(F, Depth => i))
+      for i from 0 to 2 do print (i, netList pgbMain(F, Depth => i))
     Text
       Note. If Depth is not negative, then the output is a comprehensive Groebner system on only
       part of the parameter space.
@@ -1056,19 +1056,19 @@ doc ///
       checks of Section 5 of @HREF("#ref1","[1]")@.
       One of them decides whether $f \in \sqrt{\langle E\rangle}$ for $f \in N$, using the heuristic
       called ICheck in Algorithm 3 of @HREF("#ref1","[1]")@, hence the name of the option.
-      If ICheckLoops is a nonnegative integer $k$, then ICheck computes the normal forms
+      If ICheckLoops is a nonnegative integer $k$, then iCheck computes the normal forms
       of $f^{2^i}$ modulo $E$ for $i \le k$, and the algorithm falls back on the Rabinowitsch trick only
       if none of them is zero.
       The default value @TT "infinity"@ uses the Rabinowitsch trick directly.
     Example
-      PGBMain(F, ICheckLoops => 2) === PGBMain F
+      pgbMain(F, ICheckLoops => 2) === pgbMain F
   References
     @LABEL("[1]","id" => "ref1")@ Deepak Kapur, Yao Sun, and Dingkang Wang. 2013. An efficient
     algorithm for computing a comprehensive Groebner system of a parametric polynomial system.
     In Journal of Symbolic Computation, 49, 27-44.
   SeeAlso
-    CGBMain
-    MDBasis
+    cgbMain
+    minimalDicksonBasis
 ///
 
 
@@ -1105,7 +1105,7 @@ assert(ringOrder RRevLex === {RevLex => 4});
 
 
 TEST ///
--* Testing  CGBMain on a*x+b*y *-
+-* Testing  cgbMain on a*x+b*y *-
 
 Ptest = QQ[a,b];
 Rtest = Ptest[x,y, MonomialOrder => Lex];
@@ -1123,7 +1123,7 @@ xR = variables#0;
 yR = variables#1;
 
 
-resultTest = CGBMain({aR*xR + bR*yR}, {});
+resultTest = cgbMain({aR*xR + bR*yR}, {});
 
 expected1 = ({0_Ptest}, {aP}, {aR*xR + bR*yR});
 expected2 = ({aP}, {bP}, {aR^2*xR + aR*bR*yR, aR*xR + bR*yR});
@@ -1139,7 +1139,7 @@ assert member(expected3, resultTest);
 
 
 TEST ///
--* Testing  CGB on a*x+b*y  *-
+-* Testing  cgb on a*x+b*y  *-
 PTest = QQ[aTest,bTest];
 RTest = PTest[xTest,yTest, MonomialOrder => Lex];
 
@@ -1148,7 +1148,7 @@ fTest = aTest*xTest + bTest*yTest;
 expected1 = aTest*xTest + bTest*yTest;
 expected2 = aTest^2*xTest + aTest*bTest*yTest;
 
-result = CGB {fTest};
+result = cgb {fTest};
 
 assert(#result == 2);
 assert(result#0 == expected1 or result#1 == expected1);
@@ -1191,7 +1191,7 @@ assert(GG == expectedGG);
 
 
 TEST ///
--* Testing  CGBMain on a*x+b*y  with Verbose option *-
+-* Testing  cgbMain on a*x+b*y  with Verbose option *-
 Ptest = QQ[a,b];
 Rtest = Ptest[x,y, MonomialOrder => Lex];
 
@@ -1208,7 +1208,7 @@ xR = variables#0;
 yR = variables#1;
 
 
-resultTest = CGBMain({aR*xR + bR*yR}, {}, Verbose => true);
+resultTest = cgbMain({aR*xR + bR*yR}, {}, Verbose => true);
 
 expected1 = ({0_Ptest}, {aP}, {aR*xR + bR*yR});
 expected2 = ({aP}, {bP}, {aR^2*xR + aR*bR*yR, aR*xR + bR*yR});
@@ -1225,7 +1225,7 @@ assert member(expected3, resultTest);
 
 
 TEST ///
--* Testing  CGB on a*x+b*y  with Verbose option  *-
+-* Testing  cgb on a*x+b*y  with Verbose option  *-
 PTest = QQ[aTest,bTest];
 RTest = PTest[xTest,yTest, MonomialOrder => Lex];
 
@@ -1234,7 +1234,7 @@ fTest = aTest*xTest + bTest*yTest;
 expected1 = aTest*xTest + bTest*yTest;
 expected2 = aTest^2*xTest + aTest*bTest*yTest;
 
-result = CGB({fTest}, Verbose=> true);
+result = cgb({fTest}, Verbose=> true);
 
 assert(#result == 2);
 assert(result#0 == expected1 or result#1 == expected1);
@@ -1244,7 +1244,7 @@ assert(result#0 == expected1 or result#1 == expected2);
 
 
 TEST ///
--* Testing  CGBMain on a*x+b*y  with ReduceStrata => true option *-
+-* Testing  cgbMain on a*x+b*y  with ReduceStrata => true option *-
 Ptest = QQ[a,b];
 Rtest = Ptest[x,y, MonomialOrder => Lex];
 
@@ -1261,7 +1261,7 @@ xR = variables#0;
 yR = variables#1;
 
 
-resultTest = CGBMain({aR*xR + bR*yR}, {},  ReduceStrata => true);
+resultTest = cgbMain({aR*xR + bR*yR}, {},  ReduceStrata => true);
 
 expected1 = ({0_Ptest}, {aP}, {aR*xR + bR*yR});
 expected2 = ({aP}, {bP}, {aR^2*xR + aR*bR*yR, aR*xR + bR*yR});
@@ -1276,7 +1276,7 @@ assert member(expected3, resultTest);
 ///
 
 TEST ///
--* Testing  CGBMain on a*x+b*y  with ReduceStrata => true option *-
+-* Testing  cgbMain on a*x+b*y  with ReduceStrata => true option *-
 PTest = QQ[aTest,bTest];
 RTest = PTest[xTest,yTest, MonomialOrder => Lex];
 
@@ -1285,7 +1285,7 @@ fTest = aTest*xTest + bTest*yTest;
 expected1 = aTest*xTest + bTest*yTest;
 expected2 = aTest^2*xTest + aTest*bTest*yTest;
 
-result = CGB({fTest}, ReduceStrata=> true);
+result = cgb({fTest}, ReduceStrata=> true);
 
 assert(#result == 2);
 assert(result#0 == expected1 or result#1 == expected1);
@@ -1294,39 +1294,39 @@ assert(result#0 == expected2 or result#1 == expected2);
 ///
 
 -----------------------------
--- TEST for MDBasis
+-- TEST for minimalDicksonBasis
 -----------------------------
-TEST /// -* Testing MDBasis on {a*x^2 - y, a*y^2 - 1, a*x - 1, (a + 1)*x - y, (a + 1)*y - a} *-
+TEST /// -* Testing minimalDicksonBasis on {a*x^2 - y, a*y^2 - 1, a*x - 1, (a + 1)*x - y, (a + 1)*y - a} *-
 U = U = QQ[a, MonomialOrder => Lex];
 R = U[x, y, MonomialOrder => Lex];
 G = {a*x^2 - y, a*y^2 - 1, a*x - 1, (a + 1)*x - y, (a + 1)*y - a}
-MDBasis G
+minimalDicksonBasis G
 ///
 
 -----------------------------------------------
--- TEST for MDBasis (KSW, Section 6)
+-- TEST for minimalDicksonBasis (KSW, Section 6)
 -----------------------------------------------
-TEST /// -* Testing MDBasis on {a*x*y + b*x, b*x^2*y + c*z, a*b*x + a*x*y + z, a*y + z, c*x + c*z^2} *-
+TEST /// -* Testing minimalDicksonBasis on {a*x*y + b*x, b*x^2*y + c*z, a*b*x + a*x*y + z, a*y + z, c*x + c*z^2} *-
 U = QQ[a, b, c, MonomialOrder => Lex];
 R = U[x, y, z, MonomialOrder => Lex];
 G = {a*x*y + b*x, b*x^2*y + c*z, a*b*x + a*x*y + z, a*y + z, c*x + c*z^2}
-assert(MDBasis G == {a*y + z, c*x + c*z^2})
+assert(minimalDicksonBasis G == {a*y + z, c*x + c*z^2})
 ///
 
 
 ------------------------------------------------
--- TEST for PGBMain
+-- TEST for pgbMain
 -- From Example 6.1 of
 -- "An efficient algorithm for computing a
 -- comprehensive Groebner system of a parametric
 -- polynomial system", D. Kapur Y. Sun D. Wang,
 -- J. of Symbolic Computation issue 49, 2013
 ------------------------------------------------
-TEST /// -* Testing PGBMain on {a*x-, b*y-a, c*x^2-y, c*y^2-x} *-
+TEST /// -* Testing pgbMain on {a*x-, b*y-a, c*x^2-y, c*y^2-x} *-
 U := QQ[a, b, c, MonomialOrder => GRevLex]
 R := U[x,y,z, MonomialOrder => GRevLex]
 G := {a*x-b, b*y-a, c*x^2-y, c*y^2-x}
-L := PGBMain({0_U}, {1_U}, G)
+L := pgbMain({0_U}, {1_U}, G)
 U' = ring first first first L
 R' = ring first last first L
 ExpResult = set{
@@ -1356,15 +1356,15 @@ assert((set apply(L, r -> set \ r)) == ExpResult )
 
 ///
 
-TEST /// -* Testing PGBMain overloads*-
+TEST /// -* Testing pgbMain overloads*-
 U := QQ[a, b, c, MonomialOrder => GRevLex]
 R := U[x,y,z, MonomialOrder => GRevLex]
 G := {a*x-b, b*y-a, c*x^2-y, c*y^2-x}
-L := PGBMain({0_U}, {1_U}, G, R)
+L := pgbMain({0_U}, {1_U}, G, R)
 
-assert(PGBMain(G) == L)
-assert(PGBMain({0_U}, G) == L)
-assert(PGBMain({0_U}, {1_U}, G) == L)
+assert(pgbMain(G) == L)
+assert(pgbMain({0_U}, G) == L)
+assert(pgbMain({0_U}, {1_U}, G) == L)
 
 ///
 
@@ -1377,51 +1377,51 @@ assert(PGBMain({0_U}, {1_U}, G) == L)
 TEST ///
 debug ComprehensiveGBs
 U = QQ[a,b];
-assert CCheck({0_U, a}, b)
+assert cCheck({0_U, a}, b)
 assert consistencyCheckAllTogether({0_U, a}, {1_U})
 R = U[x,y];
-L = PGBMain({0_U, a}, {1_U}, {a*x+b*y});
+L = pgbMain({0_U, a}, {1_U}, {a*x+b*y});
 assert(set apply(L, t -> set \ t) === set {
     {set {a}, set {b}, set {b*y}},
     {set {b, a}, set {1_U}, set {0_R}}})
 ///
 
 ------------------------------
--- TEST CGB returns elements of R only without duplication
+-- TEST cgb returns elements of R only without duplication
 ------------------------------
 TEST ///
 U = QQ[a,b];
 R = U[x,y];
-G = CGB {a*x - 1, b*x - 1};
+G = cgb {a*x - 1, b*x - 1};
 assert all(G, g -> ring g === R)
 assert(#G == 3)
 assert(set G === set {a_R - b_R, b*x - 1, b^2*x - b})
 ///
 
 ------------------------------
--- Test ICheckLoops option for PGBMain
+-- Test ICheckLoops option for pgbMain
 ------------------------------
 TEST ///
 U = QQ[a, b, c];
 R = U[x, y, MonomialOrder => Lex];
 F = {a*x - b, b*y - a, c*x^2 - y, c*y^2 - x};
-L = PGBMain F;
-assert all({0, 1, 2, 4}, k -> PGBMain(F, ICheckLoops => k) === L)
+L = pgbMain F;
+assert all({0, 1, 2, 4}, k -> pgbMain(F, ICheckLoops => k) === L)
 ///
 
--- Test Depth option for PGBMain
+-- Test Depth option for pgbMain
 TEST ///
 U = QQ[a, b, c, MonomialOrder => GRevLex];
 R = U[x, y, MonomialOrder => GRevLex];
 F = {a*x - b, b*y - a, c*x^2 - y, c*y^2 - x};
 strata = L -> set apply(L, t -> (set t#0, set t#1));
-L = PGBMain F;
+L = pgbMain F;
 -- each extra level of recursion adds one branch in this example
-assert(apply(0..2, d -> #PGBMain(F, Depth => d)) == (2, 3, 4))
+assert(apply(0..2, d -> #pgbMain(F, Depth => d)) == (2, 3, 4))
 -- the default never stops early, and a large depth gives the same result
-assert(strata PGBMain(F, Depth => 10) === strata L)
+assert(strata pgbMain(F, Depth => 10) === strata L)
 -- with a smaller depth we get a subset of the branches
-assert all(0..2, d -> isSubset(strata PGBMain(F, Depth => d), strata L))
+assert all(0..2, d -> isSubset(strata pgbMain(F, Depth => d), strata L))
 ///
 
 
