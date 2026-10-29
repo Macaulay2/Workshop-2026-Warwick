@@ -669,7 +669,7 @@ doc ///
   References
       @LABEL("[1]","id" => "ref1")@ Deepak Kapur, Yao Sun, and Dingkang Wang. 2013. An efficient algorithm for computing a comprehensive Gröbner system of a parametric polynomial system. In Journal of Symbolic Computation, 49, 27-44.
 
-      @LABEL("[2]","id" => "ref2")@ Akira Suzuki and Yosuke Sato. 2006. A simple algorithm to compute comprehensive Gröbner bases using Gröbner bases. In Proceedings of the 2006 International Symposium on Symbolic and Algebraic Computation (ISSAC '06). Association for Computing Machinery, New York, NY, USA, 326–331. https://doi.org/10.1145/1145768.1145821
+      @LABEL("[2]","id" => "ref2")@ Akira Suzuki and Yosuke Sato. 2006. A simple algorithm to compute comprehensive Gröbner bases using Gröbner bases. In Proceedings of the 2006 International Symposium on Symbolic and Algebraic Computation (ISSAC '06), 326–331.
 ///
 
 
@@ -771,8 +771,7 @@ doc ///
   References
     @LABEL("[1]","id" => "ref1")@ Akira Suzuki and Yosuke Sato. 2006. A simple algorithm to
     compute comprehensive Gröbner bases using Gröbner bases. In Proceedings of the 2006
-    International Symposium on Symbolic and Algebraic Computation (ISSAC '06). Association for
-    Computing Machinery, New York, NY, USA, 326–331. https://doi.org/10.1145/1145768.1145821
+    International Symposium on Symbolic and Algebraic Computation (ISSAC '06), 326–331.
   SeeAlso
     cgb
     ReduceStrata
