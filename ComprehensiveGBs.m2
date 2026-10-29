@@ -817,6 +817,58 @@ doc ///
 
 doc ///
   Key
+    Depth
+  Headline
+    bound on the recursion depth of cgbMain, cgb and pgbMain
+  Description
+    Text
+      Depth is an option to bound the number of nested recursive calls.
+      The default value @TT "-1"@ means that no bound is set,
+      and the recursion will continue until the algorithm terminates.
+      If Depth is set to a non-negative integer,
+      then the recursion will stop when the depth reaches zero.
+      In that case, the output may only cover part of the parameter space.
+    Example
+      R1 = QQ[a,b][x,y];
+      F1 = {a*x+b*y};
+      netList cgbMain(F1, {}, Depth => 0)
+      netList pgbMain(F1, Depth => 0)
+  SeeAlso
+    cgbMain
+    cgb
+    pgbMain
+///
+
+doc ///
+  Key
+    CheckAssumption
+  Headline
+    check the assumption on S in cgbMain
+  Description
+    Text
+      The function @TO "cgbMain"@ called on $(F, S)$ requires that
+      $V(S)\subseteq V(\langle F\rangle\cap k[U])$.
+      The default value of CheckAssumption is @TT "true"@,
+      which means that the assumption is verified before
+      the computation starts,
+      and an error is raised when it fails.
+      Setting it to @TT "false"@ skips the verification,
+      which is useful when the assumption is known to hold.
+    Example
+      R1 = QQ[a,b][x,y];
+      F1 = {a*x-1, a*b};
+    Text
+      Here, $\langle F\rangle\cap k[U] = \langle b\rangle$,
+      so $S = \{b\}$ satisfies the assumption,
+      while $S = \{\}$ does not.
+    Example
+      netList cgbMain(F1, {b}, CheckAssumption => false)
+  SeeAlso
+    cgbMain
+///
+
+doc ///
+  Key
     Verbose
   Headline
     record cgbMain iterations
