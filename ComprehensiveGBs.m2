@@ -355,7 +355,9 @@ pgbMain = method(
         ICheckLoops => infinity
         }
     );
-pgbMain (List, List, List, Ring) := o -> (E, N, F, R) -> (
+pgbMain (List, List, List) := o -> (E, N, F) -> (
+    if zero length F then error "List must be non-empty";
+    R := ring first F;
     cgbData := cgbDataFromRings R;
     RFlat := cgbData#"RFlat";
     KU := cgbData#"KU";
@@ -363,6 +365,8 @@ pgbMain (List, List, List, Ring) := o -> (E, N, F, R) -> (
     RFlattoR := cgbData#"RFlattoR";
     RtoRFlat := cgbData#"RtoRFlat";
     RFlattoKU := cgbData#"RFlattoKU";
+    if zero length E then E = {0_KU};
+    if zero length N then N = {1_KU};
     if not consistencyCheckAllTogether(E, N, ICheckLoops => o.ICheckLoops) then (
         return {} -- The domain is empty
     );
@@ -443,7 +447,7 @@ pgbMain List := o -> F -> (
     if zero length F then error "List must be non-empty";
     R := ring first F;
     U := coefficientRing R;
-    pgbMain({0_U}, {1_U}, F, R, o)
+    pgbMain({0_U}, {1_U}, F, o)
 )
 
 pgbMain (List, List) := o -> (E, F) -> (
@@ -452,15 +456,6 @@ pgbMain (List, List) := o -> (E, F) -> (
     U := coefficientRing R;
     if zero length E then E = {0_U};
     pgbMain(E, {1_U}, F, o)
-)
-
-pgbMain (List, List, List) := o -> (E, N, F) -> (
-    if zero length F then error "List must be non-empty";
-    R := ring first F;
-    U := coefficientRing R;
-    if zero length E then E = {0_U};
-    if zero length N then N = {1_U};
-    pgbMain(E, N, F, R, o)
 )
 
 
@@ -1360,11 +1355,12 @@ TEST /// -* Testing pgbMain overloads*-
 U := QQ[a, b, c, MonomialOrder => GRevLex]
 R := U[x,y,z, MonomialOrder => GRevLex]
 G := {a*x-b, b*y-a, c*x^2-y, c*y^2-x}
-L := pgbMain({0_U}, {1_U}, G, R)
+L := pgbMain({0_U}, {1_U}, G)
 
 assert(pgbMain(G) == L)
 assert(pgbMain({0_U}, G) == L)
-assert(pgbMain({0_U}, {1_U}, G) == L)
+assert(pgbMain({}, G) == L)
+assert(pgbMain({}, {}, G) == L)
 
 ///
 
