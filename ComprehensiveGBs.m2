@@ -356,8 +356,10 @@ pgbMain = method(
         }
     );
 pgbMain (List, List, List) := o -> (E, N, F) -> (
-    if zero length F then error "List must be non-empty";
+    if zero length F then error "F must be non-empty";
     R := ring first F;
+    if not (instance(R, PolynomialRing) and instance(coefficientRing R, PolynomialRing)) then
+    error "F must consist of polynomials in a ring k[U][X]";
     cgbData := cgbDataFromRings R;
     RFlat := cgbData#"RFlat";
     KU := cgbData#"KU";
@@ -365,8 +367,10 @@ pgbMain (List, List, List) := o -> (E, N, F) -> (
     RFlattoR := cgbData#"RFlattoR";
     RtoRFlat := cgbData#"RtoRFlat";
     RFlattoKU := cgbData#"RFlattoKU";
-    if zero length E then E = {0_KU};
-    if zero length N then N = {1_KU};
+    toKU := p -> try promote(p, KU) else
+    error("E and N must consist of polynomials in the parameters; found " | toString p);
+    E = if zero length E then {0_KU} else toKU \ E;
+    N = if zero length N then {1_KU} else toKU \ N;
     if not consistencyCheckAllTogether(E, N, ICheckLoops => o.ICheckLoops) then (
         return {} -- The domain is empty
     );
@@ -443,20 +447,9 @@ pgbMain (List, List, List) := o -> (E, N, F) -> (
 -- TODO: homogenise the output of cgbMain and pgbMain, e.g. should they both output
 -- lists of 3-tuples (3 element lists) or something else?
 
-pgbMain List := o -> F -> (
-    if zero length F then error "List must be non-empty";
-    R := ring first F;
-    U := coefficientRing R;
-    pgbMain({0_U}, {1_U}, F, o)
-)
+pgbMain List := o -> F -> pgbMain({}, {}, F, o)
 
-pgbMain (List, List) := o -> (E, F) -> (
-    if zero length F then error "List must be non-empty";
-    R := ring first F;
-    U := coefficientRing R;
-    if zero length E then E = {0_U};
-    pgbMain(E, {1_U}, F, o)
-)
+pgbMain (List, List) := o -> (E, F) -> pgbMain(E, {}, F, o)
 
 
 
