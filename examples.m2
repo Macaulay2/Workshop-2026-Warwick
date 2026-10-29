@@ -33,9 +33,15 @@ viewHelp ComprehensiveGBs
 end
 
 
+<<<<<<< HEAD
 R = QQ[a,b][x,y,z, MonomialOrder => Lex]
 F = {x^3 - a, y^4 - b, x+y-z}
 G = comprehensiveGBMain(F, ReduceStrata => true);
+=======
+R = QQ[a,b][x,y,z, MonomialOrder => Lex];
+F = {x^3 - a, y^4 - b, x+y-z};
+G = CGBMain(F, ReduceStrata => true);
+>>>>>>> 32b7833 (edited some examples)
 netList for g in G list {g_0, factor \ g_1}
 
 -- strata reduction
@@ -150,10 +156,14 @@ g=c*y_2^2+d*x_2
 F = {f,g,(x_1-x_2)^2+(y_1-y_2)^2-s,diff_(x_1) f * diff_(y_2) g -diff_(y_1) f * diff_(x_2) g, diff_(x_1) f * (y_1-y_2) - diff_(y_1) f * (x_1-x_2)}
 elapsedTime G = comprehensiveGBMain F;
 -- 39.6449s elapsed
+G = CGBMain F;
 #G -- 1515
 elapsedTime G = comprehensiveGBMain(F, ReduceStrata => true);
 -- 5.2563s elapsed
 #G -- 25
+G = CGBMain(F, ReduceStrata => true);
+GG= PGBMain(F);
+elapsedTime G = PGBMain(F);
 
 --SS example 4
 R = QQ[a,b,c,e][x_1,x_2,y_1,y_2, MonomialOrder => Lex]
@@ -237,13 +247,19 @@ R = QQ[x,y,a,b,c,
 U = QQ[a,b,c, MonomialOrder => GRevLex]
 R = U[x,y, MonomialOrder => GRevLex]
 
-U = QQ[a,b,c, MonomialOrder => Lex]
-R = U[x,y, MonomialOrder => Lex]
+U = QQ[a,b,c, MonomialOrder => Lex];
+R = U[x,y, MonomialOrder => Lex];
 
+<<<<<<< HEAD
 F={a*x-b,b*y-a,c*x^2-y,c*y^2-x}
 T = comprehensiveGBFromTriple {{0_U}, {1_U}, F}
 L= parametricGBMain T
 LL= parametricGBMain F
+=======
+
+F={a*x-b,b*y-a,c*x^2-y,c*y^2-x};
+L= PGBMain F;
+>>>>>>> 32b7833 (edited some examples)
 netList oo
 T = comprehensiveGBFromTriple {{a,b}, {c}, F};
 Lrestricted = parametricGBMain T;
