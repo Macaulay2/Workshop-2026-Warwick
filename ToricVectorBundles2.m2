@@ -967,6 +967,7 @@ g = map(TX,sumoflbs, transpose sub(matrix rays X,ZZ/101));
 
 
 *-
+-*
 -- todo not quite working.
 cokernel (ToricVectorBundleMap) := f ->(
     if not isWellDefined f then error("The map is not well defined");
@@ -993,7 +994,7 @@ cokernel (ToricVectorBundleMap) := f ->(
         );
     toricVectorBundle(variety E, mats, jumps)
     )
--*
+*-
 cokernel (ToricVectorBundleMap) := f ->(
     if not isWellDefined(f) then ( error (" The map is not well defined"));
     if isSurjective(f) then( return trivialBundle(variety source (f), 0) );     
@@ -1022,10 +1023,10 @@ cokernel (ToricVectorBundleMap) := f ->(
     -- Define the new data
     newMatrices:= apply(L, i ->  matrix fold ( (A,B)-> A|B, i) );
     newJumps := apply( # Xrays , i -> jumpsAux(newMatrices_i, L_i, minj ) );
-    (newMatrices, newJumps)= toSequence transpose apply(transpose{newMatrices, newJumps}, D -> adaptedBasis D );
-    toricVectorBundle( X, newMatrices, newJumps)
+    -- (newMatrices, newJumps)= toSequence transpose apply(transpose{newMatrices, newJumps}, D -> adaptedBasis D );
+    prune toricVectorBundle( X, newMatrices, newJumps)
     )
-*-
+
 
 ToricVectorBundleMap ++ ToricVectorBundleMap := (tvbmap1,tvbmap2) -> (
     map(tvbmap1.target ++ tvbmap2.target, tvbmap1.source ++ tvbmap2.source, tvbmap1.map ++ tvbmap2.map)
