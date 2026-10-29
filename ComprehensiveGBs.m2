@@ -645,7 +645,8 @@ doc ///
       Let $k$ be a field, $R$ be the polynomial ring $k[U]$ in the parameters $U=\{u_1,\ldots,u_m\}$, and $R[X]$ be the polynomial ring
       over $R$ in the variables $X=\{x_1,\ldots,x_n\}$ and $X\cap U=\emptyset$.
       Call $L$ the algebraic closure of $k$. Given $a \in L^m$, the specialization homomorphism of $R$ induced by $a$ is
-      $\sigma_a:R\rightarrow L$, $\sigma_a(f)=f(a)$. $\sigma_a$ extends canonically to a homomorphism $\sigma_a:R[X]\rightarrow L[X]$
+      $\sigma_a:R\rightarrow L$, $\sigma_a(f)=f(a)$.
+      The homomorphism $\sigma_a$ extends canonically to a homomorphism $\sigma_a:R[X]\rightarrow L[X]$
       by applying $\sigma_a$ coefficient-wise.
       For an $E\subseteq R=k[U]$, the variety defined by $E$ in $L^m$, denoted by $V(E)$ is
       $V(E)=\{a\in L^m :\sigma_a(f)=0 \text{ for all } f \in E \}.$
@@ -713,21 +714,22 @@ doc ///
       V(\langle F\rangle\cap k[U])$, comprehensiveGBMain takes $F$ and $S$ as inputs
       and returns a comprehensive Gröbner system on $V(S)$. The function
       itself passes $F$ and $S$ to comprehensiveGBMainRec after initialising various
-      objects. As above, the ring must be initialised as a tower ring:
+      objects. As above, the ring must be initialised as a tower ring,
+      as in the following example.
     Example
       R1 = QQ[a,b][x,y]
     Text
       Here $X = \{x,y\}$ and $U = \{a,b\}$. If we wanted to find a
       comprehensive Gröbner system over $\mathb{Q}^2$ for
-      $F = \langle ax+by\rangle$, we input the following:
+      $F = \langle ax+by\rangle$, we input the following.
     Example
       F1 = {a*x+b*y}
       S1 = {}
       comprehensiveGBMain(F1,S1)
     Text
-      comprehensiveGBMain has several options: ReduceStrata, Verbose, and Depth.
+      The function comprehensiveGBMain has several options: ReduceStrata, Verbose, and Depth.
 
-      ReduceStrata is an option to ignore computations on strata which
+      The symbol ReduceStrata is an option to ignore computations on strata which
       have already been considered. This value is set to false by default.
       For smaller examples, changing this to true can reduce computation
       times, as for the following example. It will also give more easily
@@ -755,7 +757,7 @@ doc ///
       which means the depth will never reach zero on recursion.
 
 
-      @TO "comprehensiveGBMain"@ can take in one or two lists as inputs.
+      The function @TO "comprehensiveGBMain"@ can take in one or two lists as inputs.
       When $S$ is not specified, the function returns a comprehensive
       Gröbner system on the whole parameter space, by computing a basis
       $\{s_1,\dots,s_r\}$ of the elimination ideal
@@ -785,7 +787,7 @@ doc ///
     ignore computations on strata which have already been considered
   Description
     Text
-      ReduceStrata is an option to ignore computations on strata which
+      The option ReduceStrata allows to ignore computations on strata which
       have already been considered. This value is set to false by default.
       For smaller examples, changing this to true can reduce computation
       times, as for the following example. It will also give more easily
@@ -805,7 +807,7 @@ doc ///
     number of squarings in the consistency checks of parametricGBMain
   Description
     Text
-      ICheckLoops is an option to set the number of squarings that
+      The option ICheckLoops sets the number of squarings that
       the heuristic consistency check iCheck tries before it falls back
       on the Rabinowitsch trick. The default value @TT "infinity"@ skips
       the squarings.
@@ -820,7 +822,7 @@ doc ///
     bound on the recursion depth of comprehensiveGBMain, comprehensiveGB and parametricGBMain
   Description
     Text
-      Depth is an option to bound the number of nested recursive calls.
+      The option Depth bounds the number of nested recursive calls.
       The default value @TT "-1"@ means that no bound is set,
       and the recursion will continue until the algorithm terminates.
       If Depth is set to a non-negative integer,
@@ -873,7 +875,7 @@ doc ///
   Description
     Text
       Setting Verbose to @TT "true"@ will print whatever $F$ and $S$ that
-      comprehensiveGBMainRec is currently working on:
+      comprehensiveGBMainRec is currently working on, as in the following example.
     Example
       R1 = QQ[a,b][x,y];
       F1 = {a*x+b*y};
@@ -909,7 +911,7 @@ doc ///
       $F=\{f_e\}_{e\in E}\subseteq K[\lambda_e\:e\in E][x_{v,k}:v\in V,1\leq k \leq d]$,
       where $K\in \{\mathbb{C},\mathbb{R}\}$ and
       \[ f_{ij}=\sum_{k=1}^{d}(x_{i,k}-x_{j,k})^2  -\lambda_{ij} \].
-      comprehensiveGBOnGraph returns the polynomial systems $F$ and a Combrehensive Gröbner Basis of $F$
+      The function comprehensiveGBOnGraph returns the polynomial systems $F$ and a Combrehensive Gröbner Basis of $F$.
     Example
       (F,GG)=comprehensiveGBOnGraph({{1,2,3},{(1,2),(2,3),(3,1)}},1);
       netList F
@@ -1007,18 +1009,18 @@ doc ///
       The function computes a comprehensive Gröbner system with comprehensiveGBMain and
       returns the union of its Gröbner bases, together with a basis of the
       elimination ideal $\langle F\rangle\cap k[U]$.
-      As above, the ring must be initialised as a tower ring:
+      As above, the ring must be initialised as a tower ring, as in the following example.
     Example
       R1 = QQ[a,b][x,y]
     Text
       Here $X = \{x,y\}$ and $U = \{a,b\}$. If we wanted to find a comprehensive
       Gröbner basis over $\mathb{Q}^2$ for $F = \langle ax+by\rangle$, we input
-      the following:
+      the following.
     Example
       F1 = {a*x+b*y}
       comprehensiveGB F1
     Text
-      comprehensiveGB has several options: ReduceStrata and Verbose. ReduceStrata is an option
+      The function comprehensiveGB has several options: ReduceStrata and Verbose. The symbol ReduceStrata is an option
       to ignore computations on strata which have already been considered. This
       value is set to false by default. For smaller examples, changing this to
       true can reduce computation times, as for the following example. It will
@@ -1028,7 +1030,7 @@ doc ///
       F2 = {x^2-a,y^3-b,x+y-z};
     Text
       Setting Verbose to True will print whatever $F$ and $S$ that comprehensiveGBMainRec is
-      currently working on:
+      currently working on, as in the following example.
     Example
       comprehensiveGB(F1,Verbose=>true)
   SeeAlso
