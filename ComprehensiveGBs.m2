@@ -1051,14 +1051,14 @@ doc ///
     compute a Comprehensive Gröbner System using Kapur-Sun-Wang algorithm
   Usage
     pgbMain F
-    pgbMain(E, N, F)
     pgbMain(E, F)
+    pgbMain(E, N, F)
   Inputs
     F :List
       a list of polynomials in a ring $R = k[U][X]$
     E :List
       The strata where to execute the computation
-    F :List
+    N :List
       The strata to remove from the vanishing set of $E$
     Depth=>ZZ
       a bound on the recursion depth; a negative value means no bound
