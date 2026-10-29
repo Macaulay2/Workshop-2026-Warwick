@@ -189,7 +189,7 @@ comprehensiveGBMain = method(
         Verbose => false,
         Depth => -1
         }
-    ); -- Initialises cgbMainRec
+    ); -- Initialises comprehensiveGBMainRec
 
 comprehensiveGBMain (List) := o -> (F) -> (
   R := ring first F;
@@ -239,10 +239,10 @@ comprehensiveGBMain (List, List) := o -> (F, S) -> (
   RExttoRExt' = RingsandThings_9;
   RExttoR = RingsandThings_10;
   RingsandThings = {R,X,RExt,RFlat,RExt',KU,RFlatl,RtoRExt,RExttoRFlatl,RExttoRExt',RExttoR};
-  cgbMainRec(F, S, {}, RingsandThings, o)
+  comprehensiveGBMainRec(F, S, {}, RingsandThings, o)
 )
 
-cgbMainRec = method(
+comprehensiveGBMainRec = method(
     Options => {
         ReduceStrata => false,
         Strategy => "Rabinowitsch",
@@ -250,7 +250,7 @@ cgbMainRec = method(
         Depth => -1
         }
     );
-cgbMainRec (List, List, List, List) := o -> (F, S, memo, RingsandThings) -> (
+comprehensiveGBMainRec (List, List, List, List) := o -> (F, S, memo, RingsandThings) -> (
   R := RingsandThings_0;
   X := RingsandThings_1;
   RExt := RingsandThings_2;
@@ -333,7 +333,7 @@ cgbMainRec (List, List, List, List) := o -> (F, S, memo, RingsandThings) -> (
               continue;
               );
           if o.Depth != 0 then (
-              memo = cgbMainRec(F, append(S, sub(hi, R)), memo, RingsandThings, o ++ {Depth => o.Depth -1});
+              memo = comprehensiveGBMainRec(F, append(S, sub(hi, R)), memo, RingsandThings, o ++ {Depth => o.Depth -1});
               )
           );
       return memo
@@ -345,7 +345,7 @@ cgbMainRec (List, List, List, List) := o -> (F, S, memo, RingsandThings) -> (
                   if zero g' then continue;
                   g')
               )
-          } | if o.Depth == 0 then {} else flatten apply(H, hi -> cgbMainRec(F, append(S, sub(hi, R)), memo, RingsandThings, o ++ {Depth => o.Depth -1}))
+          } | if o.Depth == 0 then {} else flatten apply(H, hi -> comprehensiveGBMainRec(F, append(S, sub(hi, R)), memo, RingsandThings, o ++ {Depth => o.Depth -1}))
       );
   );
 

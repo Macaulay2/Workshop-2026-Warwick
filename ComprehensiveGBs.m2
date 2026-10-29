@@ -154,7 +154,7 @@ comprehensiveGBMain = method(
         Depth => -1,
         CheckAssumption => true
         }
-    ); -- Initialises cgbMainRec
+    ); -- Initialises comprehensiveGBMainRec
 
 comprehensiveGBMain List := o -> F -> (
     R := ring first F;
@@ -179,7 +179,7 @@ comprehensiveGBMain (List, List) := o -> (F, S) -> (
         if isConsistentRabinowitsch(S', first entries eliminateVariables(F, cgbData)) then
         error "V(S) is not contained in V(ideal F cap k[U]); pass CheckAssumption => false to skip this check";
         );
-    cgs := cgbMainRec(F, S', {}, cgbData,
+    cgs := comprehensiveGBMainRec(F, S', {}, cgbData,
         ReduceStrata => o.ReduceStrata,
         Verbose => o.Verbose,
         Depth => o.Depth
@@ -187,14 +187,14 @@ comprehensiveGBMain (List, List) := o -> (F, S) -> (
     apply(cgs, t -> (if #(t#0) == 0 then {0_KU} else t#0, t#1, t#2))
     )
 
-cgbMainRec = method(
+comprehensiveGBMainRec = method(
     Options => {
         ReduceStrata => false,
         Verbose => false,
         Depth => -1
     }
 );
-cgbMainRec (List, List, List, CGBData) := o -> (F, S, memo, cgbData) -> (
+comprehensiveGBMainRec (List, List, List, CGBData) := o -> (F, S, memo, cgbData) -> (
     R := cgbData#"R";
     RExt := cgbData#"RExt";
     KU := cgbData#"KU";
@@ -239,14 +239,14 @@ cgbMainRec (List, List, List, CGBData) := o -> (F, S, memo, cgbData) -> (
             for hi in H do (
                 for P in decompose ideal append(S, hi) do (
                     if not isCoveredPrime(P, memo) then (
-                        memo = cgbMainRec(F, first entries gens gb P, memo, cgbData, o ++ {Depth => o.Depth -1});
+                        memo = comprehensiveGBMainRec(F, first entries gens gb P, memo, cgbData, o ++ {Depth => o.Depth -1});
                         )
                     )
                 )
             );
         return memo
     ) else (
-        return {branch} | if o.Depth == 0 then {} else flatten apply(H, hi -> cgbMainRec(F, append(S, hi), memo, cgbData, o ++ {Depth => o.Depth -1}))
+        return {branch} | if o.Depth == 0 then {} else flatten apply(H, hi -> comprehensiveGBMainRec(F, append(S, hi), memo, cgbData, o ++ {Depth => o.Depth -1}))
     );
 );
 
@@ -712,7 +712,7 @@ doc ///
       parameters, and $S\subset k[U]$ an ideal satisfying $V(S)\subseteq
       V(\langle F\rangle\cap k[U])$, comprehensiveGBMain takes $F$ and $S$ as inputs
       and returns a comprehensive Gröbner system on $V(S)$. The function
-      itself passes $F$ and $S$ to cgbMainRec after initialising various
+      itself passes $F$ and $S$ to comprehensiveGBMainRec after initialising various
       objects. As above, the ring must be initialised as a tower ring:
     Example
       R1 = QQ[a,b][x,y]
@@ -873,7 +873,7 @@ doc ///
   Description
     Text
       Setting Verbose to @TT "true"@ will print whatever $F$ and $S$ that
-      cgbMainRec is currently working on:
+      comprehensiveGBMainRec is currently working on:
     Example
       R1 = QQ[a,b][x,y];
       F1 = {a*x+b*y};
@@ -1027,7 +1027,7 @@ doc ///
       R2 = QQ[a,b][x,y,z];
       F2 = {x^2-a,y^3-b,x+y-z};
     Text
-      Setting Verbose to True will print whatever $F$ and $S$ that cgbMainRec is
+      Setting Verbose to True will print whatever $F$ and $S$ that comprehensiveGBMainRec is
       currently working on:
     Example
       comprehensiveGB(F1,Verbose=>true)
