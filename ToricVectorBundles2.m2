@@ -397,7 +397,17 @@ removeDupeCols := fM -> (
     matrix {unique for c to numColumns M' - 1 list matrix M'_c}
 )
 
--- todo one more bug...
+-*
+debug needsPackage "ToricVectorBundles2"
+X = toricProjectiveSpace 2
+T1 = tangentBundle X
+M1 = klyachkoToModule T1
+T2 = moduleToKlyachko (X, M1)
+-- BUG: This returns false when it shouldnt
+assert(T1==T2)
+
+*-
+
 ToricVectorBundle == ToricVectorBundle := (T1,T2) -> (areIsomorphic(T1,T2))
 areIsomorphic = method()
 areIsomorphic (ToricVectorBundle,ToricVectorBundle) := Boolean => (T1,T2) -> (    
@@ -429,15 +439,16 @@ areIsomorphic (ToricVectorBundle,ToricVectorBundle) := Boolean => (T1,T2) -> (
                     if N =!= null then (
                         f := map(T2, T1, transpose N);
                         -- if this one is well defined and bijective, then it's our guy.
-                        areTVBsIso = if isWellDefined f and isInjective f and isSurjective f then (
+                        if isWellDefined f and isInjective f and isSurjective f then (
                             T1.cache.iso#T2 = f;
                             Ninv := solve(transpose basis2, transpose basis1);
                             T2.cache.iso#T1 = map(T1, T2, transpose Ninv);
-                            true
-                            ) else false;
-                        break
+                            areTVBsIso = true;
+                            break
+                            ) else areTVBsIso = false;
                         );
-                    )
+                    );
+                if areTVBsIso then break
                 )
             )
         );
@@ -2905,8 +2916,8 @@ T1 == T2
 X = hirzebruchSurface 2
 E = tangentBundle X
 L = lineBundle(X_0 + 2*X_1 + 4*X_2 + 5*X_3)
-T1 = exteriorPower(E ++ L, 2)
-T2 = (exteriorPower(E,0) ** exteriorPower(L,2)) ++ (exteriorPower(E,1)**exteriorPower(L,1)) ++ (exteriorPower(E,2) ** exteriorPower(L,0))
+T1 = exteriorPower(2,E ++ L)
+T2 = (exteriorPower(0,E) ** exteriorPower(2,L)) ++ (exteriorPower(1,E)**exteriorPower(1,L)) ++ (exteriorPower(2,E) ** exteriorPower(0,L))
 areIsomorphic(T1,T2)
 E = T1
 
