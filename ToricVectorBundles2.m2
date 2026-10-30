@@ -1357,8 +1357,8 @@ moduleToKlyachko (NormalToricVariety, Module):= opts -> (X,M) -> (
 -- F = moduleToKlyachko(variety E , klyachkoToModule E);
 -- then F == moduleToKlyachko(variety E, klyachkoToModule(F)) returns true 
 klyachkoToModule = method()
--- TODO
 klyachkoToModule ToricVectorBundle := E -> (
+    E = prune E;
     X := variety E;
     -- Cox ring of the toric variety
     S := ring X;
