@@ -2249,7 +2249,12 @@ X = toricProjectiveSpace 2
 T1 = tangentBundle X
 M1 = klyachkoToModule T1
 T2 = moduleToKlyachko (X, M1)
-assert( isIsomorphism map (T2, T1, matrix {{1_QQ,0},{-1, 1}}))
+-- BUG: This returns false when it shouldnt
+assert(T1==T2)
+assert(areIsomorphic2 (T1, T2))
+assert(map isomorphism(T1,T2) ==  matrix {{1_QQ,0},{-1, 1}} )
+assert( isIsomorphism map (T2, T1, matrix {{2_QQ,0},{-2, 2}}))
+
 ///
 
 
