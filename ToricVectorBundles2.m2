@@ -85,6 +85,7 @@ export {
     "strata",
     -- Operations
     "areIsomorphic",
+    "areIsomorphic2",
     "deltaE",
     "details",
     "filtrations" => "details",
@@ -448,6 +449,65 @@ isomorphism (ToricVectorBundle,ToricVectorBundle) := Boolean => o -> (T1,T2) -> 
     if not areIsomorphic(T1,T2) then error("The bundles are not isomorphic");
     T1.cache.iso#T2
     )
+
+areIsomorphic2 = method()
+areIsomorphic2 (ToricVectorBundle,ToricVectorBundle) := Boolean => (T1,T2) -> (
+    --First check that the bundles have same rank, defined over same ring and have same base variety before
+    --anything else
+    jumps := rsort unique flatten filtrationJumps T1;
+    if not ((rank T1 == rank T2) and (variety T1 === variety T2) and (ring T1 === ring T2) and (jumps == rsort unique flatten filtrationJumps T2) ) then return false;
+    --Checking if T1 and T2 have already been deemed isomorphic. If not, create entries in a cache
+    if not T1.cache.?iso then (
+        T1.cache.iso = new MutableHashTable;
+        );
+    if not T2.cache.?iso then (
+        T2.cache.iso = new MutableHashTable;
+        );
+    --If T1 does have an entry for iso in the cache, we check if any of the maps targets is T2
+    --i.e. check if we've already deemed T1 iso T2
+    if T1.cache.iso#?T2 then return true;    
+    if not T1.cache.iso#?T2 then (
+        -- first try the identity map
+        isoMatrix := matrix id_((ring T1)^(rank T1));
+        f := map(T2,T1, isoMatrix);
+        areTVBsIso := ((isWellDefined f) and (isInjective f) and (isSurjective f));
+        if not areTVBsIso then (
+            -- attempt to find an isomorphism
+            n:= rank T1;
+            aux1 := flatten apply( jumps, j -> apply(rays T1, rho -> filteredPiece(T1, rho, j) ) );
+            aux2 := flatten apply( jumps, j -> apply(rays T2, rho ->filteredPiece(T2, rho, j) ) );
+            -- When doing the fold the zero columns are automatically removed    
+            M1 := fold((i,j) -> i|j, flatten apply(toList(1..n), i -> select(aux1, M -> numcols M == i ) ));
+            M2 := fold((i,j) -> i|j, flatten apply(toList(1..n), i -> select(aux2, M -> numcols M == i ) ));
+            
+            -- Try several maps possible isomorphisms:
+            subs:= subsets( numcols M1 ,n);
+            seen := {};
+            
+            for s in subs do(
+                M1s := M1_s;
+                M2s := M2_s;
+                if not any( seen , x -> x== (M1s, M2s )) and det M1s =!= 0_(ring T1) and det M2s =!= 0_(ring T2)  then(
+                seen = append(seen, (M1s, M2s));
+                f = map(T2,T1,M2s* (inverse M1s) );
+                areTVBsIso = ((isWellDefined f) and (isInjective f) and (isSurjective f));
+                if areTVBsIso then break
+                );
+                if areTVBsIso then break
+            );
+            
+            );
+        if areTVBsIso then (
+            T1.cache.iso#T2 = f;
+            finv := map(T1,T2,(map f)^-1);
+            T2.cache.iso#T1 = finv;
+            );
+        areTVBsIso
+        )
+    )
+
+
+
 
 -- Not sure what to do about caching this method, but we should include it. 
 isTwistOf = method()
@@ -1260,6 +1320,8 @@ fineGr = (X,A,n) -> (
 moduleToKlyachko = method(Options => {Strategy => "image"})
 -- A: presentation of the module we are sheafifying that is fine-graded
 
+-- TODO: deal with 0 matrix
+
 moduleToKlyachko (NormalToricVariety, Matrix):= opts -> (X,A) -> (
     -- Obtain the ToricVectorBundleMap associated to the presentation
   S := ring A;
@@ -1298,8 +1360,8 @@ moduleToKlyachko (NormalToricVariety, Module):= opts -> (X,M) -> (
 -- F = moduleToKlyachko(variety E , klyachkoToModule E);
 -- then F == moduleToKlyachko(variety E, klyachkoToModule(F)) returns true 
 klyachkoToModule = method()
--- TODO
 klyachkoToModule ToricVectorBundle := E -> (
+    E = prune E;
     X := variety E;
     -- Cox ring of the toric variety
     S := ring X;
@@ -1313,7 +1375,7 @@ klyachkoToModule ToricVectorBundle := E -> (
     if r == 0 then return S^0;
     -- Twist E so every filtration jump is >= 0, since a jump becomes a monomial 
     jumps := filtrationJumps E;
-    offsets := apply(jumps, js -> -(max js)-1);
+    offsets := apply(jumps, js -> -(max js));
     E' := if all(offsets, o -> o == 0) then E else twist(E, offsets);
     filtMats := filtrationMatrices E';
     filtJumps :=  filtrationJumps E';
@@ -1324,19 +1386,14 @@ klyachkoToModule ToricVectorBundle := E -> (
     -- Create all the indices to consider
     cands := apply( toList fold( (i,j) -> i**j, (n : set toList(mj..Mj))),i -> toList deepSplice i);
     --correction := apply(offsets, i -> splice{n:i});
+    
     aux := apply(cands , L -> ( 
         monL:= product( apply( n,  i -> (S_i)^(-L_i) ));
-       EL := toSequence apply(#L , i ->image (filteredPiece(E', raysX_i, L_i)*monL) );
-       EL = phibase**( gens intersect EL);
-       --map( R^{r: offsets},R^{ numcols EL : -L - offsets} , EL)
-       map( R^r,, EL)
-       
-       
+       EL := toSequence apply(#L , i ->image map(R^r,, phibase**(filteredPiece(E', raysX_i, L_i)*monL) ));
+        intersect EL
         )
     );
-    (trim image fold((i,j)-> i|j, aux ))**R^{-offsets}
-
-    
+    (trim fold((i,j)-> i+j, aux ))**R^{-offsets}
     
 )
 
@@ -2195,10 +2252,12 @@ X = toricProjectiveSpace 2
 T1 = tangentBundle X
 M1 = klyachkoToModule T1
 T2 = moduleToKlyachko (X, M1)
-M2 = klyachkoToModule T2 
-T3 = moduleToKlyachko (X, M2)
-assert( T3 == T1)
-assert( T3 == T2)
+-- BUG: This returns false when it shouldnt
+assert(T1==T2)
+assert(areIsomorphic2 (T1, T2))
+assert(map isomorphism(T1,T2) ==  matrix {{1_QQ,0},{-1, 1}} )
+assert( isIsomorphism map (T2, T1, matrix {{2_QQ,0},{-2, 2}}))
+
 ///
 
 
