@@ -420,26 +420,29 @@ areIsomorphic (ToricVectorBundle,ToricVectorBundle) := Boolean => (T1,T2) -> (
         g2 := sub(matrix {groundSet T2}, ring T2);
         if numColumns g1 == numColumns g2 then (
             -- attempt to find the isomorphism between them.
-            fixedbasis := g1_{0..rank T1-1};
-            for S in subsets(numColumns g2, rank T1) list (
-                newbasis := g2_S;
-                N := solve(transpose fixedbasis, transpose newbasis);
-                if N =!= null then (
-                    f := map(T2, T1, transpose N);
-                    -- if this one is well defined and bijective, then it's our guy.
-                    areTVBsIso = if isWellDefined f and isInjective f and isSurjective f then (
-                        T1.cache.iso#T2 = f;
-                        Ninv := solve(transpose newbasis, transpose fixedbasis);
-                        T2.cache.iso#T1 = map(T1, T2, transpose Ninv);
-                        true
-                        ) else false;
-                    break
-                    );
+            for S1 in subsets(numColumns g1, rank T1) list (
+                for S2 in subsets(numColumns g2, rank T1) list (
+                    basis1 := g1_S1;
+                    basis2 := g2_S2;
+                    N := solve(transpose basis1, transpose basis2);
+                    if N =!= null then (
+                        f := map(T2, T1, transpose N);
+                        -- if this one is well defined and bijective, then it's our guy.
+                        areTVBsIso = if isWellDefined f and isInjective f and isSurjective f then (
+                            T1.cache.iso#T2 = f;
+                            Ninv := solve(transpose basis2, transpose basis1);
+                            T2.cache.iso#T1 = map(T1, T2, transpose Ninv);
+                            true
+                            ) else false;
+                        break
+                        );
+                    )
                 )
             )
         );
     areTVBsIso
     )
+--todo try flipping the signbn one col
 
 isomorphism (ToricVectorBundle,ToricVectorBundle) := Boolean => o -> (T1,T2) -> (
     if not areIsomorphic(T1,T2) then error("The bundles are not isomorphic");
@@ -793,7 +796,7 @@ isWellDefined ToricVectorBundleMap := Boolean => f ->(
         amb := module (ring E2) ^ (numRows (filtrationMatrices E2)_0);
         for i from m1 to m2 do (
             -- not writing rank E2 allows for matrices that are not square (see cokernel)
-            f1 := map(amb, , sub( M* filteredPiece(E1,p,i), RX));
+            f1 := map(amb, , sub( M * filteredPiece(E1,p,i), RX));
             f2 := map(amb, , sub(filteredPiece(E2,p,i),RX));
             
             if not isSubset(image f1, image f2) then (
@@ -998,7 +1001,7 @@ cokernel (ToricVectorBundleMap) := f ->(
     toricVectorBundle(variety E, mats, jumps)
     )
 *-
-cokernel (ToricVectorBundleMap) := f ->(
+cokernel ToricVectorBundleMap := f ->(
     if not isWellDefined(f) then ( error (" The map is not well defined"));
     if isSurjective(f) then( return trivialBundle(variety source (f), 0) );     
     M := f.map;
