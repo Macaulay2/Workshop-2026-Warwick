@@ -1163,7 +1163,7 @@ doc ///
         (hh,ZZ,ToricVectorBundle)
         eulerChi
 ///
--- TODO Update and add Kaneyama version
+
 doc ///
     Key
         (cohomology,ZZ,ToricVectorBundle,Matrix)

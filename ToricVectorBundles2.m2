@@ -399,6 +399,20 @@ removeDupeCols := fM -> (
 
 -*
 debug needsPackage "ToricVectorBundles2"
+X = toricProjectiveSpace 1
+mats := {matrix{{1,0},{0,1}}, matrix {{1,0},{0,1}}}
+jumps := {{1,0}, {0,0}}
+T1 = toricVectorBundle(X,mats,jumps) 
+mats' := {matrix{{0,-1},{1,0}}, matrix {{1,0},{0,1}}}
+jumps' := {{0,1}, {0,0}}
+T2 = toricVectorBundle(X,mats',jumps') 
+T1 == T2
+groundSet T1
+groundSet T2
+mats'' := {matrix{{0,1},{-1,0}}, matrix {{1,0},{0,1}}}
+jumps'' := {{0,1}, {0,0}}
+T3 =  toricVectorBundle(X,mats'',jumps'') 
+
 X = toricProjectiveSpace 2
 T1 = tangentBundle X
 M1 = klyachkoToModule T1
@@ -454,7 +468,6 @@ areIsomorphic (ToricVectorBundle,ToricVectorBundle) := Boolean => (T1,T2) -> (
         );
     areTVBsIso
     )
---todo try flipping the signbn one col
 
 isomorphism (ToricVectorBundle,ToricVectorBundle) := Boolean => o -> (T1,T2) -> (
     if not areIsomorphic(T1,T2) then error("The bundles are not isomorphic");
@@ -540,7 +553,7 @@ isTwistOf (ToricVectorBundle, ToricVectorBundle) := (E1, E2) -> (
 -- vector spaces naturally come equipped with torus weights.
 -- This makes a weighted version of the coefficient ring to keep track of these weights.
 weightedCoeffRing = method() 
-weightedCoeffRing (ToricVectorBundle) := T ->(cacheValue symbol WeightedCoeffRing)(E -> (ring E)[DegreeRank => dim variety E])
+weightedCoeffRing ToricVectorBundle := (cacheValue symbol weightedCoeffRing)(E -> (ring E)[DegreeRank => dim variety E])
 
 -- PURPOSE : Computing the Cech complex of a vector bundle
 cechComplex = method()
@@ -2933,9 +2946,7 @@ T1 == T2
 T1 == prune T2
 *-
 
-
-
-torusWeights := E -> (
+satisfiesCompatibility := E -> (
     D := details E;
     R := rays E;
     decomps := for m in max variety E list (
@@ -2964,6 +2975,8 @@ torusWeights := E -> (
                 v := (D#p)_0_{position((D#p)_1, j' -> j' == j)};
                 -- for each ray p' not equal to p, we find the index j' where v intersects the filtration
                 -- of p' and take the set of characters H#p#j'.
+                -- along the way, record the visited indices j'.
+                visitedj := {j};
                 if not H#p#?j then continue;
                 filtindices := {{p, j}};
                 filtindices = (filtindices | for p' in delete(p, R_m) list (
@@ -2971,24 +2984,63 @@ torusWeights := E -> (
                         for k in rsort unique (D#p')_1 do (
                             if intersect(image filteredPiece(E,p',k), image v) != 0 then (j' = k; break) else continue
                             );
-                        if not H#p'#?j' then {} else {p', j'}
+                        if not H#p'#?j' then {} else (visitedj = visitedj | {j'}; {p', j'})
                         )
                     );
                 -- try to intersect the lists of characters
                 chars := toList intersect for f in filtindices list if f == {} then set {} else set H#(f_0)#(f_1);
                 -- if this intersection was empty, then it was impossible to index the decomposition.
-                if chars == {} then continue else {p, chars_0, v}
+                if chars == {} then continue else {p, chars_0, v, visitedj}
                 )
             );
-        -- todo: now to parse the character data to try and find a decomposition.
-        (toruswts, fibrebasis) := toSequence apply(transpose flatten chardata, MM -> matrix {MM});
-        --if numColumns fibrebasis != rank E then {} else
-        {toruswts, fibrebasis}
+        -- jumpindices might not be as long as rank E..........
+        candidateDecomps := flatten for S in subsets(#chardata, rank E) list (
+            possibleChoices := multinomialSets(chardata_S, {{}});
+            for p in possibleChoices list (
+                if (rsort unique flatten for c in p list c_3) != jumpindices then continue
+                else (
+                    for c in p list {c_1, c_2}
+                    )
+                )
+            );
+        decomp := {};
+        for c in candidateDecomps list (
+            (toruswts, fibrebasis) := toSequence apply(transpose c, MM -> matrix {MM});
+            -- now check if it works.
+            if all (for p in R_m list (
+                    chardotprods := flatten entries (matrix {p} * toruswts);
+                    if all (for j in (D#p)_1 list (
+                            cols := positions(chardotprods, i -> i >=j);
+                            if cols === null then false else (
+                                if (image fibrebasis_cols == image filteredPiece(E,p,j)) then true else false
+                                )
+                            )
+                        ) then true else false
+                    )
+                ) then (decomp = {toruswts, fibrebasis}; break)
+            );
+        decomp
         );
     if any(decomps, d -> d == {}) then false else (E.cache.eigenspaceDecompositions = decomps; true)
     )
 
+-- Given a collection of k lists L with sizes s_i, this produces all possible k-tuples
+-- {L_1_(j_1), L_2_(j_2), ... , L_k_(j_k)}
+-- where 1 \leq j_i \leq s_i.
+L = {{1},{2,3},{4,5},{6,7}}
+multinomialSets := (L, choices) -> (
+    if L == {} then choices else (
+        choices = flatten for l in L_0 list for c in choices list append(c,l);
+        multinomialSets(drop(L,1),choices)
+        )
+    )
 
+
+
+choice := {};
+for l in L list (
+    for i to #l-1 list (
+        )
 
 changelist: 2026-10-27
 - renamed the package so that we can install it to find bugs in doc
