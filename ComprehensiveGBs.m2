@@ -283,16 +283,31 @@ eliminateVariables (List, CGBData) := (F, cgbData) -> (
 )
 
 
-comprehensiveGBOnGraph = method()
-comprehensiveGBOnGraph (List, ZZ) := (G, d) -> (
+cgbOnGraph = method(
+    Options => {
+        ReduceStrata => false,
+        Verbose => false,
+        Depth => -1,
+        CheckAssumption => true
+        }
+    )
+cgbOnGraph (List, ZZ) := opts -> (G, d) -> (
     V := sort G_0;
     E := G_1;
     x := local x;
     w := local w;
-    S := QQ[toSequence apply(E, l -> w_l)];
-    R := S[x_(V_0, 1)..x_(V_(#V-1), d)];
-    F := for i in E list(sum(1..d, k -> (R_(d*(i_0-V_0)+k-1)-R_(d*(i_1-V_0)+k-1))^2)-S_(position(E, j -> j === i)));
-    (F, comprehensiveGBMain (F, ReduceStrata => true))
+    SMonoid := monoid [apply(E, l -> w_l)];
+    S := QQ SMonoid;
+    RMonoid := monoid [x_(V_0, 1)..x_(V_(#V-1), d)];
+    R := S RMonoid;
+    F := for i in E list (
+        sum(1..d, k -> (
+                R_(d*(i_0-V_0)+k-1)-R_(d*(i_1-V_0)+k-1)
+                )^2
+            ) - S_(position(E, j -> j === i)
+            )
+        );
+    (F, CGBMain(F, opts))
 )
 
 -- Given two lists A and B return the list
@@ -888,8 +903,12 @@ doc ///
 
 doc ///
   Key
-    comprehensiveGBOnGraph
-    (comprehensiveGBOnGraph,List,ZZ)
+    cgbOnGraph
+    (cgbOnGraph,List,ZZ)
+    [cgbOnGraph, Verbose]
+    [cgbOnGraph, ReduceStrata]
+    [cgbOnGraph, Depth]
+    [cgbOnGraph, CheckAssumption]
   Headline
     parametrized systems from a graph
   Usage
@@ -899,6 +918,14 @@ doc ///
       a list consisting of a list of vertices and a list of edges.
     d: ZZ
       a postive integer
+    CheckAssumption=>Boolean
+       check that $V(S)\subseteq V(\langle F\rangle\cap k[U])$
+    ReduceStrata=>Boolean
+       ignore strata that have already been computed
+    Verbose=>Boolean
+       print polynomial lists during computation
+    Depth=>ZZ
+       maximum recursion depth
   Outputs
     F: List
       A list of polynomials
@@ -913,7 +940,7 @@ doc ///
       \[ f_{ij}=\sum_{k=1}^{d}(x_{i,k}-x_{j,k})^2  -\lambda_{ij} \].
       The function comprehensiveGBOnGraph returns the polynomial systems $F$ and a Combrehensive Gröbner Basis of $F$.
     Example
-      (F,GG)=comprehensiveGBOnGraph({{1,2,3},{(1,2),(2,3),(3,1)}},1);
+      (F,GG)=cgbOnGraph({{1,2,3},{(1,2),(2,3),(3,1)}},1, ReduceStrata => true);
       netList F
       GG_0
   Caveat
