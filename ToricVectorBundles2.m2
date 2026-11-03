@@ -1054,7 +1054,8 @@ triv = trivialBundle(X,1);
 sumoflbs = lineBundle X_0 ++ lineBundle X_1 ++ lineBundle X_2 ++ lineBundle X_3;
 f = map(sumoflbs,triv,matrix(ZZ/101,{{1},{1},{1},{1}}));
 g = map(TX,sumoflbs, transpose sub(matrix rays X,ZZ/101));
-
+image f
+image g
 
 *-
 -*
