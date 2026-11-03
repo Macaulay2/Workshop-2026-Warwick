@@ -1230,6 +1230,7 @@ doc ///
         eulerChi
         (cohomology,ZZ,ToricVectorBundle)
         (hh,ZZ,ToricVectorBundle)
+        (deltaE,ToricVectorBundleKaneyama)
 ///
 
 -- TODO Update and add Kaneyama version
@@ -2106,43 +2107,6 @@ doc ///
         lineBundleKaneyama
 ///
 *-
-
-doc ///
-    Key
-        cocycleCheck
-        (cocycleCheck,ToricVectorBundleKaneyama)
-    Headline
-        checks if a toric vector bundle fulfills the cocycle condition
-    Usage
-        b = cocycleCheck E
-    Inputs
-        E:ToricVectorBundleKaneyama
-    Outputs
-        b:Boolean
-            whether @TT "E"@ satisfies the cocyle condition
-    Description
-        Text
-            The transition matrices in @TT "E"@ define an equivariant toric vector bundle if they
-            satisfy the cocycle condition. I.e. in this implementation of complete fans this means
-            that for every codimension 2 cone of the fan the cycle of transition matrices of
-            codimension 1 cones containing the codimension 2 cone gives the identity when
-            multiplied.
-        Example
-            E = toricVectorBundleKaneyama(2,pp1ProductFan 2)
-            details E
-            A = matrix{{1,2},{0,1}};
-            B = matrix{{1,0},{3,1}};
-            C = matrix{{1,-2},{0,1}};
-            E1 = addBaseChange(E,{A,B,C,matrix{{1,0},{0,1}}})
-            cocycleCheck E1
-            D = inverse(B)*A*C
-            E1 = addBaseChange(E,{A,B,C,D})
-            cocycleCheck E1
-    SeeAlso
-        addBaseChange
-        addDegrees
-        regCheck
-///
 
 
 doc ///

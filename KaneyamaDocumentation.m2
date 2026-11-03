@@ -167,7 +167,7 @@ doc ///
             vector bundle already has a list of pairs $(i,j)$ denoting the codim 1 intersections of
             two maximal cones with $i<j$ and they are ordered in lexicographic order. The matrices
             will be assigned to the pairs $(i,j)$ in that order. To see which codimension 1 cone
-            corresponds to the pair $(i,j)$ use @TO (details,ToricVectorBundle)@. The matrix $A$
+            corresponds to the pair $(i,j)$ use @TO (details,ToricVectorBundleKaneyama)@. The matrix $A$
             assigned to $(i,j)$ denotes the transition $(e_i^1,...,e_i^k) = (e_j^1,...,e_j^k)*A$.
             The matrices need not satisfy the regularity or the cocycle condition. These can be
             checked with @TO regCheck@ and @TO cocycleCheck@, or @TO (isWellDefined,ToricVectorBundleKaneyama)@.
@@ -208,7 +208,7 @@ doc ///
             dimensional cone of the underlying fan over which @TT "E"@ is defined. Note that in
             @TT "E"@ the top dimensional cones are already sorted and that the degree matrices in
             @TT "L"@ will be assigned to the cones in that order. To find out the order use
-            TO (maxCones,ToricVectorBundle). The matrices need not satisfy the regularity
+            @TO (maxCones,ToricVectorBundleKaneyama)@. The matrices need not satisfy the regularity
             condition. This can be checked with @TO regCheck@.
         Example
             E = toricVectorBundleKaneyama(2,pp1ProductFan 2)
@@ -258,6 +258,44 @@ doc ///
         (isWellDefined,ToricVectorBundleKaneyama)
 ///
 
+doc ///
+    Key
+        cocycleCheck
+        (cocycleCheck,ToricVectorBundleKaneyama)
+    Headline
+        checks if a toric vector bundle fulfills the cocycle condition
+    Usage
+        b = cocycleCheck E
+    Inputs
+        E:ToricVectorBundleKaneyama
+    Outputs
+        b:Boolean
+            whether @TT "E"@ satisfies the cocyle condition
+    Description
+        Text
+            The transition matrices in @TT "E"@ define an equivariant toric vector bundle if they
+            satisfy the cocycle condition. I.e. in this implementation of complete fans this means
+            that for every codimension 2 cone of the fan the cycle of transition matrices of
+            codimension 1 cones containing the codimension 2 cone gives the identity when
+            multiplied.
+        Example
+            E = toricVectorBundleKaneyama(2,pp1ProductFan 2)
+            details E
+            A = matrix{{1,2},{0,1}};
+            B = matrix{{1,0},{3,1}};
+            C = matrix{{1,-2},{0,1}};
+            E1 = addBaseChange(E,{A,B,C,matrix{{1,0},{0,1}}})
+            cocycleCheck E1
+            D = inverse(B)*A*C
+            E1 = addBaseChange(E,{A,B,C,D})
+            cocycleCheck E1
+    SeeAlso
+        addBaseChange
+        addDegrees
+        regCheck
+///
+
+
 -- TODO Unify with Klyachko
 
 doc ///
@@ -281,16 +319,6 @@ doc ///
             defined by these weights defines in fact a Cartier divisor, then @TT "lineBundleKaneyama"@
             computes the toric vector bundle associated to the Cartier divisor. The resulting bundle will be in
             Kaneyama's description.
-        Text
-            If no further options are given then the resulting bundle will be in Klyachko's
-            description:
-        Example
-            F = hirzebruchFan 3
-            E = lineBundleKaneyama({1,-3,4,-2},F)
-            details E
-        Text
-            If the option @TT "\"Type\" => \"Kaneyama\""@ is given then the resulting bundle will be
-            in Kaneyama's description:
         Example
             F = hirzebruchFan 3
             E = lineBundleKaneyama({1,-3,4,-2},F)
@@ -302,7 +330,6 @@ doc ///
         lineBundle
 ///
 
-
 -- TODO Unify with Klyachko
 
 doc ///
@@ -310,7 +337,7 @@ doc ///
         tangentBundleKaneyama
         (tangentBundleKaneyama,Fan)
     Headline
-        TODO
+        the tangent bundle on a toric variety, given in Kaneyama's description
     Usage
         E = tangentBundleKaneyama(F)
     Inputs
@@ -319,28 +346,60 @@ doc ///
         E : ToricVectorBundleKaneyama
     Description
         Text
-          TODO
+          If the fan @TT "F"@ is pure, of full dimension and smooth, then the function generates the tangent bundle of the
+          toric variety given by @TT "F"@ in Kaneyama's description.
+        Example
+            F = pp1ProductFan 2
+            E = tangentBundleKaneyama F
+            details E
+///
+--Not sure if this is a good example, original documentation uses tangentBundle in its examples?
+doc ///
+    Key
+        cotangentBundleKaneyama
+        (cotangentBundleKaneyama,Fan)
+    Headline
+        the cotangent bundle on a toric variety, given in Kaneyama's description
+    Usage
+        E = cotangentBundleKaneyama(F)
+    Inputs
+        F : Fan
+    Outputs
+        E : ToricVectorBundleKaneyama
+    Description
+        Text
+          If the fan @TT "F"@ is pure, of full dimension and smooth, then the function generates the cotangent bundle of the
+          toric variety given by @TT "F"@ in Kaneyama's description.
+        Example
+            F = projectiveSpaceFan 2
+            E = cotangentBundleKaneyama F
+            details E
 ///
 
-
 -- TODO Unify with Klyachko
-
+-- Do we need this as a separate doc node, or can it be combined with the Klyachko one?
 doc ///
     Key
         (deltaE,ToricVectorBundleKaneyama)
     Headline
-        TODO
+        the polytope of possible degrees that give non zero cohomology when the vector bundle input is given in Kaneyama's description
     Usage
-        P = deltaEKaneyama(E)
+        P = deltaE(E)
     Inputs
         E : ToricVectorBundleKaneyama
     Outputs
         P : Polyhedron
     Description
         Text
-          TODO
+            For a toric vector bundle over a complete toric variety there is a finite set of degrees $u$
+            such that the degree $u$ part of the cohomology of the vector bundle is non-zero. This function
+            computes a polytope $\Delta_E$, such that these degrees are contained in this polytope. If the
+            underlying toric variety is not complete, then an error is returned.
+        Example
+            TODO
+    SeeAlso
+        (deltaE,ToricVectorBundle)
 ///
-
 
 -- TODO Unify with Klyachko
 
@@ -348,16 +407,24 @@ doc ///
     Key
         (details,ToricVectorBundleKaneyama)
     Headline
-        TODO
+        the details of a toric vector bundle given in Kaneyama's description
     Usage
-        D = detailsKaneyama(E)
+        D = details E
     Inputs
         E : ToricVectorBundleKaneyama
     Outputs
         D : HashTable
     Description
         Text
-          TODO
+          For a toric vector bundle in Kaneyama's description, the sequence @TT "D"@ contains a hash table
+          that assigns to each maximal cone $\sigma$ of the underlying fan its matrix of rays and its
+          matrix of degrees, and a hash table giving a transition matrix for every pair of maximal
+          cones that intersect in a codimension 1 face.
+        Example
+            E = tangentBundleKaneyama(pp1ProductFan 2)
+            details E
+    SeeAlso
+        (details, ToricVectorBundle)
 ///
 
 
@@ -399,32 +466,14 @@ doc ///
             whether @TT "E"@ defines a toric vector bundle
     Description
         Text
-            If @TT "E"@ is in Klyachko's description then the data in @TT "E"@ defines an
-            equivariant toric vector on the toric variety if and only if for each maximal cone
-            exists a decomposition into torus eigenspaces of the bundle. See
-            @HREF("http://math.stanford.edu/~sampayne/", "Sam Payne's")@
-            @EM "Moduli of toric vector bundles"@, Compositio Math. 144, 2008. Section 2.3. This
-            uses the two functions TO findWeights and TO existsDecomposition.
-        Example
-            E = toricVectorBundleKaneyama(2,pp1ProductFan 2)
-            E = addBaseChange(E,{matrix{{1,2},{3,1}},matrix{{-1,0},{3,1}},matrix{{1,2},{-3,-1}},matrix{{-1,0},{-3,-1}}})
-            isWellDefined E
-            F = toricVectorBundleKaneyama(1,normalFan crossPolytope 3)
-            --F = addFiltration(F,apply({2,1,1,2,2,1,1,2}, i -> matrix {{i}}))
-            isWellDefined F
-        Text
-            If @TT "E"@ is in Kaneyama's description then data in @TT "E"@ defines an equivariant
-            toric vector bundle on the toric variety if and only if it satisfies the regularity and
+            Given @TT "E"@ in Kaneyama's description, i.e. @TT "E"@ is a @TO ToricVectorBundleKaneyama@, then data in @TT "E"@ defines
+            an equivariant toric vector bundle on the toric variety if and only if it satisfies the regularity and
             the cocycle condition (See @TO cocycleCheck@ and @TO regCheck@).
         Example
             E = toricVectorBundleKaneyama(2,pp1ProductFan 2)
             isWellDefined E
             E = addBaseChange(E,{matrix{{1,2},{3,1}},matrix{{-1,0},{3,1}},matrix{{1,2},{-3,-1}},matrix{{-1,0},{-3,-1}}})
             isWellDefined E
-    Caveat
-        @TT "isWellDefined"@ is known to produce incorrect output for Klyachko bundles. The user is
-        recommended to instead use @TT "isLocallyFree"@ from the package
-        @TT "PositivityToricBundles"@.
     SeeAlso
         cocycleCheck
         regCheck
