@@ -302,22 +302,6 @@ doc ///
         lineBundle
 ///
 
-doc ///
-    Key
-        cotangentBundleKaneyama
-        (cotangentBundleKaneyama,Fan)
-    Headline
-        TODO
-    Usage
-        E = cotangentBundleKaneyama(F)
-    Inputs
-        F : Fan
-    Outputs
-        E : ToricVectorBundleKaneyama
-    Description
-        Text
-          TODO
-///
 
 -- TODO Unify with Klyachko
 
