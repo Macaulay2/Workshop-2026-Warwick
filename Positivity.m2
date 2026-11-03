@@ -63,8 +63,8 @@ maxCones ToricVectorBundle := T -> (
    )
 
 
-flags = method(TypicalValue => HashTable)
-flags (ToricVectorBundle) := (cacheValue symbol filtrationFlags) ( E -> (
+flags = method()
+flags (ToricVectorBundle) := HashTable => (cacheValue symbol filtrationFlags) ( E -> (
     fJs := unique flatten filtrationJumps( E);
     hashTable for rho in rays E list (
         rayFlag := unique for i in fJs list ((filteredPiece( E, rho, i)));
@@ -73,12 +73,12 @@ flags (ToricVectorBundle) := (cacheValue symbol filtrationFlags) ( E -> (
     )
 ))
 
-getColumns = method(TypicalValue => List)
-getColumns Matrix := mat -> toList apply( 0..<numColumns mat, i->mat_i )
-getColumns Module := M -> apply(getColumns gens M, c -> image matrix c)
+getColumns = method()
+getColumns Matrix := List => mat -> toList apply( 0..<numColumns mat, i->mat_i )
+getColumns Module := List => M -> apply(getColumns gens M, c -> image matrix c)
 
-primitive = method(TypicalValue => Matrix)
-primitive Matrix := mat -> (
+primitive = method()
+primitive Matrix := Matrix => mat -> (
     m := 1;
     if ring mat === QQ then
     m = lcm apply(flatten entries mat, denominator);
@@ -95,14 +95,14 @@ cartesianProduct List := Ls -> (
     )
 
 
-poset = method(TypicalValue => List)
-poset (ToricVectorBundle) := (cacheValue symbol posetTvb)  (E -> (
+poset = method()    
+poset ToricVectorBundle := List => (cacheValue symbol posetTvb)(E -> (
     -- do all possible intersections (over ring of defintion of E)
     intersections := apply( cartesianProduct values flags E, L -> intersect( apply(L, l -> image promote(l,ring E) ) ) );
     -- remove 0-dimensional spaces and duplicates 
     intersections = toList set select( intersections, V -> rank V > 0 );
     intersections
-))
+    ))
 
 -- MAIN METHOD: groundSet ----------------------------------------
 
@@ -111,8 +111,8 @@ poset (ToricVectorBundle) := (cacheValue symbol posetTvb)  (E -> (
 --           IMPORTANT: Due to the implementation, elements might appear several times
 --   INPUT : 'tvb', a ToricVectorBundle
 --  OUTPUT : ground set (list of nx1-matrices)
-groundSet = method(Options => true, TypicalValue => List)
-groundSet ToricVectorBundle :=  {Verbosity => 0, preferredGenerators => {}} >> opts -> (cacheValue groundSet)  (E -> (
+groundSet = method(Options => true)
+groundSet ToricVectorBundle := List => {Verbosity => 0, preferredGenerators => {}} >> opts -> (cacheValue groundSet) (E -> (
     if opts#Verbosity>0 then << "METHOD: groundSet" << endl;
     intersections := poset E;
     if opts#Verbosity>0 then << "Poset of proper linear subspaces of E: " << endl << apply(intersections,gens) << endl;
@@ -164,13 +164,13 @@ groundSet ToricVectorBundle :=  {Verbosity => 0, preferredGenerators => {}} >> o
 -- polytopeTVB
 ------------------------------------------------------------------------------
 
-polytopeTVB = method(Options => true, TypicalValue => Polyhedron)
-polytopeTVB (ToricVectorBundle, Matrix) := {Verbosity => 0} >> opts -> ( (E,l) -> (
+polytopeTVB = method(Options => true)
+polytopeTVB (ToricVectorBundle, Matrix) := Polyhedron => {Verbosity => 0} >> opts -> (E,l) -> (
     if opts#Verbosity>0 then << "Calculate polytope for l = " << l << endl;
     rayE := rays E;
     filtSteps := hashTable for rho in rayE list (
         rho => sort unique flatten (-filtrationJumps (E, rho))
-    );
+        );
     flgs:= flags E;
     R := ring E;
     M := transpose matrix { apply( rayE, rho -> (filtSteps#rho)#(position((flgs)#rho, f -> isSubset(image promote(l,R), image promote(f,R))))) };
@@ -180,9 +180,8 @@ polytopeTVB (ToricVectorBundle, Matrix) := {Verbosity => 0} >> opts -> ( (E,l) -
     rhoMat = promote(rhoMat,R);
     pol := polyhedronFromHData(-rhoMat,-M);
     if opts#Verbosity>0 then << "the associated polytope has vertices:" << endl << vertices pol << endl;
-    pol
-    
-))
+    pol   
+    )
 
 
 
@@ -193,8 +192,8 @@ polytopeTVB (ToricVectorBundle, Matrix) := {Verbosity => 0} >> opts -> ( (E,l) -
 --           compute the parliament of polytopes [RJS]
 --   INPUT : 'tvb', a ToricVectorBundle
 --  OUTPUT : parliament of polytopes, hash table (ground set => parliament)
-parliament = method(Options => true, TypicalValue => HashTable)
-parliament ToricVectorBundle := {Verbosity => 0} >> opts -> (cacheValue parliament)( E -> (
+parliament = method(Options => true)
+parliament ToricVectorBundle := HashTable => {Verbosity => 0} >> opts -> (cacheValue parliament)(E -> (
     if opts#Verbosity>0 then << "METHOD: parliament" << endl;
     gs := groundSet(E, Verbosity=>(opts#Verbosity-1));
     hashTable for l in gs list ( l => polytopeTVB(E,l, Verbosity=>opts#Verbosity) )
@@ -208,41 +207,40 @@ parliament ToricVectorBundle := {Verbosity => 0} >> opts -> (cacheValue parliame
 ------------------------------------------------------------------------------
 
 
-restrictToAffine = method(Options => true, TypicalValue => ToricVectorBundle)
-restrictToAffine (ToricVectorBundle, Cone) := {Verbosity => 0} >> opts -> ( (tvb,cone) -> (
+restrictToAffine = method(Options => true)
+restrictToAffine (ToricVectorBundle, Cone) := ToricVectorBundle => {Verbosity => 0} >> opts -> (tvb,cone) -> (
     if opts#Verbosity>0 then << "METHOD: restrictToAffine" << endl;
     TV := normalToricVariety(fan cone, CoefficientRing => ring tvb );
     rayC := rays TV;
     toricVectorBundle(TV, apply( rayC, rho -> filtrationMatrices(tvb, rho)), apply(rayC, rho -> filtrationJumps(tvb, rho)) )
-))
+    )
 
-restrictToAffine (ToricVectorBundle, Matrix) := {Verbosity => 0} >> opts -> ( (tvb,cone) -> (
+restrictToAffine (ToricVectorBundle, Matrix) := ToricVectorBundle => {Verbosity => 0} >> opts -> (tvb,cone) -> (
     if opts#Verbosity>0 then << "METHOD: restrictToAffine" << endl;
     TV := normalToricVariety(fan coneFromVData cone, CoefficientRing => ring tvb );
     rayC := rays TV;
     toricVectorBundle(TV, apply( rayC, rho -> filtrationMatrices(tvb, rho)), apply(rayC, rho -> filtrationJumps(tvb, rho)) )
-))
+    )
 
 -- PURPOSE: Given the possible flags (as computed by possibleFlags) for rays of maximal cone
 --          compute a common set of basis vectors
 --   INPUT: 'tvb', toric vector bundle
---          'sigma', maximal cone
+--          'sigma', maximal cone    
 --  OUTPUT: compatible base (matrix of vectors)
-compatibleBasis = method(Options => true, TypicalValue => Matrix)
-compatibleBasis (ToricVectorBundle, Cone) := {Verbosity => 0} >> opts -> (E,C) -> (
+compatibleBasis = method(Options => true)
+compatibleBasis (ToricVectorBundle, Cone) := Matrix => {Verbosity => 0} >> opts -> (E,C) -> (
     if opts#Verbosity>0 then << "METHOD: compatibleBasis" << endl;
     F:= restrictToAffine(E, C, Verbosity=>opts#Verbosity);
     if opts#Verbosity>0 then << "details of bundle restricted to " << C << endl << details E << endl;
     fold(groundSet (F, Verbosity=>opts#Verbosity-1, preferredGenerators=> groundSet E), (i,j) -> i|j)
     )
 
-compatibleBasis (ToricVectorBundle, Matrix) := {Verbosity => 0} >> opts -> (E,C) -> (
+compatibleBasis (ToricVectorBundle, Matrix) := Matrix => {Verbosity => 0} >> opts -> (E,C) -> (
     if opts#Verbosity>0 then << "METHOD: compatibleBasis" << endl;
     F:= restrictToAffine(E, C, Verbosity=>opts#Verbosity);
     if opts#Verbosity>0 then << "details of bundle restricted to " << C << endl << details E << endl;
     fold(groundSet (F, Verbosity=>opts#Verbosity-1, preferredGenerators=> groundSet E), (i,j) -> i|j)
-    
-)
+    )
 
 -- MAIN METHOD: compatibleBases ----------------------------------------------
 
@@ -250,8 +248,8 @@ compatibleBasis (ToricVectorBundle, Matrix) := {Verbosity => 0} >> opts -> (E,C)
 --          compute list of compatible bases as in [RJS, Section 3]
 --   INPUT: 'tvb', toric vector bundle
 --  OUTPUT: hash table: max cone => compatible basis
-compatibleBases = method( Options => true, TypicalValue => Matrix)
-compatibleBases ToricVectorBundle := {Verbosity => 0} >> opts -> (cacheValue symbol compatibleBases) (E -> (
+compatibleBases = method( Options => true)
+compatibleBases ToricVectorBundle := Matrix => {Verbosity => 0} >> opts -> (cacheValue symbol compatibleBases) (E -> (
         if opts#Verbosity>0 then << "METHOD: compatibleBases" << endl;
         maxcones := maxCones E;
         --maxcones :=  apply(maxCones E,rays);
@@ -264,20 +262,20 @@ compatibleBases ToricVectorBundle := {Verbosity => 0} >> opts -> (cacheValue sym
 
 -- PURPOSE: Given a toric reflexive sheaf in Klyachko's description
 --          check whether it is locally Weil, that is, locally a direct sum of reflexive sheaves of rank 1
---   INPUT: 'tvb', toric vector bundle
+--   INPUT: 'tvb', toric vector bundle    
 --  OUTPUT: true or false
 
 isLocallyWeil = method(Options => true)
-isLocallyWeil (ToricVectorBundle) := {Verbosity => 0} >> opts -> (cacheValue isLW) (tvb -> (
-    if opts#Verbosity>0 then << "METHOD: isLocallyWeil" << endl;
- cbs := compatibleBases(tvb, Verbosity=>opts#Verbosity);
- isVB := applyValues(cbs, b -> numgens source b == rank tvb);
-  if opts#Verbosity>0 then (
-   << "cones where sheaf is not locally Weil:" << endl;
-   for cb in pairs cbs do if not cb#1 then << cb#0 << endl;
- );
- all(values isVB, i->i)
-))
+isLocallyWeil (ToricVectorBundle) := Boolean => {Verbosity => 0} >> opts -> (cacheValue isLW)(tvb -> (
+        if opts#Verbosity>0 then << "METHOD: isLocallyWeil" << endl;
+        cbs := compatibleBases(tvb, Verbosity=>opts#Verbosity);
+        isVB := applyValues(cbs, b -> numgens source b == rank tvb);
+        if opts#Verbosity>0 then (
+            << "cones where sheaf is not locally Weil:" << endl;
+            for cb in pairs cbs do if not cb#1 then << cb#0 << endl;
+            );
+        all(values isVB, i->i)
+        ))
 
 ------------------------------------------------------------------------------
 -- toricChernCharacter
@@ -286,166 +284,159 @@ isLocallyWeil (ToricVectorBundle) := {Verbosity => 0} >> opts -> (cacheValue isL
 -- PURPOSE : Given a toric vector bundle in Klyachko's description and
 --           given compatible bases as computed by compatibleBases,
 --           compute the toric Chern character as introduced in [Payne] 
---   INPUT : 'tvb', toric vector bundle
+--   INPUT : 'tvb', toric vector bundle    
 --  OUTPUT : hash table: max cone => points of toric Chern character.
 
 toricChernCharacter = method(Options => true)
-toricChernCharacter (ToricVectorBundle) := {Verbosity => 0} >> opts -> (cacheValue toricChernCharacter) ( tvb -> (
- R := ring tvb;
- compBases := compatibleBases(tvb); 
- if opts#Verbosity>0 then << "METHOD: toricChernCharacter" << endl;
- filtSteps := hashTable for rho in rays tvb list (
-  rho => sort unique flatten (-1* filtrationJumps (tvb,rho))
- );
- cI := 1; -- cartierIndex
- result := hashTable for cb in pairs compBases list (
-maxcone := apply( 0..<numgens source cb_0, i-> entries (cb_0)_i );
- if opts#Verbosity>0 then << "For maximal cone sigma: " << endl << maxcone << endl;
-base := apply( 0..<numgens source cb_1, i->matrix (cb_1)_i );
-  if opts#Verbosity>0 then << "the compatible basis is: " << endl << base << endl;
-cb_0 => for b in base list (
-   RHS := for rho in maxcone list (
-    i := position((flags tvb)#rho, f -> isSubset(image promote(b,R), image promote(f,R)));
-    filtSteps#rho#i
-   );
-   sol := solve(transpose promote(cb_0,R), transpose promote(matrix {RHS},R));
-   if opts#Verbosity>0 then << "Solve equation: " << endl << transpose cb_0 << " *x= " << transpose matrix {RHS} << endl << "Solution: " << sol << endl;
-   cI = lcm(cI, lcm( apply(flatten entries sol, denominator) ) );
-   --if all(flatten entries sol, e -> liftable(e,ZZ)) then
-   -- sol = lift(sol,ZZ); 
-   sol
-  )
- );
- tvb.cache.cartierInd = cI;
- if cI == 1 then (
-  tvb.cache.isLF = true;
-  result = applyValues(result, c -> apply(c, m -> lift(m,ZZ)));
- )
- else (
-  tvb.cache.isLF = false;
-  if opts#Verbosity>0 then << "Cartier index is: " << cI << endl;
- );
- result
-))
-     
-isLocallyFree ToricVectorBundle :=  tvb -> (
+toricChernCharacter ToricVectorBundle := HashTable => {Verbosity => 0} >> opts -> (cacheValue toricChernCharacter)(tvb -> (
+        R := ring tvb;
+        compBases := compatibleBases(tvb); 
+        if opts#Verbosity>0 then << "METHOD: toricChernCharacter" << endl;
+        filtSteps := hashTable for rho in rays tvb list (
+            rho => sort unique flatten (-1* filtrationJumps (tvb,rho))
+            );
+        cI := 1; -- cartierIndex
+        result := hashTable for cb in pairs compBases list (
+            maxcone := apply( 0..<numColumns cb_0, i-> entries (cb_0)_i );
+            if opts#Verbosity>0 then << "For maximal cone sigma: " << endl << maxcone << endl;
+            base := apply( 0..<numColumns cb_1, i->matrix (cb_1)_i );
+            if opts#Verbosity>0 then << "the compatible basis is: " << endl << base << endl;
+            cb_0 => for b in base list (
+                RHS := for rho in maxcone list (
+                    i := position((flags tvb)#rho, f -> isSubset(image promote(b,R), image promote(f,R)));
+                    filtSteps#rho#i
+                    );
+                sol := solve(transpose promote(cb_0,R), transpose promote(matrix {RHS},R));
+                if opts#Verbosity>0 then << "Solve equation: " << endl << transpose cb_0 << " *x= " << transpose matrix {RHS} << endl << "Solution: " << sol << endl;
+                cI = lcm(cI, lcm( apply(flatten entries sol, denominator) ) );
+                --if all(flatten entries sol, e -> liftable(e,ZZ)) then
+                -- sol = lift(sol,ZZ); 
+                sol
+                )
+            );
+        tvb.cache.cartierInd = cI;
+        if cI == 1 then (
+            tvb.cache.isLF = true;
+            result = applyValues(result, c -> apply(c, m -> lift(m,ZZ)));
+            )
+        else (
+            tvb.cache.isLF = false;
+            if opts#Verbosity>0 then << "Cartier index is: " << cI << endl;
+            );
+        result
+        ))
+
+isLocallyFree ToricVectorBundle := Boolean => tvb -> (
     if not isLocallyWeil tvb then (return false;);
     if not tvb.cache.?isLF then (toricChernCharacter tvb);
     tvb.cache.isLF
     )
 
-cartierInd = method()
-cartierInd (ToricVectorBundle) := tvb -> (
- if not tvb.cache.?cartierInd then
-  toricChernCharacter tvb;
- tvb.cache.cartierInd
-)
-
+cartierInd = method()    
+cartierInd ToricVectorBundle := ZZ => tvb -> (
+    if not tvb.cache.?cartierInd then
+    toricChernCharacter tvb;
+    tvb.cache.cartierInd
+    )
 
 -- PURPOSE : Given a toric vector bundle in Klyachko's description and
 --           its toric Chern character,
 --           connect components in adjacent maximal cones by lines
 --   INPUT : 'tvb', toric vector bundle
---  OUTPUT : hash table: cone of codim 1 (curve) => list of pairs
+--  OUTPUT : hash table: cone of codim 1 (curve) => list of pairs    
 graphToricChernCharacter = method(Options => true)
-graphToricChernCharacter (ToricVectorBundle) := {Verbosity => 0} >> opts -> (cacheValue graphToricChernCharacter) ( tvb -> (
- torChern := toricChernCharacter(tvb);
- if opts#Verbosity>0 then  << "METHOD: graphToricChernCharacter" << endl;
- F := fan tvb;
- n := dim F;
- raysF := rays F;
- curveCones := apply(cones(n-1,F), c -> (raysF)_c);
- hashTable for tau in curveCones list (
-    if opts#Verbosity>0 then  << "For curve cone: " << endl << tau << endl;
-  sigmas := {};
-  normal := kernel transpose tau;
-  if opts#Verbosity>0 then  << "has normal: " << endl << normal << endl;
-  for sigma in keys torChern do
-   if contains(coneFromVData sigma, coneFromVData tau) then
-     sigmas = append(sigmas,sigma);
-    if opts#Verbosity>0 then  << "the adjacent maximal cones are: " << endl << sigmas << endl;
-  edges := {};
-  for u1 in torChern#(sigmas_0) do ( 
-   for u2 in torChern#(sigmas_1) do (
-    if isSubset(image(u1-u2), normal) then (
-    if opts#Verbosity>0 then  << "connect Chern components: " << endl << {u1,u2} << endl;
-     edges = append(edges, {u1,u2});
-    ); 
-   );
-  );
-  tau => edges
- )
-))
-
-
-
+graphToricChernCharacter ToricVectorBundle := HashTable => {Verbosity => 0} >> opts -> (cacheValue graphToricChernCharacter)(tvb -> (
+        torChern := toricChernCharacter(tvb);
+        if opts#Verbosity>0 then  << "METHOD: graphToricChernCharacter" << endl;
+        F := fan tvb;
+        n := dim F;
+        raysF := rays F;
+        curveCones := apply(cones(n-1,F), c -> (raysF)_c);
+        hashTable for tau in curveCones list (
+            if opts#Verbosity>0 then  << "For curve cone: " << endl << tau << endl;
+            sigmas := {};
+            normal := kernel transpose tau;
+            if opts#Verbosity>0 then  << "has normal: " << endl << normal << endl;
+            for sigma in keys torChern do
+            if contains(coneFromVData sigma, coneFromVData tau) then
+            sigmas = append(sigmas,sigma);
+            if opts#Verbosity>0 then  << "the adjacent maximal cones are: " << endl << sigmas << endl;
+            edges := {};
+            for u1 in torChern#(sigmas_0) do ( 
+                for u2 in torChern#(sigmas_1) do (
+                    if isSubset(image(u1-u2), normal) then (
+                        if opts#Verbosity>0 then  << "connect Chern components: " << endl << {u1,u2} << endl;
+                        edges = append(edges, {u1,u2});
+                        ); 
+                    );
+                );
+            tau => edges
+            )
+        ))
 
 ------------------------------------------------------------------------------
 -- METHOD: separateJets
-------------------------------------------------------------------------------
+------------------------------------------------------------------------------    
 
-separatesJetsLocally = method( Options => true )
-separatesJetsLocally (ToricVectorBundle,Cone) := {Verbosity => 0} >> opts -> (tvb,sigma) -> (
+separatesJetsLocally = method(Options => true)
+separatesJetsLocally (ToricVectorBundle,Cone) := ZZ => {Verbosity => 0} >> opts -> (tvb,sigma) -> (
     if opts#Verbosity>0 then << "METHOD: separatesJetsLocally" << endl;
- sigmaMat := rays sigma;
-  if opts#Verbosity>0 then << "for the maximal cone sigma " << sigmaMat << endl;
- R := ring tvb;
- uSigma := apply((toricChernCharacter tvb)#sigmaMat, c -> promote(c,R));
- uSigmaSet := toList set uSigma;
- uSigmaMult := apply(uSigmaSet, u -> number(uSigma, w -> u==w));
-  if opts#Verbosity>0 then << "the u(sigma) are " << uSigmaSet <<  " with multiplicities " << uSigmaMult << endl;
- par := parliament tvb;
- parVertices := applyValues(par, pol -> apply(getColumns vertices pol, c -> matrix promote(c,QQ)) );
- if opts#Verbosity>0 then << "the parliament is " << parVertices << endl;
--- [RJS, Thm 6.2, condition (i)]
- uSigmaAreVertices := hashTable apply(uSigmaSet, u -> u => applyValues(parVertices, pol -> member(u, pol)));
- uSigmaAreVerticesNumber := applyValues( applyValues(uSigmaAreVertices, values), trueFalse -> number(trueFalse, i->i==true));
- -- check whether all uSigma are vertices of as many polytopes as their multiplicity
- if not all(0 ..< #uSigmaSet, i-> uSigmaAreVerticesNumber#(uSigmaSet#i) >= uSigmaMult#i ) then 
- (
-  return -infinity;
- );
--- [RJS, Thm 6.2, condition (ii+iii)]
- sigmaDual := dualCone sigma;
- -- gives u=> {e's} such that u vertex of P(e) and u+sigma^vee contains P(e)
- --uSigmaPE := applyPairs(uSigmaAreVertices, (u,eAV) -> (u, keys selectPairs(eAV, (e,AV) -> AV and contains(convexHull u + sigmaDual, par#e) ) ));
- uSigmaPE := applyPairs(uSigmaAreVertices, (u,eAV) -> (u, keys hashTable select(pairs eAV, (e,AV) -> AV and contains(convexHull u + sigmaDual, par#e) ) ));
- uSigmaPEnumber := applyValues(uSigmaPE, Ps -> #Ps);
- -- [RJS, Thm 6.2, condition (iv)]
- if min values uSigmaPEnumber == 0 then (
-    if opts#Verbosity>0 then << "there is no polytope with suitable local structure for at least one u(sigma): " << applyValues(uSigmaPE, l -> apply(l, e -> parVertices#e)) << endl;
-    if opts#Verbosity>0 then << << "on sigma not globally generated." << endl;
- 
-  return -infinity;
- );
- if opts#Verbosity>0 then << "the u(sigma) appear as vertices (and with locally correct structure) of " << applyValues(uSigmaPE, l -> apply(l, e -> parVertices#e)) << endl;
- oneFaces := facesAsCones(dim (variety tvb) -1, sigmaDual);
- -- calculate the intersection of the edges of u+sigmaDual with P(e)
- edges := applyPairs(uSigmaPE, (u,es) -> (u, apply(es, e->  apply(oneFaces, f-> intersection(convexHull u + f, par#e)))));
- -- transform result into matrices whose columns are the vertices of the edges
- edges = applyValues(edges, edgeSet -> apply(edgeSet, polSet -> apply(polSet, pol -> matrix vertices pol )));
- if opts#Verbosity>0 then << "the intersections of u+sigmaDual with P(e) have vertices " << edges << endl;
- -- calculate the lattice length and take for each P(e) the minimal one
- edgeLengths := applyValues(edges, edgeSet -> apply(edgeSet, matSet -> min apply(matSet, mat -> gcd flatten entries (mat_0 - mat_(numgens source mat-1)))));
- -- [RJS, Thm 6.2, condition (iv)]
- -- check which combinations of P(e)s give a basis
- checkBaseOfMatroid := apply(cartesianProduct values uSigmaPE, es -> rank fold(es, (i,j)->i|j) == rank tvb);
- -- for all bases compute the minimal edge number, take maximum among all
- l := max apply(select(pack(2, mingle(checkBaseOfMatroid , cartesianProduct values edgeLengths)), i -> i#0), i -> min i#1);
-  if opts#Verbosity>0 then (
-  if l >= 0 then ( << "separates " << l << "-jets"  << endl ) else ( << "on sigma not globally generated." << endl )
- );
- l
-)
+    sigmaMat := rays sigma;
+    if opts#Verbosity>0 then << "for the maximal cone sigma " << sigmaMat << endl;
+    R := ring tvb;
+    uSigma := apply((toricChernCharacter tvb)#sigmaMat, c -> promote(c,R));
+    uSigmaSet := toList set uSigma;
+    uSigmaMult := apply(uSigmaSet, u -> number(uSigma, w -> u==w));
+    if opts#Verbosity>0 then << "the u(sigma) are " << uSigmaSet <<  " with multiplicities " << uSigmaMult << endl;
+    par := parliament tvb;
+    parVertices := applyValues(par, pol -> apply(getColumns vertices pol, c -> matrix promote(c,QQ)) );
+    if opts#Verbosity>0 then << "the parliament is " << parVertices << endl;
+    -- [RJS, Thm 6.2, condition (i)]
+    uSigmaAreVertices := hashTable apply(uSigmaSet, u -> u => applyValues(parVertices, pol -> member(u, pol)));
+    uSigmaAreVerticesNumber := applyValues( applyValues(uSigmaAreVertices, values), trueFalse -> number(trueFalse, i->i==true));
+    -- check whether all uSigma are vertices of as many polytopes as their multiplicity
+    if not all(0 ..< #uSigmaSet, i-> uSigmaAreVerticesNumber#(uSigmaSet#i) >= uSigmaMult#i ) then return -infinity;
+    -- [RJS, Thm 6.2, condition (ii+iii)]
+    sigmaDual := dualCone sigma;
+    -- gives u=> {e's} such that u vertex of P(e) and u+sigma^vee contains P(e)
+    --uSigmaPE := applyPairs(uSigmaAreVertices, (u,eAV) -> (u, keys selectPairs(eAV, (e,AV) -> AV and contains(convexHull u + sigmaDual, par#e) ) ));
+    uSigmaPE := applyPairs(uSigmaAreVertices, (u,eAV) -> (u, keys hashTable select(pairs eAV, (e,AV) -> AV and contains(convexHull u + sigmaDual, par#e) ) ));
+    uSigmaPEnumber := applyValues(uSigmaPE, Ps -> #Ps);
+    -- [RJS, Thm 6.2, condition (iv)]
+    if min values uSigmaPEnumber == 0 then (
+        if opts#Verbosity>0 then << "there is no polytope with suitable local structure for at least one u(sigma): " << applyValues(uSigmaPE, l -> apply(l, e -> parVertices#e)) << endl;
+        if opts#Verbosity>0 then << << "on sigma not globally generated." << endl;
+    
+        return -infinity;
+        );
+    if opts#Verbosity>0 then << "the u(sigma) appear as vertices (and with locally correct structure) of " << applyValues(uSigmaPE, l -> apply(l, e -> parVertices#e)) << endl;
+    oneFaces := facesAsCones(dim (variety tvb) -1, sigmaDual);
+    -- calculate the intersection of the edges of u+sigmaDual with P(e)
+    edges := applyPairs(uSigmaPE, (u,es) -> (u, apply(es, e->  apply(oneFaces, f-> intersection(convexHull u + f, par#e)))));
+    -- transform result into matrices whose columns are the vertices of the edges
+    edges = applyValues(edges, edgeSet -> apply(edgeSet, polSet -> apply(polSet, pol -> matrix vertices pol )));
+    if opts#Verbosity>0 then << "the intersections of u+sigmaDual with P(e) have vertices " << edges << endl;
+    -- calculate the lattice length and take for each P(e) the minimal one
+    edgeLengths := applyValues(edges, edgeSet -> apply(edgeSet, matSet -> min apply(matSet, mat -> gcd flatten entries (mat_0 - mat_(numgens source mat-1)))));
+    -- [RJS, Thm 6.2, condition (iv)]
+    -- check which combinations of P(e)s give a basis
+    checkBaseOfMatroid := apply(cartesianProduct values uSigmaPE, es -> rank fold(es, (i,j)->i|j) == rank tvb);
+    -- for all bases compute the minimal edge number, take maximum among all
+    l := max apply(select(pack(2, mingle(checkBaseOfMatroid , cartesianProduct values edgeLengths)), i -> i#0), i -> min i#1);
+    if opts#Verbosity>0 then (
+        if l >= 0 then ( << "separates " << l << "-jets"  << endl ) else ( << "on sigma not globally generated." << endl )
+        );
+    l
+    )
 
 
 -- PURPOSE : Given a toric vector bundle in Klyachko's description,
 --           its parliament bases and toric Chern character
 --           compute the maximal l such that the bundle separates l-jets
 --   INPUT : 'tvb', toric vector bundle
---  OUTPUT :  Integer, -infinity if not separates any l-jets, otherwise l
+--  OUTPUT :  Integer, -infinity if not separates any l-jets, otherwise l    
 separatesJets = method(Options => true)
-separatesJets (ToricVectorBundle) := {Verbosity => 0} >> opts -> (cacheValue separatesJets) (tvb -> (
+separatesJets ToricVectorBundle := ZZ => {Verbosity => 0} >> opts -> (cacheValue separatesJets)(tvb -> (
         if opts#Verbosity>0 then << "METHOD: separatesJets" << endl;
         min(apply(maxCones tvb, sigma -> separatesJetsLocally(tvb,sigma, Verbosity=>opts#Verbosity) ) )
         ))
@@ -460,9 +451,10 @@ separatesJets (ToricVectorBundle) := {Verbosity => 0} >> opts -> (cacheValue sep
 --           check if the vector bundle is globally generated, using [RJS, Thm. 1.2]
 --   INPUT : 'tvb', toric vector bundle
 --  OUTPUT :  'true' if globally generated, otherwise 'false'
-isGloballyGenerated = method( Options => true )
-isGloballyGenerated (ToricVectorBundle) := {Verbosity => 0} >> opts -> (tvb) -> 
-if separatesJets(tvb, Verbosity=>opts#Verbosity) >= 0 then true else false;
+isGloballyGenerated = method(Options => true)
+isGloballyGenerated ToricVectorBundle := Boolean => {Verbosity => 0} >> opts -> tvb -> (
+    if separatesJets(tvb, Verbosity=>opts#Verbosity) >= 0 then true else false
+    )
 
 
 -- PURPOSE : Given a toric vector bundle in Klyachko's description,
@@ -471,7 +463,7 @@ if separatesJets(tvb, Verbosity=>opts#Verbosity) >= 0 then true else false;
 --   INPUT : 'tvb', toric vector bundle
 --  OUTPUT :  'true' if very ample, otherwise 'false'
 --isVeryAmple = method( Options => true ) -- already defined in Polyhedra
-isVeryAmple (ToricVectorBundle) := {Verbosity => 0} >> opts -> tvb -> separatesJets(tvb, opts) >= 1
+isVeryAmple ToricVectorBundle := Boolean => {Verbosity => 0} >> opts -> tvb -> separatesJets(tvb, opts) >= 1
   
 ------------------------------------------------------------------------------
 -- METHOD: restrictToInvCurves, isNef, isAmple
@@ -488,53 +480,52 @@ isVeryAmple (ToricVectorBundle) := {Verbosity => 0} >> opts -> tvb -> separatesJ
 --           'tau', (n-1)-dim cone given as matrix of rays
 --           'torChern', toric Chern character
 --  OUTPUT : list of integers (a_i) such that E|_C = \sum O_C(a_i)
-restrictToCurve = method( Options => true)
-restrictToCurve (Matrix,HashTable) := {Verbosity => 0} >> opts -> (tau,torChern) -> (
- normal := generators kernel transpose tau;
- if opts#Verbosity>0 then << "a vector normal to tau:" << endl << normal << endl;
- sigmas := {};
- for sigma in keys torChern do (
-  if contains(coneFromVData sigma, coneFromVData tau) then (
-   proj := flatten entries (transpose normal * sigma);
-   if all(proj, n -> n >= 0) then
-    sigmas = prepend(sigma,sigmas)
-   else
-    sigmas = append(sigmas,sigma);
-  );
- );
- if opts#Verbosity>0 then << "the adjacent maximal cones sigma1 and sigma2 are:" << endl << sigmas << endl;
- for u0 in torChern#(sigmas_0) list (
-  local a;
-  for u1 in torChern#(sigmas_1) do (
-   -- opposite due to different sign convention in [RJS]
-   diff := u1-u0;
-   as := unique select(apply(entries(diff|normal), i -> if i_1==0 then (if not i_0==0 then infinity) else i_0/i_1), x -> instance(x,Number) or instance(x,InfiniteNumber));
-   if #as == 1 then (
-    a = as_0;
-    if opts#Verbosity>0 then << "the Chern components u1 and u2 lie on a line orthogonal to tau: " << endl << {u0,u1} << endl 
-                           << "their difference is " << a << " times the normal." << endl;
-    break;
-   );
-  );
-  a
- )
-)
+restrictToCurve = method(Options => true)
+restrictToCurve (Matrix,HashTable) := List => {Verbosity => 0} >> opts -> (tau,torChern) -> (
+    normal := generators kernel transpose tau;
+    if opts#Verbosity>0 then << "a vector normal to tau:" << endl << normal << endl;
+    sigmas := {};
+    for sigma in keys torChern do (
+        if contains(coneFromVData sigma, coneFromVData tau) then (
+            proj := flatten entries (transpose normal * sigma);
+            if all(proj, n -> n >= 0) then
+            sigmas = prepend(sigma,sigmas)
+            else
+            sigmas = append(sigmas,sigma);
+            );
+        );
+    if opts#Verbosity>0 then << "the adjacent maximal cones sigma1 and sigma2 are:" << endl << sigmas << endl;
+    for u0 in torChern#(sigmas_0) list (
+        local a;
+        for u1 in torChern#(sigmas_1) do (
+            -- opposite due to different sign convention in [RJS]
+            diff := u1-u0;
+            as := unique select(apply(entries(diff|normal), i -> if i_1==0 then (if not i_0==0 then infinity) else i_0/i_1), x -> instance(x,Number) or instance(x,InfiniteNumber));
+            if #as == 1 then (
+                a = as_0;
+                if opts#Verbosity>0 then << "the Chern components u1 and u2 lie on a line orthogonal to tau: " << endl << {u0,u1} << endl 
+                << "their difference is " << a << " times the normal." << endl;
+                break;
+                );
+            );
+        a
+        )
+    )
 
 -- MAIN METHODS: restrictToInvCurves, isNef, isAmple -----------------------------
 
 restrictToInvCurves = method(Options => true)
-restrictToInvCurves (ToricVectorBundle) := {Verbosity => 0} >> opts -> (cacheValue symbol restrictionsToInvCurves) ( tvb -> (
- torChern := toricChernCharacter( tvb);
- if opts#Verbosity>0 then << "METHOD: restrictToInvCurves" << endl;
- F := fan tvb;
- n := dim fan tvb;
- curveCones := apply(cones(n-1,F), c -> (rays F)_c);
-
- hashTable for tau in curveCones list (
-    if opts#Verbosity>0 then << "Restriction to codim1 cone tau:" << endl << tau << endl;
-  tau => restrictToCurve(tau,torChern)
- )
-))
+restrictToInvCurves ToricVectorBundle := HashTable => {Verbosity => 0} >> opts -> (cacheValue symbol restrictionsToInvCurves) ( tvb -> (
+        torChern := toricChernCharacter( tvb);
+        if opts#Verbosity>0 then << "METHOD: restrictToInvCurves" << endl;
+        F := fan tvb;
+        n := dim fan tvb;
+        curveCones := apply(cones(n-1,F), c -> (rays F)_c);
+        hashTable for tau in curveCones list (
+            if opts#Verbosity>0 then << "Restriction to codim1 cone tau:" << endl << tau << endl;
+            tau => restrictToCurve(tau,torChern)
+            )
+        ))
 
 
 -- PURPOSE : Given a toric vector bundle in Klyachko's description and
@@ -542,19 +533,19 @@ restrictToInvCurves (ToricVectorBundle) := {Verbosity => 0} >> opts -> (cacheVal
 --           compute whether the bundle is nef or ample, using [HMP, Thm. 2.1]
 --   INPUT : 'tvb', toric vector bundle
 --  OUTPUT : hash table
---isNef = method( Options => true)
-isNef (ToricVectorBundle) := {Verbosity => 0} >> opts -> tvb -> (
-     if opts#Verbosity>0 then << "METHOD: isNef" << endl;
- restrictions := restrictToInvCurves(tvb, Verbosity => opts#Verbosity);
- all(values restrictions, r -> all(r, x -> x >=0))
-)
+--isNef = method( Options => true)    
+isNef ToricVectorBundle := HashTable => {Verbosity => 0} >> opts -> tvb -> (
+    if opts#Verbosity>0 then << "METHOD: isNef" << endl;
+    restrictions := restrictToInvCurves(tvb, Verbosity => opts#Verbosity);
+    all(values restrictions, r -> all(r, x -> x >=0))
+    )
 
---isAmple = method( Options => true)
-isAmple (ToricVectorBundle) := {Verbosity => 0} >> opts -> tvb -> (
- if opts#Verbosity>0 then << "METHOD: isAmple" << endl;
- restrictions := restrictToInvCurves(tvb, Verbosity => opts#Verbosity);
- all(values restrictions, r -> all(r, x -> x >0))
-)
+--isAmple = method( Options => true)    
+isAmple ToricVectorBundle := Boolean => {Verbosity => 0} >> opts -> tvb -> (
+    if opts#Verbosity>0 then << "METHOD: isAmple" << endl;
+    restrictions := restrictToInvCurves(tvb, Verbosity => opts#Verbosity);
+    all(values restrictions, r -> all(r, x -> x >0))
+    )
 
 ------------------------------------------------------------------------------
 -- METHOD: drawParliament2Dtikz
@@ -568,22 +559,22 @@ isAmple (ToricVectorBundle) := {Verbosity => 0} >> opts -> tvb -> (
 --           sort the points by angle
 sortByAngle = method()
 sortByAngle (List,List) := (p, angles) -> (
- if #p == 1 then return p;
- for i from 0 to #p-2 do 
-  if angles_(i+1) < angles_i then
-   return sortByAngle(switch(i,i+1,p),switch(i,i+1,angles));
- p
-)
+    if #p == 1 then return p;
+    for i from 0 to #p-2 do 
+    if angles_(i+1) < angles_i then
+    return sortByAngle(switch(i,i+1,p),switch(i,i+1,angles));
+    p
+    )
 
 -- PURPOSE : Given a list of points in the plane,
 --           sort them in circular way around center of gravity
 circularOrder = method()
 circularOrder (List) := p -> (
- mid := sum p/#p;
- pmoved := apply(p, pt->pt-mid);
- angles := apply(pmoved, pt -> atan2(pt_1,pt_0));
- sortByAngle(p,angles)
-)
+    mid := sum p/#p;
+    pmoved := apply(p, pt->pt-mid);
+    angles := apply(pmoved, pt -> atan2(pt_1,pt_0));
+    sortByAngle(p,angles)
+    )
 
 -- MAIN METHOD: drawParliament2Dtikz -----------------------------------------
 
@@ -594,92 +585,92 @@ circularOrder (List) := p -> (
 
 drawParliament2Dtikz = method(Options => true)
 drawParliament2Dtikz (ToricVectorBundle,String) := {DrawCohomology => true, DrawChernCharacter => true } >> opts -> (tvb,file) -> (
--- check for dimension 2
-if dim fan tvb != 2 then (
- error "Error: only works for 2-dim parliaments.";
- return;
-);
+    -- check for dimension 2
+    if dim fan tvb != 2 then (
+        error "Error: only works for 2-dim parliaments.";
+        return;
+        );
 
-polys := apply(values parliament tvb, vertices);
+    polys := apply(values parliament tvb, vertices);
 
-offset := 0.3;
--- want (0,0) to be inside picture
-maxx := max append(apply(polys, p->max flatten entries p^{0}),0);
-maxy := max append(apply(polys, p->max flatten entries p^{1}),0);
-minx := min append(apply(polys, p->min flatten entries p^{0}),0);
-miny := min append(apply(polys, p->min flatten entries p^{1}),0);
+    offset := 0.3;
+    -- want (0,0) to be inside picture
+    maxx := max append(apply(polys, p->max flatten entries p^{0}),0);
+    maxy := max append(apply(polys, p->max flatten entries p^{1}),0);
+    minx := min append(apply(polys, p->min flatten entries p^{0}),0);
+    miny := min append(apply(polys, p->min flatten entries p^{1}),0);
 
--- <<"" is taken from documentation about
--- creating and writing files in M2
-f := file << "";
+    -- <<"" is taken from documentation about
+    -- creating and writing files in M2
+    f := file << "";
 
-f << ///\begin{tikzpicture}[scale=0.5]/// << endl;
+    f << ///\begin{tikzpicture}[scale=0.5]/// << endl;
 
-if not minx == infinity then (
-f << /// \draw[thin, color=black!75]/// << endl;
-f << "  ("  << minx-offset << "," << miny-offset << ") grid (" << maxx+offset << "," << maxy+offset << ");" << endl << endl;
-);
+    if not minx == infinity then (
+        f << /// \draw[thin, color=black!75]/// << endl;
+        f << "  ("  << minx-offset << "," << miny-offset << ") grid (" << maxx+offset << "," << maxy+offset << ");" << endl << endl;
+        );
 
-for pMat in polys do (
- -- check for empty polytope
- if source pMat==0 then continue;
+    for pMat in polys do (
+        -- check for empty polytope
+        if source pMat==0 then continue;
 
- pts := circularOrder entries transpose pMat;
- f << /// \fill[color=black,opacity=0.1]/// << endl << "  ";
- for p in pts do (
-  f << "(" << p_0 << "," << p_1 << ") -- ";
- );
- f << "cycle;" << endl;
+        pts := circularOrder entries transpose pMat;
+        f << /// \fill[color=black,opacity=0.1]/// << endl << "  ";
+        for p in pts do (
+            f << "(" << p_0 << "," << p_1 << ") -- ";
+            );
+        f << "cycle;" << endl;
 
- f << /// \draw[color=black,opacity=0.5]/// << endl << "  ";
- for p in pts do (
-  f << "(" << p_0 << "," << p_1 << ") -- ";
- );
- f << "cycle;" << endl;
-);
+        f << /// \draw[color=black,opacity=0.5]/// << endl << "  ";
+        for p in pts do (
+            f << "(" << p_0 << "," << p_1 << ") -- ";
+            );
+        f << "cycle;" << endl;
+        );
 
 
-if opts#DrawCohomology then (
- H := apply(0 .. 2, i->degrees HH^i tvb);
- 
- for h in H_0 do (
-  f << /// \fill[color=blue,opacity=0.3]/// << endl;
-  f << "  (" << h_0 << "," << h_1 << ") circle (2pt);" << endl;
- );
- 
- for h in H_1 do (
-  f << /// \fill[color=red,opacity=0.3]/// << endl;
-  f << "  (" << h_0 << "," << h_1 << ") circle (2pt);" << endl;
- );
- 
- for h in H_2 do (
-  f << /// \fill[color=green,opacity=0.3]/// << endl;
-  f << "  (" << h_0 << "," << h_1 << ") circle (2pt);" << endl;
- );
-);
+    if opts#DrawCohomology then (
+        H := apply(0 .. 2, i->degrees HH^i tvb);
+    
+        for h in H_0 do (
+            f << /// \fill[color=blue,opacity=0.3]/// << endl;
+            f << "  (" << h_0 << "," << h_1 << ") circle (2pt);" << endl;
+            );
+    
+        for h in H_1 do (
+            f << /// \fill[color=red,opacity=0.3]/// << endl;
+            f << "  (" << h_0 << "," << h_1 << ") circle (2pt);" << endl;
+            );
+    
+        for h in H_2 do (
+            f << /// \fill[color=green,opacity=0.3]/// << endl;
+            f << "  (" << h_0 << "," << h_1 << ") circle (2pt);" << endl;
+            );
+        );
 
-if opts#DrawChernCharacter then (
- chern := values toricChernCharacter tvb;
- for cs in chern do 
-  for c in cs do (
-   f << /// \draw[thick, color=yellow!50]/// << endl;
-   f << "  (" << c_(0,0) << "," << c_(1,0) << ") circle (2pt);" << endl;
-  );
- graphChern := graphToricChernCharacter tvb;
- for ray in keys graphChern do
-  for u in graphChern#ray do (
-   f << /// \draw[thin, color=yellow!50]/// << endl;
-   f << "  (" << u_0_(0,0) << "," <<  u_0_(1,0) << ") -- (" << u_1_(0,0) << "," << u_1_(1,0) <<");" << endl;
-  );
-);
+    if opts#DrawChernCharacter then (
+        chern := values toricChernCharacter tvb;
+        for cs in chern do 
+        for c in cs do (
+            f << /// \draw[thick, color=yellow!50]/// << endl;
+            f << "  (" << c_(0,0) << "," << c_(1,0) << ") circle (2pt);" << endl;
+            );
+        graphChern := graphToricChernCharacter tvb;
+        for ray in keys graphChern do
+        for u in graphChern#ray do (
+            f << /// \draw[thin, color=yellow!50]/// << endl;
+            f << "  (" << u_0_(0,0) << "," <<  u_0_(1,0) << ") -- (" << u_1_(0,0) << "," << u_1_(1,0) <<");" << endl;
+            );
+        );
 
-f << /// \draw[thick, color=black!50]/// << endl;
-f << "  (0,0) circle (3pt);" << endl;
+    f << /// \draw[thick, color=black!50]/// << endl;
+    f << "  (0,0) circle (3pt);" << endl;
 
-f << ///\end{tikzpicture}/// << endl;
+    f << ///\end{tikzpicture}/// << endl;
 
-f << close;
-)
+    f << close;
+    )
 
 
 --- METHOD: wellformedBundleFiltrations -----------------------------------
@@ -691,48 +682,48 @@ f << close;
 wellformedBundleFiltrations = method ()
 -*
 wellformedBundleFiltrations (ToricVectorBundle) := tvb -> (
- fMTlist := applyValues(filtration tvb, f -> sort flatten entries f );
- fMT := applyValues(fMTlist, f -> matrix {f});
- fMTunique := applyValues(fMTlist, unique);
- permutations := applyPairs(fMTunique, (rho,f)-> rho => apply(f, i-> positions(flatten entries (filtration tvb)#rho, j->i==j)) );
- bT := applyPairs(base tvb, (rho,m) -> rho => fold(apply(permutations#rho, i -> m_i), (i,j) -> i|j));
- -- the following is taken from ToricVectorBundles#makeVBKlyachko
- fT := hashTable apply(pairs fMT, p -> (
-               L := flatten entries p#1;
-               L1 := sort unique L;
-               p#0 => hashTable ({(min L1-1) => {}} | apply(L1, l -> l => positions(L,e -> e == l)))));
- new ToricVectorBundle from {
-               "ring" => tvb#"ring",
-               "rayTable" => tvb#"rayTable",
-               "baseTable" => bT,
-               "filtrationMatricesTable" => fMT,
-               "filtrationTable" => fT,
-               "ToricVariety" => tvb#"ToricVariety",
-               "number of affine charts" => tvb#"number of affine charts",
-               "dimension of the variety" => tvb#"dimension of the variety",
-               "rank of the vector bundle" => tvb#"rank of the vector bundle",
-               "number of rays" => tvb#"number of rays",
-               symbol cache => new CacheTable}
-)
+    fMTlist := applyValues(filtration tvb, f -> sort flatten entries f );
+    fMT := applyValues(fMTlist, f -> matrix {f});
+    fMTunique := applyValues(fMTlist, unique);
+    permutations := applyPairs(fMTunique, (rho,f)-> rho => apply(f, i-> positions(flatten entries (filtration tvb)#rho, j->i==j)) );
+    bT := applyPairs(base tvb, (rho,m) -> rho => fold(apply(permutations#rho, i -> m_i), (i,j) -> i|j));
+    -- the following is taken from ToricVectorBundles#makeVBKlyachko
+    fT := hashTable apply(pairs fMT, p -> (
+            L := flatten entries p#1;
+            L1 := sort unique L;
+            p#0 => hashTable ({(min L1-1) => {}} | apply(L1, l -> l => positions(L,e -> e == l)))));
+    new ToricVectorBundle from {
+        "ring" => tvb#"ring",
+        "rayTable" => tvb#"rayTable",
+        "baseTable" => bT,
+        "filtrationMatricesTable" => fMT,
+        "filtrationTable" => fT,
+        "ToricVariety" => tvb#"ToricVariety",
+        "number of affine charts" => tvb#"number of affine charts",
+        "dimension of the variety" => tvb#"dimension of the variety",
+        "rank of the vector bundle" => tvb#"rank of the vector bundle",
+        "number of rays" => tvb#"number of rays",
+        symbol cache => new CacheTable}
+    )
 *-
- -- TODO decide if this method is still needed
+-- TODO decide if this method is still needed
 wellformedBundleFiltrations (ToricVectorBundle) := tvb -> (
- fMTlist := hashTable apply( rays tvb, rho -> rho => -1*filtrationJumps(tvb, rho));
- fMT := applyValues(fMTlist, f -> matrix {f});
- fMTunique := applyValues(fMTlist, unique);
- permutations := applyPairs(fMTunique, (rho,f)-> rho => apply(f, i-> positions( -1*filtrationJumps(tvb, rho), j->i==j)) );
- basetvb :=  hashTable apply( rays tvb, rho -> rho => filtrationMatrices(tvb, rho));
- bT := applyPairs(basetvb, (rho,m) -> rho => fold( (i,j) -> i|j, apply(permutations#rho, i -> m_i)));
- -- the following is taken from ToricVectorBundles#makeVBKlyachko
- fT := hashTable apply(pairs fMT, p -> (
-               L := flatten entries p#1;
-               L1 := sort unique L;
-               p#0 => hashTable ({(min L1-1) => {}} | apply(L1, l -> l => positions(L,e -> e == l)))));
- -- New data
- mats:= apply(rays tvb, rho -> bT#rho );
- jumps:= apply( rays tvb, rho -> -1*( flatten entries fMT#rho));
- toricVectorBundle( variety tvb, mats, jumps)
-)
+    fMTlist := hashTable apply( rays tvb, rho -> rho => -1*filtrationJumps(tvb, rho));
+    fMT := applyValues(fMTlist, f -> matrix {f});
+    fMTunique := applyValues(fMTlist, unique);
+    permutations := applyPairs(fMTunique, (rho,f)-> rho => apply(f, i-> positions( -1*filtrationJumps(tvb, rho), j->i==j)) );
+    basetvb :=  hashTable apply( rays tvb, rho -> rho => filtrationMatrices(tvb, rho));
+    bT := applyPairs(basetvb, (rho,m) -> rho => fold( (i,j) -> i|j, apply(permutations#rho, i -> m_i)));
+    -- the following is taken from ToricVectorBundles#makeVBKlyachko
+    fT := hashTable apply(pairs fMT, p -> (
+            L := flatten entries p#1;
+            L1 := sort unique L;
+            p#0 => hashTable ({(min L1-1) => {}} | apply(L1, l -> l => positions(L,e -> e == l)))));
+    -- New data
+    mats:= apply(rays tvb, rho -> bT#rho );
+    jumps:= apply( rays tvb, rho -> -1*( flatten entries fMT#rho));
+    toricVectorBundle( variety tvb, mats, jumps)
+    )
 
 end
 

@@ -78,7 +78,7 @@ document {
   "Another warning concerns the toric variety: the methods of ", TT "PositivityToricBundles", " implicitly assume that the variety is complete (to apply the results of [HMP] and [P]) and in addition smooth (for [RJS]). For non-complete or singular toric varieties, methods might break or results might become meaningless."},
 
   SeeAlso => {"Polyhedra::Polyhedra", "ToricVectorBundles::ToricVectorBundles"},
-  Contributors => {"The author of the package wants to thank Brett Nasserden and Alexandre Zotine for reporting bugs."}
+  Contributors => {"The author of the package wants to thank Nathan Ilten, Brett Nasserden, Greg Smith, and Sasha Zotine for reporting bugs."}
   }
 
 

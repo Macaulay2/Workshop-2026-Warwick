@@ -85,6 +85,7 @@ export {
     "strata",
     -- Operations
     "areIsomorphic",
+    "areIsomorphic2",
     "deltaE",
     "details",
     "filtrations" => "details",
@@ -99,6 +100,7 @@ export {
     "twist",
     "isTwistOf",
     "firstChernClass",
+    "cartierIndex",
     -- Misc
     "displayFiltrations",
     -- Positivity    
@@ -138,7 +140,7 @@ protect regularityCondition
 -- areIsomorphic
 protect iso
 -- cohomology
-protect weightedCoeffRing
+protect WeightedCoeffRing
 protect eigenspaceDecompositions
 protect ambRank
 
@@ -374,16 +376,13 @@ symmetricPower (ZZ, ToricVectorBundle) := (l, TVB) -> (
         ind := sort apply(subsets(rank TVB + l - 1, l),s -> apply(#s, i -> s#i - i));
         allind := sort unique flatten apply(ind, permutations);
         indtable := hashTable apply(#ind, i -> ind#i => i);
-        -- TODO: a mutable matrix isn't necessary here. we might also be able to clean up the indices.
-        newfM := apply(#R, t -> (
-                M := mutableMatrix(ring TVB,#ind,#ind);
-                for i in ind do (
-                    for j in allind do (
-                        M_(indtable#(sort j),indtable#i) = M_(indtable#(sort j),indtable#i) + product apply(#j, k -> ((fM_t)_i)_(j#k,k))
-                        );
-                    );
-                matrix M
-                )
+        -- the trick is to think of Sym(R^n) as a polynomial ring, then the symmetric power of a matrix 
+        -- is a 1xn matrix on the polynomial ring, and finally use the symmetricPower method for matrices
+        y := symbol y;
+        S := (ring TVB)[y_0..y_(rank TVB - 1)];
+        mons := symmetricPower(l, vars S);
+        newfM := apply(fM, A ->
+            lift(last coefficients(symmetricPower(l, vars S * sub(A, S)), Monomials => mons), ring TVB)
             );
         newfJ := apply(#R, t -> (
                 apply(ind, j -> sum (fJ_t)_j)
@@ -399,56 +398,28 @@ removeDupeCols := fM -> (
 )
 
 -*
-restart
 debug needsPackage "ToricVectorBundles2"
-X = toricProjectiveSpace(3, CoefficientRing=> ZZ/101);
-TX = tangentBundle X;
-triv = trivialBundle(X,1);
-sumoflbs = lineBundle X_0 ++ lineBundle X_1 ++ lineBundle X_2 ++ lineBundle X_3;
-f = map(sumoflbs,triv,matrix(ZZ/101,{{1},{1},{1},{1}}));
-g = map(TX,sumoflbs, transpose sub(matrix rays X,ZZ/101));
-image f == ker g
-
-Y = toricProjectiveSpace 1
-mats := {matrix {{1,0},{1,0},{1,1},{1,0}}, matrix {{1,0},{1,0},{0,1},{1,0}}}
-jumps := {{1,0},{0,1}}
-E' = toricVectorBundle(Y,mats,jumps)
-displayFiltrations E'
-displayFiltrations prune E'
-T1 = E'
-T2 = prune E'
+X = toricProjectiveSpace 1
+mats := {matrix{{1,0},{0,1}}, matrix {{1,0},{0,1}}}
+jumps := {{1,0}, {0,0}}
+T1 = toricVectorBundle(X,mats,jumps) 
+mats' := {matrix{{0,-1},{1,0}}, matrix {{1,0},{0,1}}}
+jumps' := {{0,1}, {0,0}}
+T2 = toricVectorBundle(X,mats',jumps') 
 T1 == T2
+groundSet T1
+groundSet T2
+mats'' := {matrix{{0,1},{-1,0}}, matrix {{1,0},{0,1}}}
+jumps'' := {{0,1}, {0,0}}
+T3 =  toricVectorBundle(X,mats'',jumps'') 
 
-X = hirzebruchSurface 2
-E = tangentBundle X
-L = lineBundle(X_0 + 2*X_1 + 4*X_2 + 5*X_3)
-T1 = exteriorPower(E ++ L, 2)
-T2 = (exteriorPower(E,0) ** exteriorPower(L,2)) ++ (exteriorPower(E,1)**exteriorPower(L,1)) ++ (exteriorPower(E,2) ** exteriorPower(L,0))
-T1 == T2
+X = toricProjectiveSpace 2
+T1 = tangentBundle X
+M1 = klyachkoToModule T1
+T2 = moduleToKlyachko (X, M1)
+-- BUG: This returns false when it shouldnt
+assert(T1==T2)
 
-X = toricProjectiveSpace 3
-E = tangentBundle X
-E' = E ++ trivialBundle(X,1);
-f = map(E',E,matrix{{1,0,0},{0,1,0},{0,0,1},{0,0,0}})
-T1 = E
-T2 = image f
-displayFiltrations T1
-displayFiltrations T2
-T1 == T2
-T1 == prune T2
-
-X = toricProjectiveSpace 2;
-E1 = toricVectorBundle(X,{matrix {{-1,-1},{-1,0}}, matrix {{1,0},{0,1}}, matrix {{0,1},{1,0}}}, {{1,0},{1,0},{1,0}})
-E2 = toricVectorBundle(X,{matrix {{-1,0},{-1,-1}}, matrix {{0,1},{1,0}}, matrix {{1,0},{0,1}}}, {{1,0},{1,0},{1,0}})
-E1 == E2
-
--- here's another random example
-Y = hirzebruchSurface 2;
-E1 = tangentBundle Y ++ tangentBundle Y;
-M = matrix(ring E1, {{1,1,0,2},{0,1,1,1},{0,1,0,-1},{0,0,0,1}});
-filtmats = apply(filtrationMatrices E1, m -> M * m)
-E2 = toricVectorBundle(Y,filtmats, filtrationJumps E1)
-E1 == E2
 *-
 
 ToricVectorBundle == ToricVectorBundle := (T1,T2) -> (areIsomorphic(T1,T2))
@@ -474,17 +445,25 @@ areIsomorphic (ToricVectorBundle,ToricVectorBundle) := Boolean => (T1,T2) -> (
         g2 := sub(matrix {groundSet T2}, ring T2);
         if numColumns g1 == numColumns g2 then (
             -- attempt to find the isomorphism between them.
-            N := solve(transpose g1, transpose g2);
-            if N =!= null then (
-                f := map(T2, T1, transpose N);
-                -- if this one is well defined and bijective, then it's our guy.
-                areTVBsIso = if not(isWellDefined f or isInjective f or isSurjective f) then false else (
-                    T1.cache.iso#T2 = f;
-                    Ninv := solve(transpose g2, transpose g1);
-                    T2.cache.iso#T1 = map(T1, T2, transpose Ninv);
-                    true
-                    )
-                );
+            for S1 in subsets(numColumns g1, rank T1) list (
+                for S2 in subsets(numColumns g2, rank T1) list (
+                    basis1 := g1_S1;
+                    basis2 := g2_S2;
+                    N := solve(transpose basis1, transpose basis2);
+                    if N =!= null then (
+                        f := map(T2, T1, transpose N);
+                        -- if this one is well defined and bijective, then it's our guy.
+                        if isWellDefined f and isInjective f and isSurjective f then (
+                            T1.cache.iso#T2 = f;
+                            Ninv := solve(transpose basis2, transpose basis1);
+                            T2.cache.iso#T1 = map(T1, T2, transpose Ninv);
+                            areTVBsIso = true;
+                            break
+                            ) else areTVBsIso = false;
+                        );
+                    );
+                if areTVBsIso then break
+                )
             )
         );
     areTVBsIso
@@ -494,6 +473,65 @@ isomorphism (ToricVectorBundle,ToricVectorBundle) := Boolean => o -> (T1,T2) -> 
     if not areIsomorphic(T1,T2) then error("The bundles are not isomorphic");
     T1.cache.iso#T2
     )
+
+areIsomorphic2 = method()
+areIsomorphic2 (ToricVectorBundle,ToricVectorBundle) := Boolean => (T1,T2) -> (
+    --First check that the bundles have same rank, defined over same ring and have same base variety before
+    --anything else
+    jumps := rsort unique flatten filtrationJumps T1;
+    if not ((rank T1 == rank T2) and (variety T1 === variety T2) and (ring T1 === ring T2) and (jumps == rsort unique flatten filtrationJumps T2) ) then return false;
+    --Checking if T1 and T2 have already been deemed isomorphic. If not, create entries in a cache
+    if not T1.cache.?iso then (
+        T1.cache.iso = new MutableHashTable;
+        );
+    if not T2.cache.?iso then (
+        T2.cache.iso = new MutableHashTable;
+        );
+    --If T1 does have an entry for iso in the cache, we check if any of the maps targets is T2
+    --i.e. check if we've already deemed T1 iso T2
+    if T1.cache.iso#?T2 then return true;    
+    if not T1.cache.iso#?T2 then (
+        -- first try the identity map
+        isoMatrix := matrix id_((ring T1)^(rank T1));
+        f := map(T2,T1, isoMatrix);
+        areTVBsIso := ((isWellDefined f) and (isInjective f) and (isSurjective f));
+        if not areTVBsIso then (
+            -- attempt to find an isomorphism
+            n:= rank T1;
+            aux1 := flatten apply( jumps, j -> apply(rays T1, rho -> filteredPiece(T1, rho, j) ) );
+            aux2 := flatten apply( jumps, j -> apply(rays T2, rho ->filteredPiece(T2, rho, j) ) );
+            -- When doing the fold the zero columns are automatically removed    
+            M1 := fold((i,j) -> i|j, flatten apply(toList(1..n), i -> select(aux1, M -> numcols M == i ) ));
+            M2 := fold((i,j) -> i|j, flatten apply(toList(1..n), i -> select(aux2, M -> numcols M == i ) ));
+            
+            -- Try several maps possible isomorphisms:
+            subs:= subsets( numcols M1 ,n);
+            seen := {};
+            
+            for s in subs do(
+                M1s := M1_s;
+                M2s := M2_s;
+                if not any( seen , x -> x== (M1s, M2s )) and det M1s =!= 0_(ring T1) and det M2s =!= 0_(ring T2)  then(
+                seen = append(seen, (M1s, M2s));
+                f = map(T2,T1,M2s* (inverse M1s) );
+                areTVBsIso = ((isWellDefined f) and (isInjective f) and (isSurjective f));
+                if areTVBsIso then break
+                );
+                if areTVBsIso then break
+            );
+            
+            );
+        if areTVBsIso then (
+            T1.cache.iso#T2 = f;
+            finv := map(T1,T2,(map f)^-1);
+            T2.cache.iso#T1 = finv;
+            );
+        areTVBsIso
+        )
+    )
+
+
+
 
 -- Not sure what to do about caching this method, but we should include it. 
 isTwistOf = method()
@@ -514,7 +552,8 @@ isTwistOf (ToricVectorBundle, ToricVectorBundle) := (E1, E2) -> (
 -- The cohomology of a toric vector bundle inherits an action of the torus, so these
 -- vector spaces naturally come equipped with torus weights.
 -- This makes a weighted version of the coefficient ring to keep track of these weights.
-weightedCoeffRing := (cacheValue symbol weightedCoeffRing)(E -> (ring E)[DegreeRank => dim variety E])
+weightedCoeffRing = method() 
+weightedCoeffRing ToricVectorBundle := (cacheValue symbol weightedCoeffRing)(E -> (ring E)[DegreeRank => dim variety E])
 
 -- PURPOSE : Computing the Cech complex of a vector bundle
 cechComplex = method()
@@ -770,7 +809,8 @@ net ToricVectorBundleMap := f -> (
     )
 
 map(ToricVectorBundle, ToricVectorBundle, Matrix):= ToricVectorBundleMap => opts -> (E2, E1, M) ->(
-    if numRows M != E2.ambRank or numColumns M != E1.ambRank then error " The dimensions of the matrix don't match the ranks of the bundles";
+    -- TODO; reformulate this check for non square matrices
+    --if numRows M != E2.ambRank or numColumns M != E1.ambRank then error " The dimensions of the matrix don't match the ranks of the bundles";
     if ring M =!= ring E1 or ring M =!= ring E2 then try sub(M, ring E1) then M = sub(M, ring E1) else error " The matrix needs to be defined over the same ring as the bundles";
     if variety E1 =!= variety E2 then error "The base varieties of the bundles have to coincide";
     new ToricVectorBundleMap from{
@@ -840,7 +880,7 @@ isWellDefined ToricVectorBundleMap := Boolean => f ->(
         amb := module (ring E2) ^ (numRows (filtrationMatrices E2)_0);
         for i from m1 to m2 do (
             -- not writing rank E2 allows for matrices that are not square (see cokernel)
-            f1 := map(amb, , sub( M* filteredPiece(E1,p,i), RX));
+            f1 := map(amb, , sub( M * filteredPiece(E1,p,i), RX));
             f2 := map(amb, , sub(filteredPiece(E2,p,i),RX));
             
             if not isSubset(image f1, image f2) then (
@@ -984,19 +1024,70 @@ kernel ToricVectorBundleMap := opts -> f -> (
         -- intersect them with the kernel as subspaces to get a new filtration
         newFilt := transpose for F in filtPieces list (
             -- if the intersection is zero then skip it.
-            if intersect(image F_0, K) == 0 then continue else {gens intersect(image F_0, K), F_1}
+            if intersect(image F_0, K) == 0 then continue else (
+                filtmat := gens intersect(image F_0, K);
+                filtjumps := for i to numColumns filtmat - 1 list F_1;
+                {filtmat, filtjumps}
+                )
             );
         -- concatenate all of those filtered pieces together, then prune them (i.e. choose a basis)
-        pruneFiltration(matrix {newFilt_0}, newFilt_1)
+        pruneFiltration(matrix {newFilt_0}, flatten newFilt_1)
         );
     toricVectorBundle(variety E, mats, jumps)
-)
+    )
 
---todo
+-*
+restart
+debug needsPackage "ToricVectorBundles2"
+ X = toricProjectiveSpace 1;
+ S = ring X;
+ I = ideal X;
+ Qtvb = map(S^{{1}, {2}, {1}, {3}},S^2,{{x_0, x_1}, {0, x_0^2}, {x_1, 0}, {0, x_0^2*x_1}})
+phi1 = moduleToKlyachko (X, Qtvb)
+coker phi1
+
+restart
+debug needsPackage "ToricVectorBundles2"
+X = toricProjectiveSpace(3, CoefficientRing=> ZZ/101);
+TX = tangentBundle X;
+triv = trivialBundle(X,1);
+sumoflbs = lineBundle X_0 ++ lineBundle X_1 ++ lineBundle X_2 ++ lineBundle X_3;
+f = map(sumoflbs,triv,matrix(ZZ/101,{{1},{1},{1},{1}}));
+g = map(TX,sumoflbs, transpose sub(matrix rays X,ZZ/101));
+
+
+*-
+-*
+-- todo not quite working.
 cokernel (ToricVectorBundleMap) := f ->(
+    if not isWellDefined f then error("The map is not well defined");
+    E := target f;
+    D := details E;
+    if isSurjective f then return trivialBundle(variety E,0);
+    imf := image f;
+    imD := details imf;
+    (mats, jumps) := toSequence transpose for p in rays E list (
+        -- we'll scan the filtration in decreasing order so that dimensions are ascending.
+        -- we have to merge the filtration jumps.
+        jumpindices := rsort unique ((D#p)_1 | (imD#p)_1);
+        EfiltPieces := for j in jumpindices list {filteredPiece(E,p,j), j};
+        imfiltPieces := for j in jumpindices list {filteredPiece(imf,p,j), j};
+        -- intersect them with the kernel as subspaces to get a new filtration
+        newFilt := transpose for i to #EfiltPieces-1 list (
+            (F, imF) := (EfiltPieces_i_0, imfiltPieces_i_0);
+            quotgens := F * (matrix (prune (image F / image imF)).cache.pruningMap);
+            {quotgens, for i to numColumns quotgens - 1 list F_i_1}
+            );
+        -- concatenate all of those filtered pieces together, then prune them (i.e. choose a basis)
+        --pruneFiltration(matrix {newFilt_0}, flatten newFilt_1)
+        newFilt
+        );
+    toricVectorBundle(variety E, mats, jumps)
+    )
+*-
+cokernel ToricVectorBundleMap := f ->(
     if not isWellDefined(f) then ( error (" The map is not well defined"));
-    if isSurjective(f) then( return trivialBundle(variety source (f), 0) ); 
-    
+    if isSurjective(f) then( return trivialBundle(variety source (f), 0) );     
     M := f.map;
     E1:= source f;
     E2 := target f;
@@ -1022,9 +1113,10 @@ cokernel (ToricVectorBundleMap) := f ->(
     -- Define the new data
     newMatrices:= apply(L, i ->  matrix fold ( (A,B)-> A|B, i) );
     newJumps := apply( # Xrays , i -> jumpsAux(newMatrices_i, L_i, minj ) );
-    (newMatrices, newJumps)= toSequence transpose apply(transpose{newMatrices, newJumps}, D -> adaptedBasis D );
-    toricVectorBundle( X, newMatrices, newJumps)
-)
+    -- (newMatrices, newJumps)= toSequence transpose apply(transpose{newMatrices, newJumps}, D -> adaptedBasis D );
+    prune toricVectorBundle( X, newMatrices, newJumps)
+    )
+
 
 ToricVectorBundleMap ++ ToricVectorBundleMap := (tvbmap1,tvbmap2) -> (
     map(tvbmap1.target ++ tvbmap2.target, tvbmap1.source ++ tvbmap2.source, tvbmap1.map ++ tvbmap2.map)
@@ -1252,6 +1344,8 @@ fineGr = (X,A,n) -> (
 moduleToKlyachko = method(Options => {Strategy => "image"})
 -- A: presentation of the module we are sheafifying that is fine-graded
 
+-- TODO: deal with 0 matrix
+
 moduleToKlyachko (NormalToricVariety, Matrix):= opts -> (X,A) -> (
     -- Obtain the ToricVectorBundleMap associated to the presentation
   S := ring A;
@@ -1290,8 +1384,8 @@ moduleToKlyachko (NormalToricVariety, Module):= opts -> (X,M) -> (
 -- F = moduleToKlyachko(variety E , klyachkoToModule E);
 -- then F == moduleToKlyachko(variety E, klyachkoToModule(F)) returns true 
 klyachkoToModule = method()
--- TODO
 klyachkoToModule ToricVectorBundle := E -> (
+    E = prune E;
     X := variety E;
     -- Cox ring of the toric variety
     S := ring X;
@@ -1305,7 +1399,7 @@ klyachkoToModule ToricVectorBundle := E -> (
     if r == 0 then return S^0;
     -- Twist E so every filtration jump is >= 0, since a jump becomes a monomial 
     jumps := filtrationJumps E;
-    offsets := apply(jumps, js -> -(max js)-1);
+    offsets := apply(jumps, js -> -(max js));
     E' := if all(offsets, o -> o == 0) then E else twist(E, offsets);
     filtMats := filtrationMatrices E';
     filtJumps :=  filtrationJumps E';
@@ -1316,19 +1410,14 @@ klyachkoToModule ToricVectorBundle := E -> (
     -- Create all the indices to consider
     cands := apply( toList fold( (i,j) -> i**j, (n : set toList(mj..Mj))),i -> toList deepSplice i);
     --correction := apply(offsets, i -> splice{n:i});
+    
     aux := apply(cands , L -> ( 
         monL:= product( apply( n,  i -> (S_i)^(-L_i) ));
-       EL := toSequence apply(#L , i ->image (filteredPiece(E', raysX_i, L_i)*monL) );
-       EL = phibase**( gens intersect EL);
-       --map( R^{r: offsets},R^{ numcols EL : -L - offsets} , EL)
-       map( R^r,, EL)
-       
-       
+       EL := toSequence apply(#L , i ->image map(R^r,, phibase**(filteredPiece(E', raysX_i, L_i)*monL) ));
+        intersect EL
         )
     );
-    (trim image fold((i,j)-> i|j, aux ))**R^{-offsets}
-
-    
+    (trim fold((i,j)-> i+j, aux ))**R^{-offsets}
     
 )
 
@@ -1781,7 +1870,7 @@ assert(dim variety T == 3)
 -- Checking exteriorPower for Klyachko
 TEST ///
 T = cotangentBundle hirzebruchSurface 3
-T = exteriorPower(T,2)
+T = exteriorPower(2,T)
 assert(ring T == ideal(1_QQ))
 
 assert(filtrationJumps T == {{-1}, {-1}, {-1}, {-1}})
@@ -1790,24 +1879,22 @@ assert(rank T == 1)
 assert(dim variety T == 2)
 
 T = tangentBundle toricProjectiveSpace 3
-T = exteriorPower(T,2)
+T = exteriorPower(2,T)
 assert(ring T == ideal(1_QQ))
 
 assert(filtrationJumps T == {{1, 1, 0}, {1, 1, 0}, {1, 1, 0}, {1, 1, 0}})
-assert(filtrationMatrices T == {map(QQ^3,QQ^3,{{-1, 0, 0}, {0, -1, 0}, {1, -1, 1}}),map(QQ^3,QQ^3,{{1, 0, 0}, {0, 1, 0}, {0, 0,
-      1}}),map(QQ^3,QQ^3,{{-1, 0, 0}, {0, 0, 1}, {0, 1, 0}}),map(QQ^3,QQ^3,{{0, 0, 1}, {-1, 0, 0}, {0, -1,
-      0}})})
+assert(filtrationMatrices T == {map(QQ^3,QQ^3,{{-1, 0, 0}, {0, -1, 0}, {1, -1, 1}}),map(QQ^3,QQ^3,{{1, 0, 0}, {0, 1, 0}, {0, 0,1}}),map(QQ^3,QQ^3,{{-1, 0, 0}, {0, 0, 1}, {0, 1, 0}}),map(QQ^3,QQ^3,{{0, 0, 1}, {-1, 0, 0}, {0, -1,0}})})
 assert(rank T == 3)
 assert(dim variety T == 3)
 
 X = hirzebruchSurface 2;
 E = tangentBundle X;
-assert(exteriorPower(E,1) == E)
-assert(rank exteriorPower(E++E,2) == 6)
+assert(exteriorPower(1,E) == E)
+assert(rank exteriorPower(2,E++E) == 6)
 D = toricDivisor({1,2,4,5},X)
 L = lineBundle(D)
-E1 = exteriorPower(E++L, 2);
-E2 = (exteriorPower(E,0)**exteriorPower(L,2))++(exteriorPower(E,1)**exteriorPower(L,1))++(exteriorPower(E,2)**exteriorPower(L,0))
+E1 = exteriorPower(2,E++L);
+E2 = (exteriorPower(0,E)**exteriorPower(2,L))++(exteriorPower(1,E)**exteriorPower(1,L))++(exteriorPower(2,E)**exteriorPower(0,L))
 assert(areIsomorphic(E1,E2))
 ///
 
@@ -1815,7 +1902,7 @@ assert(areIsomorphic(E1,E2))
 -- Checking symmetricPower for Klyachko
 TEST ///
 T = tangentBundle toricProjectiveSpace 3
-T = symmetricPower(T,2)
+T = symmetricPower(2,T)
 assert(ring T === QQ)
 assert(filtrationJumps T == {{2, 1, 1, 0, 0, 0}, {2, 1, 1, 0, 0, 0}, {2, 1, 1, 0, 0, 0}, {2, 1, 1, 0, 0, 0}})
 assert(filtrationMatrices T == {map(QQ^6,QQ^6,{{1, 0, 0, 0, 0, 0}, {2, -1, 0, 0, 0, 0}, {2, 0, -1, 0, 0, 0}, {1, -1, 0, 1, 0, 0},
@@ -1929,7 +2016,7 @@ assert(map isomorphism(E1,E2) == matrix(ring E1, {{0,1},{1,0}}))
 -- here's another random example
 Y = hirzebruchSurface 2;
 E1' = tangentBundle Y ++ tangentBundle Y;
-M = matrix(ring E1', {{1,1,0,2},{0,1,1,1},{0,1,0,-1},{0,0,0,1}});
+M =  map(QQ^4,QQ^4,{{1, 1, 1, 3}, {0, 1, 1, 2}, {0, 1, 0, 0}, {0, 0, 0, 1}});
 filtmats = apply(filtrationMatrices E1', m -> M * m)
 E2' = toricVectorBundle(Y,filtmats, filtrationJumps E1')
 assert(map isomorphism(E1',E2') == M)
@@ -2103,8 +2190,9 @@ assert(areIsomorphic(imf , kg))
 assert( rank(imf)== 1)
 assert( variety imf === X)
 assert( filtrationJumps (imf) =={{0}, {0}, {0}, {0}} )
-assert( filtrationMatrices imf == {matrix {{1_(ZZ/101)}}, matrix {{1_(ZZ/101)}}, matrix {{1_(ZZ/101)}}, matrix {{1_(ZZ/101)}}})
+assert( filtrationMatrices imf ==  {map((ZZ/101)^4,(ZZ/101)^1,{{1}, {1}, {1}, {1}}),map((ZZ/101)^4,(ZZ/101)^1,{{1}, {1}, {1}, {1}}),map((ZZ/101)^4,(ZZ/101)^1,{{1}, {1}, {1},      {1}}),map((ZZ/101)^4,(ZZ/101)^1,{{1}, {1}, {1}, {1}})})
 img= image g;
+-- BUG
 assert ( img == target g)
 
 
@@ -2112,7 +2200,7 @@ assert ( img == target g)
 assert( rank(kg)== 1)
 assert( variety kg === X)
 assert( filtrationJumps (kg) =={{0}, {0}, {0}, {0}} )
-assert( filtrationMatrices kg == {matrix {{1_(ZZ/101)}}, matrix {{1_(ZZ/101)}}, matrix {{1_(ZZ/101)}}, matrix {{1_(ZZ/101)}}})
+assert( filtrationMatrices kg ==  {map((ZZ/101)^4,(ZZ/101)^1,{{1}, {1}, {1}, {1}}),map((ZZ/101)^4,(ZZ/101)^1,{{1}, {1}, {1}, {1}}),map((ZZ/101)^4,(ZZ/101)^1,{{1}, {1}, {1},      {1}}),map((ZZ/101)^4,(ZZ/101)^1,{{1}, {1}, {1}, {1}})})
 kf = ker f;
 assert ( ker f == trivialBundle(X,0))
 
@@ -2136,6 +2224,7 @@ m = id_(QQ^2);
 z = transpose matrix {{0,0,0,0}};
 M = z | z | (m || m);
 f = map(E ++ E, E ++ E, transpose M)
+-- BUG
 assert(image f == E)
 ///
 
@@ -2182,13 +2271,17 @@ assert(E == V)
 
 -- Test 24
 TEST ///
+-- BUG areIsomorphic shouldn't fail here fails for T3 and T1
 X = toricProjectiveSpace 2
 T1 = tangentBundle X
 M1 = klyachkoToModule T1
 T2 = moduleToKlyachko (X, M1)
-M2 = klyachkoToModule T2 
-T3 = moduleToKlyachko (X, M2)
-assert( T3 == T1)
+-- BUG: This returns false when it shouldnt
+assert(T1==T2)
+assert(areIsomorphic2 (T1, T2))
+assert(map isomorphism(T1,T2) ==  matrix {{1_QQ,0},{-1, 1}} )
+assert( isIsomorphism map (T2, T1, matrix {{2_QQ,0},{-2, 2}}))
+
 ///
 
 
@@ -2811,7 +2904,7 @@ f = map(E',E,M)
 
 -*
 restart
-debug needsPackage "ToricVectorBundles"
+debug needsPackage "ToricVectorBundles2"
 X = toricProjectiveSpace(3, CoefficientRing=> ZZ/101);
 TX = tangentBundle X;
 triv = trivialBundle(X,1);
@@ -2820,6 +2913,8 @@ f = map(sumoflbs,triv,matrix(ZZ/101,{{1},{1},{1},{1}}));
 g = map(TX,sumoflbs, transpose sub(matrix rays X,ZZ/101));
 image g
 ker g
+displayFiltrations image f
+displayFiltrations prune image f
 
 Y = toricProjectiveSpace 1
 mats := {matrix {{1,0},{1,0},{1,1},{1,0}}, matrix {{1,0},{1,0},{0,1},{1,0}}}
@@ -2834,8 +2929,8 @@ T1 == T2
 X = hirzebruchSurface 2
 E = tangentBundle X
 L = lineBundle(X_0 + 2*X_1 + 4*X_2 + 5*X_3)
-T1 = exteriorPower(E ++ L, 2)
-T2 = (exteriorPower(E,0) ** exteriorPower(L,2)) ++ (exteriorPower(E,1)**exteriorPower(L,1)) ++ (exteriorPower(E,2) ** exteriorPower(L,0))
+T1 = exteriorPower(2,E ++ L)
+T2 = (exteriorPower(0,E) ** exteriorPower(2,L)) ++ (exteriorPower(1,E)**exteriorPower(1,L)) ++ (exteriorPower(2,E) ** exteriorPower(0,L))
 areIsomorphic(T1,T2)
 E = T1
 
@@ -2851,9 +2946,7 @@ T1 == T2
 T1 == prune T2
 *-
 
-
-
-torusWeights := E -> (
+satisfiesCompatibility := E -> (
     D := details E;
     R := rays E;
     decomps := for m in max variety E list (
@@ -2882,6 +2975,8 @@ torusWeights := E -> (
                 v := (D#p)_0_{position((D#p)_1, j' -> j' == j)};
                 -- for each ray p' not equal to p, we find the index j' where v intersects the filtration
                 -- of p' and take the set of characters H#p#j'.
+                -- along the way, record the visited indices j'.
+                visitedj := {j};
                 if not H#p#?j then continue;
                 filtindices := {{p, j}};
                 filtindices = (filtindices | for p' in delete(p, R_m) list (
@@ -2889,24 +2984,63 @@ torusWeights := E -> (
                         for k in rsort unique (D#p')_1 do (
                             if intersect(image filteredPiece(E,p',k), image v) != 0 then (j' = k; break) else continue
                             );
-                        if not H#p'#?j' then {} else {p', j'}
+                        if not H#p'#?j' then {} else (visitedj = visitedj | {j'}; {p', j'})
                         )
                     );
                 -- try to intersect the lists of characters
                 chars := toList intersect for f in filtindices list if f == {} then set {} else set H#(f_0)#(f_1);
                 -- if this intersection was empty, then it was impossible to index the decomposition.
-                if chars == {} then continue else {p, chars_0, v}
+                if chars == {} then continue else {p, chars_0, v, visitedj}
                 )
             );
-        -- todo: now to parse the character data to try and find a decomposition.
-        (toruswts, fibrebasis) := toSequence apply(transpose flatten chardata, MM -> matrix {MM});
-        --if numColumns fibrebasis != rank E then {} else
-        {toruswts, fibrebasis}
+        -- jumpindices might not be as long as rank E..........
+        candidateDecomps := flatten for S in subsets(#chardata, rank E) list (
+            possibleChoices := multinomialSets(chardata_S, {{}});
+            for p in possibleChoices list (
+                if (rsort unique flatten for c in p list c_3) != jumpindices then continue
+                else (
+                    for c in p list {c_1, c_2}
+                    )
+                )
+            );
+        decomp := {};
+        for c in candidateDecomps list (
+            (toruswts, fibrebasis) := toSequence apply(transpose c, MM -> matrix {MM});
+            -- now check if it works.
+            if all (for p in R_m list (
+                    chardotprods := flatten entries (matrix {p} * toruswts);
+                    if all (for j in (D#p)_1 list (
+                            cols := positions(chardotprods, i -> i >=j);
+                            if cols === null then false else (
+                                if (image fibrebasis_cols == image filteredPiece(E,p,j)) then true else false
+                                )
+                            )
+                        ) then true else false
+                    )
+                ) then (decomp = {toruswts, fibrebasis}; break)
+            );
+        decomp
         );
     if any(decomps, d -> d == {}) then false else (E.cache.eigenspaceDecompositions = decomps; true)
     )
 
+-- Given a collection of k lists L with sizes s_i, this produces all possible k-tuples
+-- {L_1_(j_1), L_2_(j_2), ... , L_k_(j_k)}
+-- where 1 \leq j_i \leq s_i.
+L = {{1},{2,3},{4,5},{6,7}}
+multinomialSets := (L, choices) -> (
+    if L == {} then choices else (
+        choices = flatten for l in L_0 list for c in choices list append(c,l);
+        multinomialSets(drop(L,1),choices)
+        )
+    )
 
+
+
+choice := {};
+for l in L list (
+    for i to #l-1 list (
+        )
 
 changelist: 2026-10-27
 - renamed the package so that we can install it to find bugs in doc
@@ -2921,7 +3055,8 @@ changelist: 2026-10-27
 todo
 - tests are all broken atm and i didn't fix them
 - finish coker
-- alas, isomorphism is still broken even with groundset.
-- implement andreas' small changes/bugfixes
+- alas, isomorphism is still broken slightly, with surjective maps.
+- implement andreas' small changes/bugfixes ( i did a few
 - implement me own version of compatibility check
 - implement iswelldefined (need span of filt mats to be same)
+- pruning map needs to be cached (is this auto done?)

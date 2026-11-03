@@ -303,3 +303,132 @@ doc ///
 ///
 
 
+-- TODO Unify with Klyachko
+
+doc ///
+    Key
+        tangentBundleKaneyama
+        (tangentBundleKaneyama,Fan)
+    Headline
+        TODO
+    Usage
+        E = tangentBundleKaneyama(F)
+    Inputs
+        F : Fan
+    Outputs
+        E : ToricVectorBundleKaneyama
+    Description
+        Text
+          TODO
+///
+
+
+-- TODO Unify with Klyachko
+
+doc ///
+    Key
+        (deltaE,ToricVectorBundleKaneyama)
+    Headline
+        TODO
+    Usage
+        P = deltaEKaneyama(E)
+    Inputs
+        E : ToricVectorBundleKaneyama
+    Outputs
+        P : Polyhedron
+    Description
+        Text
+          TODO
+///
+
+
+-- TODO Unify with Klyachko
+
+doc ///
+    Key
+        (details,ToricVectorBundleKaneyama)
+    Headline
+        TODO
+    Usage
+        D = detailsKaneyama(E)
+    Inputs
+        E : ToricVectorBundleKaneyama
+    Outputs
+        D : HashTable
+    Description
+        Text
+          TODO
+///
+
+
+-- TODO Unify with Klyachko
+-*
+doc ///
+    Key 
+        (eulerChi,ToricVectorBundleKaneyama)
+        (eulerChi,Matrix,ToricVectorBundleKaneyama)
+    Headline
+        TODO
+    Usage
+        chi = eulerChiKaneyama(E)
+        chi = eulerChiKaneyama(u,E)
+    Inputs
+        E : ToricVectorBundleKaneyama
+        u : Matrix
+            a one-column matrix representing a degree vector
+    Outputs
+        chi : ZZ
+    Description
+        Text
+          TODO
+///
+*-
+
+-- Change to Kaneyama
+doc ///
+    Key
+        (isWellDefined,ToricVectorBundleKaneyama)
+    Headline
+        checks if the data does in fact define an equivariant toric vector bundle
+    Usage
+        b = isWellDefined E
+    Inputs
+        E:ToricVectorBundleKaneyama
+    Outputs
+        b:Boolean
+            whether @TT "E"@ defines a toric vector bundle
+    Description
+        Text
+            If @TT "E"@ is in Klyachko's description then the data in @TT "E"@ defines an
+            equivariant toric vector on the toric variety if and only if for each maximal cone
+            exists a decomposition into torus eigenspaces of the bundle. See
+            @HREF("http://math.stanford.edu/~sampayne/", "Sam Payne's")@
+            @EM "Moduli of toric vector bundles"@, Compositio Math. 144, 2008. Section 2.3. This
+            uses the two functions TO findWeights and TO existsDecomposition.
+        Example
+            E = toricVectorBundleKaneyama(2,pp1ProductFan 2)
+            E = addBaseChange(E,{matrix{{1,2},{3,1}},matrix{{-1,0},{3,1}},matrix{{1,2},{-3,-1}},matrix{{-1,0},{-3,-1}}})
+            isWellDefined E
+            F = toricVectorBundleKaneyama(1,normalFan crossPolytope 3)
+            --F = addFiltration(F,apply({2,1,1,2,2,1,1,2}, i -> matrix {{i}}))
+            isWellDefined F
+        Text
+            If @TT "E"@ is in Kaneyama's description then data in @TT "E"@ defines an equivariant
+            toric vector bundle on the toric variety if and only if it satisfies the regularity and
+            the cocycle condition (See @TO cocycleCheck@ and @TO regCheck@).
+        Example
+            E = toricVectorBundleKaneyama(2,pp1ProductFan 2)
+            isWellDefined E
+            E = addBaseChange(E,{matrix{{1,2},{3,1}},matrix{{-1,0},{3,1}},matrix{{1,2},{-3,-1}},matrix{{-1,0},{-3,-1}}})
+            isWellDefined E
+    Caveat
+        @TT "isWellDefined"@ is known to produce incorrect output for Klyachko bundles. The user is
+        recommended to instead use @TT "isLocallyFree"@ from the package
+        @TT "PositivityToricBundles"@.
+    SeeAlso
+        cocycleCheck
+        regCheck
+        addBaseChange
+        addDegrees
+        details
+///
