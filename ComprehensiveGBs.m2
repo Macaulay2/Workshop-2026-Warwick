@@ -283,7 +283,7 @@ eliminateVariables (List, CGBData) := (F, cgbData) -> (
 )
 
 
-cgbOnGraph = method(
+comprehensiveGBOnGraph = method(
     Options => {
         ReduceStrata => false,
         Verbose => false,
@@ -291,7 +291,7 @@ cgbOnGraph = method(
         CheckAssumption => true
         }
     )
-cgbOnGraph (List, ZZ) := opts -> (G, d) -> (
+comprehensiveGBOnGraph (List, ZZ) := opts -> (G, d) -> (
     V := sort G_0;
     E := G_1;
     x := local x;
@@ -307,7 +307,7 @@ cgbOnGraph (List, ZZ) := opts -> (G, d) -> (
             ) - S_(position(E, j -> j === i)
             )
         );
-    (F, CGBMain(F, opts))
+    (F, comprehensiveGBMain(F, opts))
 )
 
 -- Given two lists A and B return the list
@@ -903,12 +903,12 @@ doc ///
 
 doc ///
   Key
-    cgbOnGraph
-    (cgbOnGraph,List,ZZ)
-    [cgbOnGraph, Verbose]
-    [cgbOnGraph, ReduceStrata]
-    [cgbOnGraph, Depth]
-    [cgbOnGraph, CheckAssumption]
+    comprehensiveGBOnGraph
+    (comprehensiveGBOnGraph,List,ZZ)
+    [comprehensiveGBOnGraph, Verbose]
+    [comprehensiveGBOnGraph, ReduceStrata]
+    [comprehensiveGBOnGraph, Depth]
+    [comprehensiveGBOnGraph, CheckAssumption]
   Headline
     parametrized systems from a graph
   Usage
@@ -940,7 +940,7 @@ doc ///
       \[ f_{ij}=\sum_{k=1}^{d}(x_{i,k}-x_{j,k})^2  -\lambda_{ij} \].
       The function comprehensiveGBOnGraph returns the polynomial systems $F$ and a Combrehensive Gröbner Basis of $F$.
     Example
-      (F,GG)=cgbOnGraph({{1,2,3},{(1,2),(2,3),(3,1)}},1, ReduceStrata => true);
+      (F,GG)=comprehensiveGBOnGraph({{1,2,3},{(1,2),(2,3),(3,1)}},1, ReduceStrata => true);
       netList F
       GG_0
   Caveat
