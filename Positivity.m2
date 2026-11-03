@@ -64,7 +64,7 @@ maxCones ToricVectorBundle := T -> (
 
 
 flags = method()
-flags (ToricVectorBundle) := HashTable => (cacheValue symbol filtrationFlags) ( E -> (
+flags ToricVectorBundle := HashTable => (cacheValue symbol filtrationFlags) ( E -> (
     fJs := unique flatten filtrationJumps( E);
     hashTable for rho in rays E list (
         rayFlag := unique for i in fJs list ((filteredPiece( E, rho, i)));
@@ -94,7 +94,6 @@ cartesianProduct List := Ls -> (
     return flatten table( Ls#0, cartesianProduct( Ls_{1..<#Ls} ), (l1,l2) -> {l1} | l2 )
     )
 
-
 poset = method()    
 poset ToricVectorBundle := List => (cacheValue symbol posetTvb)(E -> (
     -- do all possible intersections (over ring of defintion of E)
@@ -111,6 +110,7 @@ poset ToricVectorBundle := List => (cacheValue symbol posetTvb)(E -> (
 --           IMPORTANT: Due to the implementation, elements might appear several times
 --   INPUT : 'tvb', a ToricVectorBundle
 --  OUTPUT : ground set (list of nx1-matrices)
+-- todo need to prune filtration
 groundSet = method(Options => true)
 groundSet ToricVectorBundle := List => {Verbosity => 0, preferredGenerators => {}} >> opts -> (cacheValue groundSet) (E -> (
     if opts#Verbosity>0 then << "METHOD: groundSet" << endl;
@@ -376,8 +376,7 @@ graphToricChernCharacter ToricVectorBundle := HashTable => {Verbosity => 0} >> o
 
 ------------------------------------------------------------------------------
 -- METHOD: separateJets
-------------------------------------------------------------------------------    
-
+------------------------------------------------------------------------------
 separatesJetsLocally = method(Options => true)
 separatesJetsLocally (ToricVectorBundle,Cone) := ZZ => {Verbosity => 0} >> opts -> (tvb,sigma) -> (
     if opts#Verbosity>0 then << "METHOD: separatesJetsLocally" << endl;
@@ -513,16 +512,15 @@ restrictToCurve (Matrix,HashTable) := List => {Verbosity => 0} >> opts -> (tau,t
     )
 
 -- MAIN METHODS: restrictToInvCurves, isNef, isAmple -----------------------------
-
 restrictToInvCurves = method(Options => true)
-restrictToInvCurves ToricVectorBundle := HashTable => {Verbosity => 0} >> opts -> (cacheValue symbol restrictionsToInvCurves) ( tvb -> (
-        torChern := toricChernCharacter( tvb);
+restrictToInvCurves ToricVectorBundle := HashTable => {Verbosity => 0} >> opts -> (cacheValue symbol restrictionsToInvCurves)(tvb -> (
+        torChern := toricChernCharacter tvb;
         if opts#Verbosity>0 then << "METHOD: restrictToInvCurves" << endl;
         F := fan tvb;
         n := dim fan tvb;
         curveCones := apply(cones(n-1,F), c -> (rays F)_c);
         hashTable for tau in curveCones list (
-            if opts#Verbosity>0 then << "Restriction to codim1 cone tau:" << endl << tau << endl;
+            if opts#Verbosity > 0 then << "Restriction to codim1 cone tau:" << endl << tau << endl;
             tau => restrictToCurve(tau,torChern)
             )
         ))
