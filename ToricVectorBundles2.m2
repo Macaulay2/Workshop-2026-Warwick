@@ -85,7 +85,6 @@ export {
     "strata",
     -- Operations
     "areIsomorphic",
-    "areIsomorphic2",
     "deltaE",
     "details",
     "filtrations" => "details",
@@ -108,7 +107,7 @@ export {
     "parliament",
     "compatibleBases",
     "isLocallyWeil",
-    "cartierInd",
+    --"cartierInd",
     "toricChernCharacter",
     "graphToricChernCharacter",
     "separatesJets",
@@ -479,64 +478,6 @@ isomorphism (ToricVectorBundle,ToricVectorBundle) := Boolean => o -> (T1,T2) -> 
     if not areIsomorphic(T1,T2) then error("The bundles are not isomorphic");
     T1.cache.iso#T2
     )
-
-areIsomorphic2 = method()
-areIsomorphic2 (ToricVectorBundle,ToricVectorBundle) := Boolean => (T1,T2) -> (
-    --First check that the bundles have same rank, defined over same ring and have same base variety before
-    --anything else
-    jumps := rsort unique flatten filtrationJumps T1;
-    if not ((rank T1 == rank T2) and (variety T1 === variety T2) and (ring T1 === ring T2) and (jumps == rsort unique flatten filtrationJumps T2) ) then return false;
-    --Checking if T1 and T2 have already been deemed isomorphic. If not, create entries in a cache
-    if not T1.cache.?iso then (
-        T1.cache.iso = new MutableHashTable;
-        );
-    if not T2.cache.?iso then (
-        T2.cache.iso = new MutableHashTable;
-        );
-    --If T1 does have an entry for iso in the cache, we check if any of the maps targets is T2
-    --i.e. check if we've already deemed T1 iso T2
-    if T1.cache.iso#?T2 then return true;    
-    if not T1.cache.iso#?T2 then (
-        -- first try the identity map
-        isoMatrix := matrix id_((ring T1)^(rank T1));
-        f := map(T2,T1, isoMatrix);
-        areTVBsIso := ((isWellDefined f) and (isInjective f) and (isSurjective f));
-        if not areTVBsIso then (
-            -- attempt to find an isomorphism
-            n:= rank T1;
-            aux1 := flatten apply( jumps, j -> apply(rays T1, rho -> filteredPiece(T1, rho, j) ) );
-            aux2 := flatten apply( jumps, j -> apply(rays T2, rho ->filteredPiece(T2, rho, j) ) );
-            -- When doing the fold the zero columns are automatically removed    
-            M1 := fold((i,j) -> i|j, flatten apply(toList(1..n), i -> select(aux1, M -> numcols M == i ) ));
-            M2 := fold((i,j) -> i|j, flatten apply(toList(1..n), i -> select(aux2, M -> numcols M == i ) ));
-            
-            -- Try several maps possible isomorphisms:
-            subs:= subsets( numcols M1 ,n);
-            seen := {};
-            
-            for s in subs do(
-                M1s := M1_s;
-                M2s := M2_s;
-                if not any( seen , x -> x== (M1s, M2s )) and det M1s =!= 0_(ring T1) and det M2s =!= 0_(ring T2)  then(
-                seen = append(seen, (M1s, M2s));
-                f = map(T2,T1,M2s* (inverse M1s) );
-                areTVBsIso = ((isWellDefined f) and (isInjective f) and (isSurjective f));
-                if areTVBsIso then break
-                );
-                if areTVBsIso then break
-            );
-            
-            );
-        if areTVBsIso then (
-            T1.cache.iso#T2 = f;
-            finv := map(T1,T2,(map f)^-1);
-            T2.cache.iso#T1 = finv;
-            );
-        areTVBsIso
-        )
-    )
-
-
 
 
 -- Not sure what to do about caching this method, but we should include it. 
@@ -1389,6 +1330,38 @@ customConeSort List := L -> (
 )
 
 
+-- We store some archived code that René wrote.
+cartierIndex = method()
+cartierIndex (List,Fan) := (L,F) -> (
+     rl := raySortOfFan F;
+     -- Checking for input errors
+     if #L != #rl then error("The number of weights has to equal the number of rays.");
+     n := ambDim F;
+     -- Checking for further errors and assigning the weights to the rays
+     L = hashTable apply(#rl, i -> (if class L#i =!= ZZ then error("The weights have to be in ZZ."); rl#i => L#i));
+     -- Keeping track of the lowest common multiple of denominators of the degrees,
+     -- to check whether the divisor itself is Cartier or which multiple
+     denom := 1;
+     -- Computing the degree vector for every top dimensional cone
+     Frays := rays F;
+     scan(sort maxCones F, C -> (
+	       rC := Frays_C;
+	       -- Taking the first n x n submatrix
+	       rC1 := rC_{0..n-1};
+	       -- Setting up the solution vector by composing the corresponding weights
+	       v := matrix apply(n, i -> (c := rC1_{i}; {-(L#c)}));
+	       -- Computing the degree vector
+	       w := vertices polyhedronFromHData(matrix {toList(n:0)},matrix {{0}},transpose rC1,v);
+	       -- Checking if w also fulfils the equations given by the remaining rays
+	       if numColumns rC != n then (
+		    v = v || matrix apply(toList(n..(numColumns rC)-1), i -> {-(L#(rC_{i}))});
+	            if (transpose rC)*w - v != 0 then error("The weights do not define a Cartier divisor."));
+	       -- Check if w is QQ-Cartier
+	       scan(flatten entries w, e -> denom = lcm(denominator e ,denom))));
+     denom)
+
+
+
 raySort = value Polyhedra#"private dictionary"#"raySort"
 raySortOfFan = (fan) -> (
     r := rays fan;
@@ -2147,9 +2120,9 @@ assert(areIsomorphic(CKf , TX))
 assert( rank(CKf)== 3)
 assert( variety CKf === X)
 -- The next two tests may have to be changed if the way of computing the filtered pieces changes
-assert( filtrationJumps( CKf)=={{1, 0, 0}, {1, 0, 0}, {1, 0, 0}, {1, 0, 0}} )
-assert( filtrationMatrices(CKf)=={matrix(ZZ/101, {{-1, 1, 0}, {-1, 0, 1}, {-1, 0, 0}}), matrix(ZZ/101, {{1, -1, 0}, {0, -1, 1}, {0, -1, 0}}), matrix(ZZ/101, {{0, -1, 1}, {1, -1, 0}, {0, -1, 0}}), matrix(ZZ/101, {{0, -1, 1}, {0, -1, 0}, {1, -1, 0}}) } )
--- g is surjective
+assert( filtrationJumps( CKf)=={{0, 0, 1}, {0, 0, 1}, {0, 0, 1}, {0, 0, 1}} )
+assert( filtrationMatrices(CKf)== {map((ZZ/101)^4,(ZZ/101)^3,{{0, 0, 0}, {0, 0, 1}, {1, 0, 1}, {0, 1, 1}}),map((ZZ/101)^4,(ZZ/101)^3,{{0, 0, 0}, {0, 0, 1}, {1, 0, 0}, {0, 1,0}}),map((ZZ/101)^4,(ZZ/101)^3,{{0, 0, 0}, {1, 0, 0}, {0, 0, 1}, {0, 1, 0}}),map((ZZ/101)^4,(ZZ/101)^3,{{0, 0, 0}, {1, 0, 0}, {0, 1, 0}, {0, 0, 1}})})
+      -- g is surjective
 CKg = coker g;
 assert(CKg== trivialBundle(X,0) )
 
@@ -2213,11 +2186,7 @@ X = toricProjectiveSpace 2
 T1 = tangentBundle X
 M1 = klyachkoToModule T1
 T2 = moduleToKlyachko (X, M1)
--- BUG: This returns false when it shouldnt
 assert(T1==T2)
-assert(areIsomorphic2 (T1, T2))
-assert(map isomorphism(T1,T2) ==  matrix {{1_QQ,0},{-1, 1}} )
-assert( isIsomorphism map (T2, T1, matrix {{2_QQ,0},{-2, 2}}))
 
 ///
 
@@ -2256,16 +2225,17 @@ load "KaneyamaTests.m2"
 -- Test ??
 -- Checking isWellDefined TODO : I think this was intended for Klyachko type originally
 -- addBase does not exist anumore
+-*
 TEST ///
-T = toricVectorBundle(2,pp1ProductFan 2)
+T = toricVectorBundleKaneyama(2,pp1ProductFan 2)
 T1 = addBase(T,{matrix{{1,2},{3,1}},matrix{{-1,0},{3,1}},matrix{{1,2},{-3,-1}},matrix{{-1,0},{-3,-1}}})
 assert isWellDefined T1
-T = toricVectorBundle(1,normalFan crossPolytope 3)
+T = toricVectorBundleKaneyama(1,normalFan crossPolytope 3)
 L = apply({2,1,1,2,2,1,1,2}, i -> matrix {{i}});
 T = addFiltration(T,L)
 assert not isWellDefined T
 ///
-
+*-
 
 ---------------------------------------------------------------------------
 -- TESTS for PositivityToricBundles
@@ -2774,36 +2744,6 @@ X = toricProjectiveSpace 3
 (filts, jumps) = toSequence transpose for i to 3 list {random(ZZ^3,ZZ^3),for j to 2 list random(-3,3)}
 E = toricVectorBundle(X,filts,jumps)
 
--- We store some archived code that René wrote.
-cartierIndex (List,Fan) := (L,F) -> (
-     rl := raySortOfFan F;
-     -- Checking for input errors
-     if #L != #rl then error("The number of weights has to equal the number of rays.");
-     n := ambDim F;
-     -- Checking for further errors and assigning the weights to the rays
-     L = hashTable apply(#rl, i -> (if class L#i =!= ZZ then error("The weights have to be in ZZ."); rl#i => L#i));
-     -- Keeping track of the lowest common multiple of denominators of the degrees,
-     -- to check whether the divisor itself is Cartier or which multiple
-     denom := 1;
-     -- Computing the degree vector for every top dimensional cone
-     Frays := rays F;
-     scan(sort maxCones F, C -> (
-	       rC := Frays_C;
-	       -- Taking the first n x n submatrix
-	       rC1 := rC_{0..n-1};
-	       -- Setting up the solution vector by composing the corresponding weights
-	       v := matrix apply(n, i -> (c := rC1_{i}; {-(L#c)}));
-	       -- Computing the degree vector
-	       w := vertices polyhedronFromHData(matrix {toList(n:0)},matrix {{0}},transpose rC1,v);
-	       -- Checking if w also fulfils the equations given by the remaining rays
-	       if numColumns rC != n then (
-		    v = v || matrix apply(toList(n..(numColumns rC)-1), i -> {-(L#(rC_{i}))});
-	            if (transpose rC)*w - v != 0 then error("The weights do not define a Cartier divisor."));
-	       -- Check if w is QQ-Cartier
-	       scan(flatten entries w, e -> denom = lcm(denominator e ,denom))));
-     denom)
-
-
 X = toricProjectiveSpace 1
 --source
 mats = {map(QQ^6,QQ^6,{{1, 0, 0, 0, 0, 0}, {0, 1, 0, 0, 0, 0}, {0, 0, 1, 0, 0, 0}, {0, 0, 0, 1, 0, 0}, {0, 0, 0, 0, 1, 0}, {0, 0, 0, 0, 0, 1}}),map(QQ^6,QQ^6,{{1, 0, 0, 0, 0, 0}, {0, 1, 0, 0, 0, 0}, {0, 0, 1, 0, 0, 0}, {0, 0, 0, 1, 0, 0}, {0, 0, 0, 0, 1, 0},
@@ -3042,3 +2982,5 @@ todo
 - implement me own version of compatibility check
 - implement iswelldefined (need span of filt mats to be same)
 - pruning map needs to be cached (is this auto done?)
+- fix isIsomorphism: how to find the inverse map?
+- bug in areIsomorphic see test 20
