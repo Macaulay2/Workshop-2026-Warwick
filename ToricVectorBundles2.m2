@@ -3019,6 +3019,88 @@ cokernel ToricVectorBundleMap := f ->(
     )
 *-
 
+Nathan gave this example that I want to test:
+restart
+debug needsPackage "ToricVectorBundles2"
+needsPackage "NormalToricVarieties"
+needsPackage "ToricVectorBundles"
+needsPackage "PositivityToricBundles"
+A3 = normalToricVariety({{1,0,0},{0,1,0},{0,0,1}},{{0,1,2}})
+F = fan A3
+mats = {matrix{{1,2},{3,2}}, matrix{{0,2},{4,0}}, matrix{{1,4},{0,4}}}
+jumps = {{6,2}, {4,4}, {3,2}}
+jumps = apply(jumps, j -> matrix {-j})
+E = toricVectorBundle(2,F, mats, jumps)
+E = addBase(E,mats)
+E = addFiltration(E,jumps)
+
+A3 = normalToricVariety({{1,0,0},{0,1,0},{0,0,1}},{{0,1,2}})
+mats = {matrix{{1,2},{3,2}}, matrix{{0,2},{4,0}}, matrix{{1,4},{0,4}}}
+jumps = {{6,2}, {4,4}, {3,2}}
+E = toricVectorBundle(A3, mats, jumps)
+
+
+A3 = fan coneFromVData matrix {{1,0,0},{0,1,0},{0,0,1}};
+filtMat = apply( { {{1,0},{0,1}}, {{0,1},{1,0}}, {{1,1},{1,0}} }, matrix);
+filtStep = apply( { {{0,1}}, {{0,1}}, {{0,1}} }, matrix);
+E = toricVectorBundle (2,A3,filtMat,filtStep);
+details E
+isLocallyFree E
+findWeights E
+isVectorBundle E
+
+P112 = ccRefinement transpose matrix {{1,0},{0,1},{-1,-2}};
+D = {1,0,0};
+L = toricVectorBundle(1, P112, toList(3: matrix{{1_QQ}}), apply( D, i-> matrix{{-i}}));
+details L
+isLocallyWeil L
+toricChernCharacter L
+isLocallyFree L
+findWeights L
+isVectorBundle L
+
+P112 = ccRefinement transpose matrix {{1,0},{0,1},{-1,-2}};
+D = {1,0,0};
+L = toricVectorBundle(1, P112, toList(3: matrix{{1_QQ}}), apply( D, i-> matrix{{-i}}));
+details L
+cI = cartierInd L
+isLocallyFree L
+findWeights L
+isVectorBundle L
+L2 = toricVectorBundle(1, P112, toList(3: matrix{{1_QQ}}), apply( cI*D, i-> matrix{{-i}}));
+isLocallyFree L2
+isVectorBundle L2
+
+
+A3 = normalToricVariety({{1,0,0},{0,1,0},{0,0,1}},{{0,1,2}})
+filtMat = (reverse { {{1,0},{0,1}}, {{0,1},{1,0}}, {{1,1},{1,0}} })/matrix;
+filtStep = -{{0,1}, {0,1}, {0,1}};
+E = toricVectorBundle (A3,filtMat,filtStep);
+details E
+isLocallyFree E
+satisfiesCompatibility E
+
+P112 = weightedProjectiveSpace {1,1,2}
+L = toricVectorBundle(P112, toList (3:matrix{{1}}), {{1},{0},{0}})
+isLocallyFree L
+satisfiesCompatibility L
+L2 = toricVectorBundle(P112, toList (3:matrix{{1}}), {{2},{0},{0}})
+isLocallyFree L2
+satisfiesCompatibility L2
+
+P112 = ccRefinement transpose matrix {{1,0},{0,1},{-1,-2}};
+D = {1,0,0};
+L = toricVectorBundle(1, P112, toList(3: matrix{{1_QQ}}), apply( D, i-> matrix{{-i}}));
+details L
+cI = cartierInd L
+isLocallyFree L
+findWeights L
+isVectorBundle L
+L2 = toricVectorBundle(1, P112, toList(3: matrix{{1_QQ}}), apply( cI*D, i-> matrix{{-i}}));
+isLocallyFree L2
+isVectorBundle L2
+
+
 changelist: 2026-10-27
 - renamed the package so that we can install it to find bugs in doc
 - * made it so that you don't need square matrices (!)
