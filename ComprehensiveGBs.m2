@@ -657,28 +657,28 @@ doc ///
       This package provides the implementations of two different algorithms for computing a comprehensive Gröbner system and a
       comprehensive Gröbner basis of a parametric ideal. In the following we refer to Section 2 of @HREF("#ref1","[1]")@.
 
-      Let $k$ be a field, $R$ be the polynomial ring $k[U]$ in the parameters $U=\{u_1,\ldots,u_m\}$, and $R[X]$ be the polynomial ring
-      over $R$ in the variables $X=\{x_1,\ldots,x_n\}$ and $X\cap U=\emptyset$.
-      Call $L$ the algebraic closure of $k$. Given $a \in L^m$, the specialization homomorphism of $R$ induced by $a$ is
-      $\sigma_a:R\rightarrow L$, $\sigma_a(f)=f(a)$.
+      Let $k$ be a field, let $R$ be the polynomial ring $k[U]$ in the parameters $U=\{u_1,\ldots,u_m\}$, and let $R[X]$ be the polynomial ring
+      over $R$ in the variables $X=\{x_1,\ldots,x_n\}$, with $X\cap U=\emptyset$.
+      Denote by $L$ the algebraic closure of $k$. Given $a \in L^m$, the specialization homomorphism of $R$ induced by $a$ is the homomorphism
+      $\sigma_a:R\rightarrow L$ defined by $\sigma_a(f)=f(a)$.
       The homomorphism $\sigma_a$ extends canonically to a homomorphism $\sigma_a:R[X]\rightarrow L[X]$
       by applying $\sigma_a$ coefficient-wise.
-      For an $E\subseteq R=k[U]$, the variety defined by $E$ in $L^m$, denoted by $V(E)$ is
+      For $E\subseteq R=k[U]$, the variety defined by $E$ in $L^m$, denoted by $V(E)$, is
       $V(E)=\{a\in L^m :\sigma_a(f)=0 \text{ for all } f \in E \}.$
 
-      A set $A\subseteq L^m$ is said constructible if it exists a pair of finite sets of polynomials $(E,N)$ such that
+      A set $A\subseteq L^m$ is called constructible if there exists a pair of finite sets of polynomials $(E,N)$ such that
       $A=V(E)\setminus V(N)$, where $E,N\subseteq k[U]$.
 
-      Let $F$ be a subset of $R[X]$, $E_1,N_1,\ldots, E_t,N_t$ be subsets of $R=k[U]$, $G_1,\ldots,G_t$ be subsets of $R[X]$,
-      and S a subset of $L^m$ such that $S\subseteq (V(E_1)\setminus V(N_1) \cup \ldots \cup V(E_t)\setminus V(N_t)$. A finite set
+      Let $F$ be a subset of $R[X]$, let $E_1,N_1,\ldots, E_t,N_t$ be subsets of $R=k[U]$, let $G_1,\ldots,G_t$ be subsets of $R[X]$,
+      and let S be a subset of $L^m$ such that $S\subseteq (V(E_1)\setminus V(N_1) \cup \ldots \cup V(E_t)\setminus V(N_t)$. A finite set
       $\mathcal{G} = \{(E_1,N_1,G_1),\ldots,(E_t,N_t,G_t)\}$ is called a comprehnsive Gröbner system on $S$ for $F$ if
       $\sigma_a(G_i)$ is a Gröbner basis of the ideal $(\sigma_a(F))\subseteq L[X]$ for $a \in V(E_i) \setminus V(N_i)$ and
       $i=1,\ldots,t$. Each $(E_i,N_i,G_i)$ is called a branch of $\mathcal{G}$. In particular, if $S=L^m$, then $\mathcal{G}$ is
       called a comprehensive Gröbner system for F.
 
-      Given $S$ a basis of the elimination ideal of $(F)\cap k[U]$, a comprehenvive Gröbner basis $\mathcal{B}$ for $F\subseteq R[X]$
-      is the union of all the sets $G_i$ in a comprehensive Gröbner system $\mathcal{G}$ for F on $S$. Notice that, $(\sigma_a(F))=(1)$
-      for any $a \in L^m \setminus V(S)$. Therefore, $\mathcal{G} \cup \{(\emptyset,S,S)\}$ is a comprehensive Gröbner system for $F$.
+      Given a basis $S$ of the elimination ideal of $(F)\cap k[U]$, a comprehenvive Gröbner basis $\mathcal{B}$ for $F\subseteq R[X]$
+      is the union of all the sets $G_i$ in a comprehensive Gröbner system $\mathcal{G}$ for F on $S$. Notice that $(\sigma_a(F))=(1)$
+      for any $a \in L^m \setminus V(S)$. Therefore, the set $\mathcal{G} \cup \{(\emptyset,S,S)\}$ is a comprehensive Gröbner system for $F$.
 
       The function @TO "comprehensiveGBMain"@ is the implementation of Algorithm CGBMain of @HREF("#ref2","[2]")@. The function @TO "parametricGBMain"@
       corresponds to the Algorithm PGBMain of @HREF("#ref1","[1]")@.
