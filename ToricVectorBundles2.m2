@@ -341,9 +341,15 @@ twist(ToricVectorBundle, List) := (E, s) -> E ** lineBundle(variety E, s)
 
 dual ToricVectorBundle := {} >> opts -> tvb -> (    
     -- if a vector space has basis B, the dual has basis transpose inverse B
-    filtMats := apply(filtrationMatrices tvb, M -> transpose inverse M);
-    -- the jumps in the filtration get reverse and negated.
-    -- TODO: reverse the jumps?
+    filtMats := if tvb.ambRank == rank tvb then apply(filtrationMatrices tvb, M -> transpose inverse M) else (
+        for M in filtrationMatrices tvb list (
+            n := numColumns M;
+            -- todo: does this seem right?
+            -- complete M to a basis, then take the inverse transpose, and take the first n cols.
+            (transpose inverse matrix {{M, matrix (prune coker M).cache.pruningMap}})_{0..n-1}
+            )
+        );
+    -- the jumps in the filtration get negated.
     filtJumps := apply(filtrationJumps tvb, J -> -J);
     toricVectorBundle(variety tvb, filtMats, filtJumps)
     )
@@ -1036,88 +1042,9 @@ kernel ToricVectorBundleMap := opts -> f -> (
     toricVectorBundle(variety E, mats, jumps)
     )
 
--*
-restart
-debug needsPackage "ToricVectorBundles2"
- X = toricProjectiveSpace 1;
- S = ring X;
- I = ideal X;
- Qtvb = map(S^{{1}, {2}, {1}, {3}},S^2,{{x_0, x_1}, {0, x_0^2}, {x_1, 0}, {0, x_0^2*x_1}})
-phi1 = moduleToKlyachko (X, Qtvb)
-coker phi1
+dual ToricVectorBundleMap := {} >> opts -> f -> map(dual source f, dual target f, transpose matrix f)
 
-restart
-debug needsPackage "ToricVectorBundles2"
-X = toricProjectiveSpace(3, CoefficientRing=> ZZ/101);
-TX = tangentBundle X;
-triv = trivialBundle(X,1);
-sumoflbs = lineBundle X_0 ++ lineBundle X_1 ++ lineBundle X_2 ++ lineBundle X_3;
-f = map(sumoflbs,triv,matrix(ZZ/101,{{1},{1},{1},{1}}));
-g = map(TX,sumoflbs, transpose sub(matrix rays X,ZZ/101));
-image f
-image g
-
-*-
--*
--- todo not quite working.
-cokernel (ToricVectorBundleMap) := f ->(
-    if not isWellDefined f then error("The map is not well defined");
-    E := target f;
-    D := details E;
-    if isSurjective f then return trivialBundle(variety E,0);
-    imf := image f;
-    imD := details imf;
-    (mats, jumps) := toSequence transpose for p in rays E list (
-        -- we'll scan the filtration in decreasing order so that dimensions are ascending.
-        -- we have to merge the filtration jumps.
-        jumpindices := rsort unique ((D#p)_1 | (imD#p)_1);
-        EfiltPieces := for j in jumpindices list {filteredPiece(E,p,j), j};
-        imfiltPieces := for j in jumpindices list {filteredPiece(imf,p,j), j};
-        -- intersect them with the kernel as subspaces to get a new filtration
-        newFilt := transpose for i to #EfiltPieces-1 list (
-            (F, imF) := (EfiltPieces_i_0, imfiltPieces_i_0);
-            quotgens := F * (matrix (prune (image F / image imF)).cache.pruningMap);
-            {quotgens, for i to numColumns quotgens - 1 list F_i_1}
-            );
-        -- concatenate all of those filtered pieces together, then prune them (i.e. choose a basis)
-        --pruneFiltration(matrix {newFilt_0}, flatten newFilt_1)
-        newFilt
-        );
-    toricVectorBundle(variety E, mats, jumps)
-    )
-*-
-cokernel ToricVectorBundleMap := f ->(
-    if not isWellDefined(f) then ( error (" The map is not well defined"));
-    if isSurjective(f) then( return trivialBundle(variety source (f), 0) );     
-    M := f.map;
-    E1:= source f;
-    E2 := target f;
-    X:= variety E1;
-    RX:= ring E1;
-    Xrays := rays E1;
-    minj:= min flatten join(filtrationJumps(E1), filtrationJumps(E2));
-    maxj:= max flatten join(filtrationJumps(E1), filtrationJumps(E2));
-    steps:=  toList(minj..maxj);
-    cokerM := cokernel M;
-    pr:= (prune cokerM).cache.pruningMap;
-    ipr := map(source pr, target pr, inverse pr);
-    L:= apply(Xrays,  p ->
-        apply(steps, i ->(
-                -- TO DO: fix this
-                amb := module (ring E2) ^ (rank E2);
-                f1 := image map(amb, , sub(M * filteredPiece(E1,p,i),RX));
-                f2 := image map(amb, , sub(filteredPiece(E2,p,i),RX));
-                ipr*inducedMap(cokerM, f2/f1 ) 
-
-                ))
-        );
-    -- Define the new data
-    newMatrices:= apply(L, i ->  matrix fold ( (A,B)-> A|B, i) );
-    newJumps := apply( # Xrays , i -> jumpsAux(newMatrices_i, L_i, minj ) );
-    -- (newMatrices, newJumps)= toSequence transpose apply(transpose{newMatrices, newJumps}, D -> adaptedBasis D );
-    prune toricVectorBundle( X, newMatrices, newJumps)
-    )
-
+cokernel ToricVectorBundleMap := {} >> opts -> f -> dual kernel dual f
 
 ToricVectorBundleMap ++ ToricVectorBundleMap := (tvbmap1,tvbmap2) -> (
     map(tvbmap1.target ++ tvbmap2.target, tvbmap1.source ++ tvbmap2.source, tvbmap1.map ++ tvbmap2.map)
@@ -1549,11 +1476,20 @@ displayFiltrations = method()
 displayFiltrations ToricVectorBundle := E -> (
     filtMats := filtrationMatrices E;
     filtJumps := filtrationJumps E;
-    -- here is the range of indices we want to print
-    rng := {(min flatten filtJumps)-1, (max flatten filtJumps)+2};
-    -- put all of the matrices that appear there into a hash table indexed by rays.
-    matTable := hashTable for p in rays E list p => (
-        hashTable for i from rng_0 to rng_1 list i => filteredPiece(E,p,i)
+    (rng, matTable) := ({},{});    
+    if E != trivialBundle(variety E, 0) then (
+        -- this is the range where we want to print
+        rng = {(min flatten filtJumps)-1, (max flatten filtJumps)+2};
+        -- put all of the matrices that appear there into a hash table indexed by rays.
+        matTable = hashTable for p in rays E list p => (
+            hashTable for i from rng_0 to rng_1 list i => filteredPiece(E,p,i)
+            )
+        ) else (
+        -- edge case for the zero bundle.
+        rng = {-1,1};
+        matTable = hashTable for p in rays E list p => (
+            hashTable for i from rng_0 to rng_1 list i => matrix {{}}
+            )
         );
     -- to align things properly, we need easy access to the heights of those matrices as strings.
     h' := hashTable for p in rays E list p => max(for M in values matTable#p list length net M);
@@ -3025,23 +2961,68 @@ satisfiesCompatibility := E -> (
     if any(decomps, d -> d == {}) then false else (E.cache.eigenspaceDecompositions = decomps; true)
     )
 
--- Given a collection of k lists L with sizes s_i, this produces all possible k-tuples
--- {L_1_(j_1), L_2_(j_2), ... , L_k_(j_k)}
--- where 1 \leq j_i \leq s_i.
-L = {{1},{2,3},{4,5},{6,7}}
-multinomialSets := (L, choices) -> (
-    if L == {} then choices else (
-        choices = flatten for l in L_0 list for c in choices list append(c,l);
-        multinomialSets(drop(L,1),choices)
-        )
+
+*-
+-*
+-- todo not quite working.
+cokernel (ToricVectorBundleMap) := f ->(
+    if not isWellDefined f then error("The map is not well defined");
+    E := target f;
+    D := details E;
+    if isSurjective f then return trivialBundle(variety E,0);
+    imf := image f;
+    imD := details imf;
+    (mats, jumps) := toSequence transpose for p in rays E list (
+        -- we'll scan the filtration in decreasing order so that dimensions are ascending.
+        -- we have to merge the filtration jumps.
+        jumpindices := rsort unique ((D#p)_1 | (imD#p)_1);
+        EfiltPieces := for j in jumpindices list {filteredPiece(E,p,j), j};
+        imfiltPieces := for j in jumpindices list {filteredPiece(imf,p,j), j};
+        -- intersect them with the kernel as subspaces to get a new filtration
+        newFilt := transpose for i to #EfiltPieces-1 list (
+            (F, imF) := (EfiltPieces_i_0, imfiltPieces_i_0);
+            quotgens := F * (matrix (prune (image F / image imF)).cache.pruningMap);
+            {quotgens, for i to numColumns quotgens - 1 list F_i_1}
+            );
+        -- concatenate all of those filtered pieces together, then prune them (i.e. choose a basis)
+        --pruneFiltration(matrix {newFilt_0}, flatten newFilt_1)
+        newFilt
+        );
+    toricVectorBundle(variety E, mats, jumps)
     )
 
+cokernel ToricVectorBundleMap := f ->(
+    if not isWellDefined(f) then ( error (" The map is not well defined"));
+    if isSurjective(f) then( return trivialBundle(variety source (f), 0) );     
+    M := f.map;
+    E1:= source f;
+    E2 := target f;
+    X:= variety E1;
+    RX:= ring E1;
+    Xrays := rays E1;
+    minj:= min flatten join(filtrationJumps(E1), filtrationJumps(E2));
+    maxj:= max flatten join(filtrationJumps(E1), filtrationJumps(E2));
+    steps:=  toList(minj..maxj);
+    cokerM := cokernel M;
+    pr:= (prune cokerM).cache.pruningMap;
+    ipr := map(source pr, target pr, inverse pr);
+    L:= apply(Xrays,  p ->
+        apply(steps, i ->(
+                -- TO DO: fix this
+                amb := module (ring E2) ^ (rank E2);
+                f1 := image map(amb, , sub(M * filteredPiece(E1,p,i),RX));
+                f2 := image map(amb, , sub(filteredPiece(E2,p,i),RX));
+                ipr*inducedMap(cokerM, f2/f1 ) 
 
-
-choice := {};
-for l in L list (
-    for i to #l-1 list (
-        )
+                ))
+        );
+    -- Define the new data
+    newMatrices:= apply(L, i ->  matrix fold ( (A,B)-> A|B, i) );
+    newJumps := apply( # Xrays , i -> jumpsAux(newMatrices_i, L_i, minj ) );
+    -- (newMatrices, newJumps)= toSequence transpose apply(transpose{newMatrices, newJumps}, D -> adaptedBasis D );
+    prune toricVectorBundle( X, newMatrices, newJumps)
+    )
+*-
 
 changelist: 2026-10-27
 - renamed the package so that we can install it to find bugs in doc
