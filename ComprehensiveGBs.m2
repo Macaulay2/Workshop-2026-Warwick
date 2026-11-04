@@ -9,7 +9,7 @@ newPackage(
         { Name => "Woody Cohen", Email => "2597103@swansea.ac.uk", HomePage => ""},
         { Name => "Lorenzo De Biase", Email => "lorenzo.debiase@enea.it", HomePage => "https://sites.google.com/view/lorenzodebiase/"},
         { Name => "Angelo El Saliby", Email => "angelo.el.saliby@mis.mpg.de", HomePage => "angeloelsaliby.github.io"},
-        { Name => "Giulia Gaggero", Email => "gaggerog@mcmaster.ca", HomePage => ""},
+        { Name => "Giulia Gaggero", Email => "gaggerog@mcmaster.ca", HomePage => "https://www.giuliagaggero.com/"},
         { Name => "Sam Knight", Email => "samdeckardknight@gmail.com", HomePage => ""},
         { Name => "Weijia Wang", Email => "weijia.wang@lip6.fr", HomePage => "https://weijia.perso.lip6.fr/"}
     },
