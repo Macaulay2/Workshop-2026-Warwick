@@ -901,8 +901,8 @@ isWellDefined ToricVectorBundleMap := Boolean => f ->(
     f.cache.isWellDefined = true;
     return f.cache.isWellDefined
     )
-
-isInjective (ToricVectorBundleMap) := f -> (
+-- todo these is borked
+isInjective ToricVectorBundleMap := f -> (
     if not isWellDefined f then (
         if debugLevel > 0 then (
             << "-- the map is not well defined" << endl
@@ -927,7 +927,7 @@ isInjective (ToricVectorBundleMap) := f -> (
     true
     )
 
-isSurjective (ToricVectorBundleMap) := f -> (
+isSurjective ToricVectorBundleMap := f -> (
     if not isWellDefined f then (
         if debugLevel > 0 then (
             << "-- the map is not well defined" << endl);
@@ -942,7 +942,7 @@ isSurjective (ToricVectorBundleMap) := f -> (
         for i from m1 to m2 do (
             if not (numColumns filteredPiece(source f, p, i) >= numColumns filteredPiece(target f, p, i)) then (
                 if debugLevel > 0 then (
-                    << "some error message" << endl
+                    << (p,i) << endl
                     );
                 return false
                 );
@@ -2903,41 +2903,36 @@ satisfiesCompatibility := E -> (
         H := hashTable for p in R_m list p => (
             hashTable for j in unique (D#p)_1 list j => select(L, l -> ((matrix {p}) * l)_0 == j)
             );
-        -- sort the indices in reverse order, so that we are building up in dim.
-        jumpindices := rsort unique flatten ((values H)/keys);
-        chardata := for j in jumpindices list (
-            -- for each ray which has this index, we will try to add its corresponding vector.
-            for p in select(keys H, h -> isMember(j, keys H#h)) list (
-                -- pick out the corresponding vector for the index jump.
-                v := (D#p)_0_{position((D#p)_1, j' -> j' == j)};
-                -- for each ray p' not equal to p, we find the index j' where v intersects the filtration
-                -- of p' and take the set of characters H#p#j'.
-                -- along the way, record the visited indices j'.
-                visitedj := {j};
-                if not H#p#?j then continue;
-                filtindices := {{p, j}};
-                filtindices = (filtindices | for p' in delete(p, R_m) list (
-                        j' := {};
-                        for k in rsort unique (D#p')_1 do (
-                            if intersect(image filteredPiece(E,p',k), image v) != 0 then (j' = k; break) else continue
-                            );
-                        if not H#p'#?j' then {} else (visitedj = visitedj | {j'}; {p', j'})
-                        )
-                    );
-                -- try to intersect the lists of characters
-                chars := toList intersect for f in filtindices list if f == {} then set {} else set H#(f_0)#(f_1);
-                -- if this intersection was empty, then it was impossible to index the decomposition.
-                if chars == {} then continue else {p, chars_0, v, visitedj}
-                )
-            );
-        -- jumpindices might not be as long as rank E..........
-        candidateDecomps := flatten for S in subsets(#chardata, rank E) list (
-            possibleChoices := multinomialSets(chardata_S, {{}});
-            for p in possibleChoices list (
-                if (rsort unique flatten for c in p list c_3) != jumpindices then continue
-                else (
-                    for c in p list {c_1, c_2}
+        Dm := flatten for p in R_m list for c to numColumns (D#p)_0 - 1 list {matrix (D#p)_0_c, (D#p)_1_c, p};
+        -- applying unique to the first element in each pair.
+        Dm = Dm_(for v in unique (transpose Dm)_0 list position(Dm, p -> p_0 == v));
+        chardata := for triple in Dm list (
+            (v,j,p) := toSequence triple;
+            -- for each ray p' not equal to p, we find the index j' where v intersects the filtration
+            -- of p' and take the set of characters H#p#j'.
+            -- along the way, record the visited indices j'.
+            visitedj := {j};
+            if not H#p#?j then continue;
+            filtindices := {{p, j}};
+            filtindices = (filtindices | for p' in delete(p, R_m) list (
+                    j' := {};
+                    for k in rsort unique (D#p')_1 do (
+                        if intersect(image filteredPiece(E,p',k), image v) != 0 then (j' = k; break) else continue
+                        );
+                    if not H#p'#?j' then {} else (visitedj = visitedj | {j'}; {p', j'})
                     )
+                );
+            -- try to intersect the lists of characters
+            chars := toList intersect for f in filtindices list if f == {} then set {} else set H#(f_0)#(f_1);
+            -- if this intersection was empty, then it was impossible to index the decomposition.
+            if chars == {} then continue else {chars_0, v, visitedj}
+            );
+        -- visitedj is used to verify that we saw the whole filtration.
+        jumpindices := sort unique flatten for p in R_m list (D#p)_1;
+        candidateDecomps := for S in subsets(chardata, rank E) list (
+            if (sort unique flatten for c in S list c_2) != jumpindices then continue
+            else (
+                for c in S list {c_0, c_1}
                 )
             );
         decomp := {};
