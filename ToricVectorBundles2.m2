@@ -444,11 +444,16 @@ areIsomorphic (ToricVectorBundle,ToricVectorBundle) := Boolean => (T1,T2) -> (
     -- if it's non-empty, look for T2 as target.
     if T1.cache.iso#?T2 then return true;    
     if not T1.cache.iso#?T2 then (
-        areTVBsIso := false;
         -- compute the ground sets of both.
         g1 := sub(matrix {groundSet T1}, ring T1);
         g2 := sub(matrix {groundSet T2}, ring T2);
         if numColumns g1 == numColumns g2 then (
+            -- edge case for the zero bundle.
+            if numColumns g1 == 0 then (
+                T1.cache.iso#T2 = map(T1,T2,matrix {});
+                T1.cache.iso#T2 = map(T2,T1,matrix {});
+                return true
+                );
             -- attempt to find the isomorphism between them.
             for S1 in subsets(numColumns g1, rank T1) list (
                 for S2 in subsets(numColumns g2, rank T1) list (
@@ -462,16 +467,14 @@ areIsomorphic (ToricVectorBundle,ToricVectorBundle) := Boolean => (T1,T2) -> (
                             T1.cache.iso#T2 = f;
                             Ninv := solve(transpose basis2, transpose basis1);
                             T2.cache.iso#T1 = map(T1, T2, transpose Ninv);
-                            areTVBsIso = true;
-                            break
-                            ) else areTVBsIso = false;
-                        );
-                    );
-                if areTVBsIso then break
+                            return true
+                            )
+                        )
+                    )
                 )
             )
         );
-    areTVBsIso
+    false
     )
 
 isomorphism (ToricVectorBundle,ToricVectorBundle) := Boolean => o -> (T1,T2) -> (
@@ -828,8 +831,7 @@ isWellDefined ToricVectorBundleMap := Boolean => f ->(
         for i from m1 to m2 do (
             -- not writing rank E2 allows for matrices that are not square (see cokernel)
             f1 := map(amb, , sub( M * filteredPiece(E1,p,i), RX));
-            f2 := map(amb, , sub(filteredPiece(E2,p,i),RX));
-            
+            f2 := map(amb, , sub(filteredPiece(E2,p,i),RX));            
             if not isSubset(image f1, image f2) then (
                 if debugLevel > 0 then (
                     << ("--the image of the source is not contained in the target at index " | net i) << endl
@@ -842,54 +844,32 @@ isWellDefined ToricVectorBundleMap := Boolean => f ->(
     f.cache.isWellDefined = true;
     return f.cache.isWellDefined
     )
--- todo these is borked
+
 isInjective ToricVectorBundleMap := f -> (
-    if not isWellDefined f then (
-        if debugLevel > 0 then (
-            << "-- the map is not well defined" << endl
-            );
-        return false
-        );
     X := variety(source f);
-    for p in rays X do (
-        r := flatten join(filtrationJumps source f, filtrationJumps target f);
-        if r == {} then(return true);
-        m1 := min r;
-        m2 := max r;
-        for i from m1 to m2 do (
-            if not (numColumns filteredPiece(source f, p, i) <= numColumns filteredPiece(target f, p, i)) then (
-                if debugLevel > 0 then (
-                    << "some error message" << endl
-                    );
-                return false
-                );
-            );
-        );
-    true
+    D := details source f;
+    -- we assume the map is well defined. if it isn't, this might return true
+    -- but the map doesn't make sense.
+    if all for p in rays X list (
+        if rank ((matrix f) * (D#p)_0) == rank source f then true else (
+            if debugLevel > 0 then << "failed injectivity at ray " << p << endl;
+            false
+            )
+        ) then true else false
     )
 
 isSurjective ToricVectorBundleMap := f -> (
-    if not isWellDefined f then (
-        if debugLevel > 0 then (
-            << "-- the map is not well defined" << endl);
-        return false
-        );
-    X := variety(source f);
-    for p in rays X do (
-        r := flatten join(filtrationJumps source f, filtrationJumps target f);
-        if r == {} then(return true);
-        m1 := min r;
-        m2 := max r;
-        for i from m1 to m2 do (
-            if not (numColumns filteredPiece(source f, p, i) >= numColumns filteredPiece(target f, p, i)) then (
-                if debugLevel > 0 then (
-                    << (p,i) << endl
-                    );
-                return false
-                );
-            );
-        );
-    return true
+    Ds := details source f;
+    Dt := details target f;
+    if all for p in rays source f list (
+        jumps := unique (Ds#p_1 | Dt#p_1);
+        if all for i in jumps list (
+            if rank ((matrix f) * filteredPiece(source f,p,i)) == rank filteredPiece(target f, p, i) then true else (
+                if debugLevel > 0 then << "failed surjectivity at ray " << p << " and index " << i << endl;
+                false
+                )
+            ) then true else false
+        ) then true else false
     )
 
 -- As areIsomorphic may not find the isomorphism with the implemented strategy,
@@ -2102,7 +2082,6 @@ assert( variety imf === X)
 assert( filtrationJumps (imf) =={{0}, {0}, {0}, {0}} )
 assert( filtrationMatrices imf ==  {map((ZZ/101)^4,(ZZ/101)^1,{{1}, {1}, {1}, {1}}),map((ZZ/101)^4,(ZZ/101)^1,{{1}, {1}, {1}, {1}}),map((ZZ/101)^4,(ZZ/101)^1,{{1}, {1}, {1},      {1}}),map((ZZ/101)^4,(ZZ/101)^1,{{1}, {1}, {1}, {1}})})
 img= image g;
--- BUG
 assert ( img == target g)
 
 
