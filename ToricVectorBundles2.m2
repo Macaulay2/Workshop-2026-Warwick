@@ -857,7 +857,7 @@ isInjective ToricVectorBundleMap := f -> (
         m1 := min r;
         m2 := max r;
         for i from m1 to m2 do (
-            if not (numColumns filteredPiece(source f, p, i) <= numColumns filteredPiece(target f, p, i)) then (
+            if not (rank filteredPiece(source f, p, i) <= rank filteredPiece(target f, p, i)) then (
                 if debugLevel > 0 then (
                     << "some error message" << endl
                     );
@@ -881,7 +881,7 @@ isSurjective ToricVectorBundleMap := f -> (
         m1 := min r;
         m2 := max r;
         for i from m1 to m2 do (
-            if not (numColumns filteredPiece(source f, p, i) >= numColumns filteredPiece(target f, p, i)) then (
+            if not (rank filteredPiece(source f, p, i) >= rank filteredPiece(target f, p, i)) then (
                 if debugLevel > 0 then (
                     << (p,i) << endl
                     );
@@ -995,7 +995,7 @@ ToricVectorBundleMap ** ToricVectorBundleMap := (tvbmap1,tvbmap2) -> (
     map(tvbmap1.target ** tvbmap2.target, tvbmap1.source ** tvbmap2.source, tvbmap1.map ** tvbmap2.map)
 )
 
- ---------------------------------------
+---------------------------------------
 -- WEIL DECORATIONS
 ---------------------------------------
 
