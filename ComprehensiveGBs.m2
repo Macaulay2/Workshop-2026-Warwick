@@ -459,14 +459,8 @@ parametricGBMain (List, List, List) := o -> (E, N, F) -> (
     return PGB
     );
 
--- TODO: homogenise the output of comprehensiveGBMain and parametricGBMain, e.g. should they both output
--- lists of 3-tuples (3 element lists) or something else?
-
 parametricGBMain List := o -> F -> parametricGBMain({}, {}, F, o)
-
 parametricGBMain (List, List) := o -> (E, F) -> parametricGBMain(E, {}, F, o)
-
-
 
 -----------------------------
 -- zeroDimCheck if for those
