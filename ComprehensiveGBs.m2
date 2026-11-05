@@ -13,7 +13,7 @@ newPackage(
         { Name => "Sam Knight", Email => "samdeckardknight@gmail.com", HomePage => ""},
         { Name => "Weijia Wang", Email => "weijia.wang@lip6.fr", HomePage => "https://weijia.perso.lip6.fr/"}
     },
-    Keywords => {""},
+    Keywords => {"Groebner Basis Algorithms"},
     AuxiliaryFiles => false,
     PackageImports => {"MinimalPrimes", "RealRoots"},
     DebuggingMode => true,
