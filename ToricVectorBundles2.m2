@@ -965,8 +965,10 @@ kernel ToricVectorBundleMap := opts -> f -> (
 
 dual ToricVectorBundleMap := {} >> opts -> f -> map(dual source f, dual target f, transpose matrix f)
 
-cokernel ToricVectorBundleMap := {} >> opts -> f -> dual kernel dual f
-
+cokernel ToricVectorBundleMap := {} >> opts -> f ->(
+    if not isWellDefined f then error("The map is not well defined");
+    dual kernel dual f
+)
 ToricVectorBundleMap ++ ToricVectorBundleMap := (tvbmap1,tvbmap2) -> (
     map(tvbmap1.target ++ tvbmap2.target, tvbmap1.source ++ tvbmap2.source, tvbmap1.map ++ tvbmap2.map)
 )
@@ -2113,7 +2115,6 @@ m = id_(QQ^2);
 z = transpose matrix {{0,0,0,0}};
 M = z | z | (m || m);
 f = map(E ++ E, E ++ E, transpose M)
--- BUG
 assert(image f == E)
 ///
 
@@ -2196,6 +2197,29 @@ assert(gcd(D1,D5) == D6)
 --lcm
 D7=toricDivisor({2,5,-6},PP2);
 assert(lcm(D1,D5) == D7)
+
+///
+
+-- Test 26
+-- Test for non-square matrices
+TEST ///
+
+T = cotangentBundle (X = hirzebruchSurface 3)
+T2 = exteriorPower(2,T)
+T3 = image map( trivialBundle( X, 4), T, matrix{{1,0},{0,1},{0,0},{0,0}})
+T4 = exteriorPower(2, T3)
+assert( T == T3 )
+assert( T2 == T4 )
+assert( target filtrationMatrices(T3, {1,0}) == target filtrationMatrices(T4, {1,0}) )
+
+E2 = symmetricPower (2, T)
+E4 = symmetricPower ( 2, T3)
+assert( E2 == E4 )
+
+TT = T** T
+TT3 = T3**T3
+-- The error comes from Positivity in ground set
+assert( areIsomorphic( TT, TT3) )
 
 ///
 
