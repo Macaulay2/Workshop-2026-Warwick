@@ -43,7 +43,7 @@ doc ///
         Example
             X = hirzebruchSurface 2;
             TX = tangentBundle X;
-            displayFiltrations TX
+            filtrations TX
         Text
             The package also provides various translations into other presentations. For instance, Altmann,
             Hochenegger, and Witt showed that toric vector bundles correspond to stratifications of $E$ by torus-fixed divisors;
@@ -57,7 +57,7 @@ doc ///
             a presentation of such a module.
         Example
             M = klyachkoToModule TX
-            displayFiltrations moduleToKlyachko(X, M)
+            filtrations moduleToKlyachko(X, M)
     Contributors
         This package was originally developed by René Birkner, @HREF("https://www.sfu.ca/~nilten/", "Nathan Ilten")@
         and Lars Petersen. The following people have generously contributed code or improved existing code:
@@ -108,7 +108,7 @@ doc ///
         Example
             X = toricProjectiveSpace 2;
             TX = tangentBundle X;
-            displayFiltrations TX
+            filtrations TX
         Text
             Focusing on the filtration corresponding to the ray  {-1, -1}, the basis chosen is
             $\begin{bsmallmatrix} -1 & -1 \\ -1 & 0 \end{bsmallmatrix}$. The first column,
@@ -128,11 +128,11 @@ doc ///
             the compatibilty of the tangent bundle by simply changing one of the filtered pieces.
         Example
             TX' = toricVectorBundle(X, filtrationMatrices TX, {{0,0},{1,0},{1,0}});
-            displayFiltrations TX'
+            filtrations TX'
             isLocallyFree TX'
     SeeAlso
         toricVectorBundle
-        displayFiltrations
+        filtrations
         filtrations
         details
         filteredPiece
@@ -256,7 +256,7 @@ doc ///
             L2 = {{-1,0},{-2,-1},{0,1}}
             E = toricVectorBundle(X,L1,L2)
             details E
-            displayFiltrations E
+            filtrations E
     Caveat
       Note that entries rays fan X in general orders the rays in a different way that rays X. 
     SeeAlso
@@ -265,7 +265,7 @@ doc ///
         filtrationMatrices
         filteredPiece
         details
-        displayFiltrations
+        filtrations
 ///
 
 doc ///
@@ -373,13 +373,13 @@ doc ///
           filteredPiece(E, {0,1}, 2)
           filteredPiece(E, {0,1}, 5)
         Text
-          A convenient way of displaying all the relevant filtered pieces of a @TO ToricVectorBundle@ is using @TO displayFiltrations@.
+          A convenient way of displaying all the relevant filtered pieces of a @TO ToricVectorBundle@ is using @TO filtrations@.
         Example
-          displayFiltrations E
+          filtrations E
     SeeAlso
       filtrationMatrices
       filtrationJumps
-      displayFiltrations
+      filtrations
       details
       (variety, ToricVectorBundle)
 ///
@@ -576,7 +576,7 @@ doc ///
         Example
           X = toricProjectiveSpace 3;
           L  = lineBundle( 3*X_0-1*X_1+ 2*X_3)
-          displayFiltrations L
+          filtrations L
           L' = lineBundle( X ,{3,-1,0,2})
           L == L'
         Text
@@ -648,7 +648,7 @@ doc ///
             X = toricProjectiveSpace 2;
             E = tangentBundle X;
             Ed = dual E;
-            displayFiltrations Ed
+            filtrations Ed
             Ed == cotangentBundle X
             E = tangentBundleKaneyama projectiveSpaceFan 2
             Ed = dual E
@@ -852,7 +852,7 @@ doc ///
             E1 = trivialBundle(X, 2);
             E2 = tangentBundle X;
             E = E1 ++ E2;
-            displayFiltrations E
+            filtrations E
         Example
             E1 = toricVectorBundleKaneyama(2,hirzebruchFan 3)
             E2 = tangentBundleKaneyama(hirzebruchFan 3)
@@ -888,7 +888,7 @@ doc ///
         Example
             X = toricProjectiveSpace 1 ** toricProjectiveSpace 1;
             E = tangentBundle X;
-            displayFiltrations E
+            filtrations E
         Text
             If the option @TT "\"Type\" => \"Kaneyama\""@ is given then the resulting bundle will be
             in Kaneyama's description:
@@ -1816,7 +1816,7 @@ doc ///
 --------------------------------------------------------
 -- Weil decorations
 --------------------------------------------------------
-
+-*
 
 doc ///
     Key
@@ -1856,8 +1856,6 @@ doc ///
     Key
         weilToKlyachko
         (weilToKlyachko,WeilDecoration)
-        (weilToKlyachko,NormalToricVariety,WeilDecoration)
-        (weilToKlyachko,NormalToricVariety,List)
     Headline
         The toric vector bundle associated to a Weil decoration.
     Usage
@@ -1881,7 +1879,7 @@ doc ///
             V = tangentBundle X;
             WD = weilDecoration V;
             E = weilToKlyachko WD;
-            displayFiltrations
+            filtrations
         Text
             Alternatively, one can input the underlying normal toric variety together with the Weil decoration as a hashTable or
             as a list of pairs of stratum subspaces and divisor coefficients.
@@ -2001,12 +1999,12 @@ doc ///
 
 doc ///
     Key
-        displayFiltrations
-        (displayFiltrations,ToricVectorBundle)
+        filtrations
+        (filtrations,ToricVectorBundle)
     Headline
         prints the filtrations of a toric vector bundles
     Usage
-        s = displayFiltrations(E)
+        s = filtrations(E)
     Inputs
         E : ToricVectorBundle
     Outputs
@@ -2017,7 +2015,7 @@ doc ///
 ///
 
 
-
+*-
 --------------------------------------------------------
 -- Others
 --------------------------------------------------------
