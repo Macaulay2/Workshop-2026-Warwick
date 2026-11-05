@@ -87,7 +87,6 @@ export {
     "areIsomorphic",
     "deltaE",
     "details",
-    "filtrations" => "details",
     "eulerChi",
     "filteredPiece",
     "moduleToKlyachko",
@@ -101,7 +100,7 @@ export {
     "firstChernClass",
     "cartierIndex",
     -- Misc
-    "displayFiltrations",
+    "filtrations",
     -- Positivity    
     "groundSet", 
     "parliament",
@@ -130,16 +129,9 @@ export {
     "customConeSort"
     }
 
--- These are cached keywords as part of:
--- cechComplex
 protect cech
--- isWellDefined for Kaneyama bundles
 protect cocycleCondition
 protect regularityCondition
--- areIsomorphic
-protect iso
--- cohomology
-protect WeightedCoeffRing
 protect eigenspaceDecompositions
 protect ambRank
 
@@ -151,14 +143,16 @@ ToricVectorBundle = new Type of HashTable
 ToricVectorBundle.synonym = "vector bundle on a toric variety using Klyachko's description"
 globalAssignment ToricVectorBundle
 
-toricVectorBundle = method(Options => true)
-toricVectorBundle (NormalToricVariety, List, List) := {} >> o -> (baseVariety, matrixList, indexesList) -> (
+toricVectorBundle = method()
+toricVectorBundle (NormalToricVariety, List, List) := ToricVectorBundle => (baseVariety, matrixList, indexesList) -> (
     -- error checking
     if #matrixList != #(rays baseVariety) then error("there must be as many filtration matrices as rays of the base");
     if #indexesList != #(rays baseVariety) then error("there must be as many index lists as rays of the base");
+    matsizes := matrixList/numRows;
+    if not same matsizes then error("the ambient dimension (numRows) of the filtration matrirces must be the same");
     L := apply(matrixList, m -> rank m);
     if not same L then error("the ranks of the filtration matrices must be the same");
-    rankE := L_0;
+    rankE := first L;
     if any(#rays baseVariety, p -> #(indexesList_p) != numColumns matrixList_p) then error("the index lists must have entries corresponding to the columns of the filtration matrices");
     if rank matrix {matrixList} > rankE then error("the underlying vector space must be the same for each ray");
     -- technically the filtration matrices need to be over the coefficient ring of E
@@ -168,7 +162,7 @@ toricVectorBundle (NormalToricVariety, List, List) := {} >> o -> (baseVariety, m
 	symbol filtrationMatrices => modifiedMatList,
 	symbol filtrationJumps => indexesList,
 	symbol rank => rankE,
-        symbol ambRank => numRows matrixList_0,
+        symbol ambRank => first matsizes,
 	symbol cache => new CacheTable}
     )
 -- Alternative input
@@ -178,21 +172,23 @@ toricVectorBundle (NormalToricVariety, HashTable) := {} >> o -> (baseVariety, fi
     toricVectorBundle(baseVariety, mats, jumps)
     )
 
--- Unexported helper.
--- This method takes an (n x m) matrix of rank r whose i-th column is labeled with
--- an integer "jumps_i", and returns a rank r (n x r) submatrix with the same sublabels.
--- The choice of submatrix is dependent on the labeling: a higher label has higher priority.
-pruneFiltration = method()
-pruneFiltration (Matrix, List) := (filtMat, jumps) -> (
-    r := rank filtMat;
-    -- silly hack. I want to traverse the filtrations backwards so I make this auxiliary
+--todo finish cleaning up pruningMap.
+chooseBasis = method()
+chooseBasis ToricVectorBundle := ToricVectorBundle => E -> (
+    D := details E;
+    (newfilts, newjumps) := toSequence transpose for p in rays E list chooseBasis(D#p_0, D#p_1);
+    toricVectorBundle(variety E, newfilts, newjumps)
+    )
+chooseBasis (Matrix, List) := (M,jumps) -> (
+    r := rank M;
+    -- silly hack. I want to traverse the filtrations backwards so I make this auxilliary
     -- index set and reverse sort it.
     J := for j to #jumps - 1 list {jumps_j, -j};
-    currentspan := matrix (filtMat*0)_0;
+    currentspan := matrix (M*0)_0;
     newJ := {};
     for j in reverse sort J do (
-        if intersect(image matrix filtMat_(-j_1), image currentspan) != 0 then continue;
-        currentspan = currentspan | matrix filtMat_(-j_1);
+        if intersect(image matrix M_(-j_1), image currentspan) != 0 then continue;
+        currentspan = currentspan | matrix M_(-j_1);
         newJ = newJ | {j_0}
         );
     {currentspan_{1..r}, newJ}
@@ -204,7 +200,7 @@ prune ToricVectorBundle := ToricVectorBundle => o -> E -> E.cache.minimalPresent
     toricVectorBundle(variety E, hashTable for p in R list p => (
             (M, J) := toSequence D#p;
             -- if the matrix is not given by a basis, then we need to choose a basis.
-            if numColumns M > rank E then (M,J) = toSequence pruneFiltration(M,J);
+            if numColumns M > rank E then (M,J) = toSequence chooseBasis(M,J);
             -- once the number of columns equals the rank, we can prune.
             pr := matrix (prune image transpose M).cache.pruningMap;
             {transpose (transpose M * matrix pr), J}
@@ -320,6 +316,7 @@ ToricVectorBundle ++ ToricVectorBundle := (tvb1,tvb2) -> (
     toricVectorBundle(X, Lnew, Jnew)
     )
 
+ToricVectorBundle ** ToricVectorBundle := (tvb1,tvb2) -> tensor(tvb1,tvb2)
 tensor(ToricVectorBundle, ToricVectorBundle) := ToricVectorBundle => {} >> opts -> (tvb1, tvb2) -> (
     if variety tvb1 =!= variety tvb2 then error("expected the bundles to be over the same toric variety");
     X := variety tvb1;
@@ -328,11 +325,9 @@ tensor(ToricVectorBundle, ToricVectorBundle) := ToricVectorBundle => {} >> opts 
     Lnew:= apply(#rays X, i -> L1_i**L2_i );
     J1:= filtrationJumps tvb1; 
     J2:= filtrationJumps tvb2;
-    -- TODO check that this is what we want
     Jnew := apply(#rays X, p -> flatten apply(J1_p, e1 -> flatten apply(J2_p, e2 -> e1 + e2)));
     toricVectorBundle(X, Lnew, Jnew)
     )
-ToricVectorBundle ** ToricVectorBundle := (tvb1,tvb2) -> tensor(tvb1,tvb2)
 
 twist = method()
 twist(ToricVectorBundle, ToricDivisor) := (E, D) -> E ** lineBundle D
@@ -397,37 +392,7 @@ symmetricPower (ZZ, ToricVectorBundle) := (l, TVB) -> (
         )
     )
 
-removeDupeCols := fM -> (
-    M' := matrix {fM};
-    matrix {unique for c to numColumns M' - 1 list matrix M'_c}
-)
-
--*
-debug needsPackage "ToricVectorBundles2"
-X = toricProjectiveSpace 1
-mats := {matrix{{1,0},{0,1}}, matrix {{1,0},{0,1}}}
-jumps := {{1,0}, {0,0}}
-T1 = toricVectorBundle(X,mats,jumps) 
-mats' := {matrix{{0,-1},{1,0}}, matrix {{1,0},{0,1}}}
-jumps' := {{0,1}, {0,0}}
-T2 = toricVectorBundle(X,mats',jumps') 
-T1 == T2
-groundSet T1
-groundSet T2
-mats'' := {matrix{{0,1},{-1,0}}, matrix {{1,0},{0,1}}}
-jumps'' := {{0,1}, {0,0}}
-T3 =  toricVectorBundle(X,mats'',jumps'') 
-
-X = toricProjectiveSpace 2
-T1 = tangentBundle X
-M1 = klyachkoToModule T1
-T2 = moduleToKlyachko (X, M1)
--- BUG: This returns false when it shouldnt
-assert(T1==T2)
-
-*-
-
-ToricVectorBundle == ToricVectorBundle := (T1,T2) -> (areIsomorphic(T1,T2))
+ToricVectorBundle == ToricVectorBundle := (T1,T2) -> areIsomorphic(T1,T2)
 areIsomorphic = method()
 areIsomorphic (ToricVectorBundle,ToricVectorBundle) := Boolean => (T1,T2) -> (    
     -- First, check that the bundles have same rank, base variety, and filtration jumps.
@@ -435,23 +400,23 @@ areIsomorphic (ToricVectorBundle,ToricVectorBundle) := Boolean => (T1,T2) -> (
     jumps' := rsort unique flatten filtrationJumps T2;
     if not ( (rank T1 == rank T2) and (variety T1 === variety T2) and (jumps == jumps') ) then return false;
     -- Check the cache, and if it's empty, populate it.
-    if not T1.cache.?iso then (
-        T1.cache.iso = new MutableHashTable;
+    if not T1.cache.?isomorphism then (
+        T1.cache.isomorphism = new MutableHashTable;
         );
-    if not T2.cache.?iso then (
-        T2.cache.iso = new MutableHashTable;
+    if not T2.cache.?isomorphism then (
+        T2.cache.isomorphism = new MutableHashTable;
         );
     -- if it's non-empty, look for T2 as target.
-    if T1.cache.iso#?T2 then return true;    
-    if not T1.cache.iso#?T2 then (
+    if T1.cache.isomorphism#?T2 then return true;    
+    if not T1.cache.isomorphism#?T2 then (
         -- compute the ground sets of both.
         g1 := sub(matrix {groundSet T1}, ring T1);
         g2 := sub(matrix {groundSet T2}, ring T2);
         if numColumns g1 == numColumns g2 then (
             -- edge case for the zero bundle.
             if numColumns g1 == 0 then (
-                T1.cache.iso#T2 = map(T1,T2,matrix {});
-                T1.cache.iso#T2 = map(T2,T1,matrix {});
+                T1.cache.isomorphism#T2 = map(T1,T2,matrix {});
+                T1.cache.isomorphism#T2 = map(T2,T1,matrix {});
                 return true
                 );
             -- attempt to find the isomorphism between them.
@@ -464,9 +429,9 @@ areIsomorphic (ToricVectorBundle,ToricVectorBundle) := Boolean => (T1,T2) -> (
                         f := map(T2, T1, transpose N);
                         -- if this one is well defined and bijective, then it's our guy.
                         if isWellDefined f and isInjective f and isSurjective f then (
-                            T1.cache.iso#T2 = f;
+                            T1.cache.isomorphism#T2 = f;
                             Ninv := solve(transpose basis2, transpose basis1);
-                            T2.cache.iso#T1 = map(T1, T2, transpose Ninv);
+                            T2.cache.isomorphism#T1 = map(T1, T2, transpose Ninv);
                             return true
                             )
                         )
@@ -477,13 +442,11 @@ areIsomorphic (ToricVectorBundle,ToricVectorBundle) := Boolean => (T1,T2) -> (
     false
     )
 
-isomorphism (ToricVectorBundle,ToricVectorBundle) := Boolean => o -> (T1,T2) -> (
+isomorphism (ToricVectorBundle,ToricVectorBundle) := o -> (T1,T2) -> (
     if not areIsomorphic(T1,T2) then error("The bundles are not isomorphic");
-    T1.cache.iso#T2
+    T1.cache.isomorphism#T2
     )
 
-
--- Not sure what to do about caching this method, but we should include it. 
 isTwistOf = method()
 isTwistOf (ToricVectorBundle, ToricVectorBundle) := (E1, E2) -> (
     if (variety E1) =!= (variety E2) then return false;
@@ -503,7 +466,7 @@ isTwistOf (ToricVectorBundle, ToricVectorBundle) := (E1, E2) -> (
 -- vector spaces naturally come equipped with torus weights.
 -- This makes a weighted version of the coefficient ring to keep track of these weights.
 weightedCoeffRing = method() 
-weightedCoeffRing ToricVectorBundle := (cacheValue symbol weightedCoeffRing)(E -> (ring E)[DegreeRank => dim variety E])
+weightedCoeffRing ToricVectorBundle := (cacheValue weightedCoeffRing)(E -> (ring E)[DegreeRank => dim variety E])
 
 -- PURPOSE : Computing the Cech complex of a vector bundle
 cechComplex = method()
@@ -872,64 +835,6 @@ isSurjective ToricVectorBundleMap := f -> (
         ) then true else false
     )
 
--- As areIsomorphic may not find the isomorphism with the implemented strategy,
--- the following method checks if a map is an isomorphism and if it is stores it.
-isIsomorphism ToricVectorBundleMap := Boolean =>  f ->(
-    T1 := source f;
-    T2 := target f;
-    if T1.cache.?iso and T1.cache.iso#? T2 then ( if map f == map T1.cache.iso#T2 then return true; );
-    areTVBsIso := ((isWellDefined f) and (isInjective f) and (isSurjective f));
-    if areTVBsIso then (
-        if not T1.cache.?iso then (
-            T1.cache.iso = new MutableHashTable;
-            );
-        if not T2.cache.?iso then (
-            T2.cache.iso = new MutableHashTable;
-            );
-        T1.cache.iso#T2 = f;
-        finv := map(T1,T2,(map f)^-1);
-        T2.cache.iso#T1 = finv;
-        );
-    areTVBsIso
-    )
-
--- Auxiliary fucntion for computing the jumps that happened in a list of matrices in a filtration
--- Takes a matrix to which we want to assing the jums, a list of the filtered pieces and the minimun idex where it stats
-jumpsAux = (basemat, L,mm) ->(
-    ref := transpose entries basemat;
-    r:= # ref;
-    -- Extracts the positions where the vectors appear in the original matrix
-    Jl := apply(#L, i->(positions(ref, v -> isSubset({v}, transpose entries (L_i)))));
-    apply(sum(#Jl,  i ->apply(#ref, j -> if member(j, Jl_i) then 1 else 0)), n -> n+mm-1)    
-)
--- Auxiliary function to simplify the choice of basis done
--- Given a non square matrix of full rank and a list of jumps it returns a square matrix and a list of jumps
--- such that the filtration defined is the same as the one we started with. 
--- This fucntion is used in weilToKyachko but also in coker, image and ker
-adaptedBasis = (ML) -> (
-    M:= ML_0;
-    L:= ML_1;
-    rk := rank M;
-    if rk== numColumns M then( return {M,L});
-    levels := reverse sort unique L;
-    cols := {};
-    jumps := {};
-    B := M_{};
-    for a from 0 to #levels-1 do (
-        inds := positions(L, i -> i == levels_a);
-        for i from 0 to #inds-1 do (
-            C := M_(cols |{inds_i});
-            if rank C > rank B then (
-                cols = append(cols,inds_i);
-                jumps = append(jumps,levels_a);
-                B = C;
-                if rank C == rk then( break);
-            );
-        );
-    );
-    {M_cols, jumps}
-)
-
 image ToricVectorBundleMap := f ->(
     if not isWellDefined f then error("The map is not well defined");
     M := matrix f;
@@ -958,7 +863,7 @@ kernel ToricVectorBundleMap := opts -> f -> (
                 )
             );
         -- concatenate all of those filtered pieces together, then prune them (i.e. choose a basis)
-        pruneFiltration(matrix {newFilt_0}, flatten newFilt_1)
+        chooseBasis(matrix {newFilt_0}, flatten newFilt_1)
         );
     toricVectorBundle(variety E, mats, jumps)
     )
@@ -994,32 +899,11 @@ ToricDivisor ? ToricDivisor := (D1, D2) -> (
 gcd(ToricDivisor, ToricDivisor) := ToricDivisor => (D1, D2) -> toricDivisor(
     apply(entries vector D1, entries vector D2, min), variety D1)
 lcm(ToricDivisor, ToricDivisor) := ToricDivisor => (D1, D2) -> toricDivisor(
-    apply(entries vector D1, entries vector D2, max), variety D1)
-
--- A Weil decoration of a toric vector bundle, in the sense of Altmann,
--- Hochenegger and Witt: the map sending a vector of the fiber over the identity
--- to the largest torus-invariant Weil divisor D with e in E_{>= D}.  Since the
--- map is constant on strata, it is recorded by its strata: each stratum closure,
--- which is a subspace of the fiber, paired with the divisor decorating it.  The
--- zero subspace is decorated by infinity.
-WeilDecoration = new Type of HashTable
-WeilDecoration.synonym = "Weil decoration"
-globalAssignment WeilDecoration
-
-net WeilDecoration := WD -> (
-    "Weil decoration of rank " | toString WD.rank |
-    " with " | toString(#WD.strata) | " nonzero strata")
-
-variety WeilDecoration := WD -> WD.variety
-rank WeilDecoration := ZZ => WD -> WD.rank
-
--- The stratum closures with their divisors, sorted by dimension.
-strata = method()
-strata WeilDecoration := List => WD -> WD.strata
+    apply(entries vector D1, entries vector D2, max), variety D1)    
 
 -- NOTE: The trivial strata is excluded for convenience in coding.
 weilDecoration = method()
-weilDecoration ToricVectorBundle := WeilDecoration => V -> (
+weilDecoration ToricVectorBundle := List => V -> (
     X := variety V;
     A := rays X;
     L := flatten filtrationJumps V;
@@ -1034,46 +918,26 @@ weilDecoration ToricVectorBundle := WeilDecoration => V -> (
     -- lexicographic order and overwriting therefore leaves it behind.
     strataIntersections := new MutableHashTable;
     for inds in minInds .. maxInds do (
-	-- the filtered piece on each ray at the given index
-	pieces := apply(A, inds, (rho, j) -> image filteredPiece(V, rho, j));
-	W := intersect pieces;
-	-- a vanishing intersection is not a stratum for us.
-	if rank W > 0 then strataIntersections#W = toList inds);
+        -- the filtered piece on each ray at the given index
+        pieces := apply(A, inds, (rho, j) -> image filteredPiece(V, rho, j));
+        W := intersect pieces;
+        -- a vanishing intersection is not a stratum for us.
+        if rank W > 0 then strataIntersections#W = toList inds);
     -- Sort the strata by dimension, breaking ties by the index vector.  Note that
     -- the Matroids package globally redefines sort(List, Function) with a
     -- deepSplice that flattens any sequences in the list, so a list of pairs must
     -- not be sorted that way; sorting an auxiliary list of triples is safe.
     ks := keys strataIntersections;
     S := apply(sort apply(#ks, i -> (rank ks#i, strataIntersections#(ks#i), i)),
-	t -> (ks#(last t), strataIntersections#(ks#(last t))));
-    new WeilDecoration from {
-	symbol variety => X,
-	symbol strata  => apply(S, (W, inds) -> (W, toricDivisor(inds, X))),
-	symbol rank    => rank V,
-	symbol cache   => new CacheTable})
-
-weilToKlyachko = method()
-weilToKlyachko WeilDecoration := ToricVectorBundle => WD ->
-    weilToKlyachko(variety WD, WD)
-
-weilToKlyachko(NormalToricVariety, WeilDecoration) := ToricVectorBundle => (X, WD) ->
-    weilToKlyachko(X, apply(strata WD, (W, D) -> (W, entries vector D)))
-
-weilToKlyachko(NormalToricVariety, List) := (X, WD) ->(
-    -- The input is a list of pairs (stratum closure, list of divisor coefficients).
-    -- create a matrix with jumps for each ray that will later be refined
-    Maux := matrix transpose flatten apply(WD, (V, inds) -> entries \ V_*);
-    Jaux := apply(#rays X, j -> { Maux, flatten apply(WD, (V, inds) -> toList(numgens V : inds_j)) });
-    -- Simplify the data to get square matrices
-    data := transpose apply(Jaux, adaptedBasis);
-    toricVectorBundle(X, data_0, data_1))
+        t -> (ks#(last t), strataIntersections#(ks#(last t))));
+    apply(S, (W, inds) -> (gens W, toricDivisor(inds, X)))
+    )
 
 -- Input: weilDecoration for a ToricVectorBundle
 -- Output: the (not necessarily saturated!) chains in the poset of strata
 posetChains := (WD,n) -> (
-    sWD := strata WD;
     if n < 0 then return error("need nonnegative n");
-    if n == 0 then return apply(sWD, l -> {{numgens l_0, l_1}});
+    if n == 0 then return apply(WD, l -> {{numgens l_0, l_1}});
     divs := flatten posetChains(WD,0);
     prevChains := posetChains(WD,n-1);
     flatten for c in prevChains list (
@@ -1098,37 +962,38 @@ firstChernClass ToricVectorBundle := E -> (
         )
     )
 
---------------------------------------------------------------
--- GETTER FUNCTIONS FOR WEIL DECORATIONS
---------------------------------------------------------------
---not sure what other getter functions we would want, just one to recover the torus-invariant divisors
---for now
-
---do we want WEILDECORATION to be a type, or keep it as a list?
-
---for now, this simply gives the list of divisors as a list of ordered coefficients
---I would like to implement it so that they return as a list of ToricDivisors if that
---would make sense? So we need to associate our Weil Decoration to the appropriate NormalToricVariety?
-weilDecorationDivisors = method()
-weilDecorationDivisors List := weilDecorationList -> (
-    divList := {};
-    --assumes first entry in weilDecorationList is {0,infinity}
-    for i from 1 to #weilDecorationList - 1 do (
-        divList = append(divList, weilDecorationList#i#1)
+weilToKlyachko = method()
+weilToKlyachko List := ToricVectorBundle => WD -> (
+    -- some error checking.
+    if WD == {} then error("expected nonempty list");
+    if not all(for pair in WD list if instance(pair,List) then (
+            if #pair == 2 then (
+                if instance(pair_0, Matrix) and instance(pair_1, ToricDivisor) then true else false
+                ) else false
+            ) else false
+        ) then error("expected list of pairs of the form {strata, divisor}");
+    X := variety WD_0_1;
+    -- concatenate all of the strata together.
+    filtMat := matrix {for pair in WD list pair_0};
+    -- for a ray p, the stratum appears in index "coefficient of D_p", where D is the divisor
+    -- decorating the stratum.
+    jumps := for p to #rays X - 1 list (
+        flatten for pair in WD list (
+            D := entries vector pair_1;
+            -- since there could be multiple columns, we have to list all of these jumps.
+            toList (numgens pair_0 : D_p)
+            )
         );
-    divList
+    -- since we're brutally concatenating this, we'll just prune it.
+    chooseBasis toricVectorBundle(variety WD, for p in rays variety WD list filtMat, jumps)
     )
-
-
 
 ---------------------------------------
 -- COX MODULES CONVERSION
 ---------------------------------------
 
 -- Given a fine graded module over the Cox ring of a toric variety we obtain an equivariant sheaf.
-
 -- The code that follows take a module, assuming that it defines a toric vector bundle and returns its Klyachko description. 
-
 
 --Auxiliary fucntion for moduleToKlyachko
 
@@ -1425,8 +1290,8 @@ hirzebruchFan ZZ := n -> hirzebruch n
 vertSpace = n -> (s := ""; if n == 1 then return "" else for i to n-2 do s = s || ""; s)
 horSpace = n -> (s := " "; if n == 0 then return "" else if n == 1 then return s else for i to n-2 do s = s | " "; s)
 
-displayFiltrations = method()
-displayFiltrations ToricVectorBundle := E -> (
+filtrations = method()
+filtrations ToricVectorBundle := E -> (
     filtMats := filtrationMatrices E;
     filtJumps := filtrationJumps E;
     (rng, matTable) := ({},{});    
@@ -1856,10 +1721,10 @@ assert (map isomorphism( T1, T2) == matrix( ring T1,{{0, 1}, {1, 0}} ))
 
 -- Checks that the 2nd method works
 T1 = (tangentBundle X ** lineBundle(X, {2,-3,4,3})) ++ lineBundle(X_2 + X_3)
-displayFiltrations T1
+filtrations T1
 
 T2 =  lineBundle(X_2 + X_3)++ (lineBundle(X, {2,-3,4,3})** tangentBundle X ) 
-displayFiltrations T2
+filtrations T2
 
 assert areIsomorphic (T1,T2)
 
@@ -2737,7 +2602,6 @@ E' = toricVectorBundle(X,mats',jumps')
 M = map(QQ^2,QQ^6,{{1, 0, 1, 1, 0, 1}, {0, 1, 0, 0, 1, 0}})
 f = map(E',E,M)
 
--*
     -- This is a convenient step for what follows
     nrw := numrows newMatrices_0;
     --newMatrices = apply(# Xrays ,i ->matrix  submatrix' (rsort (newMatrices_i|| matrix{newJumps_i}), {nrw},));
@@ -2756,9 +2620,7 @@ f = map(E',E,M)
     1/0;
     tvb  = image phi;
     );
-*-
 
--*
 restart
 debug needsPackage "ToricVectorBundles2"
 X = toricProjectiveSpace(3, CoefficientRing=> ZZ/101);
@@ -2769,15 +2631,15 @@ f = map(sumoflbs,triv,matrix(ZZ/101,{{1},{1},{1},{1}}));
 g = map(TX,sumoflbs, transpose sub(matrix rays X,ZZ/101));
 image g
 ker g
-displayFiltrations image f
-displayFiltrations prune image f
+filtrations image f
+filtrations prune image f
 
 Y = toricProjectiveSpace 1
 mats := {matrix {{1,0},{1,0},{1,1},{1,0}}, matrix {{1,0},{1,0},{0,1},{1,0}}}
 jumps := {{1,0},{0,1}}
 E' = toricVectorBundle(Y,mats,jumps)
-displayFiltrations E'
-displayFiltrations prune E'
+filtrations E'
+filtrations prune E'
 T1 = E'
 T2 = prune E'
 T1 == T2
@@ -2796,11 +2658,10 @@ E' = E ++ trivialBundle(X,1);
 f = map(E',E,matrix{{1,0,0},{0,1,0},{0,0,1},{0,0,0}})
 T1 = E
 T2 = image f
-displayFiltrations T1
-displayFiltrations T2
+filtrations T1
+filtrations T2
 T1 == T2
 T1 == prune T2
-*-
 
 satisfiesCompatibility := E -> (
     D := details E;
@@ -2876,8 +2737,6 @@ satisfiesCompatibility := E -> (
     )
 
 
-*-
--*
 -- todo not quite working.
 cokernel (ToricVectorBundleMap) := f ->(
     if not isWellDefined f then error("The map is not well defined");
@@ -2936,7 +2795,43 @@ cokernel ToricVectorBundleMap := f ->(
     -- (newMatrices, newJumps)= toSequence transpose apply(transpose{newMatrices, newJumps}, D -> adaptedBasis D );
     prune toricVectorBundle( X, newMatrices, newJumps)
     )
-*-
+
+
+-- Auxiliary function for computing the jumps that happened in a list of matrices in a filtration
+-- Takes a matrix to which we want to assing the jums, a list of the filtered pieces and the minimun idex where it stats
+jumpsAux = (basemat, L,mm) -> (    
+    ref := transpose entries basemat;
+    r:= # ref;
+    -- Extracts the positions where the vectors appear in the original matrix
+    Jl := apply(#L, i->(positions(ref, v -> isSubset({v}, transpose entries (L_i)))));
+    apply(sum(#Jl,  i ->apply(#ref, j -> if member(j, Jl_i) then 1 else 0)), n -> n+mm-1)    
+    )
+-- Auxiliary function to simplify the choice of basis done
+-- Given a non square matrix of full rank and a list of jumps it returns a square matrix and a list of jumps
+-- such that the filtration defined is the same as the one we started with. 
+adaptedBasis = (ML) -> (
+    M:= ML_0;
+    L:= ML_1;
+    rk := rank M;
+    if rk== numColumns M then( return {M,L});
+    levels := reverse sort unique L;
+    cols := {};
+    jumps := {};
+    B := M_{};
+    for a from 0 to #levels-1 do (
+        inds := positions(L, i -> i == levels_a);
+        for i from 0 to #inds-1 do (
+            C := M_(cols |{inds_i});
+            if rank C > rank B then (
+                cols = append(cols,inds_i);
+                jumps = append(jumps,levels_a);
+                B = C;
+                if rank C == rk then( break);
+                );
+            );
+        );
+    {M_cols, jumps}
+    )
 
 Nathan gave this example that I want to test:
 restart
@@ -3018,6 +2913,147 @@ isVectorBundle L
 L2 = toricVectorBundle(1, P112, toList(3: matrix{{1_QQ}}), apply( cI*D, i-> matrix{{-i}}));
 isLocallyFree L2
 isVectorBundle L2
+
+
+---------------------------------------
+-- WEIL DECORATIONS
+---------------------------------------
+
+-- Torus-invariant Weil divisors are compared componentwise.  This is a partial
+-- order, so incomparable pairs are reported as such.
+ToricDivisor ? ToricDivisor := (D1, D2) -> (
+    a := entries vector D1;
+    b := entries vector D2;
+    if a === b then symbol ==
+    else if all(a, b, (i, j) -> i <= j) then symbol <
+    else if all(a, b, (i, j) -> i >= j) then symbol >
+    else symbol incomparable)
+
+-- Meet and join for that order.  The join is what cuts out an intersection of
+-- two stratum closures: E_{>= D1} * E_{>= D2} = E_{>= D1 v D2}.
+gcd(ToricDivisor, ToricDivisor) := ToricDivisor => (D1, D2) -> toricDivisor(
+    apply(entries vector D1, entries vector D2, min), variety D1)
+lcm(ToricDivisor, ToricDivisor) := ToricDivisor => (D1, D2) -> toricDivisor(
+    apply(entries vector D1, entries vector D2, max), variety D1)
+
+-- A Weil decoration of a toric vector bundle, in the sense of Altmann,
+-- Hochenegger and Witt: the map sending a vector of the fiber over the identity
+-- to the largest torus-invariant Weil divisor D with e in E_{>= D}.  Since the
+-- map is constant on strata, it is recorded by its strata: each stratum closure,
+-- which is a subspace of the fiber, paired with the divisor decorating it.  The
+-- zero subspace is decorated by infinity.
+WeilDecoration = new Type of HashTable
+WeilDecoration.synonym = "Weil decoration"
+globalAssignment WeilDecoration
+
+net WeilDecoration := WD -> (
+    "Weil decoration of rank " | net rank WD | " with " | net (#strata WD) | " nonzero strata on " | net variety WD
+    )
+
+variety WeilDecoration := WD -> WD.variety
+rank WeilDecoration := ZZ => WD -> WD.rank
+
+-- The stratum closures with their divisors, sorted by dimension.
+strata = method()
+strata WeilDecoration := List => WD -> WD.strata
+
+-- NOTE: The trivial strata is excluded for convenience in coding.
+weilDecoration = method()
+weilDecoration ToricVectorBundle := WeilDecoration => V -> (
+    X := variety V;
+    A := rays X;
+    L := flatten filtrationJumps V;
+    n := length A;
+    minInds := toList(n : min L);
+    maxInds := toList(n : max L);
+    -- For each subspace arising as an intersection of filtered pieces, record the
+    -- componentwise *largest* index vector producing it, since the decoration of
+    -- a vector is the largest D with e in E_{>= D}.  If two index vectors produce
+    -- the same intersection then so does their componentwise maximum, so that
+    -- maximum is also the lexicographic maximum; traversing the box in
+    -- lexicographic order and overwriting therefore leaves it behind.
+    strataIntersections := new MutableHashTable;
+    for inds in minInds .. maxInds do (
+	-- the filtered piece on each ray at the given index
+	pieces := apply(A, inds, (rho, j) -> image filteredPiece(V, rho, j));
+	W := intersect pieces;
+	-- a vanishing intersection is not a stratum for us.
+	if rank W > 0 then strataIntersections#W = toList inds);
+    -- Sort the strata by dimension, breaking ties by the index vector.  Note that
+    -- the Matroids package globally redefines sort(List, Function) with a
+    -- deepSplice that flattens any sequences in the list, so a list of pairs must
+    -- not be sorted that way; sorting an auxiliary list of triples is safe.
+    ks := keys strataIntersections;
+    S := apply(sort apply(#ks, i -> (rank ks#i, strataIntersections#(ks#i), i)),
+	t -> (ks#(last t), strataIntersections#(ks#(last t))));
+    new WeilDecoration from {
+	symbol variety => X,
+	symbol strata  => apply(S, (W, inds) -> (W, toricDivisor(inds, X))),
+	symbol rank    => rank V,
+	symbol cache   => new CacheTable}
+    )
+
+--do we want WEILDECORATION to be a type, or keep it as a list?
+
+--for now, this simply gives the list of divisors as a list of ordered coefficients
+--I would like to implement it so that they return as a list of ToricDivisors if that
+--would make sense? So we need to associate our Weil Decoration to the appropriate NormalToricVariety?
+weilDecorationDivisors = method()
+weilDecorationDivisors List := weilDecorationList -> (
+    divList := {};
+    --assumes first entry in weilDecorationList is {0,infinity}
+    for i from 1 to #weilDecorationList - 1 do (
+        divList = append(divList, weilDecorationList#i#1)
+        );
+    divList
+    )
+
+-- Input: weilDecoration for a ToricVectorBundle
+-- Output: the (not necessarily saturated!) chains in the poset of strata
+posetChains := (WD,n) -> (
+    sWD := strata WD;
+    if n < 0 then return error("need nonnegative n");
+    if n == 0 then return apply(sWD, l -> {{numgens l_0, l_1}});
+    divs := flatten posetChains(WD,0);
+    prevChains := posetChains(WD,n-1);
+    flatten for c in prevChains list (
+        currdiv := first c;
+        for newdiv in divs list (
+            if currdiv_0 >= newdiv_0 then continue
+            else
+            if currdiv_1 < newdiv_1 then continue
+            else {newdiv} | c
+            )
+        )
+    )
+posetChains = memoize posetChains
+
+firstChernClass = method()
+firstChernClass ToricVectorBundle := E -> (
+    D := weilDecoration E;
+    r := rank E;
+    sum flatten for i to r-1 list (
+        ichains := posetChains(D,i);
+        for c in ichains list (-1)^i * (last c)_0 * (first c)_1
+        )
+    )
+
+weilToKlyachko = method()
+weilToKlyachko WeilDecoration := ToricVectorBundle => WD -> (
+    -- concatenate all of the strata together.
+    filtMat := matrix {for pair in strata WD list gens pair_0};
+    -- for a ray p, the stratum appears in index "coefficient of D_p", where D is the divisor
+    -- decorating the stratum.
+    jumps := for p to #rays variety WD - 1 list (
+        flatten for pair in strata WD list (
+            D := entries vector pair_1;
+            -- since there could be multiple columns, we have to list all of these jumps.
+            toList (numgens pair_0 : D_p)
+            )
+        );
+    -- since we're brutally concatenating this, we'll just prune it.
+    chooseBasis toricVectorBundle(variety WD, for p in rays variety WD list filtMat, jumps)
+    )
 
 
 changelist: 2026-10-27
