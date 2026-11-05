@@ -1465,24 +1465,7 @@ assert( filtrationJumps L2 =={{3}, {4}, {1}, {0}})
 assert((filtrationMatrices L2)_0 == matrix{{1_QQ}})
 
 ///
--*
--- Test 2
--- Check for cotangentBundle
-TEST ///
 
-T = cotangentBundle hirzebruchSurface 2
-assert(ring T === QQ)
-assert(filtrationJumps T === {{0,-1},{0,-1},{0,-1},{0,-1}})
-assert(filtrationMatrices T === {matrix(QQ,{{1,0},{0,1}}),matrix(QQ,{{0,1},{1,0}}),matrix(QQ,{{0,2},{1/2,1}}),matrix(QQ,{{0,1},{-1,0}})})
-assert(rank T == 2)
-assert(dim variety T == 2)
-
-T = cotangentBundle(toricProjectiveSpace(1) ** toricProjectiveSpace(1) ** toricProjectiveSpace(1))
-assert(filtrationJumps T === {{0,0,-1},{0,0,-1},{0,0,-1},{0,0,-1},{0,0,-1},{0,0,-1}})
-assert(filtrationMatrices T === {matrix(QQ,{{-1,0,0},{0,1,0},{0,0,1}}),matrix(QQ,{{1,0,0},{0,1,0},{0,0,1}}),matrix(QQ,{{0,1,0},{-1,0,0},{0,0,1}}),matrix(QQ,{{0,1,0},{1,0,0},{0,0,1}}),matrix(QQ,{{0,1,0},{0,0,1},{-1,0,0}}),matrix(QQ,{{0,1,0},{0,0,1},{1,0,0}})})
-assert(rank T == 3)
-///
-*-
 
 
 -- Test 2
@@ -2104,6 +2087,38 @@ TT32 = T3++T3
 assert( areIsomorphic( TT2, TT32) )
 
 ///
+
+-- Test 27
+-- More test for non-square matrices
+TEST ///
+X = toricProjectiveSpace 3
+H1 = new HashTable from {{0, 0, 1} => {matrix {{0, 1/1, 0}, {0, 0, 1}, {1, 0, 0}}, {1, 0, 0}}, {1_ZZ, 0, 0} => {matrix {{1/1, 0, 0}, {0, 1, 0}, {0, 0, 1}}, {1, 0,      0}}, {0, 1_ZZ, 0} => {matrix {{0, 1, 0}, {1, 0, 0}, {0, 0, 1/1}}, {1, 0, 0}}, {-1, -1, -1} => {matrix {{-1, 0, -1}, {-1, 1, -1/1}, {-1, 0, 0}}, {1, 0, 0}}}
+E1 = toricVectorBundle( X, H1)
+H2 = new HashTable from {{0, 0, 1} => {matrix {{-1/1, 1, 0, 0}, {-1, 0, 1, 0}, {-1, 0, 0, 1}}, {0, 0, 0, 1}}, {1, 0, 0} => {matrix {{-1/1, 1, 0, 0}, {-1, 0, 1,  0}, {-1, 0, 0, 1}}, {0, 1, 0, 0}}, {0, 1, 0} => {matrix {{-1, 1/1, 0, 0}, {-1, 0, 1, 0}, {-1, 0, 0, 1}}, {0, 0, 1, 0}}, {-1, -1, -1} => {matrix {{-1, 1, 0,      0}, {-1, 0, 1, 0}, {-1, 0, 0, 1/1}}, {1, 0, 0, 0}}}
+E2 = toricVectorBundle( X, H2)
+
+E3 = image map( trivialBundle(X, 5)**lineBundle(X, {1,1,1,1}), E1, matrix {{1/1,0,0},{0,1,0},{0,0,1},{0,0,0},{0,0,0}})
+
+assert ( E1 == E2)
+assert( E2 == E3)
+assert( E1++E1 == E2++E2)
+-- Problem with groundset
+assert( E2++E2 == E3++E3)
+-- BUG: exteriorPower is not doing the right computation for E2
+assert( exteriorPower(2, E1) == exteriorPower(2, E2 ))
+assert( exteriorPower(2, E3) == exteriorPower(2, E2 ))
+assert( exteriorPower(2, E3) == exteriorPower(2, E1 ))
+-- BUG: symmetricPower doesn't work for E2
+assert( symmetricPower(2, E1)== symmetricPower(2, E2 ))
+assert( symmetricPower(2, E3)== symmetricPower(2, E2 ))
+assert( symmetricPower(2, E1)== symmetricPower(2, E3 ))
+-- BUG: The next assertion does not terminate (or at least not in a fast way)
+--assert( E1**E1 == E2**E2)
+assert( E1**E1 == E3**E3)
+assert( E3**E3 == E2**E2)
+
+///
+
 
 load "KaneyamaTests.m2"
 
