@@ -86,7 +86,7 @@ details ToricVectorBundleKaneyama := tvb -> (
 rank ToricVectorBundleKaneyama := T -> T#"rank of the vector bundle"
 
 rays ToricVectorBundleKaneyama := {} >> o -> tvb -> raySortOfFan tvb#"ToricVariety"
-ring ToricVectorBundleKaneyama := (cacheValue symbol WeightedCoeffRing)( T -> (
+ring ToricVectorBundleKaneyama := (cacheValue weightedCoeffRing)( T -> (
     QQ[DegreeRank => T#"dimension of the variety"])
 )
 
@@ -474,7 +474,6 @@ twist(ToricVectorBundleKaneyama, List) := (E, s) -> E ** lineBundleKaneyama(vari
 -- PURPOSE : Generating the Vector Bundle given by a divisor
 
 lineBundleKaneyama  = method();
-
 --   INPUT : '(L,F)',  a list 'L' of weight vectors, one for each ray of the Fan 'F'
 --  OUTPUT : 'tvb',  a ToricVectorBundleKaneyama
 lineBundleKaneyama (List,Fan) := (L,F) -> (
@@ -520,7 +519,6 @@ lineBundleKaneyama (List,Fan) := (L,F) -> (
 -- PURPOSE : Computing the cotangent bundle on a smooth, pure, and full dimensional Toric Variety 
 --   INPUT : 'F',  a smooth, pure, and full dimensional Fan
 --  OUTPUT : 'tvb',  a ToricVectorBundleKaneyama
-
 tangentBundleKaneyama = method()
 tangentBundleKaneyama Fan := F -> dual cotangentBundleKaneyama F
 cotangentBundleKaneyama = method()

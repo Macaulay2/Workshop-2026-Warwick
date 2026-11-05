@@ -138,8 +138,8 @@ groundSet ToricVectorBundle := List => {Verbosity => 0, preferredGenerators => {
                 if opts#Verbosity>0 then << "generators in V: " << apply(generatorsToChoose, gens) << endl;
                 generatorsToChoose = select( generatorsToChoose, v -> not isSubset(v, sumGinV));
                 if opts#Verbosity>0 then << "generators not in " << apply(GinV,gens) << ": " << apply(generatorsToChoose, gens) << endl;
-                while rank(sumGinV + sum append(newGs, image map(R^(rank E),R^1,0))) < rank V do (
-                    if rank(sumGinV+sum append(newGs, image map(R^(rank E),R^1,0))+generatorsToChoose#0) > rank(sumGinV+sum append(newGs, image map(R^(rank E),R^1,0))) then (
+                while rank(sumGinV + sum append(newGs, image map(R^(E.ambRank),R^1,0))) < rank V do (
+                    if rank(sumGinV+sum append(newGs, image map(R^(E.ambRank),R^1,0))+generatorsToChoose#0) > rank(sumGinV+sum append(newGs, image map(R^(E.ambRank),R^1,0))) then (
                         if opts#Verbosity>0 then << "add generator: " << gens generatorsToChoose#0 << endl;
                         newGs = append(newGs, generatorsToChoose#0);
                     );
