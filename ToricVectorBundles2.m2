@@ -975,7 +975,7 @@ ToricVectorBundleMap ** ToricVectorBundleMap := (tvbmap1,tvbmap2) -> (
     map(tvbmap1.target ** tvbmap2.target, tvbmap1.source ** tvbmap2.source, tvbmap1.map ** tvbmap2.map)
 )
 
- ---------------------------------------
+---------------------------------------
 -- WEIL DECORATIONS
 ---------------------------------------
 
