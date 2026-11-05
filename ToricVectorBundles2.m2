@@ -160,6 +160,7 @@ toricVectorBundle (NormalToricVariety, List, List) := {} >> o -> (baseVariety, m
     if not same L then error("the ranks of the filtration matrices must be the same");
     rankE := L_0;
     if any(#rays baseVariety, p -> #(indexesList_p) != numColumns matrixList_p) then error("the index lists must have entries corresponding to the columns of the filtration matrices");
+    -- TODO: dedice if we need this check
     if rank matrix {matrixList} > rankE then error("the underlying vector space must be the same for each ray");
     -- technically the filtration matrices need to be over the coefficient ring of E
     modifiedMatList := apply(matrixList, M -> sub(M, coefficientRing ring baseVariety));
@@ -509,6 +510,7 @@ weightedCoeffRing ToricVectorBundle := (cacheValue symbol weightedCoeffRing)(E -
 cechComplex = method()
 cechComplex (ZZ,ToricVectorBundle,Matrix) := (k,T,u) -> (
     -- Checking for input errors
+    T = prune T;
     dimvar := dim variety T;
     if numRows u != dimvar or numColumns u != 1 then error("Expected a matrix with 1 column and ", toString dimvar, " rows.");
     if ring u =!= ZZ then error("The degree has to be an integer vector.");
@@ -622,6 +624,7 @@ cechComplex (ZZ,ToricVectorBundle,Matrix) := (k,T,u) -> (
 -- PURPOSE : Computing the cohomology of a given ToricVectorBundle
 cohom = method()
 cohom (ZZ,ToricVectorBundle,Matrix) := (k,T,u) -> (
+    T = prune T;
     if not T.cache.?HH then T.cache.HH = new MutableHashTable;
     if not T.cache.HH#?(k,u) then (
         -- Get the k-1 th, k th and k+1 th chain in the Cech complex
@@ -641,6 +644,7 @@ cohom (ZZ,ToricVectorBundle,Matrix) := (k,T,u) -> (
 
 eulerChi = method()
 eulerChi (Matrix,ToricVectorBundle) := (u,T) -> (
+    T = prune T;
     if not T.cache.?eulerChi then T.cache.eulerChi = new MutableHashTable;
     if not T.cache.eulerChi#?u then (
         n := dim variety T;
@@ -650,14 +654,16 @@ eulerChi (Matrix,ToricVectorBundle) := (u,T) -> (
     )
 
 eulerChi ToricVectorBundle := T -> ( 
+    T = prune T;
     -- Compute the set of degrees with possible cohomology
     L := latticePoints deltaE T;
     -- Sum up their characteristics
     sum apply(L, l -> eulerChi(l,T))
     )
 
-cohomology(ZZ,ToricVectorBundle,Matrix) := opts -> (i,T,weight) -> cohom(i,T,weight)
+cohomology(ZZ,ToricVectorBundle,Matrix) := opts -> (i,T,weight) -> cohom(i,prune T,weight)
 cohomology(ZZ,ToricVectorBundle,List) := opts -> (i,T,P)-> (
+    T = prune T;
     if opts.Degree == 1 then print ("Number of degrees to calculate: "|(toString(#P)));
     for j in P list (
         if opts.Degree == 1 then << "." << flush;
@@ -665,24 +671,27 @@ cohomology(ZZ,ToricVectorBundle,List) := opts -> (i,T,P)-> (
         if j != 0 then j else continue)
     )
 cohomology(ZZ,ToricVectorBundle) := opts -> (i,T)-> (
+    T = prune T;
     L := cohomology(i,T,latticePoints deltaE T,Degree => opts.Degree);
     if L == {} then (weightedCoeffRing T)^0 else directSum L
     )
 
-hh(ZZ,ToricVectorBundle) := ZZ => (i,T) -> rank cohomology(i,T)
+hh(ZZ,ToricVectorBundle) := ZZ => (i,T) -> rank cohomology(i,prune T)
 -- this extracts graded pieces.
 hh(ZZ,Sequence) := ZZ => (i,S) -> (
     -- some error checking.
     if #S != 2 then error("The Sequence has to contain a toric vector bundle and a weight vector.");
     if not instance(S#1,Matrix) then error("The second argument has to be a weight vector given by a matrix.");
     if not (instance(S#0,ToricVectorBundle) or instance(S#0,ToricVectorBundleKaneyama)) then error("The first argument has to be a toric vector bundle.");
-    rank cohomology(i,S#0,S#1)
+    rank cohomology(i,prune S#0,S#1)
     )
 
 deltaE = method()
 deltaE ToricVectorBundle := (cacheValue symbol deltaE)( tvb -> (
         if not isComplete variety tvb then error("The toric variety needs to be complete.");
+        tvb = prune tvb;
         n := dim variety tvb;
+        
         -- Extracting necessary data with rays as column matrices to use old code
         rayTable := apply( rays tvb, s -> transpose matrix {s});
         l := #rayTable;
@@ -700,6 +709,7 @@ isGeneral = method()
 isGeneral ToricVectorBundle :=  E -> (
     if E.cache.?isGeneral then( return E.cache.isGeneral);
     -- list the max cones
+    E = prune E;
     MCones:= max variety E;
     raysX := rays E;
     r := rank E;
@@ -732,8 +742,10 @@ randomDeformation ToricVectorBundle := tvb -> (
     R:= ring tvb;
     -- Change the matrices in the filtration and preserve the jumps
     newMatrices := apply(filtrationMatrices tvb, M -> (
-            A := random(R^k, R^k);
-            while det A == 0 do (A = random(R^k, R^k));
+        (nr,nc ):=(numRows M, numColumns M);
+
+            A := random(R^nr, R^nc);
+            while rank A =!= k do (A = random(R^nr, R^nc));
             A
             )
         );
@@ -2220,6 +2232,11 @@ TT = T** T
 TT3 = T3**T3
 -- The error comes from Positivity in ground set
 assert( areIsomorphic( TT, TT3) )
+
+TT2 = T++ T
+TT32 = T3++T3
+-- The error comes from Positivity in ground set
+assert( areIsomorphic( TT2, TT32) )
 
 ///
 
