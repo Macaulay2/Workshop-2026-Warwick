@@ -339,25 +339,43 @@ twist = method()
 twist(ToricVectorBundle, ToricDivisor) := (E, D) -> E ** lineBundle D
 twist(ToricVectorBundle, List) := (E, s) -> E ** lineBundle(variety E, s)
 
-dual ToricVectorBundle := {} >> opts -> tvb -> (    
+dual ToricVectorBundle := {} >> opts -> E -> (
+    D := details E;
     -- if a vector space has basis B, the dual has basis transpose inverse B
-    (filtMats, filtJumps) := if all(filtrationMatrices tvb, M ->
-    numRows M == numColumns M) and tvb.ambRank == rank tvb then( (apply(filtrationMatrices tvb, M -> transpose inverse M),apply(filtrationJumps tvb, J -> -J)) )else (
-        toSequence transpose for p in rays tvb list (
-            M := filtrationMatrices(tvb, p);
-            J := filtrationJumps(tvb, p);
-            n := numColumns M;
-            -- todo: does this seem right?
-            if n < numRows M then(
-            -- complete M to a basis, then take the inverse transpose, and take the first n cols.
-            {(transpose inverse matrix {{M, matrix (prune coker M).cache.pruningMap}})_{0..n-1},-J } )else( 
-            (M, J) = pruneFiltration(M, J );
-             {transpose inverse M,  -J}
-             )
-        )
+    -- the filtration jumps simply get negated.
+    (fM, fJ) := toSequence transpose for p in rays E list (
+        -- first make sure that the filtration matrix is a basis.
+        (M,J) := toSequence chooseBasis(D#p_0,D#p_1);
+        (n,m) := (numRows M, numColumns M);
+        -- if the matrix is square, then just take its transpose inverse.
+        M = if n == m then transpose inverse M else (
+            -- complete M to a basis of the ambient space,
+            -- then take the inverse transpose, and take the first n cols.
+            (transpose inverse matrix {{M, matrix (prune coker M).cache.pruningMap}})_{0..m-1}
+            );
+        {M, -J}
         );
-    toricVectorBundle(variety tvb, filtMats, filtJumps)
+    toricVectorBundle(variety E, fM, fJ)
     )
+
+-*
+debug needsPackage "ToricVectorBundles2"
+X = toricProjectiveSpace(3, CoefficientRing=> ZZ/101);
+TX = tangentBundle X;
+triv = trivialBundle(X,1);
+sumoflbs = lineBundle X_0 ++ lineBundle X_1 ++ lineBundle X_2 ++ lineBundle X_3;
+f = map(sumoflbs,triv,matrix(ZZ/101,{{1},{1},{1},{1}}));
+g = map(TX,sumoflbs, transpose sub(matrix rays X,ZZ/101));
+E = image f
+dual E
+exteriorPower(1,E)
+
+X = hirzebruchSurface 2
+E = tangentBundle X
+L = lineBundle(X_0 + 2*X_1 + 4*X_2 + 5*X_3)
+T1 = exteriorPower(2,E ++ L)
+
+*-
 
 exteriorPower (ZZ, ToricVectorBundle) := opts -> (l, TVB) -> (
     if l < 0 then error("expected nonnegative exponent")
@@ -366,13 +384,16 @@ exteriorPower (ZZ, ToricVectorBundle) := opts -> (l, TVB) -> (
     else (
         R := rays variety TVB;
         D := details TVB;
-        ind := subsets(rank TVB,l);
-        newfM := for p in R list (
+        indcol := subsets(rank TVB,l);
+        (newfM, newfJ) := toSequence transpose for p in R list (
+            indrow := subsets(numRows (D#p)_0, l);
+            indcol := subsets(numColumns (D#p)_0, l);
             -- the new filtration matrices are given by minors of the old ones.
-            matrix for i in ind list for j in ind list det ((D#p)_0)^i_j
+            fM := matrix for i in indrow list for j in indcol list det ((D#p)_0)^i_j;
+            -- the new jumps are given by the sums of the jumps corresponding to those minors.
+            fJ := apply(indcol, j -> sum ((D#p)_1)_j);
+            {fM, fJ}
             );
-        -- the new jumps are given by the sums of the jumps corresponding to those minors.
-        newfJ := for p in R list apply(ind, j -> sum ((D#p)_1)_j);
         toricVectorBundle(variety TVB, newfM, newfJ)
         )
     )
