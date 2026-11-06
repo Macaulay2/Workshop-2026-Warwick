@@ -622,7 +622,6 @@ doc ///
 
 doc ///
     Key
-        dual
         (dual,ToricVectorBundle)
     Headline
         the dual bundle of a toric vector bundle
@@ -1016,8 +1015,7 @@ doc ///
         (isomorphism,ToricVectorBundle,ToricVectorBundle)
 ///
 
---todo broken
--*
+
 doc ///
     Key
         (isomorphism,ToricVectorBundle,ToricVectorBundle)
@@ -1042,20 +1040,22 @@ doc ///
             HF = hirzebruchSurface 2
             E = exteriorPower(2, cotangentBundle HF)
             F = lineBundle(HF,{-1,-1,-1,-1})
+            E == F 
+            isomorphism(E++E, F++F)
     SeeAlso
         areIsomorphic
         base
         filtrations
         details
 ///
-*-
+
 
 doc ///
     Key
         isTwistOf
         (isTwistOf,ToricVectorBundle,ToricVectorBundle)
     Headline
-        TODO
+        checks if a vector bundle is a twist of another
     Usage
         b = isTwistOf(E1,E2)
     Inputs
@@ -1065,7 +1065,17 @@ doc ///
         b : Boolean
     Description
         Text
-          TODO
+          It checks if @TT "E1"@ is a twist of @TT "E2"@.
+        Example
+          X = toricProjectiveSpace 2;
+          T = tangentBundle X;
+          isTwistOf(twist( T, {2,4,-1}) , T**lineBundle(X, {1,2,3}))
+          isTwistOf(T, trivialBundle(X,2))
+    SeeAlso
+      twist
+      lineBundle
+      areIsomorphic
+      (tensor, ToricVectorBundle, ToricVectorBundle)
 ///
 
 
@@ -1314,25 +1324,7 @@ doc ///
         deltaE
 ///
 
--- TODO Update and add Kaneyama version
--*
-doc ///
-    Key
-        grRing
-        (grRing,ToricVectorBundle)
-    Headline
-        TODO
-    Usage
-        R = grRing(E)
-    Inputs
-        E : ToricVectorBundle
-    Outputs
-        R : Ring
-    Description
-        Text
-          TODO
-///
-*-
+
 doc ///
     Key
         firstChernClass
@@ -1450,13 +1442,13 @@ doc ///
         Text
             Given a map @TT "f : E_1 -> E_2"@ of toric vector bundles,
             computes the image of @TT "f"@ as a toric vector bundle on
-            the same toric variety.
+            the same toric variety. The image of a map between reflexive sheaves
+            need not be reflexive, so the image is the reflexive dual of the image of @TT "f"@.
 
             The image is computed by taking the images of the filtered
             pieces of @TT "E_1"@ under the underlying module map of
-            @TT "f"@. The resulting filtration data is refined using an
-            adapted basis and used to construct the image toric vector
-            bundle.
+            @TT "f"@. The resulting @TO filtrationMatrices@ are the image of the filtration matrices
+            of @TT "E1"@ as subspaces of the filtration matrices of @TT "E2"@.
         Example
             X = toricProjectiveSpace 2
             E = toricVectorBundle(X, {matrix(QQ, {{-1,0},{-1,1}}), matrix(QQ, {{1,0},{0,1}}), matrix(QQ, {{0,1},{1,0}})}, {{1,0}, {1,0}, {1,0}})
@@ -1487,11 +1479,12 @@ doc ///
             computes the kernel of @TT "f"@ as a toric vector bundle on
             the same toric variety.
 
-            The kernel is computed from the kernel of the underlying module
+            The kernel is computed from the kernel of the vector spaces
             map together with the induced filtrations on the kernel for
-            each ray of the toric variety. The resulting filtration data
-            is refined using an adapted basis before constructing the
-            toric vector bundle.
+            each ray of the toric variety. 
+
+            Note that the kernel of a morphism between reflexive sheaves is 
+            authomatically a reflexive sheaf.
         Example
             X = toricProjectiveSpace 2;
             E = trivialBundle(X, 2);
@@ -1520,21 +1513,29 @@ doc ///
         Text
             Given a map @TT "f : E_1 -> E_2"@ of toric vector bundles,
             computes the cokernel of @TT "f"@ as a toric vector bundle
-            on the same toric variety.
+            on the same toric variety. The cokernel of a map of reflexive
+            sheaves need not be reflexive, so the output is the reflexive dual 
+            of the cokernel of the map.
 
-            The cokernel is computed from the cokernel of the underlying
-            module map together with the filtered pieces associated to the
-            rays of the toric variety. The resulting filtration data is
-            adapted to produce a toric vector bundle.
+            The cokernel is computed as the dual of the kernel of the dual map of f,
+            that is the map @TT "f* : (E_2)* -> (E_1)*"@ where @TT "f*"@ is given by the
+            transpose of the matrix defining @TT "f*"@.  
         Example
             X = toricProjectiveSpace 2;
             E = trivialBundle(X, 2);
             F = trivialBundle(X, 1);
-            f = map(F, E, matrix(ring E,{{1,0}}));
-            cokernel f;
+            f = map(E, F, matrix(ring E,{{0},{1}}))
+            dual f
+            displayFiltrations cokernel f
+            cokernel f == dual ker dual f
+            dual source dual f == target f
+        Example
+            f = map( F, twist(E,{-1,-1,-1}), matrix{{1,1}} )
+            coker f 
     SeeAlso
         (isSurjective,ToricVectorBundleMap)
         (isWellDefined,ToricVectorBundleMap)
+        (dual, ToricVectorBundleMap)
         ToricVectorBundleMap
 ///
 
@@ -1600,6 +1601,37 @@ doc ///
         ToricVectorBundleMap
 ///
 
+
+doc ///
+    Key
+        (dual,ToricVectorBundleMap)
+    Headline
+        the dual bundle of a toric vector bundle map
+    Usage
+        fd = dual f
+    Inputs
+        f : ToricVectorBundleMap
+    Outputs
+        fd : ToricVectorBundleMap
+    Description
+        Text
+            Given a @TO toricVectorBundleMap@, @TT "f:E-->F"@, the map  @TT "dual f"@ is the map whose source is 
+            @TT "dual target f"@, target @TT "dual source f"@ and map @TT "transpose map f"@.
+        Example
+            X = toricProjectiveSpace 2;
+            E = trivialBundle(X, 2);
+            F = trivialBundle(X, 1);
+            f = map(F, E, matrix(ring E,{{1,0}}))
+            dual f
+            dual source f == target dual f
+    Caveat
+        The net of @TT "dual f"@ does not change the names of source and target, but they are in fact the duals.
+    SeeAlso
+        tangentBundle
+        cotangentBundle
+        tangentBundleKaneyama
+        cotangentBundleKaneyama
+///
 
 
 --------------------------------------------------------
@@ -2026,7 +2058,7 @@ doc ///
         (moduleToKlyachko,NormalToricVariety,Matrix)
         (moduleToKlyachko,NormalToricVariety,Module)
     Headline
-        TODO
+        gives the Klyachko data of a module over the Cox ring
     Usage
         f = moduleToKlyachko(X,A)
         E = moduleToKlyachko(X,M)
@@ -2041,7 +2073,34 @@ doc ///
         E : ToricVectorBundle
     Description
         Text
-          TODO
+          Given a module @TT "M"@ over the Cox ring $S$ of @TT "X"@ such that its sheafification is an equivariant
+          reflexive sheaf on $X$, the fucntion obtains the Klyachko data of the associated sheaf.
+          In order to do so, it obtains a presentation matrix @TT "A"@ and obtains the map between the appropriate 
+          sums of line bundles and obtains the data as the @TO (cokernel, ToricVectorBundleMap)@ of that map.
+
+          The input module @TT "M"@ can either be a fine-graded module or a $\mathrm{Cl}(X)$ graded module (in which case a fine 
+          grading is computed internally).
+
+          If a matrix @TT "A"@ is given as inputs, its entries have to be monomial and the matrix can either describe a map between free $S$ modules that are
+          fine-graded or $\mathrm{Cl}(X)$ graded (in which case a fine grading is obtained internally). The output in this case is a @TO ToricVectorBundleMap@ 
+          between the line bundles obtained as the sheafification of the source and target and the matrix is obtained from @TT "A"@ setting all the variables to 1.
+
+        Example
+          R = QQ[x_0..x_2, Degrees =>{ {1,0,0},{0,1,0},{0,0,1}}];
+          M= image(map(R^{2:{1, 1, 1}},R^{{0, 1, 0}, {1, 0, 0}, {0, 0, 1}},{{x_0*x_2, x_1*x_2, 0}, {0, x_1*x_2, x_0*x_1}}))
+          X = toricProjectiveSpace 2;
+          E = moduleToKlyachko (X,M);
+          E == tangentBundle X
+        
+        Example
+          A = presentation M 
+          f  = moduleToKlyachko (X,A)
+          coker f== E
+          details source f
+          details target f
+        
+    SeeAlso
+      klyachkoToModule
 ///
 
 doc ///
@@ -2049,7 +2108,7 @@ doc ///
         klyachkoToModule
         (klyachkoToModule,ToricVectorBundle)
     Headline
-        TODO
+        gives a module over the Cox ring that sheafifies to the bundle
     Usage
         M = klyachkoToModule(E)
     Inputs
@@ -2059,7 +2118,18 @@ doc ///
             a module over the Cox ring whose associated sheaf is E
     Description
         Text
-          TODO
+          Given a coherent sheaf $E$ on a toric variety $X$ there exists a module $M$ over the the Cox ring of $X$, $S= K[x_\rho: \rho\in \Sigma(1)]$, such that 
+          its sheafification is the is $E$. The sheafification of a module $M$ is defined on the toric charts $U_\sigma$ with $\sigma\in \Sigma$ 
+          a cone in the fan of $X$ as $$\widetilde{M}(U_\sigma)= (M_{x^{\hat{\sigma}}})_0 $$ where $x^{\hat{\sigma}}= \prod_{\rho \notin \sigma(1)}x_\rho$ and the degree 
+          zero part is taken with respect to the $\mathrm{Cl}(X)$ grading of $M$.
+
+          The output module is given as the image of matrix with monomial entries that defiens a map between free modules over $S$ that are fine-graded.
+
+        Example
+          X = toricProjectiveSpace 2;
+          T = cotangentBundle X;
+          M = klyachkoToModule T
+          T== moduleToKlyachko(X, M)
 ///
 
 -*
