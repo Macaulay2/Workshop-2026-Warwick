@@ -2026,7 +2026,7 @@ doc ///
         (moduleToKlyachko,NormalToricVariety,Matrix)
         (moduleToKlyachko,NormalToricVariety,Module)
     Headline
-        TODO
+        gives the Klyachko data of a module over the Cox ring
     Usage
         f = moduleToKlyachko(X,A)
         E = moduleToKlyachko(X,M)
@@ -2041,7 +2041,34 @@ doc ///
         E : ToricVectorBundle
     Description
         Text
-          TODO
+          Given a module @TT "M"@ over the Cox ring $S$ of @TT "X"@ such that its sheafification is an equivariant
+          reflexive sheaf on $X$, the fucntion obtains the Klyachko data of the associated sheaf.
+          In order to do so, it obtains a presentation matrix @TT "A"@ and obtains the map between the appropriate 
+          sums of line bundles and obtains the data as the @TO cokernel (toricVectorBundleMap)@ of that map.
+
+          The input module @TT "M"@ can either be a fine-graded module or a $\mathrm{Cl}(X)$ graded module (in which case a fine 
+          grading is computed internally).
+
+          If a matrix @TT "A"@ is given as inputs, its entries have to be monomial and the matrix can either describe a map between free $S$ modules that are
+          fine-graded or $\mathrm{Cl}(X)$ graded (in which case a fine grading is obtained internally). The output in this case is a @TO ToricVectorBundleMap@ 
+          between the line bundles obtained as the sheafification of the source and target and the matrix is obtained from @TT "A"@ setting all the variables to 1.
+
+        Example
+          R = QQ[x_0..x_2, Degrees =>{ {1,0,0},{0,1,0},{0,0,1}}];
+          M= image(map(R^{2:{1, 1, 1}},R^{{0, 1, 0}, {1, 0, 0}, {0, 0, 1}},{{x_0*x_2, x_1*x_2, 0}, {0, x_1*x_2, x_0*x_1}}))
+          X = toricProjectiveSpace 2;
+          E = moduleToKlyachko (X,M);
+          E == tangentBundle X
+        
+        Example
+          A = presentation M 
+          f  = moduleToKlyachko (X,A)
+          coker f== E
+          details source f
+          details target f
+        
+    SeeAlso
+      klyachkoToModule
 ///
 
 doc ///
@@ -2049,7 +2076,7 @@ doc ///
         klyachkoToModule
         (klyachkoToModule,ToricVectorBundle)
     Headline
-        TODO
+        gives a module over the Cox ring that sheafifies to the bundle
     Usage
         M = klyachkoToModule(E)
     Inputs
@@ -2059,7 +2086,18 @@ doc ///
             a module over the Cox ring whose associated sheaf is E
     Description
         Text
-          TODO
+          Given a coherent sheaf $E$ on a toric variety $X$ there exists a module $M$ over the the Cox ring of $X$, $S= K[x_\rho: \rho\in \Sigma(1)]$, such that 
+          its sheafification is the is $E$. The sheafification of a module $M$ is defined on the toric charts $U_\sigma$ with $\sigma\in \Sigma$ 
+          a cone in the fan of $X$ as $$\widetilde{M}(U_\sigma)= (M_{x^{\hat{\sigma}}})_0 $$ where $x^{\hat{\sigma}}= \prod_{\rho \notin \sigma(1)}x_\rho$ and the degree 
+          zero part is taken with respect to the $\mathrm{Cl}(X)$ grading of $M$.
+
+          The output module is given as the image of matrix with monomial entries that defiens a map between free modules over $S$ that are fine-graded.
+
+        Example
+          X = toricProjectiveSpace 2;
+          T = cotangentBundle X;
+          M = klyachkoToModule T
+          T== moduleToKlyachko(X, M)
 ///
 
 -*
