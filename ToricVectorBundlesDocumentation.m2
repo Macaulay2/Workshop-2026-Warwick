@@ -1624,9 +1624,7 @@ doc ///
             f = map(F, E, matrix(ring E,{{1,0}}))
             dual f
             dual source f == target dual f
-    Caveat
-        The net of @TT "dual f"@ does not change the names of source and target, but they are in fact the duals.
-    SeeAlso
+     SeeAlso
         tangentBundle
         cotangentBundle
         tangentBundleKaneyama
