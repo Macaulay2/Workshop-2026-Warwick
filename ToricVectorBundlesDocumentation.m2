@@ -1015,8 +1015,7 @@ doc ///
         (isomorphism,ToricVectorBundle,ToricVectorBundle)
 ///
 
---todo broken
--*
+
 doc ///
     Key
         (isomorphism,ToricVectorBundle,ToricVectorBundle)
@@ -1041,20 +1040,22 @@ doc ///
             HF = hirzebruchSurface 2
             E = exteriorPower(2, cotangentBundle HF)
             F = lineBundle(HF,{-1,-1,-1,-1})
+            E == F 
+            isomorphism(E++E, F++F)
     SeeAlso
         areIsomorphic
         base
         filtrations
         details
 ///
-*-
+
 
 doc ///
     Key
         isTwistOf
         (isTwistOf,ToricVectorBundle,ToricVectorBundle)
     Headline
-        TODO
+        checks if a vector bundle is a twist of another
     Usage
         b = isTwistOf(E1,E2)
     Inputs
@@ -1064,7 +1065,17 @@ doc ///
         b : Boolean
     Description
         Text
-          TODO
+          It checks if @TT "E1"@ is a twist of @TT "E2"@.
+        Example
+          X = toricProjectiveSpace 2;
+          T = tangentBundle X;
+          isTwistOf(twist( T, {2,4,-1}) , T**lineBundle(X, {1,2,3}))
+          isTwistOf(T, trivialBundle(X,2))
+    SeeAlso
+      twist
+      lineBundle
+      areIsomorphic
+      (tensor, ToricVectorBundle, ToricVectorBundle)
 ///
 
 
@@ -1313,25 +1324,7 @@ doc ///
         deltaE
 ///
 
--- TODO Update and add Kaneyama version
--*
-doc ///
-    Key
-        grRing
-        (grRing,ToricVectorBundle)
-    Headline
-        TODO
-    Usage
-        R = grRing(E)
-    Inputs
-        E : ToricVectorBundle
-    Outputs
-        R : Ring
-    Description
-        Text
-          TODO
-///
-*-
+
 doc ///
     Key
         firstChernClass
