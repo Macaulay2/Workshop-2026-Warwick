@@ -1022,14 +1022,13 @@ doc ///
     Headline
         the isomorphism if the two bundles are isomorphic
     Usage
-        M = isomorphism(E,F)
         isomorphism(E,F)
     Inputs
         E:ToricVectorBundle
         F:ToricVectorBundle
     Outputs
-        M:Matrix
-            over the ring over which the two bundles are defined
+        :{Matrix, Boolean}
+            isomorphism between E and F or false if they are not isomorphic
     Description
         Text
             Two equivariant vector bundles in Klyachko's description are isomorphic if there exists
@@ -1624,7 +1623,7 @@ doc ///
             f = map(F, E, matrix(ring E,{{1,0}}))
             dual f
             dual source f == target dual f
-     SeeAlso
+    SeeAlso
         tangentBundle
         cotangentBundle
         tangentBundleKaneyama
