@@ -970,14 +970,14 @@ weilDecoration ToricVectorBundle := List => V -> (
     ks := keys strataIntersections;
     S := apply(sort apply(#ks, i -> (rank ks#i, strataIntersections#(ks#i), i)),
         t -> (ks#(last t), strataIntersections#(ks#(last t))));
-    apply(S, (W, inds) -> (gens W, toricDivisor(inds, X)))
+    apply(S, (W, inds) -> {gens W, toricDivisor(inds, X)})
     )
 
 -- Input: weilDecoration for a ToricVectorBundle
 -- Output: the (not necessarily saturated!) chains in the poset of strata
 posetChains := (WD,n) -> (
     if n < 0 then return error("need nonnegative n");
-    if n == 0 then return apply(WD, l -> {{numgens l_0, l_1}});
+    if n == 0 then return apply(WD, l -> {{numColumns l_0, l_1}});
     divs := flatten posetChains(WD,0);
     prevChains := posetChains(WD,n-1);
     flatten for c in prevChains list (

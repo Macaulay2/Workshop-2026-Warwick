@@ -49,8 +49,7 @@ doc ///
             Hochenegger, and Witt showed that toric vector bundles correspond to stratifications of $E$ by torus-fixed divisors;
             see @HREF("https://arxiv.org/abs/2412.03476", "Toric sheaves and polyhedra")@ for more details.
         Example
-            W = weilDecoration TX;
-            netList strata W
+            W = weilDecoration TX
         Text
             Another translation provided is to modules over the Cox ring. Since toric vector bundles are
             coherent sheaves, they may be represented by a finitely generated multigraded module. We provide
@@ -1523,7 +1522,7 @@ doc ///
             F = trivialBundle(X, 1);
             f = map(E, F, matrix(ring E,{{0},{1}}))
             dual f
-            displayFiltrations cokernel f
+            filtrations cokernel f
             cokernel f == dual ker dual f
             dual source dual f == target f
         Example
@@ -1612,7 +1611,7 @@ doc ///
         fd : ToricVectorBundleMap
     Description
         Text
-            Given a @TO toricVectorBundleMap@, @TT "f:E-->F"@, the map  @TT "dual f"@ is the map whose source is 
+            Given a @TO ToricVectorBundleMap@, @TT "f:E-->F"@, the map  @TT "dual f"@ is the map whose source is 
             @TT "dual target f"@, target @TT "dual source f"@ and map @TT "transpose map f"@.
         Example
             X = toricProjectiveSpace 2;
