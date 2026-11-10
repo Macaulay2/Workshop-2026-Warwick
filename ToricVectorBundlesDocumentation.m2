@@ -101,7 +101,7 @@ doc ///
             and every "@$i \in{} \mathbb{Z}$.
         Text
             In this implementation, the data of the filtrations is stored using a matrix which describes
-            a basis for $E$, together with a list of indices indicating the largest positions where the $i$th
+            a system of generators for $E$, together with a list of indices indicating the largest positions where the $i$th
             column of the matrix appears in the filtration of $E$. For instance, consider the tangent bundle
             on $\mathbb{P}^2$.
         Example
@@ -129,6 +129,13 @@ doc ///
             TX' = toricVectorBundle(X, filtrationMatrices TX, {{0,0},{1,0},{1,0}});
             filtrations TX'
             isLocallyFree TX'
+        Text 
+            However, the object created will describe a toric reflexive sheaf as Perling shown that:
+        Text
+            @TT "The category of toric reflexive sheaves on the toric variety "@ $X$ @TT " is equivalent 
+            to the category of finite dimensional "@$k$@TT"-vector spaces "@$E$@TT" with collections 
+            of decreasing filtrations "@$\{E^{\rho}(i)| i \in{} \mathbb{Z}\}$@TT", indexed by rays in 
+            "@$\rho \in \Sigma_X(1)$.
     SeeAlso
         toricVectorBundle
         filtrations
@@ -215,7 +222,7 @@ doc ///
         (toricVectorBundle,NormalToricVariety,List,List)
         (toricVectorBundle,NormalToricVariety,HashTable)
     Headline
-        a toric vector bundle of rank 'k' with given filtrations or degrees
+        a toric vector bundle of rank 'r' with given filtrations or degrees
     Usage
         E = toricVectorBundle(X,L1,L2)
         E = toricVectorBundle(X,H)
@@ -232,14 +239,12 @@ doc ///
           in its Klyachko description
     Description
         Text
-            Given a @TO "NormalToricVarieties::NormalToricVariety"@ @TT "X"@ over a field @TT "F"@ and a list of $r\times r$ matrices @TT "L1"@
-            having one matrix with entries in @TT "F"@ for each ray in the fan of @TT "X"@
-            and a list @TT "L2"@ having a list of $r$ integers for each ray in the fan of @TT "X"@;
-            it outputs a @TO toricVectorBundle@ @TT "E"@. This toric vector bundle has as Klyachko description by decreasing filtrations
-            being the ones where for a ray $\rho$ in the fan of @TT "X"@ the decreasing filtration defined at the $i$-th
-            step by the matrix given by the columns for which the corresponding jump is greater or equal to $i$ (see @TO filteredPiece@). 
-            It is assumed that the lists @TT "L1"@ and @TT "L2"@ are ordered according to the way @TO "NormalToricVarieties:: rays"@ of @TT "X"@ is and 
-            that the list of jumps is ordered so that the the $j$-th entry of the jumps list is the maximun index for which the $j$-th column appears in the filtration. 
+            Fix a @TO "NormalToricVarieties::NormalToricVariety"@ @TT "X"@ over a field @TT "F"@ with $n$ rays and a non-negative integer $r$. Consider a list of $n$ rank $r$ matrices @TT "L1"@ such that all the matrices 
+            have the same number of rows, so they define subevector spaces in the same ambient space; and a list of $n$ lists of integers, @TT "L2"@. The matrices in @TT "L1"@ must have entries in @TT "F"@ and the $i$-th list in @TT "L2"@ must have as many integers as columns the $i$-th matrix in @TT "L1"@ has. Given @TT "X"@ and the lists @TT "L1"@ and @TT "L2"@, 
+            the output is a @TO toricVectorBundle@ @TT "E"@ where the $i$-th ray in @TO "NormalToricVarieties:: rays"@ is assignened the $i$-th matrix in @TT "L1"@ with jumps as in the $i$-th list in @TT "L2"@. This toric vector bundle has as Klyachko description by decreasing filtrations
+            being the ones where for a ray $\rho$ in the fan of @TT "X"@ the decreasing filtration defined at the $j$-th
+            step by the matrix given by the columns for which the corresponding jump is greater or equal to $j$ (see @TO filteredPiece@). 
+            
 
             Alternatively, the input can be given as a pair of a @TO "NormalToricVarieties::NormalToricVariety"@ @TT "X"@  over a field @TT "F"@ and a HashTable H.
             The HashTable H must have as keys the rays of the fan and for each ray store a list consisting first of a $r\times r$ matrix with 
@@ -257,7 +262,7 @@ doc ///
             details E
             filtrations E
     Caveat
-      Note that entries rays fan X in general orders the rays in a different way that rays X. 
+      Note that entries rays fan X in general orders the rays in a different way that rays X. It is also assumed that the lists @TT "L1"@ and @TT "L2"@ are ordered according to the way @TO "NormalToricVarieties:: rays"@ of @TT "X"@ is and that the list of jumps is ordered so that the the $j$-th entry of the jumps list is the maximun index for which the $j$-th column appears in the filtration. 
     SeeAlso
         toricVectorBundleKaneyama
         filtrationJumps
@@ -288,8 +293,8 @@ doc ///
             the list of matrices for all the rays
     Description
         Text
-          A @TO ToricVectorBundle@ of rank r in its Klyachko description is given by a rank $r$ matrix with $j$ columns
-          and a list of $j$ integers desbrining the jumps of the filtrations. The list of all those matrices can be recovered using @TT "filtrationMatrices"@
+          A @TO ToricVectorBundle@ of rank r in its Klyachko description on a @TO "NormalToricVarieties::NormalToricVariety"@ $X$ is given by a pair of a rank $r$ matrix with $j$ columns
+          and a list of $j$ integers desbrining the jumps of the filtration for each ray of the fan of $X$. The list of all those matrices can be recovered using @TT "filtrationMatrices"@
           and if a ray is specified, then the corresponding matrix for that ray is returned.
         Example
           X = toricProjectiveSpace 2;
@@ -297,6 +302,8 @@ doc ///
           details T
           filtrationMatrices(T)
           filtrationMatrices(T , {-1,-1})
+    Caveat
+      The rays of the fan of $X$ should be given as obtained by @TO "NormalToricVarieties:: rays"@.
     SeeAlso
       toricVectorBundle
       filtrationJumps
@@ -324,8 +331,9 @@ doc ///
             filtration jumps for all rays, or for ray p
     Description
         Text
-          A @TO ToricVectorBundle@ of rank $r$ in its Klyachko description is given by a rank $r$ matrix with $j$ columns
-          and a list $j$ integers describing the jumps of the filtrations. The list of all those jumps can be recovered using @TT "filtrationJumps"@
+          
+          A @TO ToricVectorBundle@ of rank r in its Klyachko description on a @TO "NormalToricVarieties::NormalToricVariety"@ $X$ is given by a pair of a rank $r$ matrix with $j$ columns
+          and a list of $j$ integers desbrining the jumps of the filtration for each ray of the fan of $X$. The list of all those jumps can be recovered using @TT "filtrationJumps"@
           and if a ray is specified, then the corresponding list of jumps in that ray is returned.
         Example
           X = toricProjectiveSpace 2;
@@ -333,6 +341,8 @@ doc ///
           details T
           filtrationJumps(T)
           filtrationJumps(T , {-1,-1})
+    Caveat
+      The rays of the fan of $X$ should be given as obtained by @TO "NormalToricVarieties:: rays"@.
     SeeAlso
       toricVectorBundle
       filtrationMatrices
@@ -375,6 +385,8 @@ doc ///
           A convenient way of displaying all the relevant filtered pieces of a @TO ToricVectorBundle@ is using @TO filtrations@.
         Example
           filtrations E
+    Caveat
+      The rays of the fan of $X$ should be given as obtained by @TO "NormalToricVarieties:: rays"@.
     SeeAlso
       filtrationMatrices
       filtrationJumps
@@ -514,7 +526,7 @@ doc ///
 --------------------------------------------------------
 
 
--- TODO Update and add Kaneyama version
+
 doc ///
     Key
         cotangentBundle
@@ -578,8 +590,6 @@ doc ///
           filtrations L
           L' = lineBundle( X ,{3,-1,0,2})
           L == L'
-        Text
-          TODO KANEYAMA
     SeeAlso
         twist
         (tensor,ToricVectorBundle, ToricVectorBundle)
@@ -807,10 +817,8 @@ doc ///
         E1:ToricVectorBundle
     Description
         Text
-            For a bundle of rank $k$ the function @TT "randomDeformation"@ replaces each base matrix
-            by a random $k$ by $k$ matrix with entries between $l$ and $h$. For this $h$ must be
-            greater than $l$. If $l$ is not given then the random entries are between $0$ and $h$
-            and then $h$ must be strictly positive.
+            For a bundle of rank $r$ the function @TT "randomDeformation"@ replaces each base $n\times m$ matrix of rank $r$
+            by a random $n\times m$ matrix of rank $r$ and keeps the same @TO filtrationJumps@.
         Example
             X= toricProjectiveSpace 1 ** toricProjectiveSpace 1
             E = tangentBundle X
@@ -842,7 +850,7 @@ doc ///
         E: ToricVectorBundle
     Description
         Text
-            If $E_1$ and $E_2$ are defined over the same fan, then @TT "directSum"@ computes the
+            If $E_1$ and $E_2$ are defined over the same @TO "NormalToricVarieties::NormalToricVariety"@ $X$, then @TT "directSum"@ computes the
             direct sum of the two vector bundles. The bundles must both be given in the same
             description and the resulting bundle will be in this description.
         Example
