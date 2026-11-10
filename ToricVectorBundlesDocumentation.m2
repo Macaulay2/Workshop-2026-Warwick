@@ -1016,21 +1016,18 @@ doc ///
         (isomorphism,ToricVectorBundle,ToricVectorBundle)
 ///
 
---todo broken
--*
 doc ///
     Key
         (isomorphism,ToricVectorBundle,ToricVectorBundle)
     Headline
         the isomorphism if the two bundles are isomorphic
     Usage
-        M = isomorphism(E,F)
         isomorphism(E,F)
     Inputs
-        E:ToricVectorBundle
-        F:ToricVectorBundle
+        E : ToricVectorBundle
+        F : ToricVectorBundle
     Outputs
-        M:Matrix
+        M : Matrix
             over the ring over which the two bundles are defined
     Description
         Text
@@ -1048,7 +1045,6 @@ doc ///
         filtrations
         details
 ///
-*-
 
 doc ///
     Key
