@@ -195,18 +195,39 @@ chooseBasis (Matrix, List) := (M,jumps) -> (
     {currentspan_{1..r}, newJ}
     )
 
+-*
+debug needsPackage "ToricVectorBundles2"
+X = toricProjectiveSpace(3, CoefficientRing=> ZZ/101);
+TX = tangentBundle X;
+triv = trivialBundle(X,1);
+sumoflbs = lineBundle X_0 ++ lineBundle X_1 ++ lineBundle X_2 ++ lineBundle X_3;
+f = map(sumoflbs,triv,matrix(ZZ/101,{{1},{1},{1},{1}}));
+g = map(TX,sumoflbs, transpose sub(matrix rays X,ZZ/101));
+E = prune image f
+
+E = image f
+dual E
+exteriorPower(1,E)
+
+X = hirzebruchSurface 2
+E = tangentBundle X
+L = lineBundle(X_0 + 2*X_1 + 4*X_2 + 5*X_3)
+T1 = exteriorPower(2,E ++ L)
+*-
+
 prune ToricVectorBundle := ToricVectorBundle => o -> E -> E.cache.minimalPresentation ??= (
     R := rays E;
     D := details E;
-    toricVectorBundle(variety E, hashTable for p in R list p => (
-            (M, J) := toSequence D#p;
-            -- if the matrix is not given by a basis, then we need to choose a basis.
-            if numColumns M > rank E then (M,J) = toSequence chooseBasis(M,J);
-            -- once the number of columns equals the rank, we can prune.
-            pr := matrix (prune image transpose M).cache.pruningMap;
-            {transpose (transpose M * matrix pr), J}
-            )
-        )
+    idFibre := (filtrationMatrices E)_0;
+    pr := matrix (prune image transpose idFibre).cache.pruningMap;
+    (newfM, newfJ) := toSequence transpose for p in R list (
+        (M, J) := toSequence D#p;
+        -- if the matrix is not given by a basis, then we need to choose a basis.
+        if numColumns M > rank E then (M,J) = toSequence chooseBasis(M,J);
+        -- once the number of columns equals the rank, we can prune.
+        {transpose (transpose M * pr), J}
+        );
+    toricVectorBundle(variety E, newfM, newfJ)
     )
 
 ---------------------------------------------------------------------------
@@ -335,6 +356,7 @@ twist(ToricVectorBundle, ToricDivisor) := (E, D) -> E ** lineBundle D
 twist(ToricVectorBundle, List) := (E, s) -> E ** lineBundle(variety E, s)
 
 dual ToricVectorBundle := {} >> opts -> E -> (
+    if rank E == 0 then return E;
     D := details E;
     -- if a vector space has basis B, the dual has basis transpose inverse B
     -- the filtration jumps simply get negated.
@@ -352,25 +374,6 @@ dual ToricVectorBundle := {} >> opts -> E -> (
         );
     toricVectorBundle(variety E, fM, fJ)
     )
-
--*
-debug needsPackage "ToricVectorBundles2"
-X = toricProjectiveSpace(3, CoefficientRing=> ZZ/101);
-TX = tangentBundle X;
-triv = trivialBundle(X,1);
-sumoflbs = lineBundle X_0 ++ lineBundle X_1 ++ lineBundle X_2 ++ lineBundle X_3;
-f = map(sumoflbs,triv,matrix(ZZ/101,{{1},{1},{1},{1}}));
-g = map(TX,sumoflbs, transpose sub(matrix rays X,ZZ/101));
-E = image f
-dual E
-exteriorPower(1,E)
-
-X = hirzebruchSurface 2
-E = tangentBundle X
-L = lineBundle(X_0 + 2*X_1 + 4*X_2 + 5*X_3)
-T1 = exteriorPower(2,E ++ L)
-
-*-
 
 exteriorPower (ZZ, ToricVectorBundle) := opts -> (l, TVB) -> (
     if l < 0 then error("expected nonnegative exponent")
@@ -970,14 +973,14 @@ weilDecoration ToricVectorBundle := List => V -> (
     ks := keys strataIntersections;
     S := apply(sort apply(#ks, i -> (rank ks#i, strataIntersections#(ks#i), i)),
         t -> (ks#(last t), strataIntersections#(ks#(last t))));
-    apply(S, (W, inds) -> (gens W, toricDivisor(inds, X)))
+    apply(S, (W, inds) -> {gens W, toricDivisor(inds, X)})
     )
 
 -- Input: weilDecoration for a ToricVectorBundle
 -- Output: the (not necessarily saturated!) chains in the poset of strata
 posetChains := (WD,n) -> (
     if n < 0 then return error("need nonnegative n");
-    if n == 0 then return apply(WD, l -> {{numgens l_0, l_1}});
+    if n == 0 then return apply(WD, l -> {{numColumns l_0, l_1}});
     divs := flatten posetChains(WD,0);
     prevChains := posetChains(WD,n-1);
     flatten for c in prevChains list (
@@ -3149,12 +3152,7 @@ changelist: 2026-10-27
 - fixed all present documentation errors (Kaneyama needs to be split out)
 
 todo
-- tests are all broken atm and i didn't fix them
-- finish coker
-- alas, isomorphism is still broken slightly, with surjective maps.
-- implement andreas' small changes/bugfixes ( i did a few
 - implement me own version of compatibility check
-- implement iswelldefined (need span of filt mats to be same)
 - pruning map needs to be cached (is this auto done?)
 - fix isIsomorphism: how to find the inverse map?
 - bug in areIsomorphic see test 20
