@@ -289,8 +289,8 @@ doc ///
             the list of matrices for all the rays
     Description
         Text
-          A @TO ToricVectorBundle@ of rank r in its Klyachko description is given by a $r\times r$ matrix
-          and a list of jumps. The list of all those matrices can be recovered using @TT "filtrationMatrices"@
+          A @TO ToricVectorBundle@ of rank r in its Klyachko description is given by a rank $r$ matrix with $j$ columns
+          and a list of $j$ integers desbrining the jumps of the filtrations. The list of all those matrices can be recovered using @TT "filtrationMatrices"@
           and if a ray is specified, then the corresponding matrix for that ray is returned.
         Example
           X = toricProjectiveSpace 2;
@@ -325,8 +325,8 @@ doc ///
             filtration jumps for all rays, or for ray p
     Description
         Text
-          A @TO ToricVectorBundle@ of rank r in its Klyachko description is given by a $r\times r$ matrix
-          and a list of jumps. The list of all those jumps can be recovered using @TT "filtrationJumps"@
+          A @TO ToricVectorBundle@ of rank $r$ in its Klyachko description is given by a rank $r$ matrix with $j$ columns
+          and a list $j$ integers describing the jumps of the filtrations. The list of all those jumps can be recovered using @TT "filtrationJumps"@
           and if a ray is specified, then the corresponding list of jumps in that ray is returned.
         Example
           X = toricProjectiveSpace 2;
@@ -363,7 +363,7 @@ doc ///
         Text
           A @TO ToricVectorBundle@ of rank $r$ in its Klyachko description is given by a decreasing filtration of
           vector spaces in each ray (satisfying a certain compatibility condition). This information is stored as a pair of a 
-          $r \times r$ matrix and a list of $r$ integers that indicate what is the first index where the corresponding column 
+          rank $r$ matrix with $j$ columns and a list of $j$ integers that indicate what is the first index where the corresponding column 
           of the matrix appears. 
         Example
           X = toricProjectiveSpace 2
@@ -1612,7 +1612,7 @@ doc ///
         fd : ToricVectorBundleMap
     Description
         Text
-            Given a @TO toricVectorBundleMap@, @TT "f:E-->F"@, the map  @TT "dual f"@ is the map whose source is 
+            Given a @TO ToricVectorBundleMap@, @TT "f:E-->F"@, the map  @TT "dual f"@ is the map whose source is 
             @TT "dual target f"@, target @TT "dual source f"@ and map @TT "transpose map f"@.
         Example
             X = toricProjectiveSpace 2;
