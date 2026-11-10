@@ -1015,6 +1015,7 @@ doc ///
         (isomorphism,ToricVectorBundle,ToricVectorBundle)
 ///
 
+
 doc ///
     Key
         (isomorphism,ToricVectorBundle,ToricVectorBundle)
@@ -1023,8 +1024,8 @@ doc ///
     Usage
         isomorphism(E,F)
     Inputs
-        E : ToricVectorBundle
-        F : ToricVectorBundle
+        E:ToricVectorBundle
+        F:ToricVectorBundle
     Outputs
         :{Matrix, Boolean}
             isomorphism between E and F or false if they are not isomorphic
@@ -1046,6 +1047,7 @@ doc ///
         filtrations
         details
 ///
+
 
 doc ///
     Key
@@ -1612,7 +1614,7 @@ doc ///
         fd : ToricVectorBundleMap
     Description
         Text
-            Given a @TO toricVectorBundleMap@, @TT "f:E-->F"@, the map  @TT "dual f"@ is the map whose source is 
+            Given a @TO ToricVectorBundleMap@, @TT "f:E-->F"@, the map  @TT "dual f"@ is the map whose source is 
             @TT "dual target f"@, target @TT "dual source f"@ and map @TT "transpose map f"@.
         Example
             X = toricProjectiveSpace 2;
