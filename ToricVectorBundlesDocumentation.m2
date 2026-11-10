@@ -49,8 +49,7 @@ doc ///
             Hochenegger, and Witt showed that toric vector bundles correspond to stratifications of $E$ by torus-fixed divisors;
             see @HREF("https://arxiv.org/abs/2412.03476", "Toric sheaves and polyhedra")@ for more details.
         Example
-            W = weilDecoration TX;
-            netList strata W
+            W = weilDecoration TX
         Text
             Another translation provided is to modules over the Cox ring. Since toric vector bundles are
             coherent sheaves, they may be represented by a finitely generated multigraded module. We provide
@@ -1521,22 +1520,23 @@ doc ///
             on the same toric variety. The cokernel of a map of reflexive
             sheaves need not be reflexive, so the output is the reflexive dual 
             of the cokernel of the map.
-
-            The cokernel is computed as the dual of the kernel of the dual map of f,
-            that is the map @TT "f* : (E_2)* -> (E_1)*"@ where @TT "f*"@ is given by the
-            transpose of the matrix defining @TT "f*"@.  
         Example
             X = toricProjectiveSpace 2;
             E = trivialBundle(X, 2);
             F = trivialBundle(X, 1);
             f = map(E, F, matrix(ring E,{{0},{1}}))
             dual f
-            displayFiltrations cokernel f
+            filtrations cokernel f
             cokernel f == dual ker dual f
             dual source dual f == target f
+        Text
+            The cokernel is computed as the dual of the kernel of the dual map of f,
+            that is the map @TT "f* : (E_2)* -> (E_1)*"@ where @TT "f*"@ is given by the
+            transpose of the matrix defining @TT "f*"@. This means that information
+            about torsion is lost.
         Example
             f = map( F, twist(E,{-1,-1,-1}), matrix{{1,1}} )
-            coker f 
+            coker f
     SeeAlso
         (isSurjective,ToricVectorBundleMap)
         (isWellDefined,ToricVectorBundleMap)
