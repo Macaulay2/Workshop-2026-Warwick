@@ -335,6 +335,7 @@ twist(ToricVectorBundle, ToricDivisor) := (E, D) -> E ** lineBundle D
 twist(ToricVectorBundle, List) := (E, s) -> E ** lineBundle(variety E, s)
 
 dual ToricVectorBundle := {} >> opts -> E -> (
+    if rank E == 0 then return E;
     D := details E;
     -- if a vector space has basis B, the dual has basis transpose inverse B
     -- the filtration jumps simply get negated.

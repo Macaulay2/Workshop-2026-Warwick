@@ -1512,10 +1512,6 @@ doc ///
             on the same toric variety. The cokernel of a map of reflexive
             sheaves need not be reflexive, so the output is the reflexive dual 
             of the cokernel of the map.
-
-            The cokernel is computed as the dual of the kernel of the dual map of f,
-            that is the map @TT "f* : (E_2)* -> (E_1)*"@ where @TT "f*"@ is given by the
-            transpose of the matrix defining @TT "f*"@.  
         Example
             X = toricProjectiveSpace 2;
             E = trivialBundle(X, 2);
@@ -1525,9 +1521,14 @@ doc ///
             filtrations cokernel f
             cokernel f == dual ker dual f
             dual source dual f == target f
+        Text
+            The cokernel is computed as the dual of the kernel of the dual map of f,
+            that is the map @TT "f* : (E_2)* -> (E_1)*"@ where @TT "f*"@ is given by the
+            transpose of the matrix defining @TT "f*"@. This means that information
+            about torsion is lost.
         Example
             f = map( F, twist(E,{-1,-1,-1}), matrix{{1,1}} )
-            coker f 
+            coker f
     SeeAlso
         (isSurjective,ToricVectorBundleMap)
         (isWellDefined,ToricVectorBundleMap)
