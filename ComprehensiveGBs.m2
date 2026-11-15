@@ -2,13 +2,13 @@ newPackage(
     "ComprehensiveGBs",
     Version => "1.0",
     Date => "",
-    Headline => "A package for computing Comprehensive Gröbner Bases (CGBs)",
+    Headline => "computing comprehensive Gröbner bases (CGBs)",
     Authors => {
         { Name => "Agustina Cagliero", Email => "mariaagustina.cagliero@kuleuven.be", HomePage => "https://sites.google.com/view/mariaagustinacagliero/"},
         { Name => "Oliver Clarke", Email => "oliver.clarke@durham.ac.uk", HomePage => "https://www.oliverclarkemath.com"},
         { Name => "Woody Cohen", Email => "2597103@swansea.ac.uk", HomePage => ""},
         { Name => "Lorenzo De Biase", Email => "lorenzo.debiase@enea.it", HomePage => "https://sites.google.com/view/lorenzodebiase/"},
-        { Name => "Angelo El Saliby", Email => "angelo.el.saliby@mis.mpg.de", HomePage => "angeloelsaliby.github.io"},
+        { Name => "Angelo El Saliby", Email => "angelo.el.saliby@mis.mpg.de", HomePage => "https://angeloelsaliby.github.io"},
         { Name => "Giulia Gaggero", Email => "gaggerog@mcmaster.ca", HomePage => "https://www.giuliagaggero.com/"},
         { Name => "Sam Knight", Email => "samdeckardknight@gmail.com", HomePage => ""},
         { Name => "Weijia Wang", Email => "weijia.wang@lip6.fr", HomePage => "https://weijia.perso.lip6.fr/"}
@@ -16,7 +16,7 @@ newPackage(
     Keywords => {"Groebner Basis Algorithms"},
     AuxiliaryFiles => false,
     PackageImports => {"MinimalPrimes", "RealRoots"},
-    DebuggingMode => true,
+    DebuggingMode => false,
     HomePage => "https://github.com/Macaulay2/Workshop-2026-Warwick/tree/CGBs"
     )
 
@@ -39,21 +39,7 @@ CGBData = new Type of HashTable
 
 ringOrder = method(); -- returns the monomial order of a polynomial ring
 ringOrder PolynomialRing := List => R -> (
-    order := select(toList (options R).MonomialOrder, orderEntry -> not member(first orderEntry, {MonomialSize, Position}));
-    n := numgens R;
-    apply(order, orderEntry -> (
-        if first orderEntry === Weights then (
-            -- For U = QQ[a]; R = U[x,y,z, MonomialOrder => {Lex => 1, GLex}];
-            -- {Lex => 1, GLex} unexpectedly expands to {Lex => 1, Weights => {1,1,1}, Lex => 2}.
-            -- The bug is confirmed and will be fixed in future versions of Macaulay2: https://github.com/Macaulay2/M2/pull/4673
-            -- Anyway, we ignore the unused weights as a hotfix for now.
-            -- Update: This has been fixed in the next version so we can remove the fix [do this just before pull request]
-            Weights => take(last orderEntry, min(n, #last orderEntry))
-        ) else (
-            n = n - if instance(last orderEntry, ZZ) then last orderEntry else #last orderEntry;
-            orderEntry
-        )
-    ))
+    select(toList (options R).MonomialOrder, orderEntry -> not member(first orderEntry, {MonomialSize, Position}))
 );
 
 cgbDataFromRings = method();
@@ -112,7 +98,7 @@ squareFreePart RingElement := h -> (
     if zero h then return h;
     R := ring h;
     f := product listOfFactors h;
-    return f_R
+    f_R
 );
 
 
@@ -145,7 +131,14 @@ isCoveredPrime (Ideal, List) := (P, memo) -> (
     all(decompose(P + ideal (memo#j)#1), Q -> isCoveredPrime(Q, memo))
 );
 
-
+checkParametricInput = method(); -- checks whether F is a non-empty list of parametric polynomials in the same ring
+checkParametricInput List := F -> (
+    if #F == 0 or not all(F, f -> instance(f, RingElement) or instance(f, Number)) then
+    error "F must be a non-empty list of parametric polynomials";
+    R := commonRing F;
+    if not (instance(R, PolynomialRing) and instance(coefficientRing R, PolynomialRing)) then
+    error "F must consist of polynomials in a common ring k[U][X]";
+);
 
 comprehensiveGBMain = method(
     Options => {
@@ -157,7 +150,8 @@ comprehensiveGBMain = method(
     ); -- Initialises comprehensiveGBMainRec
 
 comprehensiveGBMain List := o -> F -> (
-    R := ring first F;
+    checkParametricInput F;
+    R := commonRing F;
     KU := coefficientRing R;
     S := first entries eliminateVariables(F, cgbDataFromRings R);
     cgs := comprehensiveGBMain(F, S, o ++ {CheckAssumption => false});
@@ -165,7 +159,8 @@ comprehensiveGBMain List := o -> F -> (
     {({0_KU}, S, apply(S, s -> promote(s, R)))} | cgs
     )
 comprehensiveGBMain (List, List) := o -> (F, S) -> (
-    R := ring first F;
+    checkParametricInput F;
+    R := commonRing F;
     KU := coefficientRing R;
     S' := apply(S, s -> (
             s' := sub(s, R);
@@ -244,10 +239,10 @@ comprehensiveGBMainRec (List, List, List, CGBData) := o -> (F, S, memo, cgbData)
                     )
                 )
             );
-        return memo
+        memo
     ) else (
-        return {branch} | if o.Depth == 0 then {} else flatten apply(H, hi -> comprehensiveGBMainRec(F, append(S, hi), memo, cgbData, o ++ {Depth => o.Depth -1}))
-    );
+        {branch} | if o.Depth == 0 then {} else flatten apply(H, hi -> comprehensiveGBMainRec(F, append(S, hi), memo, cgbData, o ++ {Depth => o.Depth -1}))
+    )
 );
 
 
@@ -257,7 +252,8 @@ comprehensiveGB = method( Options => {
     Depth => -1
 })
 comprehensiveGB List := o -> F -> (
-    R := ring first F;
+    checkParametricInput F;
+    R := commonRing F;
     s := first entries eliminateVariables(F, cgbDataFromRings R);
     G := comprehensiveGBMain(F, s,
         ReduceStrata => o.ReduceStrata,
@@ -294,15 +290,16 @@ comprehensiveGBOnGraph = method(
 comprehensiveGBOnGraph (List, ZZ) := opts -> (G, d) -> (
     V := sort G_0;
     E := G_1;
-    x := local x;
-    w := local w;
+    H := hashTable apply(#V, i -> V_i => i);
+    x := getSymbol "x";
+    w := getSymbol "w";
     SMonoid := monoid [apply(E, l -> w_(toSequence l))];
     S := QQ SMonoid;
-    RMonoid := monoid [x_(V_0, 1)..x_(V_(#V-1), d)];
+    RMonoid := monoid [flatten apply(V, v -> apply(1..d, k -> x_(v,k)))];
     R := S RMonoid;
     F := for i in E list (
         sum(1..d, k -> (
-                R_(d*(i_0-V_0)+k-1)-R_(d*(i_1-V_0)+k-1)
+                R_(d*H#(i_0)+k-1)-R_(d*H#(i_1)+k-1)
                 )^2
             ) - S_(position(E, j -> j === i)
             )
@@ -371,10 +368,8 @@ parametricGBMain = method(
         }
     );
 parametricGBMain (List, List, List) := o -> (E, N, F) -> (
-    if zero length F then error "F must be non-empty";
-    R := ring first F;
-    if not (instance(R, PolynomialRing) and instance(coefficientRing R, PolynomialRing)) then
-    error "F must consist of polynomials in a ring k[U][X]";
+    checkParametricInput F;
+    R := commonRing F;
     cgbData := cgbDataFromRings R;
     RFlat := cgbData#"RFlat";
     KU := cgbData#"KU";
@@ -382,8 +377,12 @@ parametricGBMain (List, List, List) := o -> (E, N, F) -> (
     RFlattoR := cgbData#"RFlattoR";
     RtoRFlat := cgbData#"RtoRFlat";
     RFlattoKU := cgbData#"RFlattoKU";
-    toKU := p -> try promote(p, KU) else
-    error("E and N must consist of polynomials in the parameters; found " | toString p);
+    toKU := p -> (
+            p' := sub(p, R);
+            if not liftable(p', KU) then
+            error("E and N must consist of polynomials in the parameters; found " | toString p);
+            lift(p', KU)
+            );
     E = if zero length E then {0_KU} else toKU \ E;
     N = if zero length N then {1_KU} else toKU \ N;
     if not consistencyCheckAllTogether(E, N, ICheckLoops => o.ICheckLoops) then (
@@ -456,7 +455,7 @@ parametricGBMain (List, List, List) := o -> (E, N, F) -> (
                 )
             );
         );
-    return PGB
+    PGB
     );
 
 parametricGBMain List := o -> F -> parametricGBMain({}, {}, F, o)
@@ -517,7 +516,7 @@ cCheck (List, RingElement) := (E, f) -> (
     if zero dim ideal GspE and zeroDimCheck(GspE, fAlpha) then (
         return true; -- certifies consistency
     );
-    return false -- unknown consistency (i.e., it could still be consistent)
+    false -- unknown consistency (i.e., it could still be consistent)
 );
 
 
@@ -561,7 +560,7 @@ iCheck (List, RingElement) := o -> (E, f) -> (
         );
     );
 
-    return false; -- unknown consistency
+    false -- unknown consistency
 );
 
 ----------------------------------------
@@ -613,7 +612,7 @@ consistencyCheckAllTogether (List, RingElement) := o -> (E, f) -> (
     if debugLevel > 0 then (
        print "General check was used";
        );
-    return null;
+    null
 );
 
 -- Note that we cannot have ideal E = (0) or ideal F = (0)
@@ -633,7 +632,7 @@ consistencyCheckAllTogether (List, List) := o -> (E, N) -> (
     if undecided then (
         return isConsistentRabinowitsch(E, N)
     );
-    return false
+    false
 );
 
 
@@ -645,7 +644,7 @@ doc ///
   Key
     ComprehensiveGBs
   Headline
-    a package for computing Comprehensive Gröbner Bases (CGBs).
+    computing comprehensive Gröbner bases (CGBs)
   Description
     Text
       This package provides the implementations of two different algorithms for computing a comprehensive Gröbner system and a
@@ -660,26 +659,41 @@ doc ///
       For $E\subseteq R=k[U]$, the variety defined by $E$ in $L^m$, denoted by $V(E)$, is
       $V(E)=\{a\in L^m :\sigma_a(f)=0 \text{ for all } f \in E \}.$
 
-      A set $A\subseteq L^m$ is called constructible if there exists a pair of finite sets of polynomials $(E,N)$ such that
-      $A=V(E)\setminus V(N)$, where $E,N\subseteq k[U]$.
-
       Let $F$ be a subset of $R[X]$, let $E_1,N_1,\ldots, E_t,N_t$ be subsets of $R=k[U]$, let $G_1,\ldots,G_t$ be subsets of $R[X]$,
-      and let S be a subset of $L^m$ such that $S\subseteq (V(E_1)\setminus V(N_1) \cup \ldots \cup V(E_t)\setminus V(N_t)$. A finite set
-      $\mathcal{G} = \{(E_1,N_1,G_1),\ldots,(E_t,N_t,G_t)\}$ is called a comprehnsive Gröbner system on $S$ for $F$ if
-      $\sigma_a(G_i)$ is a Gröbner basis of the ideal $(\sigma_a(F))\subseteq L[X]$ for $a \in V(E_i) \setminus V(N_i)$ and
-      $i=1,\ldots,t$. Each $(E_i,N_i,G_i)$ is called a branch of $\mathcal{G}$. In particular, if $S=L^m$, then $\mathcal{G}$ is
-      called a comprehensive Gröbner system for F.
+      and let $S$ be a subset of $L^m$ such that $S\subseteq (V(E_1)\setminus V(N_1)) \cup \ldots \cup (V(E_t)\setminus V(N_t))$. A finite set
+      $\mathcal{G} = \{(E_1,N_1,G_1),\ldots,(E_t,N_t,G_t)\}$ is called a comprehensive Gröbner system on $S$ for $F$ if
+      for all $i=1,\ldots,t$ and for all $a \in V(E_i) \setminus V(N_i)$,
+      $\sigma_a(G_i)$ is a Gröbner basis of the ideal $(\sigma_a(F))\subseteq L[X]$.
+      Each $(E_i,N_i,G_i)$ is called a branch of $\mathcal{G}$. In particular, if $S=L^m$, then $\mathcal{G}$ is
+      called a comprehensive Gröbner system for $F$.
 
-      Given a basis $S$ of the elimination ideal of $(F)\cap k[U]$, a comprehenvive Gröbner basis $\mathcal{B}$ for $F\subseteq R[X]$
-      is the union of all the sets $G_i$ in a comprehensive Gröbner system $\mathcal{G}$ for F on $S$. Notice that $(\sigma_a(F))=(1)$
+      Given a basis $S$ of the elimination ideal $(F)\cap k[U]$, a comprehensive Gröbner basis $\mathcal{B}$ for $F\subseteq R[X]$
+      is the union of all the sets $G_i$ in a comprehensive Gröbner system $\mathcal{G}$ for $F$ on $S$. Notice that $(\sigma_a(F))=(1)$
       for any $a \in L^m \setminus V(S)$. Therefore, the set $\mathcal{G} \cup \{(\emptyset,S,S)\}$ is a comprehensive Gröbner system for $F$.
 
       The function @TO "comprehensiveGBMain"@ is the implementation of Algorithm CGBMain of @HREF("#ref2","[2]")@. The function @TO "parametricGBMain"@
       corresponds to the Algorithm PGBMain of @HREF("#ref1","[1]")@.
+
+      As an illustrative example, consider the following system.
+      Let $f = y+ux+v$ and $g = uy+x+v$ be polynomials in $\QQ[u,v][y,x]$, where $u$ and $v$ are parameters.
+      For generic values of $u$ and $v$, the specialized system has a unique solution,
+      but for some values of $u$ and $v$ it has no solutions or infinitely many solutions.
+      A Gröbner basis computed over the fraction field $\QQ(u,v)$ only sees the generic case,
+      whereas a comprehensive Gröbner system detects every case.
+    Example
+      R = QQ[u,v][y,x, MonomialOrder => Lex];
+      F = {y + u*x + v, u*y + x + v};
+      netList parametricGBMain F
   References
       @LABEL("[1]","id" => "ref1")@ Deepak Kapur, Yao Sun, and Dingkang Wang. 2013. An efficient algorithm for computing a comprehensive Gröbner system of a parametric polynomial system. In Journal of Symbolic Computation, 49, 27-44.
 
       @LABEL("[2]","id" => "ref2")@ Akira Suzuki and Yosuke Sato. 2006. A simple algorithm to compute comprehensive Gröbner bases using Gröbner bases. In Proceedings of the 2006 International Symposium on Symbolic and Algebraic Computation (ISSAC '06), 326–331.
+  Subnodes
+    comprehensiveGB
+    comprehensiveGBMain
+    parametricGBMain
+    comprehensiveGBOnGraph
+    minimalDicksonBasis
 ///
 
 
@@ -693,7 +707,7 @@ doc ///
     [comprehensiveGBMain, Depth]
     [comprehensiveGBMain, CheckAssumption]
   Headline
-    a method that computes a Comprehensive Gröbner System
+    compute a comprehensive Gröbner system
   Usage
     comprehensiveGBMain(F,S)
     comprehensiveGBMain F
@@ -720,20 +734,20 @@ doc ///
       tower polynomial ring $R = k[U][X]$, for $U$ a set of parameters and
       $X$ a set of variables, and a finite set $F\subset R$ of polynomials in the variables and
       parameters, and given a finite set $S\subset k[U]$ satisfying $V(S)\subseteq
-      V(\langle F\rangle\cap k[U])$, the method comprehensiveGBMain takes returns a comprehensive Gröbner system of the ideal generated by $F$ on $V(S)$. The ring where the elements of $F$ live must be initialised as a tower ring,
+      V(\langle F\rangle\cap k[U])$, the method comprehensiveGBMain returns a comprehensive Gröbner system of the ideal generated by $F$ on $V(S)$. The ring where the elements of $F$ live must be initialised as a tower ring,
       as in the following example.
     Example
       R1 = QQ[a,b][x,y]
     Text
       Here $X = \{x,y\}$ and $U = \{a,b\}$. To find a
-      comprehensive Gröbner system of $F = \langle ax+by\rangle$ over $\mathb{Q}^2$, 
+      comprehensive Gröbner system of $F = \langle ax+by\rangle$ over $\QQ^2$, 
       we input the following.
     Example
       F1 = {a*x+b*y}
       S1 = {}
-      comprehensiveGBMain(F1,S1)
+      comprehensiveGBMain(F1, S1)
     Text
-      The function comprehensiveGBMain has several options: ReduceStrata, Verbose, and Depth.
+      The function comprehensiveGBMain has several options: ReduceStrata, Verbose, Depth, and CheckAssumption.
 
       The symbol ReduceStrata is an option to ignore computations on strata which
       have already been considered. This value is set to false by default.
@@ -742,19 +756,20 @@ doc ///
       parsable results.
     Example
       R2 = QQ[a,b][x,y,z];
-      F2 = {x^2-a,y^3-b,x+y-z};
+      F2 = {x^2-a, y^3-b, x+y-z};
       S2 = {};
+      comprehensiveGBMain(F2, S2, ReduceStrata => true)
     Text
-      Setting @TO "Verbose"@ to @TT "true"@ will display the current
+      Setting Verbose to @TT "true"@ will display the current
       polynomial lists $F$ and $S$ in the internal computation.
     Example
-      comprehensiveGBMain(F1,S1,Verbose=>true)
+      comprehensiveGBMain(F1, S1, Verbose => true)
     Text
-      The option @TO "Depth"@ sets a bound for the recursion depth of the
+      The option @TO "ComprehensiveGBs :: Depth"@ sets a bound for the recursion depth of the
       algorithm. For instance, setting it to zero will return one of the
       generic stratum.
     Example
-      for i from 0 to 3 do print (i, netList comprehensiveGBMain(F1, S1, Depth => i))
+      for i from 0 to 3 do print(i, netList comprehensiveGBMain(F1, S1, Depth => i))
     Text
       When the function is about to recurse, the
       value of the depth option is checked.  If the value is zero then
@@ -784,6 +799,12 @@ doc ///
     comprehensiveGB
     ReduceStrata
     Verbose
+    "ComprehensiveGBs :: Depth"
+    CheckAssumption
+  Subnodes
+    ReduceStrata
+    "ComprehensiveGBs :: Depth"
+    CheckAssumption
   ///
 
 doc ///
@@ -800,8 +821,9 @@ doc ///
       parseable results.
     Example
       R2 = QQ[a,b][x,y,z];
-      F2 = {x^2-a,y^3-b,x+y-z};
+      F2 = {x^2-a, y^3-b, x+y-z};
       S2 = {};
+      comprehensiveGBMain(F2, S2, ReduceStrata => true)
   SeeAlso
     comprehensiveGBMain
 ///
@@ -873,24 +895,6 @@ doc ///
     comprehensiveGBMain
 ///
 
-doc ///
-  Key
-    Verbose
-  Headline
-    record comprehensiveGBMain iterations
-  Description
-    Text
-      Setting Verbose to @TT "true"@ will print whatever $F$ and $S$ that
-      comprehensiveGBMainRec is currently working on, as in the following example.
-    Example
-      R1 = QQ[a,b][x,y];
-      F1 = {a*x+b*y};
-      S1 = {};
-      comprehensiveGBMain(F1,S1,Verbose=>true)
-  SeeAlso
-    comprehensiveGBMain
-///
-
 
 doc ///
   Key
@@ -908,7 +912,7 @@ doc ///
     G: List
       a list consisting of a list of vertices and a list of edges.
     d: ZZ
-      a postive integer
+      a positive integer
     CheckAssumption=>Boolean
        check that $V(S)\subseteq V(\langle F\rangle\cap k[U])$
     ReduceStrata=>Boolean
@@ -921,17 +925,17 @@ doc ///
     F: List
       A list of polynomials
     GG: List
-      The Comprehensive Gröbner Basis of the polynomials
+      The comprehensive Gröbner system of the polynomials
   Description
     Text
       Let $G=(V,E)$ be graph and fix a positive integer $d$.
-      Consider the paramaterized polynomial systems
+      Consider the parameterized polynomial systems
       $F=\{f_e\}_{e\in E}\subseteq K[\lambda_e\:e\in E][x_{v,k}:v\in V,1\leq k \leq d]$,
       where $K\in \{\mathbb{C},\mathbb{R}\}$ and
       \[ f_{ij}=\sum_{k=1}^{d}(x_{i,k}-x_{j,k})^2  -\lambda_{ij} \].
-      The function comprehensiveGBOnGraph returns the polynomial systems $F$ and a Combrehensive Gröbner Basis of $F$.
+      The function comprehensiveGBOnGraph returns the polynomial systems $F$ and a comprehensive Gröbner system of $F$.
     Example
-      (F,GG)=comprehensiveGBOnGraph({{1,2,3},{(1,2),(2,3),(3,1)}},1, ReduceStrata => true);
+      (F, GG) = comprehensiveGBOnGraph({{1,2,3}, {(1,2),(2,3),(3,1)}}, 1, ReduceStrata => true);
       netList F
       GG_0
   Caveat
@@ -947,7 +951,7 @@ doc ///
     minimalDicksonBasis
     (minimalDicksonBasis, List)
   Headline
-    a method for computing a minimal Dickson basis
+    compute a minimal Dickson basis
   Usage
     minimalDicksonBasis G
   Inputs
@@ -1002,7 +1006,7 @@ doc ///
     [comprehensiveGB, ReduceStrata]
     [comprehensiveGB, Depth]
   Headline
-    a method that computes a Comprehensive Gröbner Basis
+    compute a comprehensive Gröbner basis
   Usage
     G = comprehensiveGB F
   Inputs
@@ -1032,29 +1036,38 @@ doc ///
       R1 = QQ[a,b][x,y]
     Text
       Here $X = \{x,y\}$ and $U = \{a,b\}$. If we wanted to find a comprehensive
-      Gröbner basis over $\mathb{Q}^2$ for $F = \langle ax+by\rangle$, we input
+      Gröbner basis over $\QQ^2$ for $F = \langle ax+by\rangle$, we input
       the following.
     Example
       F1 = {a*x+b*y}
       comprehensiveGB F1
     Text
-      The function comprehensiveGB has several options: ReduceStrata and Verbose. The symbol ReduceStrata is an option
+      The function comprehensiveGB has several options: ReduceStrata, Verbose, and Depth. The symbol ReduceStrata is an option
       to ignore computations on strata which have already been considered. This
       value is set to false by default. For smaller examples, changing this to
       true can reduce computation times, as for the following example. It will
       also give more easily parseable results.
     Example
       R2 = QQ[a,b][x,y,z];
-      F2 = {x^2-a,y^3-b,x+y-z};
+      F2 = {x^2-a, y^3-b, x+y-z};
+      comprehensiveGB(F2, ReduceStrata => true)
     Text
-      Setting Verbose to True will print whatever $F$ and $S$ that comprehensiveGBMainRec is
+      Setting Verbose to true will print whatever $F$ and $S$ that the algorithm is
       currently working on, as in the following example.
     Example
-      comprehensiveGB(F1,Verbose=>true)
+      comprehensiveGB(F1, Verbose => true)
+    Text
+      The option Depth sets a bound on the recursion depth of the algorithm.
+      With a non-negative value, the output may only be
+      a comprehensive Gröbner basis on part of the parameter space,
+      as in the following example.
+    Example
+      comprehensiveGB(F1, Depth => 0)
   SeeAlso
     comprehensiveGBMain
     ReduceStrata
     Verbose
+    "ComprehensiveGBs :: Depth"
 ///
 
 doc ///
@@ -1066,7 +1079,7 @@ doc ///
     [parametricGBMain, Depth]
     [parametricGBMain, ICheckLoops]
   Headline
-    compute a Comprehensive Gröbner System using Kapur-Sun-Wang algorithm
+    compute a comprehensive Gröbner system using Kapur-Sun-Wang algorithm
   Usage
     parametricGBMain F
     parametricGBMain(E, F)
@@ -1112,7 +1125,7 @@ doc ///
       The default Depth is -1, which never reaches zero, so the full comprehensive Gröbner system is
       computed.
     Example
-      for i from 0 to 2 do print (i, netList parametricGBMain(F, Depth => i))
+      for i from 0 to 2 do print(i, netList parametricGBMain(F, Depth => i))
     Text
       Note. If Depth is not negative, then the output is a comprehensive Gröbner system on only
       part of the parameter space.
@@ -1134,6 +1147,8 @@ doc ///
   SeeAlso
     comprehensiveGBMain
     minimalDicksonBasis
+  Subnodes
+    ICheckLoops
 ///
 
 
@@ -1171,190 +1186,100 @@ assert(ringOrder RRevLex === {RevLex => 4});
 
 TEST ///
 -* Testing  comprehensiveGBMain on a*x+b*y *-
+R = QQ[a,b][x,y, MonomialOrder => Lex];
 
-Ptest = QQ[a,b];
-Rtest = Ptest[x,y, MonomialOrder => Lex];
+result = comprehensiveGBMain({a*x + b*y}, {});
 
-params = gens Ptest;
-variables = gens Rtest
+expected1 = ({0_(coefficientRing R)}, {a}, {a*x + b*y});
+expected2 = ({a}, {b}, {a^2*x + a*b*y, a*x + b*y});
+expected3 = ({b, a}, {1_(coefficientRing R)}, {a*x + b*y});
 
-aP = params#0;
-bP = params#1;
-
-aR = promote (aP , Rtest);
-bR = promote (bP , Rtest);
-
-xR = variables#0;
-yR = variables#1;
-
-
-resultTest = comprehensiveGBMain({aR*xR + bR*yR}, {});
-
-expected1 = ({0_Ptest}, {aP}, {aR*xR + bR*yR});
-expected2 = ({aP}, {bP}, {aR^2*xR + aR*bR*yR, aR*xR + bR*yR});
-expected3 = ({bP, aP}, {1_Ptest}, {aR*xR + bR*yR});
-
-assert(#resultTest == 3);
-
-assert member(expected1, resultTest);
-assert member(expected2, resultTest);
-assert member(expected3, resultTest);
-
+assert(#result == 3);
+assert(set result == set {expected1, expected2, expected3});
 ///
 
 
 TEST ///
 -* Testing  comprehensiveGB on a*x+b*y  *-
-PTest = QQ[aTest,bTest];
-RTest = PTest[xTest,yTest, MonomialOrder => Lex];
+R = QQ[a,b][x,y, MonomialOrder => Lex];
 
-fTest = aTest*xTest + bTest*yTest;
-
-expected1 = aTest*xTest + bTest*yTest;
-expected2 = aTest^2*xTest + aTest*bTest*yTest;
-
-result = comprehensiveGB {fTest};
+result = comprehensiveGB {a*x + b*y};
 
 assert(#result == 2);
-assert(result#0 == expected1 or result#1 == expected1);
-assert(result#0 == expected1 or result#1 == expected2);
+assert(set result == set {a*x + b*y, a^2*x + a*b*y});
 ///
 
 
 TEST ///
 -* Testing comprehensiveGBOnGraph  on  E = {(1,2)}, V = {1,2} *-
 
-E = {(1,2)};
-V = {1,2};
-G = {V,E};
+(F, GG) = comprehensiveGBOnGraph({{1,2}, {(1,2)}}, 2);
+R = ring first F;
+use coefficientRing R; use R;
 
-(F,GG) = comprehensiveGBOnGraph(G,2);
-
-
-
-Rtest = ring first F;
-
-
-Stest = coefficientRing Rtest;
-
-x11 = Rtest_0;
-x12 = Rtest_1;
-x21 = Rtest_2;
-x22 = Rtest_3;
-
-w12 = promote(Stest_0,Rtest);
-
-expectedF = {x11^2 - 2*x11*x21 + x21^2 + x12^2 - 2*x12*x22 + x22^2 - w12 };
-expectedGG = {
-    ({0_Stest}, {1_Stest}, expectedF)
-};
-
-assert(F == expectedF);
-assert(GG == expectedGG);
-
+assert(F == {(x_(1,1) - x_(2,1))^2 + (x_(1,2) - x_(2,2))^2 - w_(1,2)});
+assert(GG == {({0}, {1}, F)});
 ///
 
 
 TEST ///
 -* Testing  comprehensiveGBMain on a*x+b*y  with Verbose option *-
-Ptest = QQ[a,b];
-Rtest = Ptest[x,y, MonomialOrder => Lex];
+R = QQ[a,b][x,y, MonomialOrder => Lex];
 
-params = gens Ptest;
-variables = gens Rtest
+result = comprehensiveGBMain({a*x + b*y}, {}, Verbose => true);
 
-aP = params#0;
-bP = params#1;
+expected1 = ({0_(coefficientRing R)}, {a}, {a*x + b*y});
+expected2 = ({a}, {b}, {a^2*x + a*b*y, a*x + b*y});
+expected3 = ({b, a}, {1_(coefficientRing R)}, {a*x + b*y});
 
-aR = promote (aP , Rtest);
-bR = promote (bP , Rtest);
-
-xR = variables#0;
-yR = variables#1;
-
-
-resultTest = comprehensiveGBMain({aR*xR + bR*yR}, {}, Verbose => true);
-
-expected1 = ({0_Ptest}, {aP}, {aR*xR + bR*yR});
-expected2 = ({aP}, {bP}, {aR^2*xR + aR*bR*yR, aR*xR + bR*yR});
-expected3 = ({bP, aP}, {1_Ptest}, {aR*xR + bR*yR});
-
-assert(#resultTest == 3);
-
-assert member(expected1, resultTest);
-assert member(expected2, resultTest);
-assert member(expected3, resultTest);
-
-
+assert(#result == 3);
+assert(set result == set {expected1, expected2, expected3});
 ///
 
 
 TEST ///
 -* Testing  comprehensiveGB on a*x+b*y  with Verbose option  *-
-PTest = QQ[aTest,bTest];
-RTest = PTest[xTest,yTest, MonomialOrder => Lex];
+R = QQ[a,b][x,y, MonomialOrder => Lex];
 
-fTest = aTest*xTest + bTest*yTest;
-
-expected1 = aTest*xTest + bTest*yTest;
-expected2 = aTest^2*xTest + aTest*bTest*yTest;
-
-result = comprehensiveGB({fTest}, Verbose=> true);
+result = comprehensiveGB({a*x + b*y}, Verbose => true);
 
 assert(#result == 2);
-assert(result#0 == expected1 or result#1 == expected1);
-assert(result#0 == expected1 or result#1 == expected2);
-
+assert(set result == set {a*x + b*y, a^2*x + a*b*y});
 ///
 
 
 TEST ///
--* Testing  comprehensiveGBMain on a*x+b*y  with ReduceStrata => true option *-
-Ptest = QQ[a,b];
-Rtest = Ptest[x,y, MonomialOrder => Lex];
+-* Testing  comprehensiveGBMain on a*x^2 + b*y, x*y - a, b*x - y^3  with ReduceStrata => true option *-
+R = QQ[a,b][x,y];
+F = {a*x^2 + b*y, x*y - a, b*x - y^3};
 
-params = gens Ptest;
-variables = gens Rtest
+result = comprehensiveGBMain(F, ReduceStrata => true);
+assert(#result == 4);
 
-aP = params#0;
-bP = params#1;
+expected1 = ({0_(coefficientRing R)}, {a^10 - a*b^7});
+expected2 = ({a^10 - a*b^7}, {a^4*b^5});
+expected3 = ({b, a}, {1_(coefficientRing R)});
+expected4 = ({a}, {b^2});
+assert(set apply(result, t -> (t#0, t#1)) == set {expected1, expected2, expected3, expected4});
 
-aR = promote (aP , Rtest);
-bR = promote (bP , Rtest);
-
-xR = variables#0;
-yR = variables#1;
-
-
-resultTest = comprehensiveGBMain({aR*xR + bR*yR}, {},  ReduceStrata => true);
-
-expected1 = ({0_Ptest}, {aP}, {aR*xR + bR*yR});
-expected2 = ({aP}, {bP}, {aR^2*xR + aR*bR*yR, aR*xR + bR*yR});
-expected3 = ({bP, aP}, {1_Ptest}, {aR*xR + bR*yR});
-
-assert(#resultTest == 3);
-
-assert member(expected1, resultTest);
-assert member(expected2, resultTest);
-assert member(expected3, resultTest);
+unreduced = comprehensiveGBMain(F, ReduceStrata => false);
+assert(#unreduced == 6);
+assert isSubset(result, unreduced);
 
 ///
 
 TEST ///
--* Testing  comprehensiveGBMain on a*x+b*y  with ReduceStrata => true option *-
-PTest = QQ[aTest,bTest];
-RTest = PTest[xTest,yTest, MonomialOrder => Lex];
+-* Testing  comprehensiveGB on a*x^2 + b*y, x*y - a, b*x - y^3  with ReduceStrata => true option *-
+R = QQ[a,b][x,y];
+F = {a*x^2 + b*y, x*y - a, b*x - y^3};
 
-fTest = aTest*xTest + bTest*yTest;
+result = comprehensiveGB(F, ReduceStrata => true);
+assert(#result == 21);
+assert isSubset({promote(a^10 - a*b^7, R), a*x^2 + b*y, x*y - a, y^3 - b*x}, result);
 
-expected1 = aTest*xTest + bTest*yTest;
-expected2 = aTest^2*xTest + aTest*bTest*yTest;
-
-result = comprehensiveGB({fTest}, ReduceStrata=> true);
-
-assert(#result == 2);
-assert(result#0 == expected1 or result#1 == expected1);
-assert(result#0 == expected2 or result#1 == expected2);
+unreduced = comprehensiveGB(F, ReduceStrata => false);
+assert(#unreduced == 32);
+assert isSubset(result, unreduced);
 
 ///
 
@@ -1365,7 +1290,7 @@ TEST /// -* Testing minimalDicksonBasis on {a*x^2 - y, a*y^2 - 1, a*x - 1, (a + 
 U = U = QQ[a, MonomialOrder => Lex];
 R = U[x, y, MonomialOrder => Lex];
 G = {a*x^2 - y, a*y^2 - 1, a*x - 1, (a + 1)*x - y, (a + 1)*y - a}
-minimalDicksonBasis G
+assert(minimalDicksonBasis G == {(a + 1)*x - y, (a + 1)*y - a})
 ///
 
 -----------------------------------------------
@@ -1492,53 +1417,3 @@ assert all(0..2, d -> isSubset(strata parametricGBMain(F, Depth => d), strata L)
 
 
 end --
-
-
-
--* Development section *-
-restart
-debug needsPackage "ComprehensiveGBs"
-check "ComprehensiveGBs"
-
-uninstallPackage "ComprehensiveGBs"
-restart
-needsPackage "ComprehensiveGBs"
-installPackage "ComprehensiveGBs"
-viewHelp "ComprehensiveGBs"
-
-
-Description
-       Text
-       Tree
-       Example
-       CannedExample
-     Acknowledgement
-     Contributors
-     References
-     Caveat
-     SeeAlso
-     Subnodes
-
-doc ///
-     Key
-     Headline
-     Usage
-       degreeMap phi
-     Inputs
-       phi: ...
-     Outputs
-     Consequences
-       Item
-     Description
-       Text
-       Example
-       CannedExample
-       Code
-       Pre
-     ExampleFiles
-     Contributors
-     References
-     Caveat
-     SeeAlso
-
-     ///
