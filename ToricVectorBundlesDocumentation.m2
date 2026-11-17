@@ -1366,13 +1366,6 @@ doc ///
         Text
             Determines whether the map @TT "f"@ is injective as a map of
             toric vector bundles.
-            The method first checks that @TT "f"@ is well defined and that
-            its underlying map of modules is injective. It then checks the
-            dimensions of the filtered pieces of the source and target for
-            every ray of the underlying toric variety.
-
-            Returns @TT "true"@ if all these conditions are satisfied, and
-            @TT "false"@ otherwise.
         Example
             X = toricProjectiveSpace 2;
             E = trivialBundle(X, 1);
@@ -1400,22 +1393,30 @@ doc ///
             whether f is surjective
     Description
         Text
-            Determines whether the map @TT "f"@ is surjective as a map of
-            toric vector bundles.
-
-            The method first checks that @TT "f"@ is well defined and that
-            its underlying map of modules is surjective. It then checks the
-            dimensions of the filtered pieces of the source and target for
-            every ray of the underlying toric variety.
-
-            Returns @TT "true"@ if all these conditions are satisfied, and
-            @TT "false"@ otherwise.
+            Determines whether the map @TT "f"@ is a surjective morphism.
         Example
             X = toricProjectiveSpace 2;
             E = trivialBundle(X, 2);
             F = trivialBundle(X, 1);
             f = map(F, E, matrix(ring E,{{1,0}}));
             assert(isSurjective f)
+        Text
+            Technically speaking, in the category of filtered vector spaces, we are
+            further checking for a strict morphism: each filtered piece of the source
+            must surject onto the target filtered piece via the induced map.
+            The strictness condition is a subtlety that arises because the category
+            of filtered vector spaces is not abelian; see
+            @HREF("https://stacks.math.columbia.edu/tag/0120", "Section 12.19")@
+            in the stacks project. For example, the inclusion map
+            $\mathcal{O} \rightarrow \mathcal{O}(1)$ is injective, but not surjective
+            (whereas the associated map is indeed surjective in the category of filtered
+            vector spaces).
+        Example
+            O = trivialBundle(X,1)
+            O1 = lineBundle X_0;
+            phi = map(O1, O, matrix {{1}});
+            isSurjective phi
+            isSurjective matrix phi
     SeeAlso
         (image,ToricVectorBundleMap)
         (cokernel,ToricVectorBundleMap)
