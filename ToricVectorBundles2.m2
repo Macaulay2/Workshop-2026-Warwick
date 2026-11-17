@@ -85,6 +85,7 @@ export {
     "strata",
     -- Operations
     "areIsomorphic",
+    "chooseBasis",
     "deltaE",
     "details",
     "eulerChi",
@@ -1004,11 +1005,11 @@ weilToKlyachko List := ToricVectorBundle => WD -> (
         flatten for pair in WD list (
             D := entries vector pair_1;
             -- since there could be multiple columns, we have to list all of these jumps.
-            toList (numgens pair_0 : D_p)
+            toList (numColumns pair_0 : D_p)
             )
         );
     -- since we're brutally concatenating this, we'll just prune it.
-    chooseBasis toricVectorBundle(variety WD, for p in rays variety WD list filtMat, jumps)
+    chooseBasis toricVectorBundle(X, for p in rays X list filtMat, jumps)
     )
 
 ---------------------------------------
@@ -2020,11 +2021,11 @@ assert(h.map == matrix(QQ,{{12,0},{0,21}}))
 TEST ///
 M = toricProjectiveSpace 2;
 V = tangentBundle M++lineBundle(M_1);
-W = weilDecoration V;
-(strats, divs) = toSequence transpose ((strata W)/toList)
+W = weilDecoration V
+(strats, divs) = toSequence transpose W
 assert(strats/rank == {1,1,2,3})
 assert(divs == {M_2, M_0, M_1, M_1 - M_1})
-E = weilToKlyachko(M,W)
+E = weilToKlyachko W
 assert(E == V)
 ///
 
@@ -2072,7 +2073,6 @@ assert(lcm(D1,D5) == D7)
 -- Test 26
 -- Test for non-square matrices
 TEST ///
-
 T = cotangentBundle (X = hirzebruchSurface 3)
 T2 = exteriorPower(2,T)
 T3 = image map( trivialBundle( X, 4), T, matrix{{1,0},{0,1},{0,0},{0,0}})
