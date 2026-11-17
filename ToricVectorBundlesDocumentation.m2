@@ -538,12 +538,6 @@ doc ///
             E = cotangentBundle X
             details E
             dual tangentBundle X == E
-        Text
-            To create the cotangent bundle in its Kaneyama description use @TO cotangentBundleKaneyama@.
-        Example
-            F = projectiveSpaceFan 2;
-            E = cotangentBundleKaneyama(F)
-            details E
     SeeAlso
         tangentBundle
         cotangentBundleKaneyama
@@ -640,21 +634,8 @@ doc ///
             Ed = dual E
             details Ed
             Ed == cotangentBundle(X)
-        Text 
-            One can also take duals of bundles in Kaneyama's description (TODO: FIX EXAMPLE the bundles should be equal)
-        Example
-            X = toricProjectiveSpace 2;
-            E = tangentBundle X;
-            Ed = dual E;
-            filtrations Ed
-            Ed == cotangentBundle X
-            E = tangentBundleKaneyama projectiveSpaceFan 2
-            Ed = dual E
-            details Ed
-            CT = cotangentBundleKaneyama projectiveSpaceFan 2
-            details CT
-            Ed == CT
     SeeAlso
+        (dual,ToricVectorBundleKaneyama)
         tangentBundle
         cotangentBundle
         tangentBundleKaneyama
@@ -668,7 +649,6 @@ doc ///
         exterior power of a toric vector bundle
     Usage
         El = exteriorPower(l, E)
-        Fl = exteriorPower(l,F)
     Inputs
         l : ZZ
         E : ToricVectorBundle
@@ -676,8 +656,6 @@ doc ///
     Outputs
         El: ToricVectorBundle
             the l-th exterior power of E
-        Fl: ToricVectorBundleKaneyama
-            the l-th exterior power of F
     Description
         Text
           Computes the @TT "l"@-th exterior power of the toric vector
@@ -841,8 +819,7 @@ doc ///
     Description
         Text
             If $E_1$ and $E_2$ are defined over the same @TO "NormalToricVarieties::NormalToricVariety"@ $X$, then @TT "directSum"@ computes the
-            direct sum of the two vector bundles. The bundles must both be given in the same
-            description and the resulting bundle will be in this description.
+            direct sum of the two vector bundles.
         Example
             X = hirzebruchSurface 3;
             E1 = trivialBundle(X, 2);
@@ -855,10 +832,15 @@ doc ///
             E = E1 ++ E2
             details E
     SeeAlso
+        (symbol ++,ToricVectorBundleKaneyama,ToricVectorBundleKaneyama)
         (symbol **,ToricVectorBundle,ToricVectorBundle)
+        (symbol **,ToricVectorBundleKaneyama,ToricVectorBundleKaneyama)
         (tensor,ToricVectorBundle,ToricVectorBundle)
-        (exteriorPower, ZZ, ToricVectorBundle)
-        (symmetricPower, ZZ, ToricVectorBundle)
+        (tensor,ToricVectorBundleKaneyama,ToricVectorBundleKaneyama)
+        (exteriorPower,ZZ,ToricVectorBundle)
+        (exteriorPower,ZZ,ToricVectorBundleKaneyama)
+        (symmetricPower,ZZ,ToricVectorBundle)
+        (symmetricPower,ZZ,ToricVectorBundleKaneyama)
 ///
 
 

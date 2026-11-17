@@ -177,6 +177,80 @@ addDegrees (ToricVectorBundleKaneyama,List) := (tvb,L) -> (
 	  "topConeTable" => tvb#"topConeTable",
 	  symbol cache => new CacheTable})
 
+  -- PURPOSE : Checking if a ToricVectorBundleKaneyama satisfies the regularity conditions of the degrees
+--   INPUT : 'tvb', a ToricVectorBundleKaneyama
+--  OUTPUT : 'true' or 'false'
+-- COMMENT : This function is for checking ToricVectorBundles whose degrees and matrices 
+--     	     are inserted by hand. Those generated for example by tangentBundle fulfill the 
+--     	     conditions automatically.
+
+regCheck = method(TypicalValue => Boolean)
+regCheck ToricVectorBundleKaneyama := (cacheValue symbol regularityCondition)( tvb -> (
+     	  -- Extracting the necessary data
+     	  tCT := customConeSort keys tvb#"topConeTable";
+     	  c1T := tvb#"codim1Table";
+     	  bCT := tvb#"baseChangeTable";
+     	  dT := tvb#"degreeTable";
+     	  k := tvb#"rank of the vector bundle";
+     	  if not (all(keys bCT, p -> (
+	       	    -- Taking a pair corresponding to a codim 1 cone, the corresponding transition matrix and its inverse
+	       	    A := bCT#p;
+	       	    B := inverse A;
+	       	    -- Computing the dual of the codim 1 cone
+	       	    C := dualCone posHull c1T#p;
+	       	    -- Check for all pairs of degree vectors of the two top Cones the reg condition
+	       	    all(k, i -> (
+			      ri := (dT#(tCT#(p#1)))_{i};
+			      all(k, j -> (
+				   	rj := (dT#(tCT#(p#0)))_{j};
+				   	(if A^{i}_{j} != 0 then contains(C,rj-ri) else true) and (if A^{j}_{i} != 0 then contains(C,ri-rj) else true)))))))) then (
+                                             if debugLevel > 0 then
+					     << "--toric vector bundle does not satisfy regularity conditions of the degrees" << endl;
+		                            return false
+					);
+		  return true
+
+            ))
+
+-- PURPOSE : Checking if the ToricVectorBundleKaneyama fulfills the cocycle condition
+--   INPUT : 'tvb',  a ToricVectorBundleKaneyama 
+--  OUTPUT : 'true' or 'false' 
+cocycleCheck = method(TypicalValue => Boolean)
+cocycleCheck ToricVectorBundleKaneyama := (cacheValue symbol cocycleCondition)( tvb -> (
+     	  -- Extracting data out of tvb
+     	  n := tvb#"dimension of the variety";
+     	  k := tvb#"rank of the vector bundle";
+     	  bCT := tvb#"baseChangeTable";
+     	  topCones := customConeSort keys tvb#"topConeTable";
+     	  L := hashTable {};
+     	  -- For each codim 2 Cone computing the list of topCones which have this Cone as a face
+     	  -- and save the list of indices of these topCones as an element in L
+     	  for i from 0 to #topCones - 1  do L = merge(hashTable apply(facesAsCones(2,posHull topCones#i), C -> (rays C, linealitySpace C) => {i}),L,(a,b) -> sort join(a,b));
+     	  -- Finding the cyclic order of every list of topCones in L and write this cyclic order as a 
+     	  -- list of consecutive pairs
+     	  L = for l in values L list (
+	       pairings := {};
+	       start := l#0;
+	       a := start;
+	       l = drop(l,1);
+	       i := position(l, e -> dim intersection(posHull topCones#a, posHull topCones#e) == n-1);
+	       while i =!= null do (
+		    pairings = pairings | {(a,l#i)};
+		    a = l#i;
+		    l = drop(l,{i,i});
+		    i = position(l, e -> dim intersection(posHull topCones#a, posHull topCones#e) == n-1));
+	       if dim intersection(posHull topCones#a, posHull topCones#start) == n-1 then pairings | {(a,start)} else continue);
+     	  -- Check for every cyclic order of topCones if the product of the corresponding transition
+     	  -- matrices is the identity
+     	  if not (all(L, l -> product apply(reverse l, e -> if e#0 > e#1 then inverse bCT#(e#1,e#0) else bCT#e) == map(QQ^k,QQ^k,1))) then (
+		      if debugLevel > 0 then
+			  << "--toric vector bundle does not fulfill cocycle condition" << endl;
+			return false
+		  	);
+                    return true
+
+                    ))
+
 -- PURPOSE : Checking if the ToricVectorBundleKaneyama is well-defined. Combining previous cocycleCheck and regCheck
 --	    First checks if tvb fulfills the cocycle condition
 --	    Then checks that tvb satisfies the regularity conditions of the degrees
@@ -222,8 +296,6 @@ ToricVectorBundleKaneyama ++ ToricVectorBundleKaneyama := (tvb1,tvb2) -> (
 	"codim1Table" => E#"codim1Table",
 	"topConeTable" => E#"topConeTable",
 	symbol cache => new CacheTable};
-
-    -- we combined regCheck and cocycleCheck into isWellDefined.....should we change these and remove them then?
      if (tvb1.cache.?regularityCondition and tvb2.cache.?regularityCondition and tvb1.cache.regularityCondition and tvb2.cache.regularityCondition and (
 	       tvb1.cache.?cocycleCondition and tvb2.cache.?cocycleCondition and tvb1.cache.cocycleCondition and tvb2.cache.cocycleCondition)) then (
 	  E.cache.regularityCondition = true;
@@ -690,72 +762,4 @@ cechComplex (ZZ,ToricVectorBundleKaneyama,Matrix) := (k,tvb,u) -> (
 --     	     are inserted by hand. Those generated for example by tangentBundle fulfill the 
 --     	     conditions automatically.
 
-regCheck = method(TypicalValue => Boolean)
-regCheck ToricVectorBundleKaneyama := (cacheValue symbol regularityCondition)( tvb -> (
-     	  -- Extracting the necessary data
-     	  tCT := customConeSort keys tvb#"topConeTable";
-     	  c1T := tvb#"codim1Table";
-     	  bCT := tvb#"baseChangeTable";
-     	  dT := tvb#"degreeTable";
-     	  k := tvb#"rank of the vector bundle";
-     	  if not (all(keys bCT, p -> (
-	       	    -- Taking a pair corresponding to a codim 1 cone, the corresponding transition matrix and its inverse
-	       	    A := bCT#p;
-	       	    B := inverse A;
-	       	    -- Computing the dual of the codim 1 cone
-	       	    C := dualCone posHull c1T#p;
-	       	    -- Check for all pairs of degree vectors of the two top Cones the reg condition
-	       	    all(k, i -> (
-			      ri := (dT#(tCT#(p#1)))_{i};
-			      all(k, j -> (
-				   	rj := (dT#(tCT#(p#0)))_{j};
-				   	(if A^{i}_{j} != 0 then contains(C,rj-ri) else true) and (if A^{j}_{i} != 0 then contains(C,ri-rj) else true)))))))) then (
-                                             if debugLevel > 0 then
-					     << "--toric vector bundle does not satisfy regularity conditions of the degrees" << endl;
-		                            return false
-					);
-		  return true
-
-            ))
-
-
-
--- PURPOSE : Checking if the ToricVectorBundleKaneyama fulfills the cocycle condition
---   INPUT : 'tvb',  a ToricVectorBundleKaneyama 
---  OUTPUT : 'true' or 'false' 
-cocycleCheck = method(TypicalValue => Boolean)
-cocycleCheck ToricVectorBundleKaneyama := (cacheValue symbol cocycleCondition)( tvb -> (
-     	  -- Extracting data out of tvb
-     	  n := tvb#"dimension of the variety";
-     	  k := tvb#"rank of the vector bundle";
-     	  bCT := tvb#"baseChangeTable";
-     	  topCones := customConeSort keys tvb#"topConeTable";
-     	  L := hashTable {};
-     	  -- For each codim 2 Cone computing the list of topCones which have this Cone as a face
-     	  -- and save the list of indices of these topCones as an element in L
-     	  for i from 0 to #topCones - 1  do L = merge(hashTable apply(facesAsCones(2,posHull topCones#i), C -> (rays C, linealitySpace C) => {i}),L,(a,b) -> sort join(a,b));
-     	  -- Finding the cyclic order of every list of topCones in L and write this cyclic order as a 
-     	  -- list of consecutive pairs
-     	  L = for l in values L list (
-	       pairings := {};
-	       start := l#0;
-	       a := start;
-	       l = drop(l,1);
-	       i := position(l, e -> dim intersection(posHull topCones#a, posHull topCones#e) == n-1);
-	       while i =!= null do (
-		    pairings = pairings | {(a,l#i)};
-		    a = l#i;
-		    l = drop(l,{i,i});
-		    i = position(l, e -> dim intersection(posHull topCones#a, posHull topCones#e) == n-1));
-	       if dim intersection(posHull topCones#a, posHull topCones#start) == n-1 then pairings | {(a,start)} else continue);
-     	  -- Check for every cyclic order of topCones if the product of the corresponding transition
-     	  -- matrices is the identity
-     	  if not (all(L, l -> product apply(reverse l, e -> if e#0 > e#1 then inverse bCT#(e#1,e#0) else bCT#e) == map(QQ^k,QQ^k,1))) then (
-		      if debugLevel > 0 then
-			  << "--toric vector bundle does not fulfill cocycle condition" << endl;
-			return false
-		  	);
-                    return true
-
-                    ))
 
