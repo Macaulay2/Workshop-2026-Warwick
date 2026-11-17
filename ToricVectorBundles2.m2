@@ -384,13 +384,15 @@ symmetricPower (ZZ, ToricVectorBundle) := (l, TVB) -> (
         R := rays variety TVB;
         fM := filtrationMatrices TVB;
         fJ := filtrationJumps TVB;
-        ind := sort apply(subsets(rank TVB + l - 1, l),s -> apply(#s, i -> s#i - i));
+        d := numRows first fM;
+        m := numColumns first fM;
+        ind := sort apply(subsets(m + l - 1, l),s -> apply(#s, i -> s#i - i));
         allind := sort unique flatten apply(ind, permutations);
         indtable := hashTable apply(#ind, i -> ind#i => i);
         -- the trick is to think of Sym(R^n) as a polynomial ring, then the symmetric power of a matrix 
         -- is a 1xn matrix on the polynomial ring, and finally use the symmetricPower method for matrices
         y := symbol y;
-        S := (ring TVB)[y_0..y_(rank TVB - 1)];
+        S := (ring TVB)[y_0..y_(d - 1)];
         mons := symmetricPower(l, vars S);
         newfM := apply(fM, A ->
             lift(last coefficients(symmetricPower(l, vars S * sub(A, S)), Monomials => mons), ring TVB)
@@ -2117,7 +2119,7 @@ assert( E2++E2 == E3++E3)
 assert( exteriorPower(2, E1) == exteriorPower(2, E2 ))
 assert( exteriorPower(2, E3) == exteriorPower(2, E2 ))
 assert( exteriorPower(2, E3) == exteriorPower(2, E1 ))
--- BUG: symmetricPower doesn't work for E2
+-- BUG: symmetricPower doesn't work for E2 (fixed)
 assert( symmetricPower(2, E1)== symmetricPower(2, E2 ))
 assert( symmetricPower(2, E3)== symmetricPower(2, E2 ))
 assert( symmetricPower(2, E1)== symmetricPower(2, E3 ))
