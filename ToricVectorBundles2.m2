@@ -195,26 +195,6 @@ chooseBasis (Matrix, List) := (M,jumps) -> (
     {currentspan_{1..r}, newJ}
     )
 
--*
-debug needsPackage "ToricVectorBundles2"
-X = toricProjectiveSpace(3, CoefficientRing=> ZZ/101);
-TX = tangentBundle X;
-triv = trivialBundle(X,1);
-sumoflbs = lineBundle X_0 ++ lineBundle X_1 ++ lineBundle X_2 ++ lineBundle X_3;
-f = map(sumoflbs,triv,matrix(ZZ/101,{{1},{1},{1},{1}}));
-g = map(TX,sumoflbs, transpose sub(matrix rays X,ZZ/101));
-E = prune image f
-
-E = image f
-dual E
-exteriorPower(1,E)
-
-X = hirzebruchSurface 2
-E = tangentBundle X
-L = lineBundle(X_0 + 2*X_1 + 4*X_2 + 5*X_3)
-T1 = exteriorPower(2,E ++ L)
-*-
-
 prune ToricVectorBundle := ToricVectorBundle => o -> E -> E.cache.minimalPresentation ??= (
     R := rays E;
     D := details E;
@@ -3150,9 +3130,3 @@ changelist: 2026-10-27
 - fixed ker
 - changed groundSet to accommodate *
 - fixed all present documentation errors (Kaneyama needs to be split out)
-
-todo
-- implement me own version of compatibility check
-- pruning map needs to be cached (is this auto done?)
-- fix isIsomorphism: how to find the inverse map?
-- bug in areIsomorphic see test 20
