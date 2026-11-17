@@ -145,6 +145,105 @@ doc ///
 
 doc ///
     Key
+        (ring,ToricVectorBundleKaneyama)
+    Headline
+        the graded ring of the bundle when given in Kaneyama's description
+    Usage
+        R = ring E
+    Inputs
+        E:ToricVectorBundleKaneyama
+    Outputs
+        R:Ring
+    Description
+        Text
+            For a vector bundle in Kaneyama's description the graded ring is @TO QQ@ with degree
+            space the lattice of the underlying fan.
+        Example
+            E =tangentBundleKaneyama(projectiveSpaceFan 3)
+            ring E
+           
+    SeeAlso
+       (ring,ToricVectorBundle)
+
+///
+
+doc ///
+    Key
+        (rank,ToricVectorBundleKaneyama)
+    Headline
+        the rank of the vector bundle
+    Usage
+        r = rank E
+    Inputs
+        E:ToricVectorBundleKaneyama
+    Outputs
+        r:ZZ
+    Description
+        Text
+            Returns the rank $r$ of a @TO ToricVectorBundleKaneyama@.
+        Example
+            E =tangentBundleKaneyama(pp1ProductFan 3)
+            rank E
+    SeeAlso
+       (rank,ToricVectorBundle)
+       (rays,ToricVectorBundleKaneyama)
+       toricVectorBundleKaneyama
+
+///
+
+doc ///
+    Key
+        (rays,ToricVectorBundleKaneyama)
+    Headline
+        the rays of the underlying fan
+    Usage
+        L = rays E
+    Inputs
+        E:ToricVectorBundleKaneyama
+    Outputs
+        L:List
+    Description
+        Text
+            Returns the rays of the fan of the underlying toric variety of a @TO ToricVectorBundleKaneyama@ as a list, where
+            each ray is represented as a one column matrix.
+        Example
+            E =cotangentBundleKaneyama(projectiveSpaceFan 2)
+            rays E
+           
+    SeeAlso
+       (rays,ToricVectorBundle)
+       (rank,ToricVectorBundleKaneyama)
+       (fan,ToricVectorBundleKaneyama)
+///
+
+doc ///
+    Key
+        (fan,ToricVectorBundleKaneyama)
+    Headline
+        the underlying fan of a toric vector bundle in Kaneyama's description
+    Usage
+        F = fan E
+    Inputs
+        E : ToricVectorBundleKaneyama
+    Outputs
+        F : Fan
+    Description
+        Text
+            Returns the fan of the underlying @TO "NormalToricVarieties:: NormalToricVariety"@. This is an object of the package
+            Polyhedra. See also @TO "Polyhedra::Fan"@.
+        Example
+            E = tangentBundleKaneyama hirzebruchFan 3
+            F = fan E
+            rays F
+            maxCones F
+    SeeAlso
+        "Polyhedra::Fan"
+        variety
+        (fan,ToricVectorBundle)
+///
+
+doc ///
+    Key
         addBaseChange
         (addBaseChange,ToricVectorBundleKaneyama,List)
     Headline

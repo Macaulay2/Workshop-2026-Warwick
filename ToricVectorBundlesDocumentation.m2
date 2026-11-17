@@ -419,17 +419,12 @@ doc ///
             rays F
             maxCones F
             fan X == fan E
-        Example
-            E = tangentBundleKaneyama hirzebruchFan 3
-            F = fan E
-            rays F
-            maxCones F
     SeeAlso
         "Polyhedra::Fan"
         variety
+        (fan,ToricVectorBundleKaneyama)
 ///
 
---todo Kaneyama
 doc ///
     Key
         ring
@@ -453,6 +448,7 @@ doc ///
             ring E'
     SeeAlso
         toricVectorBundle
+        (ring,ToricVectorBundleKaneyama)
 ///
 
 
@@ -472,18 +468,16 @@ doc ///
         r : ZZ
     Description
         Text
-            Returns the rank $r$ of a @TO ToricVectorBundle@ in Klyachko's description or a @TO ToricVectorBundleKaneyama@.
+            Returns the rank $r$ of a @TO ToricVectorBundle@ in Klyachko's description.
         Example
             X = toricProjectiveSpace 2** toricProjectiveSpace 3
             E = tangentBundle X
-            rank E
-        Example
-            E = tangentBundleKaneyama pp1ProductFan 3
             rank E
     SeeAlso
         (rays,ToricVectorBundle)
         (fan,ToricVectorBundle)
         toricVectorBundle
+        (rank,ToricVectorBundleKaneyama)
 ///
 
 doc ///
@@ -508,15 +502,11 @@ doc ///
             E = cotangentBundle X
             rays E
             rays X
-        Text 
-            For a @TO ToricVectorBundleKaneyama@ it returns the list of rays of the underlying fan, where each ray is represented as a one column matrix.
-        Example
-            E = cotangentBundleKaneyama projectiveSpaceFan 2
-            rays E
     SeeAlso
         (rank,ToricVectorBundle)
         (fan,ToricVectorBundle)
         (variety, ToricVectorBundle)
+        (rays,ToricVectorBundleKaneyama)
 ///
 
 
@@ -1022,6 +1012,7 @@ doc ///
         (isomorphism,ToricVectorBundle,ToricVectorBundle)
 ///
 
+
 doc ///
     Key
         (isomorphism,ToricVectorBundle,ToricVectorBundle)
@@ -1030,8 +1021,8 @@ doc ///
     Usage
         isomorphism(E,F)
     Inputs
-        E : ToricVectorBundle
-        F : ToricVectorBundle
+        E:ToricVectorBundle
+        F:ToricVectorBundle
     Outputs
         :{Matrix, Boolean}
             isomorphism between E and F or false if they are not isomorphic
@@ -1053,6 +1044,7 @@ doc ///
         filtrations
         details
 ///
+
 
 doc ///
     Key
